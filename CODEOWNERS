@@ -1,0 +1,20 @@
+# package config
+package.json @development-leads @infrastructure-leads
+package-lock.json @development-leads @infrastructure-leads
+
+# build and bundler config
+vite.config.ts @development-leads @infrastructure-leads
+
+
+# linting and formatting config
+eslint.config.js @development-leads @infrastructure-leads
+.prettierrc @development-leads @infrastructure-leads
+
+# CI/CD config
+.github/ @development-leads @infrastructure-leads
+
+# root config files
+*.config.* @development-leads @infrastructure-leads
+.*rc @development-leads @infrastructure-leads
+.*rc.* @development-leads @infrastructure-leads
+tsconfig.json @development-leads @infrastructure-leads
