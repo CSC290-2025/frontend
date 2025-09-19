@@ -24,6 +24,18 @@ export default defineConfig([
       },
     },
     rules: {
+      'no-restricted-imports': [
+        'warn',
+        {
+          patterns: [
+            {
+              group: ['../*', './../*', '../../*'],
+              message:
+                'Use absolute imports with @ alias instead of relative imports',
+            },
+          ],
+        },
+      ],
       '@typescript-eslint/no-unused-vars': [
         'warn',
         {
