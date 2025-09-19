@@ -1,0 +1,36 @@
+# Dependencies
+node_modules
+
+# Build & Output
+/dist
+/dist-ssr
+/coverage
+.eslintcache
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Environment Variables & Secrets
+.env
+.env.local
+.env.*.local
+*.local
+
+# Editor & OS Specific
+.idea
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.DS_Store
+Thumbs.db
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
