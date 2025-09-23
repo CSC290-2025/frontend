@@ -1,20 +1,24 @@
 # package config
-package.json @development-leads @infrastructure-leads
-package-lock.json @development-leads @infrastructure-leads
+package.json @CSC290-2025/development-leads @CSC290-2025/infrastructure-leads
+package-lock.json @CSC290-2025/development-leads @CSC290-2025/infrastructure-leads
 
 # build and bundler config
-vite.config.ts @development-leads @infrastructure-leads
+vite.config.ts @CSC290-2025/development-leads @CSC290-2025/infrastructure-leads
 
+# entry files
+index.html @CSC290-2025/development-leads @CSC290-2025/infrastructure-leads
+src/main.tsx @CSC290-2025/development-leads @CSC290-2025/infrastructure-leads
+src/app.tsx @CSC290-2025/development-leads @CSC290-2025/infrastructure-leads
 
 # linting and formatting config
-eslint.config.js @development-leads @infrastructure-leads
-.prettierrc @development-leads @infrastructure-leads
+eslint.config.js @CSC290-2025/development-leads @CSC290-2025/infrastructure-leads
+.prettierrc @CSC290-2025/development-leads @CSC290-2025/infrastructure-leads
 
 # CI/CD config
-.github/ @development-leads @infrastructure-leads
+.github/ @CSC290-2025/development-leads @CSC290-2025/infrastructure-leads
 
 # root config files
-*.config.* @development-leads @infrastructure-leads
-.*rc @development-leads @infrastructure-leads
-.*rc.* @development-leads @infrastructure-leads
-tsconfig.json @development-leads @infrastructure-leads
+*.config.* @CSC290-2025/development-leads @CSC290-2025/infrastructure-leads
+.*rc @CSC290-2025/development-leads @CSC290-2025/infrastructure-leads
+.*rc.* @CSC290-2025/development-leads @CSC290-2025/infrastructure-leads
+tsconfig.json @CSC290-2025/development-leads @CSC290-2025/infrastructure-leads
