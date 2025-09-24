@@ -34,3 +34,8 @@ Thumbs.db
 *.sln
 *.sw?
 
+# Package Manager Lock File
+package-lock.json
+yarn.lock
+bun.lockb
+!pnpm-lock.yaml
