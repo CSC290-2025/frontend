@@ -45,7 +45,7 @@ Complete all applicable items before requesting review:
 - **Linting**: Verify `pnpm run check` passes
 - **Responsive testing**: Test UI changes on different screen sizes
 
-### 6. Dependencies
+### 5. Dependencies
 
 Link related issues or PRs:
 
