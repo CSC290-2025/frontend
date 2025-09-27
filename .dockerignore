@@ -50,7 +50,7 @@ pids
 # Caches
 .npm
 .eslintcache
-.prettierache
+.prettiercache
 
 # Husky
 .husky
