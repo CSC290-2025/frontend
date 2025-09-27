@@ -3,6 +3,7 @@ services:
   dev:
     build:
       target: development
+      context: .
     ports:
       - '5173:5173'
     volumes:
@@ -15,6 +16,7 @@ services:
   prod:
     build:
       target: production
+      context: .
     ports:
       - '80:80'
     environment:
