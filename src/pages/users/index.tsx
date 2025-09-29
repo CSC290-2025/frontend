@@ -149,7 +149,7 @@ export default function UsersPage() {
               </div>
               <div className="mb-6">
                 <label className="mb-2 block text-sm font-medium">
-                  Avatar URL (optional)
+                  Avatar URL
                 </label>
                 <input
                   type="url"
