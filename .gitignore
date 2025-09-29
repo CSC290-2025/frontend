@@ -46,3 +46,6 @@ package-lock.json
 yarn.lock
 bun.lockb
 !pnpm-lock.yaml
+
+# Open API one
+/src/api/generated/
