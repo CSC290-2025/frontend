@@ -1,3 +1,9 @@
+import Test from '@/features/emergency/pages/test.tsx';
+
 export default function Home() {
-  return <h1>Home</h1>;
+  return (
+    <>
+      <Test />
+    </>
+  );
 }
