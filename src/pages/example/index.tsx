@@ -1,1 +1,1 @@
-export { default } from '@/features/_example/pages/UserHomepage';
+export { default } from '@/features/freecycle/pages/UserHomepage';
