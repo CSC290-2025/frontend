@@ -5,6 +5,7 @@ import {
 } from '@/features/emergency/config/firebase.ts';
 import { onMessage } from 'firebase/messaging';
 import FCMApi from '@/features/emergency/api/fcm.ts';
+import { toast } from 'sonner';
 
 function Test() {
   const [notificationAccess, setNotificationAccess] = useState(false);
@@ -112,9 +113,15 @@ function Test() {
   useEffect(() => {
     requestNotificationAccess();
   }, []);
+
   onMessage(messaging, (payload) => {
     console.log('Received Foreground message ', payload);
+    toast(`${payload.notification?.title}`, {
+      description: payload.notification?.body,
+      position: 'top-right',
+    });
   });
+
   return (
     <>
       <div className="m-4 flex min-h-screen w-full flex-col items-center">

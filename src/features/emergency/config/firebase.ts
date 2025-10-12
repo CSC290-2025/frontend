@@ -26,8 +26,8 @@ const getFCMToken = async (cb: (token: string) => void) => {
       vapidKey: config.FIREBASE_VAPID_KEY,
       serviceWorkerRegistration: registration,
     });
-    console.log('Token: ', token);
     cb(token);
+    console.log('Token: ', token);
     await TokenApi.storeToken(token);
   } catch (error) {
     console.error(error);
