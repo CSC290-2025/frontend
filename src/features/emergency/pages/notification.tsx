@@ -7,7 +7,7 @@ import { onMessage } from 'firebase/messaging';
 import FCMApi from '@/features/emergency/api/fcm.ts';
 import { toast } from 'sonner';
 
-function Test() {
+export default function NotificationPage() {
   const [notificationAccess, setNotificationAccess] = useState(false);
   const [fcmToken, setFcmToken] = useState('');
   const [title, setTitle] = useState('');
@@ -171,4 +171,3 @@ function Test() {
     </>
   );
 }
-export default Test;
