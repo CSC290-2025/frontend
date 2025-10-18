@@ -1,1 +1,1 @@
-export { default } from '@/features/emergency/pages/notification.tsx';
+export { default } from '@/features/emergency/pages/notification-page.tsx';

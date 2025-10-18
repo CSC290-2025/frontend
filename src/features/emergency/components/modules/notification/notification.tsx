@@ -6,8 +6,9 @@ import {
 import { onMessage } from 'firebase/messaging';
 import FCMApi from '@/features/emergency/api/fcm.ts';
 import { toast } from 'sonner';
+import { useReportFrom } from '@/features/emergency/hooks/report-from.tsx';
 
-export default function NotificationPage() {
+export default function NotificationModule() {
   const [notificationAccess, setNotificationAccess] = useState(false);
   const [fcmToken, setFcmToken] = useState('');
   const [title, setTitle] = useState('');
@@ -15,6 +16,7 @@ export default function NotificationPage() {
   const [topic, setTopic] = useState('');
   const [subscriptionTopic, setSubscriptionTopic] = useState('');
 
+  const { location, findLocation } = useReportFrom();
   const requestNotificationAccess = () => {
     if (typeof window !== 'undefined') {
       Notification.requestPermission().then((permission) => {
@@ -111,7 +113,9 @@ export default function NotificationPage() {
   // };
 
   useEffect(() => {
-    requestNotificationAccess();
+    return () => {
+      requestNotificationAccess();
+    };
   }, []);
 
   onMessage(messaging, (payload) => {
@@ -166,6 +170,15 @@ export default function NotificationPage() {
               Send to Everyone
             </button>
           </div>
+          <div className="mt-5 flex w-full flex-row items-center gap-5">
+            <button
+              className="w-full rounded-lg bg-black p-3 text-xl font-bold text-white"
+              onClick={findLocation}
+            >
+              Find Location
+            </button>
+          </div>
+          {location && <div>{location}</div>}
         </div>
       </div>
     </>
