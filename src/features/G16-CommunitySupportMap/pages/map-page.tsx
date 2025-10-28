@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import initMapAndMarkers from '../../support-map/config/google-map';
+import initMapAndMarkers from '../config/google-map';
 
 const MapPage = () => {
   const mapRef = useRef<HTMLDivElement>(null);

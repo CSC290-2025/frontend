@@ -1,1 +1,1 @@
-export { default } from '@/features/support-map/pages/map-page';
+export { default } from '@/features/G16-CommunitySupportMap/pages/map-page';
