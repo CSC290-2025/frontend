@@ -13,7 +13,7 @@ export default defineConfig(({ mode }) => {
   const isGithubPages = mode === 'gh-pages';
 
   return {
-    base: isGithubPages ? '/my-repo-name/' : '/',
+    base: isGithubPages ? '/frontend/' : '/',
     plugins: [react(), tailwindcss(), generouted()],
     resolve: {
       alias: {
