@@ -3,9 +3,23 @@
 
 import { components, hooks, utils } from '@generouted/react-router/client';
 
-export type Path = `/` | `/example` | `/example/:id`;
+export type Path =
+  | `/`
+  | `/AdminAddAPT`
+  | `/AdminEditAPT`
+  | `/AdminListedAPT`
+  | `/AdminTenantInfo`
+  | `/ApartmentBooking`
+  | `/ApartmentDetails`
+  | `/ApartmentHomepage`
+  | `/ApartmentHomepage/:id`
+  | `/ApartmentPayment`
+  | `/MyRentedAPT`
+  | `/example`
+  | `/example/:id`;
 
 export type Params = {
+  '/ApartmentHomepage/:id': { id: string };
   '/example/:id': { id: string };
 };
 
