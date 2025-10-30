@@ -1,6 +1,7 @@
 import React, { type FC, type ReactNode } from 'react';
 import { cn } from '@/lib/utils.ts';
 import { GoogleMap, useJsApiLoader } from '@react-google-maps/api';
+import config from '@/features/emergency/config/env';
 
 type MapInitProps = {
   children: ReactNode;
@@ -15,8 +16,8 @@ const center = {
 const MapInit: FC<MapInitProps> = ({ classname, children }) => {
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
-    googleMapsApiKey: 'AIzaSyCSfRzShn1CNQhK1WRbcBYao-veqTr201w',
-    libraries: ['marker'],
+    googleMapsApiKey: config.GOOGLE_API_KEY,
+    // libraries: ['marker'],
   });
 
   const [map, setMap] = React.useState<google.maps.Map | null>(null);

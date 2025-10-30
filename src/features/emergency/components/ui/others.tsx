@@ -1,4 +1,4 @@
-import Button from './button.tsx';
+import { Button } from './button.tsx';
 import { CheckIcon, XIcon, ArrowRightIcon, ArrowLeftIcon } from './icons.tsx';
 
 const OthersButton = () => {
