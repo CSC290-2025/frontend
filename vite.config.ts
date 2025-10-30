@@ -9,11 +9,16 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // https://vite.dev/config/
-export default defineConfig({
-  plugins: [react(), tailwindcss(), generouted()],
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, 'src'),
+export default defineConfig(({ mode }) => {
+  const isGithubPages = mode === 'gh-pages';
+
+  return {
+    base: isGithubPages ? '/my-repo-name/' : '/',
+    plugins: [react(), tailwindcss(), generouted()],
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, 'src'),
+      },
     },
-  },
+  };
 });
