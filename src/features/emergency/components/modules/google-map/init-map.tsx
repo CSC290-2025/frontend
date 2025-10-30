@@ -1,23 +1,25 @@
 import React, { type FC, type ReactNode } from 'react';
 import { cn } from '@/lib/utils.ts';
-import { GoogleMap, useJsApiLoader } from '@react-google-maps/api';
+import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
 import config from '@/features/emergency/config/env';
+import { useReportFrom } from '@/features/emergency/hooks/report-from.tsx';
 
 type MapInitProps = {
   children: ReactNode;
   classname?: string;
 };
 
-const center = {
-  lat: -3.745,
-  lng: -38.523,
-};
-
 const MapInit: FC<MapInitProps> = ({ classname, children }) => {
+  const { location } = useReportFrom();
+
+  const markerPosition = {
+    lat: Number(location.lat) || 0,
+    lng: Number(location.long) || 0,
+  };
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
     googleMapsApiKey: config.GOOGLE_API_KEY,
-    // libraries: ['marker'],
+    libraries: [],
   });
 
   const [map, setMap] = React.useState<google.maps.Map | null>(null);
@@ -38,11 +40,16 @@ const MapInit: FC<MapInitProps> = ({ classname, children }) => {
     <div className={cn('overflow-hidden shadow-lg', classname)}>
       <GoogleMap
         mapContainerClassName="w-full h-full"
-        center={center}
-        zoom={10}
+        center={markerPosition}
+        zoom={location ? 15 : 10}
         onLoad={onLoad}
         onUnmount={onUnmount}
+        options={{
+          streetViewControl: false,
+          cameraControl: false,
+        }}
       >
+        <Marker position={markerPosition} />
         {children}
         {/* Child components, such as markers, info windows, etc. */}
       </GoogleMap>
