@@ -1,3 +1,4 @@
+import * as z from 'zod';
 import {
   createContext,
   type ReactNode,
@@ -5,6 +6,14 @@ import {
   useEffect,
   useState,
 } from 'react';
+
+const ReportFromSchema = z.object({
+  title: z.string(),
+  description: z.string(),
+  image_url: z.string(),
+  ambulance_service: z.boolean().default(false),
+});
+type ReportFrom = z.infer<typeof ReportFromSchema>;
 
 type ReportFromState = {
   location: string;
@@ -31,13 +40,13 @@ export function ReportFromProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    return geolocation.watchPosition(
+    return navigator.geolocation.watchPosition(
       (pos: GeolocationPosition) => {
         const coords = `${pos.coords.latitude}, ${pos.coords.longitude}`;
         setLocation(coords);
       },
       (err) => {
-        console.error('Error getting location:', err);
+        console.log('Error getting location:', err);
       }
     );
   }

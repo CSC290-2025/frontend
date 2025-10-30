@@ -6,6 +6,6 @@ export default class FCMApi {
   static async sendAllNotification(
     notification: NotificationT
   ): Promise<SuccessResponseInterface<TokenModel>> {
-    return await post('/notifications/all', { notification });
+    return await post('/fcm/all', { notification });
   }
 }
