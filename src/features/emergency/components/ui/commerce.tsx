@@ -1,4 +1,4 @@
-import Button from './button.tsx';
+import { Button } from './button.tsx';
 import { ShoppingCartIcon, HeartIcon, StarIcon, ShareIcon } from './icons.tsx';
 
 const CommerceButton = () => {

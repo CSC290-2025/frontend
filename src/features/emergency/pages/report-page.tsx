@@ -15,12 +15,15 @@ import {
   CardDescription,
 } from '@/features/emergency/components/ui/card.tsx';
 import MapInit from '@/features/emergency/components/modules/google-map/init-map.tsx';
+import { useReportFrom } from '@/features/emergency/hooks/report-from.tsx';
 import { Checkbox } from '@/features/emergency/components/ui/checkbox.tsx';
 import { Label } from '@/features/emergency/components/ui/label';
 import { Button } from '@/features/emergency/components/ui/button.tsx';
 import { CircleAlert } from 'lucide-react';
 
 function ReportPage() {
+  const { location, findLocation, address } = useReportFrom();
+
   return (
     <MapInit classname="rounded-2xl min-h-screen">
       <div className="grid h-full min-h-screen w-full grid-cols-7 grid-rows-2">
@@ -30,6 +33,7 @@ function ReportPage() {
               variant={'secondary'}
               iconLeft={<CircleAlert />}
               className="col-start-1 row-start-3 m-5"
+              onClick={findLocation}
             >
               Report
             </Button>
@@ -37,15 +41,16 @@ function ReportPage() {
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle>Confirm the location</AlertDialogTitle>
-              <AlertDialogDescription>
-                <Card className="mt-3">
-                  <CardContent>
-                    <CardDescription>
-                      Soi Phutthabucha 42, Khwaeng Bang Mot, Khet Thung Khru,
-                      Krung Thep Maha Nakhon 10140
-                    </CardDescription>
-                  </CardContent>
-                </Card>
+              <AlertDialogDescription asChild>
+                <div>
+                  <Card className="mt-3">
+                    <CardContent>
+                      <CardDescription>
+                        {location ? address : 'Fetching location...'}
+                      </CardDescription>
+                    </CardContent>
+                  </Card>
+                </div>
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter className="grid grid-cols-2 justify-between">

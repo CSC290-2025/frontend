@@ -9,6 +9,8 @@ const config = {
   FIREBASE_VAPID_KEY: import.meta.env.VITE_FIREBASE_VAPID_KEY,
 
   API_BASE_URL: import.meta.env.VITE_API_BASE_URL!,
+  GEO_API_KEY: import.meta.env.VITE_GEO_API_KEY!,
+  GOOGLE_API_KEY: import.meta.env.VITE_GOOGLE_API_KEY!,
 };
 
 export default config;
