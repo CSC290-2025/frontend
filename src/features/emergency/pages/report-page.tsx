@@ -22,12 +22,14 @@ import { Textarea } from '@/features/emergency/components/ui/textarea.tsx';
 import { CircleAlert } from 'lucide-react';
 import { useState } from 'react';
 import { Car, AlertTriangle, Waves, Camera, Ambulance } from 'lucide-react';
+import { useReportFrom } from '@/features/emergency/hooks/report-from.tsx';
 
 function ReportPage() {
   const [showDetail, setShowDetail] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('Traffic');
   const [file, setFile] = useState<File | null>(null);
   const [ambulance, setAmbulance] = useState(false);
+  const { findLocation, address } = useReportFrom();
 
   const categories = [
     { name: 'Traffic', icon: <Car size={32} /> },
@@ -44,6 +46,7 @@ function ReportPage() {
               variant="secondary"
               iconLeft={<CircleAlert />}
               className="col-start-1 row-start-3 m-5"
+              onClick={findLocation}
             >
               Report
             </Button>
@@ -51,15 +54,16 @@ function ReportPage() {
           <AlertDialogContent className="max-w-lg">
             <AlertDialogHeader>
               <AlertDialogTitle>Confirm the location</AlertDialogTitle>
-              <AlertDialogDescription>
-                <Card className="mt-3">
-                  <CardContent>
-                    <CardDescription>
-                      Soi Phutthabucha 42, Khwaeng Bang Mot, Khet Thung Khru,
-                      Krung Thep Maha Nakhon 10140
-                    </CardDescription>
-                  </CardContent>
-                </Card>
+              <AlertDialogDescription asChild>
+                <div>
+                  <Card className="mt-3">
+                    <CardContent>
+                      <CardDescription>
+                        {address ? `${address}` : 'Fetching address'}
+                      </CardDescription>
+                    </CardContent>
+                  </Card>
+                </div>
               </AlertDialogDescription>
             </AlertDialogHeader>
 

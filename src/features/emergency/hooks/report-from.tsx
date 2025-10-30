@@ -56,6 +56,7 @@ export function ReportFromProvider({ children }: { children: ReactNode }) {
       async (pos: GeolocationPosition) => {
         const lat = pos.coords.latitude;
         const long = pos.coords.longitude;
+        console.log(pos.coords.latitude, pos.coords.longitude);
 
         setLocation((prev) => ({
           ...prev,
@@ -76,6 +77,11 @@ export function ReportFromProvider({ children }: { children: ReactNode }) {
       },
       (err) => {
         console.log('Error getting location:', err);
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 10000,
+        maximumAge: 0,
       }
     );
   }
