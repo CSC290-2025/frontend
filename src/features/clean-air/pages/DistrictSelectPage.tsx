@@ -1,5 +1,8 @@
-import React from 'react';
-
+import DistrictItem from '@/features/clean-air/components/DistrictItem';
 export default function DistrictSelectPage() {
-  return <div>DistrictSelectPage</div>;
+  return (
+    <div>
+      <DistrictItem />
+    </div>
+  );
 }
