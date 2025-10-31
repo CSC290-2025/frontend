@@ -38,14 +38,14 @@ function ReportPage() {
   ];
 
   return (
-    <MapInit classname=" rounded-2xl min-h-screen lg:w-full sm:w-screen">
+    <MapInit classname="rounded-2xl h-[calc(100svh-56px-16px)] lg:w-full sm:w-screen">
       <div className="grid h-full min-h-screen w-full grid-cols-7 grid-rows-2">
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button
               variant="secondary"
               iconLeft={<CircleAlert />}
-              className="col-start-1 row-start-3 m-5"
+              className="absolute z-100 col-start-1 row-start-3 m-5"
               onClick={findLocation}
             >
               Report
