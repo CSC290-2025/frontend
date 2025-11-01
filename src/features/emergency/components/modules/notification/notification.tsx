@@ -4,9 +4,8 @@ import {
   messaging,
 } from '@/features/emergency/config/firebase.ts';
 import { onMessage } from 'firebase/messaging';
-import FCMApi from '@/features/emergency/api/fcm.ts';
+import FCMApi from '@/features/emergency/api/fcm.api.ts';
 import { toast } from 'sonner';
-import { useReportFrom } from '@/features/emergency/hooks/report-from.tsx';
 
 export default function NotificationModule() {
   const [notificationAccess, setNotificationAccess] = useState(false);
@@ -16,7 +15,6 @@ export default function NotificationModule() {
   const [topic, setTopic] = useState('');
   const [subscriptionTopic, setSubscriptionTopic] = useState('');
 
-  const { location, findLocation } = useReportFrom();
   const requestNotificationAccess = () => {
     if (typeof window !== 'undefined') {
       Notification.requestPermission().then((permission) => {
@@ -170,15 +168,7 @@ export default function NotificationModule() {
               Send to Everyone
             </button>
           </div>
-          <div className="mt-5 flex w-full flex-row items-center gap-5">
-            <button
-              className="w-full rounded-lg bg-black p-3 text-xl font-bold text-white"
-              onClick={findLocation}
-            >
-              Find Location
-            </button>
-          </div>
-          {location && <div>{location}</div>}
+          <div className="mt-5 flex w-full flex-row items-center gap-5"></div>
         </div>
       </div>
     </>

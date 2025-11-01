@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getMessaging, getToken } from 'firebase/messaging';
-import TokenApi from '@/features/emergency/api/token.ts';
+import TokenApi from '@/features/emergency/api/token.api.ts';
 import config from '@/features/emergency/config/env';
 
 const firebaseConfig = {

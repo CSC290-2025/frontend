@@ -2,7 +2,7 @@ import React, { type FC, type ReactNode } from 'react';
 import { cn } from '@/lib/utils.ts';
 import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
 import config from '@/features/emergency/config/env';
-import { useReportFrom } from '@/features/emergency/hooks/report-from.tsx';
+import { useGeoLocation } from '@/features/emergency/hooks/geo-location.tsx';
 
 type MapInitProps = {
   children: ReactNode;
@@ -10,7 +10,7 @@ type MapInitProps = {
 };
 
 const MapInit: FC<MapInitProps> = ({ classname, children }) => {
-  const { location } = useReportFrom();
+  const { location } = useGeoLocation();
 
   const markerPosition = {
     lat: Number(location.lat) || 0,
@@ -19,14 +19,14 @@ const MapInit: FC<MapInitProps> = ({ classname, children }) => {
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
     googleMapsApiKey: config.GOOGLE_API_KEY,
-    libraries: [],
+    // libraries: [],
   });
 
   const [map, setMap] = React.useState<google.maps.Map | null>(null);
 
   const onLoad = React.useCallback(function callback(map: google.maps.Map) {
     // This is just an example of getting and using the map instance!!! don't just blindly copy!
-    // const bounds = new window.google.maps.LatLngBounds(center)
+    // const bounds = new window.google.maps.LatLngBounds(markerPosition)
     // map.fitBounds(bounds)
 
     setMap(map);
@@ -45,8 +45,9 @@ const MapInit: FC<MapInitProps> = ({ classname, children }) => {
         onLoad={onLoad}
         onUnmount={onUnmount}
         options={{
-          streetViewControl: false,
           cameraControl: false,
+          mapTypeControl: false,
+          fullscreenControl: false,
         }}
       >
         <Marker position={markerPosition} />

@@ -2,10 +2,6 @@ import NotificationModule from '@/features/emergency/components/modules/notifica
 import { ReportFromProvider } from '@/features/emergency/hooks/report-from.tsx';
 
 function NotificationPage() {
-  return (
-    <ReportFromProvider>
-      <NotificationModule />
-    </ReportFromProvider>
-  );
+  return <NotificationModule />;
 }
 export default NotificationPage;

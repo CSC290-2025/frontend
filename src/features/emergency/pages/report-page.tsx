@@ -22,14 +22,28 @@ import { Textarea } from '@/features/emergency/components/ui/textarea.tsx';
 import { CircleAlert } from 'lucide-react';
 import { useState } from 'react';
 import { Car, AlertTriangle, Waves, Camera, Ambulance } from 'lucide-react';
-import { useReportFrom } from '@/features/emergency/hooks/report-from.tsx';
+import { useGeoLocation } from '@/features/emergency/hooks/geo-location.tsx';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import {
+  type ReportRequestFrom,
+  ReportOmit,
+} from '@/features/emergency/interfaces/report.ts';
 
 function ReportPage() {
   const [showDetail, setShowDetail] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState('Traffic');
   const [file, setFile] = useState<File | null>(null);
   const [ambulance, setAmbulance] = useState(false);
-  const { findLocation, address } = useReportFrom();
+  const { findLocation, address } = useGeoLocation();
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<ReportRequestFrom>({
+    resolver: zodResolver(ReportOmit),
+  });
 
   const categories = [
     { name: 'Traffic', icon: <Car size={32} /> },
@@ -130,13 +144,13 @@ function ReportPage() {
                 </label>
 
                 <div className="col-start-1 flex items-center gap-3">
-                  <Ambulance size={36} />
-                  <Label htmlFor="details">Ambulance needed?</Label>
+                  {/*<Ambulance size={36} />*/}
                   <Checkbox
                     id="details"
                     checked={ambulance}
                     onCheckedChange={(checked) => setAmbulance(!!checked)}
                   />
+                  <Label htmlFor="details">Ambulance needed?</Label>
                 </div>
               </div>
             )}
