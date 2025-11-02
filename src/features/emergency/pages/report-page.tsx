@@ -18,7 +18,7 @@ import { Label } from '@/features/emergency/components/ui/label';
 import { Button } from '@/features/emergency/components/ui/button.tsx';
 import { Textarea } from '@/features/emergency/components/ui/textarea.tsx';
 import { AlertTriangle, Camera, Car, CircleAlert, Waves } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useGeoLocation } from '@/features/emergency/hooks/geo-location.tsx';
 import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -28,8 +28,6 @@ import {
 } from '@/features/emergency/interfaces/report.ts';
 import { useReportFrom } from '@/features/emergency/hooks/report-from.tsx';
 import { DialogClose } from '@radix-ui/react-dialog';
-
-const currentUser = { id: 123 };
 
 function ReportPage() {
   const [showDetail, setShowDetail] = useState(false);
@@ -51,10 +49,11 @@ function ReportPage() {
   } = useForm<ReportRequestFrom>({
     resolver: zodResolver(ReportOmit),
     defaultValues: {
-      report_category: 'Traffic',
+      title: 'test',
+      report_category: 'traffic',
       ambulance_service: false,
-      image_url: '',
-      user_id: currentUser.id,
+      image_url: 'kuy',
+      user_id: null,
     },
   });
 
@@ -66,6 +65,10 @@ function ReportPage() {
       console.error('Failed to submit report:', err);
     }
   });
+
+  useEffect(() => {
+    console.error(errors);
+  }, [errors]);
 
   return (
     <MapInit classname="rounded-2xl h-[calc(100svh-56px-16px)] lg:w-full sm:w-screen">
