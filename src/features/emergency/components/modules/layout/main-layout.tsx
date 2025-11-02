@@ -21,14 +21,12 @@ const MainLayout: FC<MainLayoutProps> = ({
         <div
           className={cn(
             'my-6 flex flex-row items-center justify-center',
-            overlap && 'absolute top-12 z-100 mx-auto w-full'
+            overlap && 'absolute top-12 z-50 mx-auto w-full'
           )}
         >
           <MenuBar />
         </div>
-        <div className="grid flex-1 items-start gap-4 p-0 sm:px-6 sm:py-0 md:gap-8">
-          {children}
-        </div>
+        <div className="grid flex-1 items-start gap-4 p-0">{children}</div>
       </div>
     </main>
   );
