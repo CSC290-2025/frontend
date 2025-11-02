@@ -8,7 +8,7 @@ import { post } from '.';
 export default class ReportApi {
   static async postReport(data: ReportRequestFrom) {
     const response: SuccessResponseInterface<ReportResponseFrom> = await post(
-      'reports',
+      '/reports',
       data
     );
     return response;

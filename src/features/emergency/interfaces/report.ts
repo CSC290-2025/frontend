@@ -13,7 +13,7 @@ const ReportFromSchema = z.object({
     .nullable(),
   status: z.enum(['pending', 'resolved', 'verified']).nullable(),
   title: z.string().min(1).optional(),
-  report_category_id: z.number().int().nullable(),
+  report_category: z.string(),
   created_at: z.coerce.date(),
   updated_at: z.coerce.date(),
 });

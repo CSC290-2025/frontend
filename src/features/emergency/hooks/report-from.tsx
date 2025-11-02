@@ -7,7 +7,7 @@ import { createContext, type ReactNode, useContext, useState } from 'react';
 
 type ReportFromState = {
   report: ReportResponseFrom[];
-  createReport: (data: ReportRequestFrom) => void;
+  createReport: (data: ReportRequestFrom) => Promise<void>;
   isLoading: boolean;
 };
 
@@ -19,11 +19,13 @@ export function ReportFromProvider({ children }: { children: ReactNode }) {
 
   const createReport = async (data: ReportRequestFrom) => {
     setIsLoading(true);
+    console.log('Creating report', data);
     try {
       const res = await ReportApi.postReport(data);
+      console.log(res);
       setReport((prev) => [...prev, res.data]);
     } catch (error: any) {
-      console.error(error.error.message);
+      console.error(error);
     } finally {
       setIsLoading(false);
     }
