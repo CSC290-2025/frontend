@@ -1,0 +1,91 @@
+# Dependencies
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Build outputs
+dist
+build
+
+# Environment files
+.env
+.env.local
+.env.development
+.env.production
+
+# IDE files
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Git
+.git
+.gitignore
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# Coverage
+coverage
+
+# Logs
+logs
+*.log
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Caches
+.npm
+.eslintcache
+.prettiercache
+
+# Husky
+.husky
+
+# Claude Code
+.claude/
+CLAUDE.md
+
+# Cursor AI
+.cursor/
+.cursorignore
+.cursorban
+
+# Codeium AI
+.codeium/
+.codeiumignore
+
+# GitHub Copilot
+.copilotignore
+
+# Tabnine
+.tabnine/
+
+# AWS CodeWhisperer
+**/CodeWhisperer/
+
+# AI tools' temporary & metadata files
+*.ai.log
+*.agent.json
+*.history.json
+*.prompt.log
+*.chatcache
+.ai_temp/
+.ai_cache/
+
+# VSCode AI integrations cache
+.vscode/.ai/
+.vscode-ai/
