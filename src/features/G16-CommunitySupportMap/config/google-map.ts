@@ -1,4 +1,4 @@
-import { Loader, setOptions, importLibrary } from '@googlemaps/js-api-loader';
+import { setOptions, importLibrary } from '@googlemaps/js-api-loader';
 import config from './env';
 
 setOptions({ key: config.GOOGLE_MAPS_API_KEY });
