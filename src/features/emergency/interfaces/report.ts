@@ -3,7 +3,10 @@ import * as z from 'zod';
 const ReportFromSchema = z.object({
   id: z.number().int(),
   user_id: z.number().int().nullable(),
-  image_url: z.string().nullable(),
+  image_url: z
+    .union([z.string(), z.instanceof(File)])
+    .optional()
+    .nullable(),
   description: z.string().min(5).max(1000).nullable(),
   location: z.any().nullable().optional(),
   ambulance_service: z.boolean().nullable(),

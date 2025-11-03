@@ -1,3 +1,6 @@
+import { useState } from 'react';
+import { useForm, Controller } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import {
   Dialog,
   DialogContent,
@@ -12,26 +15,23 @@ import {
   CardContent,
   CardDescription,
 } from '@/features/emergency/components/ui/card.tsx';
-import MapInit from '@/features/emergency/components/modules/google-map/init-map.tsx';
 import { Checkbox } from '@/features/emergency/components/ui/checkbox.tsx';
 import { Label } from '@/features/emergency/components/ui/label';
 import { Button } from '@/features/emergency/components/ui/button.tsx';
 import { Textarea } from '@/features/emergency/components/ui/textarea.tsx';
+import MapInit from '@/features/emergency/components/modules/google-map/init-map.tsx';
 import { AlertTriangle, Camera, Car, CircleAlert, Waves } from 'lucide-react';
-import { useEffect, useState } from 'react';
 import { useGeoLocation } from '@/features/emergency/hooks/geo-location.tsx';
-import { Controller, useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
+import { useReportFrom } from '@/features/emergency/hooks/report-from.tsx';
 import {
   ReportOmit,
   type ReportRequestFrom,
 } from '@/features/emergency/interfaces/report.ts';
-import { useReportFrom } from '@/features/emergency/hooks/report-from.tsx';
 import { DialogClose } from '@radix-ui/react-dialog';
 
 function ReportPage() {
   const [showDetail, setShowDetail] = useState(false);
-  const [file, setFile] = useState<File | null>(null);
+  const [file, setFile] = useState<string | null>(null);
   const { findLocation, address } = useGeoLocation();
   const { createReport } = useReportFrom();
 
@@ -52,23 +52,18 @@ function ReportPage() {
       title: 'test',
       report_category: 'traffic',
       ambulance_service: false,
-      image_url: 'kuy',
       user_id: null,
     },
   });
 
   const onSubmit = handleSubmit(async (data) => {
     try {
-      const res = await createReport(data);
-      console.log('Report submitted:', res);
+      data.image_url = file;
+      await createReport(data);
     } catch (err) {
       console.error('Failed to submit report:', err);
     }
   });
-
-  useEffect(() => {
-    console.error(errors);
-  }, [errors]);
 
   return (
     <MapInit classname="rounded-2xl h-[calc(100svh-56px-16px)] lg:w-full sm:w-screen">
@@ -90,15 +85,13 @@ function ReportPage() {
               <DialogHeader>
                 <DialogTitle>Confirm the location</DialogTitle>
                 <DialogDescription asChild>
-                  <div>
-                    <Card className="mt-3">
-                      <CardContent>
-                        <CardDescription>
-                          {address ? address : 'Fetching address'}
-                        </CardDescription>
-                      </CardContent>
-                    </Card>
-                  </div>
+                  <Card className="mt-3">
+                    <CardContent>
+                      <CardDescription>
+                        {address ?? 'Fetching address'}
+                      </CardDescription>
+                    </CardContent>
+                  </Card>
                 </DialogDescription>
               </DialogHeader>
 
@@ -107,7 +100,7 @@ function ReportPage() {
                   {/* Description */}
                   <div>
                     <DialogTitle className="mb-4">
-                      What&#39;s happening?
+                      What&apos;s happening?
                     </DialogTitle>
                     <Textarea
                       placeholder="Type something..."
@@ -172,7 +165,7 @@ function ReportPage() {
                         <span className="text-sm text-gray-600">
                           {file ? (
                             <img
-                              src={URL.createObjectURL(file)}
+                              src={file}
                               alt="Preview"
                               className="h-20 w-20 rounded-md object-cover"
                             />
@@ -188,8 +181,12 @@ function ReportPage() {
                           onChange={(e) => {
                             const f = e.target.files?.[0];
                             if (f) {
-                              setFile(f);
-                              field.onChange(URL.createObjectURL(f));
+                              const reader = new FileReader();
+                              reader.readAsDataURL(f);
+                              reader.onloadend = () => {
+                                setFile(reader.result?.toString() || null);
+                              };
+                              field.onChange(f);
                             }
                           }}
                         />

@@ -19,12 +19,11 @@ export function ReportFromProvider({ children }: { children: ReactNode }) {
 
   const createReport = async (data: ReportRequestFrom) => {
     setIsLoading(true);
-    console.log('Creating report', data);
     try {
       const res = await ReportApi.postReport(data);
       console.log(res);
       setReport((prev) => [...prev, res.data]);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(error);
     } finally {
       setIsLoading(false);
