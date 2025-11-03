@@ -1,8 +1,10 @@
 import React, { type FC, type ReactNode } from 'react';
 import { cn } from '@/lib/utils.ts';
-import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
+import { GoogleMap, useJsApiLoader, MarkerF } from '@react-google-maps/api';
 import config from '@/features/emergency/config/env';
 import { useGeoLocation } from '@/features/emergency/hooks/geo-location.tsx';
+import { Button } from '@/features/emergency/components/ui/button.tsx';
+import { Crosshair } from 'lucide-react';
 
 type MapInitProps = {
   children: ReactNode;
@@ -37,7 +39,22 @@ const MapInit: FC<MapInitProps> = ({ classname, children }) => {
   }, []);
 
   return isLoaded ? (
-    <div className={cn('overflow-hidden shadow-lg', classname)}>
+    <div
+      className={cn(
+        'relative justify-end overflow-hidden shadow-lg',
+        classname
+      )}
+    >
+      <Crosshair
+        className="bg-secondary text-secondary-foreground hover:bg-secondary/80 absolute right-0 z-20 m-4 cursor-pointer rounded-full border-4"
+        size={30}
+        onClick={() => {
+          if (map) {
+            map.panTo(markerPosition);
+            map.setZoom(18);
+          }
+        }}
+      />
       <GoogleMap
         mapContainerClassName="w-full h-full"
         center={markerPosition}
@@ -50,7 +67,7 @@ const MapInit: FC<MapInitProps> = ({ classname, children }) => {
           fullscreenControl: false,
         }}
       >
-        <Marker position={markerPosition} />
+        <MarkerF position={markerPosition} />
         {children}
         {/* Child components, such as markers, info windows, etc. */}
       </GoogleMap>
