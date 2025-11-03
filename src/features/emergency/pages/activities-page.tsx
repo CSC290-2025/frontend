@@ -1,7 +1,4 @@
-import { useNavigate } from '@/router.ts';
-import { useEffect, useState } from 'react';
 import { Clock } from 'lucide-react';
-import { Button } from '@/features/emergency/components/ui/button';
 import {
   Tabs,
   TabsContent,
@@ -10,12 +7,6 @@ import {
 } from '@/features/emergency/components/ui/tabs';
 
 export default function ActivitiesPage() {
-  const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'ongoing' | 'completed'>(
-    'ongoing'
-  );
-  const [reportType, setReportType] = useState<'quick' | 'detailed'>('quick');
-
   return (
     <div>
       <div className="p-6">
