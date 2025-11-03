@@ -11,7 +11,9 @@ import {
 function Header() {
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center justify-between bg-white/30 px-6 shadow-lg ring-1 ring-black/5 backdrop-blur-md">
-      <h1 className="cursor-pointer">Emergency Report</h1>
+      <h1 className="cursor-pointer scroll-m-20 text-2xl font-semibold tracking-tight">
+        Emergency Report
+      </h1>
 
       <DropdownMenu>
         <DropdownMenuTrigger>
