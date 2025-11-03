@@ -24,7 +24,7 @@ export function ReportFromProvider({ children }: { children: ReactNode }) {
       const res = await ReportApi.postReport(data);
       console.log(res);
       setReport((prev) => [...prev, res.data]);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error(error);
     } finally {
       setIsLoading(false);
