@@ -19,6 +19,12 @@ export default function ActivitiesPage() {
   return (
     <div>
       <div className="p-6">
+        {/* Header */}
+        <div className="mb-6 flex items-center gap-2">
+          <Clock size={32} />
+          <h1 className="text-3xl font-bold">Activities</h1>
+        </div>
+
         <Tabs defaultValue="Ongoing" className="w-[400px]">
           <TabsList>
             <TabsTrigger value="Ongoing">Ongoing</TabsTrigger>
