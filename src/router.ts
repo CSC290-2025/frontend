@@ -7,13 +7,14 @@ export type Path =
   | `/`
   | `/example`
   | `/example/:id`
-  | `/map`
-  | `/map/:id`
   | `/harm`
-  | `/harm/:id`;
+  | `/harm/:id`
+  | `/map`
+  | `/map/:id`;
 
 export type Params = {
   '/example/:id': { id: string };
+  '/harm/:id': { id: string };
   '/map/:id': { id: string };
 };
 
