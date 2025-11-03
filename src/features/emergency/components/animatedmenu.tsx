@@ -16,7 +16,7 @@ const menuItems: MenuItem[] = [
   {
     icon: <Home className="h-5 w-5" />,
     label: 'Hot line',
-    href: '#',
+    href: '/',
     gradient:
       'radial-gradient(circle, rgba(59,130,246,0.15) 0%, rgba(37,99,235,0.06) 50%, rgba(29,78,216,0) 100%)',
     iconColor: 'group-hover:text-blue-500 dark:group-hover:text-blue-400',
@@ -24,7 +24,7 @@ const menuItems: MenuItem[] = [
   {
     icon: <Bell className="h-5 w-5" />,
     label: 'Activities',
-    href: '#',
+    href: '/activity',
     gradient:
       'radial-gradient(circle, rgba(249,115,22,0.15) 0%, rgba(234,88,12,0.06) 50%, rgba(194,65,12,0) 100%)',
     iconColor: 'group-hover:text-orange-500 dark:group-hover:text-orange-400',

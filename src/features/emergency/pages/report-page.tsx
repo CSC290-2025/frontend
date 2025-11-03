@@ -16,6 +16,7 @@ import { Checkbox } from '@/features/emergency/components/ui/checkbox.tsx';
 import { Label } from '@/features/emergency/components/ui/label';
 import { Button } from '@/features/emergency/components/ui/button.tsx';
 import { Textarea } from '@/features/emergency/components/ui/textarea.tsx';
+import { Spinner } from '@/features/emergency/components/ui/spinner.tsx';
 import MapInit from '@/features/emergency/components/modules/google-map/init-map.tsx';
 import { AlertTriangle, Camera, Car, CircleAlert, Waves } from 'lucide-react';
 import { useGeoLocation } from '@/features/emergency/hooks/geo-location.tsx';
@@ -28,48 +29,49 @@ import { DialogClose } from '@radix-ui/react-dialog';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useEffect, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
+import { toast } from 'sonner';
 
 function ReportPage() {
   const [showDetail, setShowDetail] = useState(false);
+  const [open, setOpen] = useState(false);
   const [file, setFile] = useState<string | null>(null);
   const { findLocation, address } = useGeoLocation();
-  const { createReport } = useReportFrom();
+  const { createReport, isLoading } = useReportFrom();
 
   const categories = [
-    { name: 'Traffic', icon: <Car size={32} /> },
-    { name: 'Accident', icon: <AlertTriangle size={32} /> },
-    { name: 'Disaster', icon: <Waves size={32} /> },
+    { name: 'Traffic', icon: <Car size={32} />, label: 'traffic' },
+    { name: 'Accident', icon: <AlertTriangle size={32} />, label: 'accident' },
+    { name: 'Disaster', icon: <Waves size={32} />, label: 'disaster' },
   ];
 
   const {
     control,
     register,
     handleSubmit,
+    reset,
     formState: { errors },
   } = useForm<ReportRequestFrom>({
     resolver: zodResolver(ReportOmit),
     defaultValues: {
       title: 'test',
-      report_category: 'traffic',
-      ambulance_service: false,
       user_id: null,
     },
   });
 
-  const cancel = () => {
-    setShowDetail(false);
-    setFile(null);
-  };
-
-  useEffect(() => {
-    console.log(errors);
-    console.log(file);
-  }, [errors, file]);
-
   const onSubmit = handleSubmit(async (data) => {
     try {
+      console.log(data);
       data.image_url = file;
       await createReport(data);
+
+      setOpen(false);
+      setFile(null);
+      setShowDetail(false);
+      reset();
+
+      toast('Report successfully sent', {
+        position: 'top-right',
+      });
     } catch (err) {
       console.error('Failed to submit report:', err);
     }
@@ -78,7 +80,7 @@ function ReportPage() {
   return (
     <MapInit classname="h-[calc(100svh-56px)] lg:w-full sm:w-screen">
       <div className="grid h-full min-h-screen w-full grid-cols-7 grid-rows-2">
-        <Dialog>
+        <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
             <Button
               variant="secondary"
@@ -98,7 +100,7 @@ function ReportPage() {
                   <Card className="mt-3">
                     <CardContent>
                       <CardDescription>
-                        {address ?? 'Fetching address'}
+                        {address ? address : 'Fetching address...'}
                       </CardDescription>
                     </CardContent>
                   </Card>
@@ -135,14 +137,15 @@ function ReportPage() {
                         <div className="flex justify-center gap-4">
                           {categories.map((cat) => (
                             <button
-                              key={cat.name}
+                              key={cat.label}
                               type="button"
-                              onClick={() => field.onChange(cat.name)}
+                              onClick={() => field.onChange(cat.label)}
                               className={`flex h-24 w-24 flex-col items-center justify-center gap-2 rounded-xl border transition ${
-                                field.value === cat.name
+                                field.value === cat.label
                                   ? 'border-black bg-black text-white'
                                   : 'border-transparent bg-gray-100 text-gray-500'
                               }`}
+                              {...register('report_category')}
                             >
                               {cat.icon}
                               <span className="text-sm font-medium">
@@ -221,6 +224,7 @@ function ReportPage() {
                           onCheckedChange={(checked) =>
                             field.onChange(!!checked)
                           }
+                          {...register('ambulance_service')}
                         />
                       )}
                     />
@@ -251,7 +255,14 @@ function ReportPage() {
                       Close
                     </Button>
                   </DialogClose>
-                  <Button type="submit">Confirm</Button>
+                  {isLoading ? (
+                    <Button type="submit">
+                      <Spinner />
+                      Sending...
+                    </Button>
+                  ) : (
+                    <Button type="submit">Confirm</Button>
+                  )}
                 </div>
               </DialogFooter>
             </form>

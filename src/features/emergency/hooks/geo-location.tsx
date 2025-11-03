@@ -62,7 +62,11 @@ export function GeoLocationProvider({ children }: { children: ReactNode }) {
         }
       },
       (err) => console.error('Error getting location:', err),
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      {
+        enableHighAccuracy: false,
+        timeout: 60 * 1000,
+        maximumAge: 15 * 60 * 1000,
+      }
     );
   }
 
