@@ -1,5 +1,5 @@
 import React from 'react';
 
 export default function AdminAddAPT() {
-  return <div>admin jaa</div>;
+  return <div>Add apartment here</div>;
 }

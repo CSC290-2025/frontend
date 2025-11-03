@@ -48,7 +48,7 @@ export default function ApartmentPayment() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center bg-gray-50 px-4 py-10">
+    <div className="flex min-h-screen flex-col items-center bg-[#F9FAFB] px-4 py-10">
       <div className="mb-6 w-full max-w-5xl">
         <h1 className="mb-6 text-4xl font-bold">Room Booking</h1>
 

@@ -7,6 +7,7 @@ export type Path =
   | `/`
   | `/AdminAddAPT`
   | `/AdminEditAPT`
+  | `/AdminEditTenant`
   | `/AdminListedAPT`
   | `/AdminTenantInfo`
   | `/ApartmentBooking`

@@ -1,58 +1,50 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { User, CalendarDays } from 'lucide-react';
-// ยังไม้ได้ลงไอคอน เดี๋ยวโหลดมาลง ขอโทษสังคม
 
-export default function ApartmentBooking() {
+type Tenant = {
+  id: number;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  email: string;
+  roomType: string;
+  checkin: string;
+  apartmentName?: string;
+};
+
+export default function AdminEditTenant() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const tenant = location.state?.tenant as Tenant | undefined;
+  const apartmentName = location.state?.apartmentName || 'Current Tenant';
 
-  const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    phone: '',
-    email: '',
-    checkin: '',
-    roomType: 'Single',
-    confirmed: false,
+  const [formData, setFormData] = useState<Tenant>({
+    id: tenant?.id || Date.now(),
+    firstName: tenant?.firstName || '',
+    lastName: tenant?.lastName || '',
+    phone: tenant?.phone || '',
+    email: tenant?.email || '',
+    roomType: tenant?.roomType || 'Studio',
+    checkin: tenant?.checkin || '',
+    apartmentName,
   });
 
-  useEffect(() => {
-    const saved = localStorage.getItem('bookingData');
-    if (saved) {
-      setFormData(JSON.parse(saved));
-    }
-  }, []);
-
-  const handleChange = (field: string, value: string | boolean) => {
+  const handleChange = <K extends keyof Tenant>(field: K, value: Tenant[K]) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleNext = () => {
-    localStorage.setItem('bookingData', JSON.stringify(formData));
-    navigate('/Apartmentpayment', {
-      state: { roomType: formData.roomType },
+  const handleSave = () => {
+    console.log('Saved tenant:', formData);
+    navigate('/AdminTenantInfo', {
+      state: { updatedTenant: formData, apartmentName: formData.apartmentName },
     });
   };
 
   return (
     <div className="flex min-h-screen flex-col items-center bg-[#F9FAFB] px-4 py-10">
       <div className="mb-6 w-full max-w-5xl">
-        <h1 className="mb-6 text-4xl font-bold">Room Booking</h1>
-
-        <div className="mb-4 flex items-center space-x-4">
-          <div className="flex items-center space-x-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#01CEF8] font-semibold text-white">
-              1
-            </div>
-            <span className="font-medium text-[#2B5991]">Details</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full border border-gray-300 font-semibold text-gray-400">
-              2
-            </div>
-            <span className="font-medium text-gray-400">Payment</span>
-          </div>
-        </div>
+        <h1 className="text-4xl font-bold text-gray-800">Edit Tenant Info.</h1>
       </div>
 
       <div className="w-full max-w-5xl rounded-3xl border border-gray-200 bg-white p-10 shadow-lg">
@@ -65,7 +57,7 @@ export default function ApartmentBooking() {
           </div>
           <hr className="mb-6 border-gray-200" />
 
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">
                 First Name :
@@ -75,9 +67,9 @@ export default function ApartmentBooking() {
                 value={formData.firstName}
                 onChange={(e) => handleChange('firstName', e.target.value)}
                 className="w-full rounded-md border border-gray-300 p-2 focus:ring-1 focus:ring-[#01CEF8] focus:outline-none"
-                placeholder="Enter first name"
               />
             </div>
+
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">
                 Last Name :
@@ -87,9 +79,9 @@ export default function ApartmentBooking() {
                 value={formData.lastName}
                 onChange={(e) => handleChange('lastName', e.target.value)}
                 className="w-full rounded-md border border-gray-300 p-2 focus:ring-1 focus:ring-[#01CEF8] focus:outline-none"
-                placeholder="Enter last name"
               />
             </div>
+
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">
                 Phone :
@@ -99,9 +91,9 @@ export default function ApartmentBooking() {
                 value={formData.phone}
                 onChange={(e) => handleChange('phone', e.target.value)}
                 className="w-full rounded-md border border-gray-300 p-2 focus:ring-1 focus:ring-[#01CEF8] focus:outline-none"
-                placeholder="Enter phone number"
               />
             </div>
+
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">
                 Email :
@@ -111,7 +103,6 @@ export default function ApartmentBooking() {
                 value={formData.email}
                 onChange={(e) => handleChange('email', e.target.value)}
                 className="w-full rounded-md border border-gray-300 p-2 focus:ring-1 focus:ring-[#01CEF8] focus:outline-none"
-                placeholder="Enter email address"
               />
             </div>
           </div>
@@ -126,18 +117,7 @@ export default function ApartmentBooking() {
           </div>
           <hr className="mb-6 border-gray-200" />
 
-          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
-                Check-in date :
-              </label>
-              <input
-                type="date"
-                value={formData.checkin}
-                onChange={(e) => handleChange('checkin', e.target.value)}
-                className="w-full rounded-md border border-gray-300 p-2 focus:ring-1 focus:ring-[#01CEF8] focus:outline-none"
-              />
-            </div>
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <div>
               <label className="mb-1 block text-sm font-medium text-gray-700">
                 Room Type :
@@ -147,33 +127,32 @@ export default function ApartmentBooking() {
                 onChange={(e) => handleChange('roomType', e.target.value)}
                 className="w-full rounded-md border border-gray-300 p-2 focus:ring-1 focus:ring-[#01CEF8] focus:outline-none"
               >
+                <option value="Studio">Studio</option>
                 <option value="Single">Single</option>
                 <option value="Double">Double</option>
-                <option value="Studio">Studio</option>
               </select>
+            </div>
+
+            <div>
+              <label className="mb-1 block text-sm font-medium text-gray-700">
+                Check-in Date :
+              </label>
+              <input
+                type="date"
+                value={formData.checkin}
+                onChange={(e) => handleChange('checkin', e.target.value)}
+                className="w-full rounded-md border border-gray-300 p-2 focus:ring-1 focus:ring-[#01CEF8] focus:outline-none"
+              />
             </div>
           </div>
         </div>
 
-        <div className="mb-8 flex items-center gap-2">
-          <input
-            type="checkbox"
-            id="confirm"
-            checked={formData.confirmed}
-            onChange={(e) => handleChange('confirmed', e.target.checked)}
-            className="h-4 w-4"
-          />
-          <label htmlFor="confirm" className="text-sm text-gray-600">
-            I have read and confirmed that the information provided is correct.
-          </label>
-        </div>
-
-        <div className="flex justify-end">
+        <div className="mt-8 flex justify-end">
           <button
-            onClick={handleNext}
+            onClick={handleSave}
             className="rounded-md bg-[#01CEF8] px-6 py-2 font-medium text-white hover:bg-[#4E8FB1]"
           >
-            Step 2 : Payment →
+            Save
           </button>
         </div>
       </div>
