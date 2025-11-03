@@ -49,7 +49,9 @@ export default function AdminTenantInfo() {
           <div
             key={tenant.id}
             className="flex cursor-pointer flex-col items-center rounded-xl border border-gray-200 bg-white p-5 shadow-md transition hover:shadow-lg md:flex-row md:items-start"
-            onClick={() => navigate('/AdminEditTenant', { state: { tenant } })}
+            onClick={() =>
+              navigate('/AdminEditTenant', { state: { tenant, apartmentName } })
+            }
           >
             <div className="mt-4 flex-1 md:mt-0 md:ml-6">
               <h3 className="text-xl font-semibold text-gray-800">
@@ -68,7 +70,9 @@ export default function AdminTenantInfo() {
             >
               <button
                 onClick={() =>
-                  navigate('/AdminEditTenant', { state: { tenant } })
+                  navigate('/AdminEditTenant', {
+                    state: { tenant, apartmentName },
+                  })
                 }
                 className="flex items-center justify-center gap-2 px-3 py-2 font-medium text-gray-700"
               >
