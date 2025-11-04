@@ -1,9 +1,9 @@
-//import
-
-export const getTrafficLightStatus = (id: number) => {
-  //get the traffic light status using traffic ID
-};
-
-export const trafficLightControl = (id: number) => {
-  //manually control the traffic light using traffic ID
-};
+// import { apiClient } from '@/lib/apiClient';
+//
+// export const getTrafficLightStatus = (id: number) => {
+//   return apiClient.get(`/traffic-light/${id}`);
+// };
+//
+// export const trafficLightControl = (id: number, action: string) => {
+//   return apiClient.post(`/traffic-light/${id}/control`, { action });
+//

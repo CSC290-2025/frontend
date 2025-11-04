@@ -15,6 +15,7 @@
   },
   "dependencies": {
     "@generouted/react-router": "^1.20.0",
+    "@googlemaps/react-wrapper": "^1.2.0",
     "@hookform/resolvers": "^5.2.2",
     "@radix-ui/react-alert-dialog": "^1.1.15",
     "@radix-ui/react-dialog": "^1.1.15",
@@ -44,6 +45,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.33.0",
+    "@types/google.maps": "^3.58.1",
     "@types/node": "^24.5.2",
     "@types/react": "^19.1.10",
     "@types/react-dom": "^19.1.7",
