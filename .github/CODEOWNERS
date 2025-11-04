@@ -1,3 +1,4 @@
+
 # package config
 package.json @CSC290-2025/development-leads @CSC290-2025/infrastructure-leads
 package-lock.json @CSC290-2025/development-leads @CSC290-2025/infrastructure-leads
@@ -25,3 +26,8 @@ eslint.config.js @CSC290-2025/development-leads @CSC290-2025/infrastructure-lead
 .*rc @CSC290-2025/development-leads @CSC290-2025/infrastructure-leads
 .*rc.* @CSC290-2025/development-leads @CSC290-2025/infrastructure-leads
 tsconfig.json @CSC290-2025/development-leads @CSC290-2025/infrastructure-leads
+
+# Firebase files
+.firebaserc @CSC290-2025/database-leads @CSC290-2025/development-leads @CSC290-2025/infrastructure-leads
+firebase.json @CSC290-2025/database-leads @CSC290-2025/development-leads @CSC290-2025/infrastructure-leads
+database.rules.json @CSC290-2025/database-leads @CSC290-2025/development-leads @CSC290-2025/infrastructure-leads

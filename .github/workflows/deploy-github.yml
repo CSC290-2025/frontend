@@ -1,28 +1,29 @@
-name: Build Test
+name: Deploy GitHub Pages
 
 on:
-  pull_request:
-    branches:
-      - main
+  push:
+    branches: [main]
     paths:
       - 'src/**'
       - 'public/**'
       - 'vite.config.*'
-      - 'tsconfig.*'
       - 'package.json'
       - 'pnpm-lock.yaml'
 
 jobs:
-  build:
-    name: Build Frontend
+  deploy:
+    name: Deploy GitHub Pages
     runs-on: ubuntu-latest
 
     concurrency:
-      group: build-${{ github.head_ref || github.run_id }}
+      group: gh-pages-deploy
       cancel-in-progress: true
 
+    permissions:
+      contents: write
+
     steps:
-      - name: Checkout Repository
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Install pnpm
@@ -51,5 +52,11 @@ jobs:
       - name: Install dependencies
         run: pnpm install --no-lockfile
 
-      - name: Build Project
-        run: pnpm run build
+      - name: Build project
+        run: pnpm run build --mode gh-pages
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
