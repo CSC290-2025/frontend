@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Pencil, Star } from 'lucide-react';
-import ConfirmDelete from '../components/ConfirmDelete';
+import ConfirmDelete from '@/features/G9-ApartmentListing/components/ConfirmDelete';
 
 export default function AdminListedAPT() {
   const navigate = useNavigate();

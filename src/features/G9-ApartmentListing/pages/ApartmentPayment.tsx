@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Wallet } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import BookingComplete from '../components/BookingComplete';
+import BookingComplete from '@/features/G9-ApartmentListing/components/BookingComplete';
 
 export default function ApartmentPayment() {
   const navigate = useNavigate();
