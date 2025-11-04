@@ -21,7 +21,7 @@ const MainLayout: FC<MainLayoutProps> = ({
         <div
           className={cn(
             'my-6 flex flex-row items-center justify-center',
-            overlap && 'absolute top-12 z-50 mx-auto w-full'
+            overlap && 'absolute z-50 mx-auto w-full'
           )}
         >
           <MenuBar />

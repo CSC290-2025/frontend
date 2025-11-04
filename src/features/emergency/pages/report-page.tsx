@@ -111,7 +111,7 @@ function ReportPage() {
                 <div className="flex flex-col gap-6">
                   {/* Description */}
                   <div>
-                    <DialogTitle className="mt-4 mb-4">
+                    <DialogTitle className="my-6">
                       What&apos;s happening?
                     </DialogTitle>
                     <Textarea
@@ -127,7 +127,7 @@ function ReportPage() {
 
                   {/* Category */}
                   <div>
-                    <h2 className="mb-4 text-lg font-semibold">
+                    <h2 className="mb-6 text-lg font-semibold">
                       Select the category
                     </h2>
                     <Controller
