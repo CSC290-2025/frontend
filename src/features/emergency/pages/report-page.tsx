@@ -27,7 +27,7 @@ import {
 } from '@/features/emergency/interfaces/report.ts';
 import { DialogClose } from '@radix-ui/react-dialog';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { toast } from 'sonner';
 
