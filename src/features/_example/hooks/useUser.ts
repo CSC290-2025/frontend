@@ -1,6 +1,6 @@
 //example of how the hooks file should look like
 import { useQuery } from '@tanstack/react-query';
-import { fetchUserById } from '../api/feature.api';
+import { fetchUserById } from '@/features/_example/api/feature.api';
 
 //get user id
 export function useUser(id: number) {

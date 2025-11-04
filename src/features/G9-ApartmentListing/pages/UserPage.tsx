@@ -1,4 +1,4 @@
-import UserCard from '../../G9-ApartmentListing/components/UserCard';
+import UserCard from '@/features/G9-ApartmentListing/components/UserCard';
 
 export default function UserPage() {
   const id = 1; // example only in real website might use useParams instaed
