@@ -8,8 +8,11 @@ function Home() {
         Access your Citizen Portal
       </h1>
       <div className="flex content-around gap-5">
-        <Categories title={'Summary City Performance Dashboard'} />
-        <Categories title={'Public Trends Report'} />
+        <Categories
+          title={'Summary City Performance Dashboard'}
+          type="summary"
+        />
+        <Categories title={'Public Trends Report'} type="trends" />
       </div>
     </div>
   );

@@ -8,7 +8,10 @@ export type Path =
   | `/example`
   | `/example/:id`
   | `/power-bi`
-  | `/power-bi/summary/healthcare`;
+  | `/power-bi/summary/demographic`
+  | `/power-bi/summary/healthcare`
+  | `/power-bi/summary/traffic`
+  | `/power-bi/summary/weather`;
 
 export type Params = {
   '/example/:id': { id: string };
