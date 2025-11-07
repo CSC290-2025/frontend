@@ -39,7 +39,7 @@ for `page` structure we use **file-based routing** by **generouted**
 this means that if you create an folder in `/src/pages` it will automatically set route for you but you need to have `index.tsx` file
 in that folder first and **it must be named `index.tsx` only**
 
-for example : i have `/src/weather` and inside `/weather` I have `index.tsx` that shows and the weather UI
+for example : i have `/src/pages/weather` and inside `pages/weather` I have `index.tsx` that shows and the weather UI
 this mean if I go to `www.smartcityhub.com/weather` it will shows all the weather pages automatically without touching `router.ts` or `main.tsx` file.
 
 you can check it here for more detail : https://github.com/CSC290-2025/generouted-vite-example
