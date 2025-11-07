@@ -26,9 +26,9 @@ export default class ReportApi {
       },
       headers: {
         'X-Custom-Header': 'x-total-count',
+        'Content-Type': 'application/json',
       },
     });
-    console.log(response.headers);
     return {
       data: response.data.data,
       headers: response.headers,

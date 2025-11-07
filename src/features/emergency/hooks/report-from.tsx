@@ -27,7 +27,7 @@ type ReportFromState = {
     limit: string
   ) => Promise<ReportResponseFrom[]>;
   isLoading: boolean;
-  totalPage: number | null;
+  totalPage: number;
 };
 
 const ReportFromContext = createContext<ReportFromState | null>(null);
@@ -38,7 +38,7 @@ export function ReportFromProvider({
   initialLimit,
 }: ReportFromProviderProps) {
   const [report, setReport] = useState<ReportResponseFrom[]>([]);
-  const [totalPage, setTotalPage] = useState<number | null>(null);
+  const [totalPage, setTotalPage] = useState<number>(1);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -72,7 +72,11 @@ export function ReportFromProvider({
     setIsLoading(true);
     try {
       const res = await ReportApi.getReportByStatusPag(status, page, limit);
-      const totalPage = res.headers['x-total-count'] || null;
+      const totalPage = res.headers['x-total-count'] || 1;
+
+      if (!totalPage || totalPage === 0) {
+        throw new Error('Total page must be a number');
+      }
       console.log(totalPage);
 
       setTotalPage(totalPage);

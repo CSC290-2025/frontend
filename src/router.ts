@@ -8,6 +8,7 @@ export type Path =
   | `/activity`
   | `/example`
   | `/example/:id`
+  | `/hotLine`
   | `/notification`
   | `/notification/:id`
   | `/sos`

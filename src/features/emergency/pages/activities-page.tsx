@@ -6,12 +6,7 @@ import {
   TabsList,
   TabsTrigger,
 } from '@/features/emergency/components/ui/tabs';
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardTitle,
-} from '@/features/emergency/components/ui/card';
+import { Card, CardContent } from '@/features/emergency/components/ui/card';
 import { Badge } from '@/features/emergency/components/ui/badge.tsx';
 import { PaginationWithLinks } from '@/features/emergency/components/ui/pagination-with-link.tsx';
 import { useReportFrom } from '@/features/emergency/hooks/report-from.tsx';
@@ -54,9 +49,9 @@ export default function ActivitiesPage() {
               <div key={r.id} className="mb-6">
                 <Card className="w-full">
                   <CardContent>
-                    <div className="grid grid-cols-6 place-items-center">
+                    <div className="grid grid-cols-6">
                       <Card
-                        className="col-span-1 h-[250px] overflow-hidden py-0"
+                        className="col-span-2 overflow-hidden py-0 sm:col-span-1"
                         onClick={() => {
                           navigate(`${r.image_url}`);
                         }}
@@ -75,9 +70,11 @@ export default function ActivitiesPage() {
                           <h1>Not have picture</h1>
                         )}
                       </Card>
-                      <div className="col-span-1">{r.description}</div>
-                      <div className="col-span-2">
-                        <Badge>{r.status}</Badge>
+                      <div className="col-span-4 gap-2 pl-5">
+                        <div className="">{r.description}</div>
+                        <div className="object-bottom">
+                          <Badge>{r.status}</Badge>
+                        </div>
                       </div>
                     </div>
                   </CardContent>

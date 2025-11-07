@@ -9,10 +9,7 @@ export default function ActivityLayout() {
   const perPage = searchParams.get('_limit') || '5';
   return (
     <MainLayout classname="transition-colors duration-300">
-      <ReportFromProvider
-        initialPage={currentPage.toString()}
-        initialLimit={perPage.toString()}
-      >
+      <ReportFromProvider initialPage={currentPage} initialLimit={perPage}>
         <Outlet />
       </ReportFromProvider>
     </MainLayout>
