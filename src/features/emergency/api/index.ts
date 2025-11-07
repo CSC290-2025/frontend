@@ -1,6 +1,6 @@
 import config from '@/features/emergency/config/env.ts';
-import axios from 'axios';
 import type { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import axios from 'axios';
 import type {
   ErrorsValidationInterface,
   SuccessResponseInterface,
@@ -38,13 +38,9 @@ class Api {
     return axiosInstance;
   }
 
-  _get = async (
-    url: string,
-    config?: AxiosRequestConfig<any>
-  ): Promise<SuccessResponseInterface> => {
+  _get = async (url: string, config?: AxiosRequestConfig<any>) => {
     const axiosInstance = this._getAxiosInstance(this.baseURL);
-    const response = await axiosInstance.get(url, config);
-    return response.data;
+    return await axiosInstance.get(url, config);
   };
 
   _post = async (

@@ -7,11 +7,16 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/features/emergency/components/ui/dropdown-menu.tsx';
+import { useNavigate } from 'react-router';
 
 function Header() {
+  const navigate = useNavigate();
   return (
     <header className="sticky top-0 z-30 flex h-14 items-center justify-between bg-white/30 px-6 shadow-lg ring-1 ring-black/5 backdrop-blur-md">
-      <h1 className="cursor-pointer scroll-m-20 text-2xl font-semibold tracking-tight">
+      <h1
+        className="cursor-pointer scroll-m-20 text-2xl font-semibold tracking-tight"
+        onClick={() => navigate('/sos')}
+      >
         Emergency Report
       </h1>
 

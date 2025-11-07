@@ -3,7 +3,7 @@ import type {
   ReportRequestFrom,
   ReportResponseFrom,
 } from '@/features/emergency/interfaces/report.ts';
-import { post } from '.';
+import { get, post } from '.';
 
 export default class ReportApi {
   static async postReport(data: ReportRequestFrom) {
@@ -12,5 +12,26 @@ export default class ReportApi {
       data
     );
     return response;
+  }
+
+  static async getReportByStatusPag(
+    status: string,
+    page: string,
+    limit: string
+  ) {
+    const response = await get(`/reports/${status}`, {
+      params: {
+        _page: page,
+        _limit: limit,
+      },
+      headers: {
+        'X-Custom-Header': 'x-total-count',
+        'Content-Type': 'application/json',
+      },
+    });
+    return {
+      data: response.data.data,
+      headers: response.headers,
+    };
   }
 }

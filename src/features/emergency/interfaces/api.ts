@@ -2,6 +2,7 @@ export interface SuccessResponseInterface<DataT = any> {
   statusCode: number;
   success: boolean;
   message: string;
+  headers: Record<string, any>;
   data: DataT;
 }
 
