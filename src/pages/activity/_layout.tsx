@@ -5,8 +5,8 @@ import MainLayout from '@/features/emergency/components/modules/layout/main-layo
 
 export default function ActivityLayout() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const currentPage = parseInt(searchParams.get('_page') || '1', 10);
-  const perPage = parseInt(searchParams.get('_limit') || '5', 10);
+  const currentPage = searchParams.get('_page') || '1';
+  const perPage = searchParams.get('_limit') || '5';
   return (
     <MainLayout classname="transition-colors duration-300">
       <ReportFromProvider
