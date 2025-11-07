@@ -12,12 +12,15 @@ import {
   CardFooter,
   CardTitle,
 } from '@/features/emergency/components/ui/card';
+import { Badge } from '@/features/emergency/components/ui/badge.tsx';
 import { PaginationWithLinks } from '@/features/emergency/components/ui/pagination-with-link.tsx';
 import { useReportFrom } from '@/features/emergency/hooks/report-from.tsx';
+import { useNavigate } from 'react-router';
 import { useEffect } from 'react';
 
 export default function ActivitiesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const currentPage = parseInt(searchParams.get('_page') || '1', 10);
   const perPage = parseInt(searchParams.get('_limit') || '5', 10);
 
@@ -48,13 +51,35 @@ export default function ActivitiesPage() {
           <div className="h-auto">
             {isLoading && <div>Loading...</div>}
             {report.map((r) => (
-              <div key={r.id} className="mb-2">
-                <Card className="h-20 w-full">
+              <div key={r.id} className="mb-6">
+                <Card className="w-full">
                   <CardContent>
-                    <CardTitle>{r.description}</CardTitle>
-                    {/*{r.image_url && (*/}
-                    {/*    <img className="size-20" src={r.image_url}/>*/}
-                    {/*)}*/}
+                    <div className="grid grid-cols-6 place-items-center">
+                      <Card
+                        className="col-span-1 h-[250px] overflow-hidden py-0"
+                        onClick={() => {
+                          navigate(`${r.image_url}`);
+                        }}
+                      >
+                        {r.image_url ? (
+                          <img
+                            alt={r.title}
+                            src={
+                              r.image_url instanceof File
+                                ? URL.createObjectURL(r.image_url)
+                                : r.image_url
+                            }
+                            className="aspect-square object-cover"
+                          />
+                        ) : (
+                          <h1>Not have picture</h1>
+                        )}
+                      </Card>
+                      <div className="col-span-1">{r.description}</div>
+                      <div className="col-span-2">
+                        <Badge>{r.status}</Badge>
+                      </div>
+                    </div>
                   </CardContent>
                 </Card>
               </div>
