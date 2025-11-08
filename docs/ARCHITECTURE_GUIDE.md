@@ -6,9 +6,9 @@
 
 ## We have 2 main folder for frontend `feature` and `page` folder folder project structure cleanness.
 
-# `feature` folder is used for making pages and all of frontend stuffs for each feature (UI,api logics,components,pages) in that folder.
+### `feature` folder is used for making pages and all of frontend stuffs for each feature (UI,api logics,components,pages) in that folder.
 
-# `page` is used for routing only used for entering pages.
+### `page` is used for routing only used for entering pages.
 
 `feature` structure
 
@@ -32,7 +32,7 @@ Substitute [feature] with specific names.
 
 if you are new to **React Query** you can read this for understanding `hooks` folder and structure : https://tanstack.com/query/v4/docs/framework/react/overview
 
-# GENEROUTED FILE-BASED ROUTING GUIDE
+# Generouted File-Based Routing Guide
 
 for `page` structure we use **file-based routing** by **generouted**
 
@@ -58,7 +58,7 @@ Substitute [pages] with specific names.
 
 ### 2. CODE PATTERN
 
-# **2.1 `/src/feature`** Code Pattern
+#### **2.1 `/src/feature`** Code Pattern
 
 #### APIs PATTERN
 
@@ -150,7 +150,7 @@ export { default as UserPage } from './pages/UserPage';
 export { useUser } from './hooks/useUser';
 ```
 
-# **2.2 `/src/pages`** Code Pattern
+#### **2.2 `/src/pages`** Code Pattern
 
 #### INDEX.TSX PATTERN (Do it all like this for all of files in `/src/pages` folder)
 
