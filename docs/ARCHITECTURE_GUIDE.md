@@ -47,9 +47,9 @@ you can check it here for more detail : https://github.com/CSC290-2025/generoute
 `page` structure
 
 ```tree
-Substitue [feature] with specific names.
+Substitute [pages] with specific names.
 
-[features]/
+[pages]/
 ├── api/
 │   ├── [feature].api.tsx
 │   └── index.ts (export * from './[feature].api')
@@ -57,12 +57,12 @@ Substitue [feature] with specific names.
 │   ├── [componentName].tsx
 ├── hooks/ (fetching,caching data,etc)
 │   ├── [hookName].tsx
-├── pages/
-│   ├── [pageName].tsx
-└── index.ts (export everything (default as pages,hooks) you can see in _example/index.ts)
+└── index.tsx (re-export from the pages folder in features/pages)
 ```
 
 ### 2. CODE PATTERN
+
+**2.1 `/src/feature`** Code Pattern
 
 #### APIs PATTERN
 
@@ -152,4 +152,12 @@ export default function UserPage() {
 export { default as UserCard } from './components/UserCard';
 export { default as UserPage } from './pages/UserPage';
 export { useUser } from './hooks/useUser';
+```
+
+**2.2 `/src/pages`** Code Pattern
+
+#### INDEX.TSX PATTERN (Do it all like this for all of files in `/src/pages` folder)
+
+```typescript
+export { default } from '@/features/_example/pages/UserHomepage';
 ```
