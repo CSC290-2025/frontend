@@ -8,13 +8,11 @@ export type Path =
   | `/example`
   | `/example/:id`
   | `/power-bi`
-  | `/power-bi/summary/demographic`
-  | `/power-bi/summary/healthcare`
-  | `/power-bi/summary/traffic`
-  | `/power-bi/summary/weather`;
+  | `/power-bi/summary/:category`;
 
 export type Params = {
   '/example/:id': { id: string };
+  '/power-bi/summary/:category': { category: string };
 };
 
 export type ModalPath = never;
