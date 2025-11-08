@@ -50,13 +50,9 @@ you can check it here for more detail : https://github.com/CSC290-2025/generoute
 Substitute [pages] with specific names.
 
 [pages]/
-├── api/
-│   ├── [feature].api.tsx
-│   └── index.ts (export * from './[feature].api')
-├── components/
-│   ├── [componentName].tsx
-├── hooks/ (fetching,caching data,etc)
-│   ├── [hookName].tsx
+├── [nested pages]/ **Optional**
+│   └── index.tsx (re-export from the pages folder in features/pages)
+├── [id.tsx]/ (in case you have dynamic routes e.g /user/[id]) **Optional**
 └── index.tsx (re-export from the pages folder in features/pages)
 ```
 
