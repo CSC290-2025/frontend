@@ -13,7 +13,7 @@
 `feature` structure
 
 ```tree
-Substitue [feature] with specific names.
+Substitute [feature] with specific names.
 
 [features]/
 ├── api/
@@ -50,7 +50,7 @@ you can check it here for more detail : https://github.com/CSC290-2025/generoute
 Substitute [pages] with specific names.
 
 [pages]/
-├── [nested pages]/ **Optional**
+├── [nested-pages-name]/ **Optional**
 │   └── index.tsx (re-export from the pages folder in features/pages)
 ├── [id.tsx]/ (in case you have dynamic routes e.g /user/[id]) **Optional**
 └── index.tsx (re-export from the pages folder in features/pages)
@@ -58,7 +58,7 @@ Substitute [pages] with specific names.
 
 ### 2. CODE PATTERN
 
-**2.1 `/src/feature`** Code Pattern
+# **2.1 `/src/feature`** Code Pattern
 
 #### APIs PATTERN
 
@@ -150,7 +150,7 @@ export { default as UserPage } from './pages/UserPage';
 export { useUser } from './hooks/useUser';
 ```
 
-**2.2 `/src/pages`** Code Pattern
+# **2.2 `/src/pages`** Code Pattern
 
 #### INDEX.TSX PATTERN (Do it all like this for all of files in `/src/pages` folder)
 
