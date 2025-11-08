@@ -1,4 +1,4 @@
-import { Event, WasteData, WasteTrend, Item } from './types';
+import type { Event, WasteData, WasteTrend, Item } from '../types/types';
 
 // Mock API
 export const api = {
