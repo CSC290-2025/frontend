@@ -6,6 +6,7 @@ import {
   useUpdateWallet,
   useTopUpWallet,
   useGenerateQR,
+  useTransferFunds,
 } from '@/features/Financial/hooks/useUserWallets';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,12 +30,15 @@ export default function FinancialPage() {
   const [newOrgType, setNewOrgType] = useState('');
   const [qrRawData, setQrRawData] = useState('');
   const [topUpAmount, setTopUpAmount] = useState('');
+  const [transferToUserId, setTransferToUserId] = useState('');
+  const [transferAmount, setTransferAmount] = useState('');
 
   const { data: wallets, refetch } = useUserWallets(Number(userId));
   const { mutateAsync: createWallet } = useCreateWallet();
   const { mutateAsync: updateWallet } = useUpdateWallet();
   const { mutateAsync: topUpWallet } = useTopUpWallet();
   const { mutateAsync: generateQR } = useGenerateQR();
+  const { mutateAsync: transferFunds } = useTransferFunds();
 
   const wallet = wallets?.[0];
   const isOrg = wallet?.wallet_type === 'organization';
@@ -276,6 +280,52 @@ export default function FinancialPage() {
                   </Button>
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          <Card className="mt-4">
+            <CardContent className="p-4">
+              <div className="mb-2 font-semibold">Transfer</div>
+              <p className="mb-4 text-sm text-gray-600">
+                Send money to another user.
+              </p>
+
+              <div className="space-y-4">
+                <div>
+                  <Label>Recipient User ID</Label>
+                  <Input
+                    type="number"
+                    placeholder="User ID to transfer to"
+                    value={transferToUserId}
+                    onChange={(e) => setTransferToUserId(e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <Label>Amount</Label>
+                  <Input
+                    type="number"
+                    placeholder="Amount to transfer"
+                    value={transferAmount}
+                    onChange={(e) => setTransferAmount(e.target.value)}
+                  />
+                </div>
+
+                <Button
+                  onClick={async () => {
+                    await transferFunds({
+                      fromUserId: Number(userId),
+                      toUserId: Number(transferToUserId),
+                      amount: Number(transferAmount),
+                    });
+                    setTransferToUserId('');
+                    setTransferAmount('');
+                  }}
+                  disabled={!transferToUserId || !transferAmount}
+                >
+                  Transfer
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </>
