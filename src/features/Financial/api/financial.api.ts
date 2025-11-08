@@ -44,3 +44,17 @@ export const generateQRCode = async (amount: string): Promise<string> => {
   const response = await apiClient.post('/scb/qr/create', { amount });
   return response.data?.data?.qrResponse?.data?.qrRawData || '';
 };
+
+// Transfer funds between users
+export const transferFunds = async (
+  fromUserId: number,
+  toUserId: number,
+  amount: number
+): Promise<{ status: string }> => {
+  const response = await apiClient.post('/wallets/transfer', {
+    from_user_id: fromUserId,
+    to_user_id: toUserId,
+    amount,
+  });
+  return response.data?.data;
+};

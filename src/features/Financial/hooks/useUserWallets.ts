@@ -5,6 +5,7 @@ import {
   updateWallet,
   topUpWallet,
   generateQRCode,
+  transferFunds,
 } from '@/features/Financial';
 import type { UpdateWalletRequest } from '@/features/Financial/types';
 
@@ -59,5 +60,29 @@ export function useTopUpWallet() {
 export function useGenerateQR() {
   return useMutation({
     mutationFn: generateQRCode,
+  });
+}
+
+export function useTransferFunds() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      fromUserId,
+      toUserId,
+      amount,
+    }: {
+      fromUserId: number;
+      toUserId: number;
+      amount: number;
+    }) => transferFunds(fromUserId, toUserId, amount),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ['wallets', variables.fromUserId],
+      });
+      queryClient.invalidateQueries({
+        queryKey: ['wallets', variables.toUserId],
+      });
+    },
   });
 }
