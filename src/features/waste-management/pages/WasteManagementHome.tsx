@@ -12,10 +12,10 @@ function App() {
     switch (currentPage) {
       case 'events':
         return <EventsPage />;
-      case 'transport':
+      case 'freecycle':
         return <FreeCyclePage />;
       default:
-        return <DashboardPage />;
+        return <DashboardPage onNavigate={setCurrentPage} />;
     }
   };
 

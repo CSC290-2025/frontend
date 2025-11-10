@@ -2,10 +2,15 @@ import { Search, Trophy, Package, User, Trash2, Recycle } from 'lucide-react';
 import { useWasteData } from '../hooks/useWasteData';
 import { useWasteTrends } from '../hooks/useWasteTrends';
 
-export function DashboardPage() {
+export function DashboardPage({
+  onNavigate,
+}: {
+  onNavigate: (page: string) => void;
+}) {
   const { data: wasteData, loading: wasteLoading } = useWasteData();
   const { trends, loading: trendsLoading } = useWasteTrends();
   const maxValue = Math.max(...wasteData.map((d) => d.value), 0); // Added 0 for safety on empty array
+
   // const totalWaste = trends.reduce((sum, t) => sum + t.amount, 0); // This var wasn't used
 
   return (
@@ -179,7 +184,10 @@ export function DashboardPage() {
             <h3 className="font-semibold">Join free cycle</h3>
           </div>
 
-          <div className="cursor-pointer rounded-xl bg-white p-6 text-center shadow-sm transition-shadow hover:shadow-md">
+          <div
+            className="cursor-pointer rounded-xl bg-white p-6 text-center shadow-sm transition-shadow hover:shadow-md"
+            onClick={() => onNavigate('events')}
+          >
             <Trophy size={48} className="mx-auto mb-4" />
             <h3 className="font-semibold">Find the events</h3>
           </div>
