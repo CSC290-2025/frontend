@@ -1,9 +1,16 @@
 import { Trophy, Package, User, Trash2 } from 'lucide-react';
 
-export function QuickLinksHeader() {
+export function QuickLinksHeader({
+  onNavigate,
+}: {
+  onNavigate: (page: string) => void;
+}) {
   return (
     <div className="mb-6 grid grid-cols-4 gap-4">
-      <div className="cursor-pointer rounded-xl bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
+      <div
+        className="cursor-pointer rounded-xl bg-white p-6 shadow-sm transition-shadow hover:shadow-md"
+        onClick={() => onNavigate('events')}
+      >
         <Trophy className="mb-2" size={24} />
         <h3 className="font-semibold">Events</h3>
         <p className="text-sm text-gray-500">Activities and volunteer</p>
