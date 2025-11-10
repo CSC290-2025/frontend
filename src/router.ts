@@ -3,7 +3,14 @@
 
 import { components, hooks, utils } from '@generouted/react-router/client';
 
-export type Path = `/` | `/example` | `/example/:id` | `/waste-management`;
+export type Path =
+  | `/`
+  | `/example`
+  | `/example/:id`
+  | `/waste-management`
+  | `/waste-management/dashboard`
+  | `/waste-management/events`
+  | `/waste-management/free-cycle`;
 
 export type Params = {
   '/example/:id': { id: string };

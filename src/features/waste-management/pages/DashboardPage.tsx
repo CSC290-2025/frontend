@@ -21,7 +21,7 @@ export default function DashboardPage({ onNavigate }: DashboardPageProps) {
         <input
           type="text"
           placeholder="Search for location, schedule, or events"
-          className="w-full rounded-lg border border-gray-200 px-4 py-3 pl-10"
+          className="w-1/3 rounded-lg border border-gray-200 px-4 py-3 pl-10"
         />
         <Search className="absolute top-3.5 left-3 text-gray-400" size={20} />
       </div>
