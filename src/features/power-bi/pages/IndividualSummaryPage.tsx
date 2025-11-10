@@ -1,5 +1,6 @@
 import { useNavigate, useParams } from '@/router';
 import React from 'react';
+import Nav from '../components/Nav';
 
 function IndividualSummaryPage() {
   const { category, reportId } = useParams(
@@ -38,9 +39,7 @@ function IndividualSummaryPage() {
 
   return (
     <div className="flex h-screen w-screen flex-col items-center justify-around p-10">
-      <h1 className="mb-2 text-center text-xl font-bold">
-        Access your Citizen Portal
-      </h1>
+      <Nav />
       <h2 className="font-medium">Summary City Performance Dashboard</h2>
       <h2>{category}</h2>
       <h2>{report.name}</h2>

@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Link, useNavigate, useParams } from '@/router';
 import React from 'react';
+import Nav from '../components/Nav';
 
 function SummaryPage() {
   const { category } = useParams('/power-bi/summary/:category');
@@ -36,17 +37,7 @@ function SummaryPage() {
 
   return (
     <div className="flex h-screen w-screen flex-col justify-around p-5">
-      <div className="relative w-full py-4">
-        <h1 className="text-center text-xl font-bold">
-          Access your Citizen Portal
-        </h1>
-        <Button
-          onClick={() => navigate('/power-bi')}
-          className="absolute top-3 right-6"
-        >
-          Home
-        </Button>
-      </div>
+      <Nav />
       <div className="flex items-center gap-2">
         <h2 className="font-medium">Summary City Performance Dashboard </h2>
         <div>
