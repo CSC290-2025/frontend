@@ -6,14 +6,14 @@
 
 ## We have 2 main folder for frontend `feature` and `page` folder folder project structure cleanness.
 
-# `feature` folder is used for making pages and all of frontend stuffs for each feature (UI,api logics,components,pages) in that folder.
+### `feature` folder is used for making pages and all of frontend stuffs for each feature (UI,api logics,components,pages) in that folder.
 
-# `page` is used for routing only used for entering pages.
+### `page` is used for routing only used for entering pages.
 
 `feature` structure
 
 ```tree
-Substitue [feature] with specific names.
+Substitute [feature] with specific names.
 
 [features]/
 ├── api/
@@ -32,7 +32,7 @@ Substitue [feature] with specific names.
 
 if you are new to **React Query** you can read this for understanding `hooks` folder and structure : https://tanstack.com/query/v4/docs/framework/react/overview
 
-# GENEROUTED FILE-BASED ROUTING GUIDE
+# Generouted File-Based Routing Guide
 
 for `page` structure we use **file-based routing** by **generouted**
 
@@ -47,22 +47,18 @@ you can check it here for more detail : https://github.com/CSC290-2025/generoute
 `page` structure
 
 ```tree
-Substitue [feature] with specific names.
+Substitute [pages] with specific names.
 
-[features]/
-├── api/
-│   ├── [feature].api.tsx
-│   └── index.ts (export * from './[feature].api')
-├── components/
-│   ├── [componentName].tsx
-├── hooks/ (fetching,caching data,etc)
-│   ├── [hookName].tsx
-├── pages/
-│   ├── [pageName].tsx
-└── index.ts (export everything (default as pages,hooks) you can see in _example/index.ts)
+[pages]/
+├── [nested-pages-name]/ **Optional**
+│   └── index.tsx (re-export from the pages folder in features/pages)
+├── [id.tsx]/ (in case you have dynamic routes e.g /user/[id]) **Optional**
+└── index.tsx (re-export from the pages folder in features/pages)
 ```
 
 ### 2. CODE PATTERN
+
+#### **2.1 `/src/feature`** Code Pattern
 
 #### APIs PATTERN
 
@@ -152,4 +148,12 @@ export default function UserPage() {
 export { default as UserCard } from './components/UserCard';
 export { default as UserPage } from './pages/UserPage';
 export { useUser } from './hooks/useUser';
+```
+
+#### **2.2 `/src/pages`** Code Pattern
+
+#### INDEX.TSX PATTERN (Do it all like this for all of files in `/src/pages` folder)
+
+```typescript
+export { default } from '@/features/_example/pages/UserHomepage';
 ```
