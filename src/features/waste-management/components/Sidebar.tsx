@@ -8,7 +8,7 @@ import {
   Settings,
   Wallet,
   LogOut,
-  Package,
+  BusFront,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -25,10 +25,10 @@ export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
       subtitle: 'Dashboard and quick service',
     },
     {
-      id: 'freecycle',
-      icon: Package,
-      label: 'Free Cycle',
-      subtitle: 'Give and get free items',
+      id: 'transportation',
+      icon: BusFront,
+      label: 'ransport',
+      subtitle: 'Bus timing and routes',
     },
     {
       id: 'events',
