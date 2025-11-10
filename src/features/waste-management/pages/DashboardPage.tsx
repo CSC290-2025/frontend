@@ -1,42 +1,21 @@
-import { Search, Trophy, Package, User, Trash2, Recycle } from 'lucide-react';
+import { Search, User, Recycle, Package, Trophy } from 'lucide-react';
+import { Header } from '../components/Header';
+import { PageWrapper } from '../components/PageWrapper';
 import { useWasteData } from '../hooks/useWasteData';
 import { useWasteTrends } from '../hooks/useWasteTrends';
 
-export function DashboardPage({
-  onNavigate,
-}: {
+interface DashboardPageProps {
   onNavigate: (page: string) => void;
-}) {
+}
+
+export default function DashboardPage({ onNavigate }: DashboardPageProps) {
   const { data: wasteData, loading: wasteLoading } = useWasteData();
   const { trends, loading: trendsLoading } = useWasteTrends();
-  const maxValue = Math.max(...wasteData.map((d) => d.value), 0); // Added 0 for safety on empty array
-
-  // const totalWaste = trends.reduce((sum, t) => sum + t.amount, 0); // This var wasn't used
+  const maxValue = Math.max(...wasteData.map((d) => d.value), 0); // Added 0 for safety
 
   return (
-    <div className="flex-1 overflow-y-auto bg-gray-50 p-8">
-      <div className="mb-6 grid grid-cols-4 gap-4">
-        <div className="cursor-pointer rounded-xl bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
-          <Trophy className="mb-2" size={24} />
-          <h3 className="font-semibold">Events</h3>
-          <p className="text-sm text-gray-500">Activities and volunteer</p>
-        </div>
-        <div className="cursor-pointer rounded-xl bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
-          <Package className="mb-2" size={24} />
-          <h3 className="font-semibold">Free cycle</h3>
-          <p className="text-sm text-gray-500">Activities and volunteer</p>
-        </div>
-        <div className="cursor-pointer rounded-xl bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
-          <User className="mb-2" size={24} />
-          <h3 className="font-semibold">Volunteer</h3>
-          <p className="text-sm text-gray-500">Activities and volunteer</p>
-        </div>
-        <div className="cursor-pointer rounded-xl bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
-          <Trash2 className="mb-2" size={24} />
-          <h3 className="font-semibold">Waste Management</h3>
-          <p className="text-sm text-gray-500">Activities and volunteer</p>
-        </div>
-      </div>
+    <PageWrapper>
+      <Header onNavigate={onNavigate} />
 
       <div className="relative mb-6">
         <input
@@ -45,14 +24,6 @@ export function DashboardPage({
           className="w-full rounded-lg border border-gray-200 px-4 py-3 pl-10"
         />
         <Search className="absolute top-3.5 left-3 text-gray-400" size={20} />
-      </div>
-
-      <div className="mb-8 rounded-2xl bg-gradient-to-r from-purple-500 to-pink-500 p-12 text-center">
-        <h1 className="mb-2 text-5xl font-bold text-white">Developing a</h1>
-        <h2 className="mb-2 text-6xl font-bold text-white">STRONG</h2>
-        <h3 className="text-3xl font-bold text-white">
-          WORSHIP CULTURE IN YOUR CHURCH
-        </h3>
       </div>
 
       <div className="grid grid-cols-3 gap-6">
@@ -172,14 +143,17 @@ export function DashboardPage({
             </div>
           </div>
 
-          <div className="rounded-xl bg-gradient-to-br from-green-400 to-green-600 p-6 text-white shadow-sm">
+          <div className="rounded-xl bg-gradient-to-br from-green-400 to-green-600 p-6 text-center text-white shadow-sm">
             <Recycle size={48} className="mx-auto mb-3" />
             <h3 className="mb-2 text-lg font-bold">Recycling Rate</h3>
             <p className="text-3xl font-bold">68%</p>
             <p className="mt-2 text-sm opacity-90">+5% from last month</p>
           </div>
 
-          <div className="cursor-pointer rounded-xl bg-white p-6 text-center shadow-sm transition-shadow hover:shadow-md">
+          <div
+            className="cursor-pointer rounded-xl bg-white p-6 text-center shadow-sm transition-shadow hover:shadow-md"
+            onClick={() => onNavigate('freecycle')}
+          >
             <Package size={48} className="mx-auto mb-4" />
             <h3 className="font-semibold">Join free cycle</h3>
           </div>
@@ -193,6 +167,6 @@ export function DashboardPage({
           </div>
         </div>
       </div>
-    </div>
+    </PageWrapper>
   );
 }

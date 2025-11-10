@@ -1,30 +1,31 @@
+// --- src/App.tsx ---
 import { useState } from 'react';
 import { Sidebar } from '../components/Sidebar';
-import { DashboardPage } from '../pages/DashboardPage';
-import { EventsPage } from '../pages/EventsPage';
-import { FreeCyclePage } from '../pages/FreeCyclePage';
+import DashboardPage from '../pages/DashboardPage';
+import FreeCyclePage from '../pages/FreeCyclePage';
+import EventsPage from '../pages/EventsPage';
 
-// Main App
-function App() {
+export default function App() {
   const [currentPage, setCurrentPage] = useState('dashboard');
 
-  const renderPage = () => {
+  function renderPage() {
     switch (currentPage) {
-      case 'events':
-        return <EventsPage />;
+      case 'dashboard':
+        return <DashboardPage onNavigate={setCurrentPage} />;
       case 'freecycle':
-        return <FreeCyclePage />;
+        return <FreeCyclePage onNavigate={setCurrentPage} />;
+      case 'events':
+        return <EventsPage onNavigate={setCurrentPage} />;
+
       default:
         return <DashboardPage onNavigate={setCurrentPage} />;
     }
-  };
+  }
 
   return (
     <div className="flex h-screen bg-white">
       <Sidebar currentPage={currentPage} onNavigate={setCurrentPage} />
-      {renderPage()}
+      <main className="ml-60 w-[calc(100%-15rem)]">{renderPage()}</main>
     </div>
   );
 }
-
-export default App;

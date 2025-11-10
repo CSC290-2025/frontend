@@ -1,34 +1,34 @@
-import { Trophy, Package, User, Trash2 } from 'lucide-react';
+import { Trophy, User, Package, Trash2 } from 'lucide-react';
 
-export function QuickLinksHeader({
-  onNavigate,
-}: {
+interface HeaderProps {
   onNavigate: (page: string) => void;
-}) {
+}
+
+export function Header({ onNavigate }: HeaderProps) {
+  const cardStyle =
+    'bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow cursor-pointer';
+
   return (
     <div className="mb-6 grid grid-cols-4 gap-4">
-      <div
-        className="cursor-pointer rounded-xl bg-white p-6 shadow-sm transition-shadow hover:shadow-md"
-        onClick={() => onNavigate('events')}
-      >
-        <Trophy className="mb-2" size={24} />
+      <div className={cardStyle} onClick={() => onNavigate('events')}>
+        <Trophy className="mb-2 text-cyan-500" size={24} />
         <h3 className="font-semibold">Events</h3>
         <p className="text-sm text-gray-500">Activities and volunteer</p>
       </div>
-      <div className="cursor-pointer rounded-xl bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
-        <Package className="mb-2" size={24} />
+      <div className={cardStyle} onClick={() => onNavigate('freecycle')}>
+        <Package className="mb-2 text-cyan-500" size={24} />
         <h3 className="font-semibold">Free cycle</h3>
-        <p className="text-sm text-gray-500">Activities and volunteer</p>
+        <p className="text-sm text-gray-500">Give and get free items</p>
       </div>
-      <div className="cursor-pointer rounded-xl bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
-        <User className="mb-2" size={24} />
+      <div className={cardStyle} onClick={() => onNavigate('volunteer')}>
+        <User className="mb-2 text-cyan-500" size={24} />
         <h3 className="font-semibold">Volunteer</h3>
-        <p className="text-sm text-gray-500">Activities and volunteer</p>
+        <p className="text-sm text-gray-500">Join a good cause</p>
       </div>
-      <div className="cursor-pointer rounded-xl bg-white p-6 shadow-sm transition-shadow hover:shadow-md">
-        <Trash2 className="mb-2" size={24} />
+      <div className={cardStyle} onClick={() => onNavigate('waste')}>
+        <Trash2 className="mb-2 text-cyan-500" size={24} />
         <h3 className="font-semibold">Waste Management</h3>
-        <p className="text-sm text-gray-500">Activities and volunteer</p>
+        <p className="text-sm text-gray-500">Report and track</p>
       </div>
     </div>
   );

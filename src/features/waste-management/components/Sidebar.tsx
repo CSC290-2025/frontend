@@ -11,13 +11,12 @@ import {
   Package,
 } from 'lucide-react';
 
-export function Sidebar({
-  currentPage,
-  onNavigate,
-}: {
+interface SidebarProps {
   currentPage: string;
   onNavigate: (page: string) => void;
-}) {
+}
+
+export function Sidebar({ currentPage, onNavigate }: SidebarProps) {
   const menuItems = [
     {
       id: 'dashboard',
@@ -26,10 +25,10 @@ export function Sidebar({
       subtitle: 'Dashboard and quick service',
     },
     {
-      id: 'transport',
+      id: 'freecycle',
       icon: Package,
-      label: 'Transport',
-      subtitle: 'Bus timing and routes',
+      label: 'Free Cycle',
+      subtitle: 'Give and get free items',
     },
     {
       id: 'events',
@@ -64,39 +63,56 @@ export function Sidebar({
   ];
 
   return (
-    <div className="flex h-screen w-48 flex-col border-r border-gray-200 bg-white">
-      <div className="flex-1 overflow-y-auto">
+    <div className="fixed top-0 left-0 flex h-screen w-60 flex-col border-r border-gray-200 bg-white">
+      <div className="border-b p-4">
+        <h2 className="text-2xl font-bold text-cyan-500">
+          City<span className="text-gray-800">Hub</span>
+        </h2>
+      </div>
+      <div className="flex-1 overflow-y-auto pt-4">
         {menuItems.map((item) => (
           <div
             key={item.id}
             onClick={() => onNavigate(item.id)}
-            className={`cursor-pointer border-b border-gray-100 p-4 hover:bg-gray-50 ${
-              currentPage === item.id ? 'bg-gray-50' : ''
+            className={`mx-3 mb-2 cursor-pointer rounded-lg px-4 py-3 hover:bg-gray-100 ${
+              currentPage === item.id
+                ? 'bg-cyan-50 text-cyan-600'
+                : 'text-gray-700'
             }`}
           >
-            <div className="mb-1 flex items-center gap-3">
+            <div className="flex items-center gap-3">
               <item.icon size={20} />
               <span className="text-sm font-medium">{item.label}</span>
             </div>
-            <p className="ml-8 text-xs text-gray-500">{item.subtitle}</p>
           </div>
         ))}
 
-        <div className="cursor-pointer border-b border-gray-100 p-4 hover:bg-gray-50">
+        <hr className="my-4" />
+
+        <div
+          className="mx-3 mb-2 cursor-pointer rounded-lg px-4 py-3 hover:bg-gray-100"
+          onClick={() => onNavigate('profile')}
+        >
           <div className="flex items-center gap-3">
             <User size={20} />
             <span className="text-sm font-medium">Profile</span>
           </div>
         </div>
 
-        <div className="cursor-pointer border-b border-gray-100 p-4 hover:bg-gray-50">
+        <div
+          className="mx-3 mb-2 cursor-pointer rounded-lg px-4 py-3 hover:bg-gray-100"
+          onClick={() => onNavigate('setting')}
+        >
           <div className="flex items-center gap-3">
             <Settings size={20} />
             <span className="text-sm font-medium">Setting</span>
           </div>
         </div>
 
-        <div className="cursor-pointer p-4 hover:bg-gray-50">
+        <div
+          className="mx-3 mb-2 cursor-pointer rounded-lg px-4 py-3 hover:bg-gray-100"
+          onClick={() => onNavigate('ewallet')}
+        >
           <div className="flex items-center gap-3">
             <Wallet size={20} />
             <span className="text-sm font-medium">E-wallet</span>

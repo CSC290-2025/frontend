@@ -1,44 +1,20 @@
 import { useState } from 'react';
-import {
-  Search,
-  Trophy,
-  Package,
-  User,
-  Trash2,
-  Plus,
-  Filter,
-  Bookmark,
-} from 'lucide-react';
+import { Search, Plus, Filter, Bookmark } from 'lucide-react';
+import { Header } from '../components/Header';
+import { PageWrapper } from '../components/PageWrapper';
 import { useEvents } from '../hooks/useEvents';
 
-export function EventsPage() {
+interface EventsPageProps {
+  onNavigate: (page: string) => void;
+}
+
+export default function EventsPage({ onNavigate }: EventsPageProps) {
   const { events, loading } = useEvents();
   const [activeTab, setActiveTab] = useState('Events');
 
   return (
-    <div className="flex-1 overflow-y-auto bg-gray-50 p-8">
-      <div className="mb-6 grid grid-cols-4 gap-4">
-        <div className="rounded-xl bg-white p-6 shadow-sm">
-          <Trophy className="mb-2" size={24} />
-          <h3 className="font-semibold">Events</h3>
-          <p className="text-sm text-gray-500">Activities and volunteer</p>
-        </div>
-        <div className="rounded-xl bg-white p-6 shadow-sm">
-          <Package className="mb-2" size={24} />
-          <h3 className="font-semibold">Free cycle</h3>
-          <p className="text-sm text-gray-500">Activities and volunteer</p>
-        </div>
-        <div className="rounded-xl bg-white p-6 shadow-sm">
-          <User className="mb-2" size={24} />
-          <h3 className="font-semibold">Volunteer</h3>
-          <p className="text-sm text-gray-500">Activities and volunteer</p>
-        </div>
-        <div className="rounded-xl bg-white p-6 shadow-sm">
-          <Trash2 className="mb-2" size={24} />
-          <h3 className="font-semibold">Waste Management</h3>
-          <p className="text-sm text-gray-500">Activities and volunteer</p>
-        </div>
-      </div>
+    <PageWrapper>
+      <Header onNavigate={onNavigate} />
 
       <div className="relative mb-6">
         <input
@@ -74,7 +50,7 @@ export function EventsPage() {
           </button>
           <button className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-6 py-2 text-gray-700 hover:bg-gray-50">
             <Filter size={20} />
-            Fillter
+            Filter
           </button>
         </div>
       </div>
@@ -123,6 +99,6 @@ export function EventsPage() {
           ))}
         </div>
       )}
-    </div>
+    </PageWrapper>
   );
 }
