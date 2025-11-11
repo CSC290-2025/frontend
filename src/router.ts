@@ -9,11 +9,13 @@ export type Path =
   | `/example/:id`
   | `/power-bi`
   | `/power-bi/create`
+  | `/power-bi/edit/:id`
   | `/power-bi/summary/:category`
   | `/power-bi/summary/:category/:reportId`;
 
 export type Params = {
   '/example/:id': { id: string };
+  '/power-bi/edit/:id': { id: string };
   '/power-bi/summary/:category': { category: string };
   '/power-bi/summary/:category/:reportId': {
     category: string;
