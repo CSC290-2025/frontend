@@ -1,1 +1,1 @@
-export { default } from '@/features/volunteer/pages/userjoin';
+export { default } from '@/features/Volunteer/pages/userjoin';

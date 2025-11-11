@@ -1,7 +1,33 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Upload, X, MapPin, Calendar, Clock, Users, Plus, Image } from 'lucide-react';
+import axios from 'axios';
+import { useNavigate } from '@/router'; // Import from Generouted
+import {
+  ArrowLeft,
+  Upload,
+  X,
+  MapPin,
+  Calendar,
+  Clock,
+  Users,
+  Plus,
+  Image,
+} from 'lucide-react';
+
+// This is the shape of the data the API *expects*
+interface ApiPayload {
+  title: string;
+  description: string;
+  start_at: string;
+  end_at: string;
+  total_seats: number;
+  created_by_user_id: number;
+  department_id: number;
+  address_id: number;
+  image_url?: string;
+}
 
 export default function CreateVolunteerPost() {
+  const navigate = useNavigate(); // Hook for navigation
   const [formData, setFormData] = useState({
     title: '',
     organization: '',
@@ -9,34 +35,44 @@ export default function CreateVolunteerPost() {
     date: '',
     startTime: '',
     endTime: '',
-    maxVolunteers: '',
+    maxVolunteers: '10',
     location: '',
     address: '',
     description: '',
     activities: [''],
     requirements: [''],
-    difficulty: 'beginner'
+    difficulty: 'beginner',
   });
-
-  const [uploadedImage, setUploadedImage] = useState<string | ArrayBuffer | null>(null);
+  const [uploadedImage, setUploadedImage] = useState<
+    string | ArrayBuffer | null
+  >(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleArrayChange = (field: string, index: number, value: string) => {
-    const newArray = [...formData[field as keyof typeof formData]];
+  const handleArrayChange = (
+    field: 'activities' | 'requirements',
+    index: number,
+    value: string
+  ) => {
+    const newArray = [...formData[field]];
     newArray[index] = value;
-    setFormData(prev => ({ ...prev, [field]: newArray }));
+    setFormData((prev) => ({ ...prev, [field]: newArray }));
   };
 
-  const addArrayItem = (field: string) => {
-    setFormData(prev => ({ ...prev, [field]: [...prev[field as keyof typeof formData], ''] }));
+  const addArrayItem = (field: 'activities' | 'requirements') => {
+    setFormData((prev) => ({ ...prev, [field]: [...formData[field], ''] }));
   };
 
-  const removeArrayItem = (field: string, index: number) => {
-    const newArray = (formData[field as keyof typeof formData] as string[]).filter((_, i) => i !== index);
-    setFormData(prev => ({ ...prev, [field]: newArray }));
+  const removeArrayItem = (
+    field: 'activities' | 'requirements',
+    index: number
+  ) => {
+    const newArray = formData[field].filter((_, i) => i !== index);
+    setFormData((prev) => ({ ...prev, [field]: newArray }));
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -46,55 +82,142 @@ export default function CreateVolunteerPost() {
       reader.onloadend = () => {
         setUploadedImage(reader.result);
       };
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(file); // This gives a base64 string
     }
   };
 
-  const handleSubmit = () => {
-    console.log('Form submitted:', formData);
-    alert('Volunteer post created successfully!');
+  const handleSubmit = async () => {
+    setIsLoading(true);
+    setError(null);
+
+    const {
+      title,
+      description,
+      date,
+      startTime,
+      endTime,
+      maxVolunteers,
+      organization,
+      location,
+      address,
+      activities,
+      requirements,
+      difficulty,
+    } = formData;
+
+    const start_at = `${date}T${startTime}:00.000Z`;
+    const end_at = `${date}T${endTime}:00.000Z`;
+
+    const fullDescription = `
+${description}
+
+---
+**Organization:** ${organization}
+**Location:** ${location}
+**Address:** ${address}
+**Difficulty:** ${difficulty}
+
+**Activities:**
+${activities.map((act) => `- ${act}`).join('\n')}
+
+**Requirements:**
+${requirements.map((req) => `- ${req}`).join('\n')}
+    `;
+
+    const payload: ApiPayload = {
+      title: title,
+      description: fullDescription,
+      start_at: start_at,
+      end_at: end_at,
+      total_seats: parseInt(maxVolunteers, 10),
+      image_url: typeof uploadedImage === 'string' ? uploadedImage : '', // Send base64 string
+
+      // testing with static IDs
+      created_by_user_id: 1,
+      department_id: 1,
+      address_id: 1,
+    };
+
+    try {
+      const response = await axios.post(
+        'http://localhost:3000/api/v1/volunteer/create',
+        payload
+      );
+
+      if (response.data.success) {
+        alert('Event created successfully!');
+        navigate('/volunteer/board'); // Redirect on success
+      } else {
+        throw new Error('API returned an error');
+      }
+    } catch (err: any) {
+      console.error('Error creating event:', err.response?.data || err.message);
+      setError(
+        err.response?.data?.message ||
+          err.message ||
+          'An unknown error occurred.'
+      );
+    } finally {
+      setIsLoading(false);
+    }
   };
 
+  // --- JSX (NO CHANGES NEEDED) ---
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-5xl mx-auto px-8 py-4 flex items-center justify-between">
-          <button className="flex items-center gap-2 text-gray-600 hover:text-gray-800">
-            <ArrowLeft className="w-5 h-5" />
+      <div className="border-b border-gray-200 bg-white">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-8 py-4">
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center gap-2 text-gray-600 hover:text-gray-800"
+          >
+            <ArrowLeft className="h-5 w-5" />
             <span className="font-medium">Back</span>
           </button>
-          <h1 className="text-xl font-bold text-gray-800">Create Volunteer Opportunity</h1>
+          <h1 className="text-xl font-bold text-gray-800">
+            Create Volunteer Opportunity
+          </h1>
           <div className="w-20"></div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="max-w-5xl mx-auto px-8 py-8">
+      <div className="mx-auto max-w-5xl px-8 py-8">
         <div className="space-y-6">
           {/* Image Upload Section */}
-          <div className="bg-white rounded-2xl p-6 border border-gray-200">
-            <h2 className="text-lg font-bold text-gray-800 mb-4">Cover Image</h2>
+          <div className="rounded-2xl border border-gray-200 bg-white p-6">
+            <h2 className="mb-4 text-lg font-bold text-gray-800">
+              Cover Image
+            </h2>
             <div className="relative">
               {uploadedImage ? (
                 <div className="relative">
                   <img
-                    src={typeof uploadedImage === 'string' ? uploadedImage : undefined}
+                    src={
+                      typeof uploadedImage === 'string'
+                        ? uploadedImage
+                        : undefined
+                    }
                     alt="Uploaded"
-                    className="w-full h-64 object-cover rounded-xl"
+                    className="h-64 w-full rounded-xl object-cover"
                   />
                   <button
                     onClick={() => setUploadedImage(null)}
-                    className="absolute top-4 right-4 p-2 bg-white rounded-full shadow-lg hover:bg-gray-100"
+                    className="absolute top-4 right-4 rounded-full bg-white p-2 shadow-lg hover:bg-gray-100"
                   >
-                    <X className="w-5 h-5 text-gray-600" />
+                    <X className="h-5 w-5 text-gray-600" />
                   </button>
                 </div>
               ) : (
-                <label className="flex flex-col items-center justify-center w-full h-64 border-2 border-dashed border-gray-300 rounded-xl cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors">
-                  <Image className="w-12 h-12 text-gray-400 mb-3" />
-                  <span className="text-gray-600 font-medium">Click to upload cover image</span>
-                  <span className="text-gray-400 text-sm mt-1">PNG, JPG up to 10MB</span>
+                <label className="flex h-64 w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 transition-colors hover:border-blue-400 hover:bg-blue-50">
+                  <Image className="mb-3 h-12 w-12 text-gray-400" />
+                  <span className="font-medium text-gray-600">
+                    Click to upload cover image
+                  </span>
+                  <span className="mt-1 text-sm text-gray-400">
+                    PNG, JPG up to 10MB
+                  </span>
                   <input
                     type="file"
                     className="hidden"
@@ -107,11 +230,13 @@ export default function CreateVolunteerPost() {
           </div>
 
           {/* Basic Information */}
-          <div className="bg-white rounded-2xl p-6 border border-gray-200">
-            <h2 className="text-lg font-bold text-gray-800 mb-4">Basic Information</h2>
+          <div className="rounded-2xl border border-gray-200 bg-white p-6">
+            <h2 className="mb-4 text-lg font-bold text-gray-800">
+              Basic Information
+            </h2>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="mb-2 block text-sm font-medium text-gray-700">
                   Opportunity Title *
                 </label>
                 <input
@@ -119,31 +244,35 @@ export default function CreateVolunteerPost() {
                   value={formData.title}
                   onChange={(e) => handleInputChange('title', e.target.value)}
                   placeholder="e.g., Teaching Volunteer Program"
-                  className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  className="w-full rounded-xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="mb-2 block text-sm font-medium text-gray-700">
                   Organization Name *
                 </label>
                 <input
                   type="text"
                   value={formData.organization}
-                  onChange={(e) => handleInputChange('organization', e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange('organization', e.target.value)
+                  }
                   placeholder="e.g., Community Education Center"
-                  className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  className="w-full rounded-xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="mb-2 block text-sm font-medium text-gray-700">
                   Category *
                 </label>
                 <select
                   value={formData.category}
-                  onChange={(e) => handleInputChange('category', e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  onChange={(e) =>
+                    handleInputChange('category', e.target.value)
+                  }
+                  className="w-full rounded-xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:outline-none"
                 >
                   <option value="">Select a category</option>
                   <option value="education">Education</option>
@@ -158,73 +287,80 @@ export default function CreateVolunteerPost() {
           </div>
 
           {/* Schedule & Capacity */}
-          <div className="bg-white rounded-2xl p-6 border border-gray-200">
-            <h2 className="text-lg font-bold text-gray-800 mb-4">Schedule & Capacity</h2>
+          <div className="rounded-2xl border border-gray-200 bg-white p-6">
+            <h2 className="mb-4 text-lg font-bold text-gray-800">
+              Schedule & Capacity
+            </h2>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <Calendar className="w-4 h-4 inline mr-1" />
+                <label className="mb-2 block text-sm font-medium text-gray-700">
+                  <Calendar className="mr-1 inline h-4 w-4" />
                   Date *
                 </label>
                 <input
                   type="date"
                   value={formData.date}
                   onChange={(e) => handleInputChange('date', e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  className="w-full rounded-xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <Users className="w-4 h-4 inline mr-1" />
+                <label className="mb-2 block text-sm font-medium text-gray-700">
+                  <Users className="mr-1 inline h-4 w-4" />
                   Max Volunteers *
                 </label>
                 <input
                   type="number"
                   value={formData.maxVolunteers}
-                  onChange={(e) => handleInputChange('maxVolunteers', e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange('maxVolunteers', e.target.value)
+                  }
                   placeholder="55"
-                  className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  className="w-full rounded-xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <Clock className="w-4 h-4 inline mr-1" />
+                <label className="mb-2 block text-sm font-medium text-gray-700">
+                  <Clock className="mr-1 inline h-4 w-4" />
                   Start Time *
                 </label>
                 <input
                   type="time"
                   value={formData.startTime}
-                  onChange={(e) => handleInputChange('startTime', e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  onChange={(e) =>
+                    handleInputChange('startTime', e.target.value)
+                  }
+                  className="w-full rounded-xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  <Clock className="w-4 h-4 inline mr-1" />
+                <label className="mb-2 block text-sm font-medium text-gray-700">
+                  <Clock className="mr-1 inline h-4 w-4" />
                   End Time *
                 </label>
                 <input
                   type="time"
                   value={formData.endTime}
                   onChange={(e) => handleInputChange('endTime', e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  className="w-full rounded-xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:outline-none"
                 />
               </div>
             </div>
 
             <div className="mt-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="mb-2 block text-sm font-medium text-gray-700">
                 Difficulty Level
               </label>
               <div className="flex gap-3">
                 {['beginner', 'intermediate', 'advanced'].map((level) => (
                   <button
                     key={level}
+                    type="button" // Add type="button" to prevent form submission
                     onClick={() => handleInputChange('difficulty', level)}
-                    className={`px-6 py-2 rounded-full font-medium transition-colors ${
+                    className={`rounded-full px-6 py-2 font-medium transition-colors ${
                       formData.difficulty === level
                         ? 'bg-blue-500 text-white'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -238,27 +374,29 @@ export default function CreateVolunteerPost() {
           </div>
 
           {/* Location */}
-          <div className="bg-white rounded-2xl p-6 border border-gray-200">
-            <h2 className="text-lg font-bold text-gray-800 mb-4">
-              <MapPin className="w-5 h-5 inline mr-2" />
+          <div className="rounded-2xl border border-gray-200 bg-white p-6">
+            <h2 className="mb-4 text-lg font-bold text-gray-800">
+              <MapPin className="mr-2 inline h-5 w-5" />
               Location
             </h2>
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="mb-2 block text-sm font-medium text-gray-700">
                   Venue Name *
                 </label>
                 <input
                   type="text"
                   value={formData.location}
-                  onChange={(e) => handleInputChange('location', e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange('location', e.target.value)
+                  }
                   placeholder="e.g., Community Education Center"
-                  className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  className="w-full rounded-xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="mb-2 block text-sm font-medium text-gray-700">
                   Full Address *
                 </label>
                 <textarea
@@ -266,55 +404,61 @@ export default function CreateVolunteerPost() {
                   onChange={(e) => handleInputChange('address', e.target.value)}
                   placeholder="123 Learning Street, Central District, Bangkok, Thailand 10100"
                   rows={3}
-                  className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                  className="w-full rounded-xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:outline-none"
                 />
               </div>
             </div>
           </div>
 
           {/* Description */}
-          <div className="bg-white rounded-2xl p-6 border border-gray-200">
-            <h2 className="text-lg font-bold text-gray-800 mb-4">Description</h2>
+          <div className="rounded-2xl border border-gray-200 bg-white p-6">
+            <h2 className="mb-4 text-lg font-bold text-gray-800">
+              Description
+            </h2>
             <textarea
               value={formData.description}
               onChange={(e) => handleInputChange('description', e.target.value)}
               placeholder="Describe the volunteer opportunity, its purpose, and what volunteers can expect..."
               rows={6}
-              className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+              className="w-full rounded-xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:outline-none"
             />
           </div>
 
           {/* Activities */}
-          <div className="bg-white rounded-2xl p-6 border border-gray-200">
-            <div className="flex items-center justify-between mb-4">
+          <div className="rounded-2xl border border-gray-200 bg-white p-6">
+            <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-bold text-gray-800">Activities</h2>
               <button
+                type="button" // Add type="button"
                 onClick={() => addArrayItem('activities')}
-                className="flex items-center gap-2 px-4 py-2 rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 font-medium"
+                className="flex items-center gap-2 rounded-full bg-blue-100 px-4 py-2 font-medium text-blue-600 hover:bg-blue-200"
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="h-4 w-4" />
                 Add Activity
               </button>
             </div>
             <div className="space-y-3">
               {formData.activities.map((activity, index) => (
                 <div key={index} className="flex gap-3">
-                  <div className="flex items-center justify-center w-8 h-8 rounded-full bg-lime-400 text-gray-800 font-semibold flex-shrink-0 mt-2">
+                  <div className="mt-2 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-lime-400 font-semibold text-gray-800">
                     {index + 1}
                   </div>
                   <input
                     type="text"
                     value={activity}
-                    onChange={(e) => handleArrayChange('activities', index, e.target.value)}
+                    onChange={(e) =>
+                      handleArrayChange('activities', index, e.target.value)
+                    }
                     placeholder="e.g., Assist with classroom activities"
-                    className="flex-1 px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    className="flex-1 rounded-xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:outline-none"
                   />
                   {formData.activities.length > 1 && (
                     <button
+                      type="button" // Add type="button"
                       onClick={() => removeArrayItem('activities', index)}
-                      className="p-3 text-red-500 hover:bg-red-50 rounded-xl"
+                      className="rounded-xl p-3 text-red-500 hover:bg-red-50"
                     >
-                      <X className="w-5 h-5" />
+                      <X className="h-5 w-5" />
                     </button>
                   )}
                 </div>
@@ -323,34 +467,38 @@ export default function CreateVolunteerPost() {
           </div>
 
           {/* Requirements */}
-          <div className="bg-white rounded-2xl p-6 border border-gray-200">
-            <div className="flex items-center justify-between mb-4">
+          <div className="rounded-2xl border border-gray-200 bg-white p-6">
+            <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-bold text-gray-800">Requirements</h2>
               <button
+                type="button" // Add type="button"
                 onClick={() => addArrayItem('requirements')}
-                className="flex items-center gap-2 px-4 py-2 rounded-full bg-blue-100 text-blue-600 hover:bg-blue-200 font-medium"
+                className="flex items-center gap-2 rounded-full bg-blue-100 px-4 py-2 font-medium text-blue-600 hover:bg-blue-200"
               >
-                <Plus className="w-4 h-4" />
+                <Plus className="h-4 w-4" />
                 Add Requirement
               </button>
             </div>
             <div className="space-y-3">
               {formData.requirements.map((requirement, index) => (
                 <div key={index} className="flex gap-3">
-                  <div className="w-2 h-2 rounded-full bg-blue-500 flex-shrink-0 mt-4" />
+                  <div className="mt-4 h-2 w-2 flex-shrink-0 rounded-full bg-blue-500" />
                   <input
                     type="text"
                     value={requirement}
-                    onChange={(e) => handleArrayChange('requirements', index, e.target.value)}
+                    onChange={(e) =>
+                      handleArrayChange('requirements', index, e.target.value)
+                    }
                     placeholder="e.g., Age 18 or above"
-                    className="flex-1 px-4 py-3 rounded-xl border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+                    className="flex-1 rounded-xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:outline-none"
                   />
                   {formData.requirements.length > 1 && (
                     <button
+                      type="button" // Add type="button"
                       onClick={() => removeArrayItem('requirements', index)}
-                      className="p-3 text-red-500 hover:bg-red-50 rounded-xl"
+                      className="rounded-xl p-3 text-red-500 hover:bg-red-50"
                     >
-                      <X className="w-5 h-5" />
+                      <X className="h-5 w-5" />
                     </button>
                   )}
                 </div>
@@ -358,19 +506,29 @@ export default function CreateVolunteerPost() {
             </div>
           </div>
 
+          {/* Error Message */}
+          {error && (
+            <div className="rounded-lg border border-red-300 bg-red-100 p-3 text-red-800">
+              <strong>Error:</strong> {error}
+            </div>
+          )}
+
           {/* Action Buttons */}
-          <div className="flex gap-4 justify-end pt-4">
+          <div className="flex justify-end gap-4 pt-4">
             <button
+              type="button" // Add type="button"
               onClick={() => alert('Saved as draft')}
-              className="px-8 py-3 rounded-full border border-gray-300 text-gray-700 font-medium hover:bg-gray-50"
+              className="rounded-full border border-gray-300 px-8 py-3 font-medium text-gray-700 hover:bg-gray-50"
             >
               Save as Draft
             </button>
             <button
+              type="submit" // This is the main submit button
               onClick={handleSubmit}
-              className="px-8 py-3 rounded-full bg-lime-400 text-gray-800 font-medium hover:bg-lime-500"
+              disabled={isLoading}
+              className="rounded-full bg-lime-400 px-8 py-3 font-medium text-gray-800 hover:bg-lime-500 disabled:opacity-50"
             >
-              Publish Opportunity
+              {isLoading ? 'Publishing...' : 'Publish Opportunity'}
             </button>
           </div>
         </div>

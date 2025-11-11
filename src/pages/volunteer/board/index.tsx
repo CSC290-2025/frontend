@@ -1,1 +1,1 @@
-export { default } from '@/features/volunteer/pages/board';
+export { default } from '@/features/Volunteer/pages/board';
