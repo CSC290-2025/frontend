@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Personal from '../components/userSettingPage/Personal';
 import Health from '../components/userSettingPage/Health';
+import Account from '../components/userSettingPage/Account';
 function UserSettingPage() {
   const bloodTypeOptions = ['A', 'B', 'AB', 'O'];
   const genderOptions = ['male', 'female', 'none'];
@@ -43,6 +44,7 @@ function UserSettingPage() {
     <div>
       <Personal data={personal} />
       <Health data={health} />
+      <Account data={account} />
     </div>
   );
 }

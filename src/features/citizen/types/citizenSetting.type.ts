@@ -33,3 +33,12 @@ export type HealthData = {
 export type HeathProps = {
   data: HealthData;
 };
+
+export type AccountData = {
+  Username: string;
+  Email: string;
+};
+
+export type AccountProps = {
+  data: AccountData;
+};
