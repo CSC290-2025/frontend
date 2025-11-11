@@ -18,3 +18,18 @@ export type PersonalData = {
 export type PersonalProps = {
   data: PersonalData;
 };
+
+export type HealthData = {
+  BirthDate: string;
+  BloodType: string;
+  CongenitalDisease: string;
+  Allergic: string;
+  Insurance: string;
+  Height: number;
+  Weight: number;
+  Gender: string;
+};
+
+export type HeathProps = {
+  data: HealthData;
+};

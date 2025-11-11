@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import Personal from '../components/userSettingPage/Personal';
+import Health from '../components/userSettingPage/Health';
 function UserSettingPage() {
   const bloodTypeOptions = ['A', 'B', 'AB', 'O'];
-  const genderOptions = ['Male', 'Female', 'None'];
+  const genderOptions = ['male', 'female', 'none'];
   const [bloodType, setBloodType] = useState(bloodTypeOptions[3]);
   const [gender, setGender] = useState(genderOptions[0]);
   const UserData = {
@@ -23,7 +24,7 @@ function UserSettingPage() {
       PostalCode: '10540',
     },
     health: {
-      BirthDate: new Date('2006-05-11'),
+      BirthDate: '2006-05-11',
       BloodType: bloodType,
       CongenitalDisease: 'Asthma',
       Allergic: 'Dust',
@@ -41,6 +42,7 @@ function UserSettingPage() {
   return (
     <div>
       <Personal data={personal} />
+      <Health data={health} />
     </div>
   );
 }
