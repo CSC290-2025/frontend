@@ -13,11 +13,13 @@ function IndividualSummaryPage() {
       {
         id: 'healthcare1',
         name: 'Healthcare Report One',
+        description: 'djkffjg',
         link: 'https://app.powerbi.com/view?r=eyJrIjoiYmE2NzE0NTMtMWIxZi00ZmIyLTgyOGItNjlkNjc2NWI0MzJiIiwidCI6IjZmNDQzMmRjLTIwZDItNDQxZC1iMWRiLWFjMzM4MGJhNjMzZCIsImMiOjEwfQ%3D%3D',
       },
       {
         id: 'healthcare2',
         name: 'testing healthcare 2',
+        description: 'djkffjg',
         link: 'https://app.powerbi.com/reportEmbed?reportId=e2f13170-33ba-416c-a6aa-44344e11dab2&autoAuth=true&ctid=6f4432dc-20d2-441d-b1db-ac3380ba633d',
       },
     ],
@@ -25,6 +27,7 @@ function IndividualSummaryPage() {
       {
         id: 'testing1',
         name: 'testing 1',
+        description: 'djkffjg',
         link: 'https://app.powerbi.com/reportEmbed?reportId=e2f13170-33ba-416c-a6aa-44344e11dab2&autoAuth=true&ctid=6f4432dc-20d2-441d-b1db-ac3380ba633d',
       },
     ],

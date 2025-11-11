@@ -8,6 +8,7 @@ export type Path =
   | `/example`
   | `/example/:id`
   | `/power-bi`
+  | `/power-bi/create`
   | `/power-bi/summary/:category`
   | `/power-bi/summary/:category/:reportId`;
 
