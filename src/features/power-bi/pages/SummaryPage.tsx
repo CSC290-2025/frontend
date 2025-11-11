@@ -30,10 +30,8 @@ function SummaryPage() {
         link: 'https://app.powerbi.com/reportEmbed?reportId=e2f13170-33ba-416c-a6aa-44344e11dab2&autoAuth=true&ctid=6f4432dc-20d2-441d-b1db-ac3380ba633d',
       },
     ],
-    demographic:
-      'https://app.powerbi.com/reportEmbed?reportId=e2f13170-33ba-416c-a6aa-44344e11dab2&autoAuth=true&ctid=6f4432dc-20d2-441d-b1db-ac3380ba633d',
-    traffic:
-      'https://app.powerbi.com/reportEmbed?reportId=e2f13170-33ba-416c-a6aa-44344e11dab2&autoAuth=true&ctid=6f4432dc-20d2-441d-b1db-ac3380ba633d',
+    demographic: [],
+    traffic: [],
   };
 
   const categoryReports = reportLinks[category];
@@ -56,19 +54,25 @@ function SummaryPage() {
           </select>
         </div>
       </div>
-      {categoryReports.map((g) => (
-        <div key={g.id}>
-          <Link to={`/power-bi/summary/${category}/${g.id}`}>
-            <h2>{g.name}</h2>
-            <iframe
-              title={g.name}
-              src={g.link}
-              className="h-[400px] w-full border-0 outline-none"
-              frameBorder="0"
-            ></iframe>
-          </Link>
+      {categoryReports.length === 0 ? (
+        <div className="flex h-full items-center justify-center">
+          <p className="mt-10 text-lg">No reports yet — check back later.</p>
         </div>
-      ))}
+      ) : (
+        categoryReports.map((g) => (
+          <div key={g.id}>
+            <Link to={`/power-bi/summary/${category}/${g.id}`}>
+              <h2>{g.name}</h2>
+              <iframe
+                title={g.name}
+                src={g.link}
+                className="h-[400px] w-full border-0 outline-none"
+                frameBorder="0"
+              ></iframe>
+            </Link>
+          </div>
+        ))
+      )}
     </div>
   );
 }

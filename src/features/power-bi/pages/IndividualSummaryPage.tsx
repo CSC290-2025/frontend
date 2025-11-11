@@ -1,8 +1,14 @@
 import { useNavigate, useParams } from '@/router';
 import React from 'react';
 import Nav from '../components/Nav';
+import { Button } from '@/components/ui/button';
 
 function IndividualSummaryPage() {
+  const user = {
+    name: 'Alora',
+    role: 'admin', // change later
+  };
+
   const { category, reportId } = useParams(
     '/power-bi/summary/:category/:reportId'
   );
@@ -13,7 +19,7 @@ function IndividualSummaryPage() {
       {
         id: 'healthcare1',
         name: 'Healthcare Report One',
-        description: 'djkffjg',
+        description: 'this is the description',
         link: 'https://app.powerbi.com/view?r=eyJrIjoiYmE2NzE0NTMtMWIxZi00ZmIyLTgyOGItNjlkNjc2NWI0MzJiIiwidCI6IjZmNDQzMmRjLTIwZDItNDQxZC1iMWRiLWFjMzM4MGJhNjMzZCIsImMiOjEwfQ%3D%3D',
       },
       {
@@ -49,9 +55,18 @@ function IndividualSummaryPage() {
       <iframe
         title={report.name}
         src={report.link}
-        className="h-[800px] w-full border-0 outline-none"
+        className="mb-4 h-[800px] w-full border-0 outline-none"
         frameBorder="0"
       ></iframe>
+      <p>{report.description}</p>
+      {user.role === 'admin' && (
+        <Button
+          className="mt-4"
+          onClick={() => navigate(`/power-bi/edit/${report.id}`)}
+        >
+          Edit Report
+        </Button>
+      )}
     </div>
   );
 }
