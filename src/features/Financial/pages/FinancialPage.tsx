@@ -40,10 +40,10 @@ export default function FinancialPage() {
   const isOrg = wallet?.wallet_type === 'organization';
 
   return (
-    <div className="p-4">
+    <div className="space-y-4 p-4">
       <h1 className="mb-4">Financial Wallet</h1>
 
-      <div className="mb-4">
+      <div>
         <Label>User ID: </Label>
         <Input
           type="text"
@@ -62,7 +62,7 @@ export default function FinancialPage() {
       </div>
 
       {!wallet && (
-        <Card className="mb-4">
+        <Card>
           <CardContent className="space-y-4 pt-6">
             <div>
               <Label>Wallet Type</Label>
@@ -113,7 +113,7 @@ export default function FinancialPage() {
       {/* Wallet Info */}
       {wallet && (
         <>
-          <Card className="mb-4">
+          <Card>
             <CardContent className="p-4">
               <div className="mb-2">
                 <span className="font-semibold">Balance: </span>$
@@ -227,7 +227,6 @@ export default function FinancialPage() {
               </ul>
             </CardContent>
           </Card>
-
           <Card>
             <CardContent className="p-4">
               <div className="mb-2 font-semibold">Top Up</div>
