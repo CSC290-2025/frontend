@@ -5,14 +5,12 @@ import { components, hooks, utils } from '@generouted/react-router/client';
 
 export type Path =
   | `/`
-  | `/detail`
-  | `/donation`
-  | `/donation_request`
   | `/example`
   | `/example/:id`
-  | `/homepage`
-  | `/post`
-  | `/userjoined`;
+  | `/volunteer/board`
+  | `/volunteer/createpost`
+  | `/volunteer/detail`
+  | `/volunteer/userjoin`;
 
 export type Params = {
   '/example/:id': { id: string };

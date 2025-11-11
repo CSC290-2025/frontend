@@ -1,1 +1,3 @@
-export { default } from '@/features/Volunteer/pages/homepage';
+export default function Home() {
+  return <h1>Home</h1>;
+}
