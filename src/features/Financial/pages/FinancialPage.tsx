@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import {
-  useUserWallets,
+  useUserWallet,
   useCreateWallet,
   useUpdateWallet,
   useTopUpWallet,
@@ -33,14 +33,14 @@ export default function FinancialPage() {
   const [transferToUserId, setTransferToUserId] = useState('');
   const [transferAmount, setTransferAmount] = useState('');
 
-  const { data: wallets, refetch } = useUserWallets(Number(userId));
+  const { data: wallets, refetch } = useUserWallet(Number(userId));
   const { mutateAsync: createWallet } = useCreateWallet();
   const { mutateAsync: updateWallet } = useUpdateWallet();
   const { mutateAsync: topUpWallet } = useTopUpWallet();
   const { mutateAsync: generateQR } = useGenerateQR();
   const { mutateAsync: transferFunds } = useTransferFunds();
 
-  const wallet = wallets?.[0];
+  const wallet = wallets;
   const isOrg = wallet?.wallet_type === 'organization';
 
   return (

@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import {
-  fetchUserWallets,
+  fetchUserWallet,
   createWallet,
   updateWallet,
   topUpWallet,
@@ -9,10 +9,10 @@ import {
 } from '@/features/Financial';
 import type { UpdateWalletRequest } from '@/features/Financial/types';
 
-export function useUserWallets(userId: number) {
+export function useUserWallet(userId: number) {
   return useQuery({
     queryKey: ['wallets', userId],
-    queryFn: () => fetchUserWallets(userId),
+    queryFn: () => fetchUserWallet(userId),
     enabled: !!userId,
   });
 }
