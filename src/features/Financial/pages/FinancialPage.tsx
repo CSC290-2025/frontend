@@ -34,6 +34,9 @@ export default function FinancialPage() {
   const [transferAmount, setTransferAmount] = useState('');
 
   const { data: wallets, refetch } = useUserWallet(Number(userId));
+  const { data: recipientWallet } = useUserWallet(
+    transferToUserId ? Number(transferToUserId) : NaN
+  );
   const { mutateAsync: createWallet } = useCreateWallet();
   const { mutateAsync: updateWallet } = useUpdateWallet();
   const { mutateAsync: topUpWallet } = useTopUpWallet();
@@ -309,22 +312,51 @@ export default function FinancialPage() {
                     value={transferAmount}
                     onChange={(e) => setTransferAmount(e.target.value)}
                   />
-                </div>
+                  <Button
+                    onClick={async () => {
+                      const validations = [
+                        [
+                          userId === transferToUserId,
+                          'Cannot transfer to yourself',
+                        ],
+                        [
+                          wallet?.balance < Number(transferAmount),
+                          'Insufficient funds',
+                        ],
+                        [
+                          wallet?.status !== 'active',
+                          'Your wallet must be active',
+                        ],
+                        [!transferToUserId, 'Please enter a recipient user ID'],
+                        [!recipientWallet, 'Recipient wallet not found'],
+                        [
+                          recipientWallet?.status !== 'active',
+                          'Recipient wallet must be active',
+                        ],
+                      ];
 
-                <Button
-                  onClick={async () => {
-                    await transferFunds({
-                      fromUserId: Number(userId),
-                      toUserId: Number(transferToUserId),
-                      amount: Number(transferAmount),
-                    });
-                    setTransferToUserId('');
-                    setTransferAmount('');
-                  }}
-                  disabled={!transferToUserId || !transferAmount}
-                >
-                  Transfer
-                </Button>
+                      for (const [condition, errorMessage] of validations) {
+                        if (condition) {
+                          alert(errorMessage);
+                          return;
+                        }
+                      }
+
+                      await transferFunds({
+                        fromUserId: Number(userId),
+                        toUserId: Number(transferToUserId),
+                        amount: Number(transferAmount),
+                      });
+
+                      setTransferToUserId('');
+                      setTransferAmount('');
+                      refetch();
+                    }}
+                    disabled={!transferToUserId || !transferAmount}
+                  >
+                    Transfer
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
