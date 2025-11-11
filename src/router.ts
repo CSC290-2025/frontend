@@ -8,19 +8,20 @@ export type Path =
   | `/example`
   | `/example/:id`
   | `/power-bi`
+  | `/power-bi/:type/:category`
+  | `/power-bi/:type/:category/:id`
   | `/power-bi/create`
-  | `/power-bi/edit/:id`
-  | `/power-bi/summary/:category`
-  | `/power-bi/summary/:category/:reportId`;
+  | `/power-bi/edit/:id`;
 
 export type Params = {
   '/example/:id': { id: string };
-  '/power-bi/edit/:id': { id: string };
-  '/power-bi/summary/:category': { category: string };
-  '/power-bi/summary/:category/:reportId': {
+  '/power-bi/:type/:category': { type: string; category: string };
+  '/power-bi/:type/:category/:id': {
+    type: string;
     category: string;
-    reportId: string;
+    id: string;
   };
+  '/power-bi/edit/:id': { id: string };
 };
 
 export type ModalPath = never;
