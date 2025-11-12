@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { Link } from '@/router';
 import userIcon from '@/assets/userIcon.svg';
 import apartmentIcon from '@/assets/apartmentIcon.svg';
 import searchIcon from '@/assets/searchIcon.svg';
@@ -19,13 +19,13 @@ interface Apartment {
 }
 
 export default function ApartmentHomepage() {
-  const [searchTerm, setSearchTerm] = useState<string>(''); // ✅ สำหรับช่อง search
+  const [searchTerm, setSearchTerm] = useState<string>(''); // For the search box
   const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
   const [selectedRatings, setSelectedRatings] = useState<number[]>([]);
   const [minPrice, setMinPrice] = useState<number>(0);
   const [maxPrice, setMaxPrice] = useState<number>(20000);
   const [currentPage, setCurrentPage] = useState<number>(1);
-  const itemsPerPage = 2;
+  const itemsPerPage = 5;
 
   const apartments: Apartment[] = [
     {
@@ -168,14 +168,16 @@ export default function ApartmentHomepage() {
   };
 
   const handleMinChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = Math.min(Number(e.target.value), maxPrice - 1000);
-    setMinPrice(value);
+    const value = Number(e.target.value);
+    const newMinPrice = Math.min(value, maxPrice - 1000);
+    setMinPrice(newMinPrice);
     setCurrentPage(1);
   };
 
   const handleMaxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = Math.max(Number(e.target.value), minPrice + 1000);
-    setMaxPrice(value);
+    const value = Number(e.target.value);
+    const newMaxPrice = Math.max(value, minPrice + 1000);
+    setMaxPrice(newMaxPrice);
     setCurrentPage(1);
   };
 
@@ -287,8 +289,10 @@ export default function ApartmentHomepage() {
 
             {/* Slider */}
             <div className="relative mb-10 w-full">
+              {/* Track background */}
               <div className="absolute top-1/2 h-2 w-full -translate-y-1/2 rounded-full bg-gray-300"></div>
 
+              {/* Active track */}
               <div
                 className="absolute top-1/2 h-2 -translate-y-1/2 rounded-full bg-[#2B5991]"
                 style={{
@@ -297,31 +301,41 @@ export default function ApartmentHomepage() {
                 }}
               ></div>
 
+              {/* Min price input */}
               <input
                 type="range"
                 min={0}
                 max={20000}
                 value={minPrice}
                 onChange={handleMinChange}
-                className="pointer-events-none absolute w-full appearance-none bg-transparent"
-                style={{ top: 'calc(50% - 6px)' }}
+                className="slider-min absolute w-full appearance-none bg-transparent"
+                style={{
+                  top: 'calc(50% - 11px)',
+                  height: '22px',
+                  zIndex: minPrice > maxPrice - 1000 ? 2 : 1,
+                }}
               />
 
+              {/* Max price input */}
               <input
                 type="range"
                 min={0}
                 max={20000}
                 value={maxPrice}
                 onChange={handleMaxChange}
-                className="pointer-events-none absolute w-full appearance-none bg-transparent"
-                style={{ top: 'calc(50% - 6px)' }}
+                className="slider-max absolute w-full appearance-none bg-transparent"
+                style={{
+                  top: 'calc(50% - 11px)',
+                  height: '22px',
+                  zIndex: 2,
+                }}
               />
 
               <style>{`
-                input[type="range"] {
+                .slider-min, .slider-max {
                   pointer-events: none;
                 }
-                input[type="range"]::-webkit-slider-thumb {
+                .slider-min::-webkit-slider-thumb, .slider-max::-webkit-slider-thumb {
                   appearance: none;
                   height: 22px;
                   width: 22px;
@@ -331,7 +345,15 @@ export default function ApartmentHomepage() {
                   cursor: pointer;
                   pointer-events: auto;
                   position: relative;
-                  top: -4px;
+                }
+                .slider-min::-moz-range-thumb, .slider-max::-moz-range-thumb {
+                  height: 22px;
+                  width: 22px;
+                  border-radius: 50%;
+                  background-color: white;
+                  border: 4px solid #2B5991;
+                  cursor: pointer;
+                  pointer-events: auto;
                 }
               `}</style>
             </div>
@@ -371,7 +393,7 @@ export default function ApartmentHomepage() {
           </div>
         </div>
 
-        {/* ผลลัพธ์ */}
+        {/* Results */}
         <p className="mb-5 text-sm text-gray-500">
           {filteredApartments.length} Listing found
         </p>
@@ -379,10 +401,11 @@ export default function ApartmentHomepage() {
         {/* Apartment Cards */}
         <div className="space-y-5">
           {currentApartments.map((apartment) => (
-            <NavLink
+            <Link
               key={apartment.id}
-              to={`/apartment/${apartment.id}`}
-              className="block flex gap-6 rounded-lg bg-white p-6 shadow-sm transition-shadow hover:shadow-md"
+              to="/ApartmentHomepage/:id"
+              params={{ id: apartment.id.toString() }}
+              className="flex gap-6 rounded-lg bg-white p-6 shadow-sm transition-shadow hover:shadow-md"
             >
               <img
                 src={apartment.image}
@@ -441,7 +464,7 @@ export default function ApartmentHomepage() {
                   </div>
                 </div>
               </div>
-            </NavLink>
+            </Link>
           ))}
         </div>
 

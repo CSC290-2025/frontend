@@ -7,7 +7,7 @@ export default function AdminAddAPT() {
         <div className="mb-1">
           <span className="mr-2 font-bold text-blue-600">Home</span>
           <a
-            href="/apartmenthomepage"
+            href="/ApartmentHomepage"
             className="text-gray-600 hover:text-blue-600 hover:underline"
           >
             HERE
@@ -16,7 +16,7 @@ export default function AdminAddAPT() {
         <div className="mb-1">
           <span className="mr-2 font-bold text-blue-600">Booking</span>
           <a
-            href="/apartmentbooking"
+            href="/ApartmentBooking"
             className="text-gray-600 hover:text-blue-600 hover:underline"
           >
             HERE
@@ -25,7 +25,7 @@ export default function AdminAddAPT() {
         <div className="mb-1">
           <span className="mr-2 font-bold text-blue-600">Payment</span>
           <a
-            href="/apartmentpayment"
+            href="/ApartmentPayment"
             className="text-gray-600 hover:text-blue-600 hover:underline"
           >
             HERE
@@ -34,7 +34,7 @@ export default function AdminAddAPT() {
         <div className="mb-1">
           <span className="mr-2 font-bold text-blue-600">Details</span>
           <a
-            href="/apartmentdetails"
+            href="/ApartmentDetails"
             className="text-gray-600 hover:text-blue-600 hover:underline"
           >
             HERE
