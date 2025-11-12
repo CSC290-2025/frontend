@@ -1,73 +1,14 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import DiscoverPage from './DiscoverPage';
 import PostItemForm from './PostItemForm';
 import PostEventForm from './PostEventForm';
 import ItemDetailPage from './ItemDetailPage';
-import type { PostItem } from '@/features/freecycle/pages/Constants';
-import { banners } from './Constants';
+import type { PostItem } from '@/types/postItem';
+import DiscoverBanner from '@/features/freecycle/components/DiscoverBanner';
+import MyItemsPage from './MyItemsPage';
+import MyRequestsPage from './MyRequestsPage';
+import SearchBar from '@/features/freecycle/components/SearchBar';
 
-function DiscoverBanner() {
-  const [currentBanner, setCurrentBanner] = useState(0);
-  const bannerRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      if (bannerRef.current) {
-        const scrollLeft = bannerRef.current.scrollLeft;
-        const width = bannerRef.current.offsetWidth;
-        const newIndex = Math.round(scrollLeft / width);
-        setCurrentBanner(newIndex);
-      }
-    };
-
-    const banner = bannerRef.current;
-    if (banner) {
-      banner.addEventListener('scroll', handleScroll, { passive: true });
-      return () => banner.removeEventListener('scroll', handleScroll);
-    }
-  }, []);
-
-  return (
-    <div className="mb-8">
-      {' '}
-      <div
-        ref={bannerRef}
-        className="scrollbar-hide w-full snap-x snap-mandatory overflow-x-auto rounded-2xl shadow-lg"
-        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-      >
-        <div className="flex">
-          {banners.map((banner, index) => (
-            <div
-              key={index}
-              className={`h-56 min-w-full bg-gradient-to-r ${banner.gradient} flex snap-start items-center justify-center`}
-            >
-              <div className="text-center text-black">
-                <h2 className="mb-2 text-3xl font-bold">{banner.title}</h2>
-                <p className="text-lg opacity-90">{banner.subtitle}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-      {/* Banner Indicators */}
-      <div className="flex justify-center gap-2 py-4">
-        {banners.map((_, index) => (
-          <div
-            key={index}
-            className={`h-2 rounded-full transition-all duration-300 ${
-              currentBanner === index ? 'w-8 bg-cyan-500' : 'w-2 bg-gray-300'
-            }`}
-          />
-        ))}
-      </div>
-      <style>{`
-        .scrollbar-hide::-webkit-scrollbar {
-          display: none;
-        }
-      `}</style>
-    </div>
-  );
-}
 type Page =
   | 'home'
   | 'discover'
@@ -78,16 +19,19 @@ type Page =
   | 'item-detail';
 
 export default function FreecycleHomepage() {
+  // State to manage current page
   const [currentPage, setCurrentPage] = useState<Page>('home');
-  const [_searchQuery, _setSearchQuery] = useState('');
-  const [_selectedItem, _setSelectedItem] = useState<PostItem | null>(null);
+  // State to manage search query
+  const [searchQuery, setSearchQuery] = useState('');
+  // State to hold the selected item for detail view
+  const [selectedItem, setSelectedItem] = useState<PostItem | null>(null);
 
   const handleSearch = () => {
     setCurrentPage('discover');
   };
 
-  const _handleViewItem = (item: PostItem) => {
-    _setSelectedItem(item);
+  const handleViewItem = (item: PostItem) => {
+    setSelectedItem(item);
     setCurrentPage('item-detail');
   };
 
@@ -95,40 +39,36 @@ export default function FreecycleHomepage() {
     switch (currentPage) {
       case 'discover':
         return (
-          <DiscoverPage
-            searchQuery={_searchQuery}
-            onViewItem={_handleViewItem}
-          />
+          <DiscoverPage searchQuery={searchQuery} onViewItem={handleViewItem} />
         );
       case 'my-items':
-        return <h1>My Items</h1>;
+        return <MyItemsPage _onViewItem={handleViewItem} />;
       case 'my-requests':
-        return <h1>My Requests</h1>;
+        return <MyRequestsPage />;
       case 'post-item':
         return <PostItemForm onSuccess={() => setCurrentPage('my-items')} />;
       case 'post-event':
-        return <PostEventForm />;
+        return <PostEventForm _onSuccess={() => setCurrentPage('home')} />;
       case 'item-detail':
-        return <ItemDetailPage />;
+        return (
+          <ItemDetailPage
+            _item={selectedItem!}
+            _onBack={() => setCurrentPage('discover')}
+          />
+        );
       default:
         return (
           <div className="space-y-8">
-            <DiscoverBanner />
-            {/* <div className="relative h-48 w-full overflow-hidden rounded-2xl shadow-lg">
-              <img
-                src="https://images.pexels.com/photos/3184460/pexels-photo-3184460.jpeg?auto=compress&cs=tinysrgb&w=1260"
-                alt="Freecycle Community"
-                className="h-full w-full object-cover"
-              />
-              <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-r from-teal-600/80 to-cyan-600/80">
-                <div className="px-4 text-center text-white">
-                  <h1 className="mb-2 text-4xl font-bold">Freecycle</h1>
-                  <p className="text-lg">Share, Reuse, Build Community</p>
-                </div>
-              </div>
-            </div> */}
+            <div className="relative h-48 w-full overflow-hidden rounded-2xl shadow-lg">
+              <DiscoverBanner />
+            </div>
 
             <div className="mx-auto max-w-2xl">
+              <SearchBar
+                value={searchQuery}
+                onChange={setSearchQuery}
+                placeholder="Search for items"
+              />
               <div className="mt-4 text-center">
                 <button
                   onClick={handleSearch}
@@ -151,6 +91,14 @@ export default function FreecycleHomepage() {
                 </p>
               </button>
 
+              {/* I want to show Discoverpage on Homepage */}
+              <div>
+                <DiscoverPage
+                  searchQuery={searchQuery}
+                  onViewItem={handleViewItem}
+                />
+              </div>
+
               <button
                 onClick={() => setCurrentPage('post-item')}
                 className="rounded-2xl bg-white p-6 text-center shadow-md transition-all hover:shadow-lg"
@@ -162,6 +110,8 @@ export default function FreecycleHomepage() {
                 </p>
               </button>
             </div>
+
+            {/* DiscoverPage integrated into homepage */}
           </div>
         );
     }

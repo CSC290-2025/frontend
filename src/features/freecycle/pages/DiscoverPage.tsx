@@ -1,7 +1,10 @@
-import { useEffect, useState } from 'react';
 import { Filter } from 'lucide-react';
-import type { PostItem, Category } from '@/features/freecycle/pages/Constants';
-import ItemCard from '@/features/freecycle/components/ItemCard';
+import { ItemCard } from '@/features/freecycle/components/ItemCard';
+import CategoryFilter from '@/features/freecycle/components/CategoryFilter';
+import SearchBar from '@/features/freecycle/components/SearchBar';
+import type { PostItem } from '@/types/postItem';
+import { mapApiPostToItem } from '@/types/postItem';
+import { useDiscoverPage } from '@/features/freecycle/hooks/useFreecycle';
 
 interface DiscoverPageProps {
   searchQuery: string;
@@ -12,38 +15,18 @@ export default function DiscoverPage({
   searchQuery,
   onViewItem,
 }: DiscoverPageProps) {
-  const [items, setItems] = useState<PostItem[]>([]);
-  const [filteredItems, setFilteredItems] = useState<PostItem[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
-  const [localSearch, setLocalSearch] = useState(searchQuery);
-  const [showFilters, setShowFilters] = useState(false);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {}, []);
-
-  const filterItems = () => {
-    let filtered = items;
-
-    if (localSearch.trim()) {
-      const query = localSearch.toLowerCase();
-      filtered = filtered.filter(
-        (item) =>
-          item.item_name.toLowerCase().includes(query) ||
-          item.description?.toLowerCase().includes(query)
-      );
-    }
-
-    setFilteredItems(filtered);
-  };
-
-  const toggleCategory = (categoryId: number) => {
-    setSelectedCategories((prev) =>
-      prev.includes(categoryId)
-        ? prev.filter((id) => id !== categoryId)
-        : [...prev, categoryId]
-    );
-  };
+  const {
+    filteredItems,
+    categories: categoriesData,
+    selectedCategories,
+    localSearch,
+    showFilters,
+    loading,
+    hasError,
+    setLocalSearch,
+    setShowFilters,
+    toggleCategory,
+  } = useDiscoverPage(searchQuery);
 
   return (
     <div className="space-y-6">
@@ -58,12 +41,20 @@ export default function DiscoverPage({
         </button>
       </div>
 
-      <div>Search bar</div>
+      <SearchBar
+        value={localSearch}
+        onChange={setLocalSearch}
+        placeholder="Search items..."
+      />
 
       {showFilters && (
         <div className="rounded-2xl bg-white p-6 shadow-md">
           <h3 className="mb-4 font-semibold text-gray-900">Categories</h3>
-          <div>Category filters</div>
+          <CategoryFilter
+            categories={categoriesData}
+            selectedCategories={selectedCategories}
+            onToggleCategory={toggleCategory}
+          />
         </div>
       )}
 
@@ -71,19 +62,28 @@ export default function DiscoverPage({
         <div className="py-12 text-center">
           <p className="text-gray-600">Loading items...</p>
         </div>
+      ) : hasError ? (
+        <div className="py-12 text-center">
+          <p className="text-red-600">
+            Failed to load items. Please try again.
+          </p>
+        </div>
       ) : filteredItems.length === 0 ? (
         <div className="py-12 text-center">
           <p className="text-gray-600">No items found</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {filteredItems.map((item) => (
-            <ItemCard
-              key={item.item_id}
-              item={item}
-              onClick={() => onViewItem(item)}
-            />
-          ))}
+          {filteredItems.map((item) => {
+            const displayItem = mapApiPostToItem(item);
+            return (
+              <ItemCard
+                key={item.id}
+                item={displayItem}
+                onClick={() => onViewItem(displayItem)}
+              />
+            );
+          })}
         </div>
       )}
     </div>
