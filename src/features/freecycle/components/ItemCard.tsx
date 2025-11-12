@@ -1,4 +1,4 @@
-import type { PostItem } from '@/features/freecycle/pages/Constants';
+import type { PostItem } from '@/types/postItem';
 
 interface ItemCardProps {
   item: PostItem;
@@ -12,9 +12,9 @@ export default function ItemCard({ item, onClick }: ItemCardProps) {
       className="cursor-pointer overflow-hidden rounded-2xl bg-white shadow-md transition-all duration-200 hover:scale-[1.02] hover:shadow-lg"
     >
       <div className="flex aspect-square items-center justify-center overflow-hidden bg-gray-200">
-        {item.photo ? (
+        {item.photo_url ? (
           <img
-            src={item.photo}
+            src={item.photo_url}
             alt={item.item_name}
             className="h-full w-full object-cover"
           />
