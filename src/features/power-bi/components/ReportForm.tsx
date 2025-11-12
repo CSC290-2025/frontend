@@ -5,8 +5,13 @@ import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useNavigate } from '@/router';
 import React, { useEffect, useState } from 'react';
+import { createReport, updateReport, type Report } from '../api/reports.api';
 
-function ReportForm({ oldReport }) {
+interface ReportFormProps {
+  oldReport?: Report | null;
+}
+
+function ReportForm({ oldReport }: ReportFormProps) {
   const [form, setForm] = useState({
     title: '',
     url: '',
@@ -18,29 +23,64 @@ function ReportForm({ oldReport }) {
 
   useEffect(() => {
     if (oldReport) {
-      setForm(oldReport);
+      setForm({
+        title: oldReport.title_string || '',
+        url: oldReport.power_bi_report_id_string || '',
+        visibility: 'citizens', // Not in backend model, keeping for UI
+        type: 'summary', // Not in backend model, keeping for UI
+        category:
+          oldReport.dim_category?.category_name?.toLowerCase() || 'healthcare',
+        description: oldReport.description_string || '',
+      });
     }
   }, [oldReport]);
 
   const [submitted, setSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const navigate = useNavigate();
 
-  const handleChange = (e) => {
+  const handleChange = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >
+  ) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoading(true);
+    setError(null);
 
-    if (oldReport) {
-      console.log('Updating report:', form);
-    } else {
-      console.log('Creating report:', form);
+    try {
+      if (oldReport) {
+        // Update existing report
+        await updateReport(oldReport.report_id, {
+          title: form.title,
+          description: form.description || null,
+          category: form.category,
+          embedUrl: form.url || null,
+        });
+      } else {
+        // Create new report
+        await createReport({
+          title: form.title,
+          description: form.description || null,
+          category: form.category,
+          embedUrl: form.url || null,
+        });
+      }
+      setSubmitted(true);
+      navigate('/power-bi');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to save report');
+      console.error('Error saving report:', err);
+    } finally {
+      setLoading(false);
     }
-    setSubmitted(true);
-    navigate('/power-bi');
   };
 
   return (
@@ -58,6 +98,14 @@ function ReportForm({ oldReport }) {
           <h1 className="text-xl font-medium">
             {oldReport ? 'Edit Report' : 'Create New Report'}
           </h1>
+             {error && (
+        <div className="rounded bg-red-100 p-2 text-red-700">{error}</div>
+      )}
+      {submitted && (
+        <div className="rounded bg-green-100 p-2 text-green-700">
+          Report {oldReport ? 'updated' : 'created'} successfully
+        </div>
+      )}
         </div>
       </div>
 
@@ -134,8 +182,9 @@ function ReportForm({ oldReport }) {
         type="submit"
         onClick={handleSubmit}
         className="w-1/4 self-center px-2"
+        disabled={loading}
       >
-        {oldReport ? 'Save Changes' : 'Create'}
+        {loading ? 'Saving...' : oldReport ? 'Save Changes' : 'Create'}
       </Button>
     </div>
   );
