@@ -26,17 +26,16 @@ const MapPage = () => {
   }, []);
 
   return (
-    <div className="min-h-screen w-full bg-neutral-100">
-      <div className="relative w-full">
+    <>
+      <div className="w-full">
         <div
           ref={mapRef}
           id="google_map"
-          className="w m-3"
-          style={{ height: 'calc(100vh - 160px)' }}
+          className="overflow-hidden rounded-xl border border-neutral-200 shadow-sm"
+          style={{ height: 'calc(95vh - 200px)' }}
         />
       </div>
-    </div>
+    </>
   );
 };
-
 export default MapPage;
