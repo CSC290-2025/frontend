@@ -7,18 +7,18 @@ type MainLayoutProps = {
 
 const MainLayout: FC<MainLayoutProps> = ({ children }) => {
   return (
-    <main className="min-h-screen bg-gray-50">
+    <main className="min-h-screen overflow-hidden bg-white">
       <Header />
       {/* <div className="relative">
         <div
           className='my-6 flex flex-row items-center justify-center'
             
         >
-          <MenuBar />
+          <MenuBar/>
         </div>
         <div className="grid flex-1 items-start gap-4 p-0">{children}</div>
       </div> */}
-      <div className="grid flex-1 items-start gap-4 p-0">{children}</div>
+      <div className="grid flex-1 items-end gap-4 p-6">{children}</div>
     </main>
   );
 };
