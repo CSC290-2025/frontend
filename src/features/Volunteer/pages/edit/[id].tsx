@@ -2,8 +2,6 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate, useParams } from '@/router';
 import { ArrowLeft } from 'lucide-react';
-
-// ... (Interface definitions remain the same)
 interface VolunteerEvent {
   id: number;
   title: string;
@@ -31,7 +29,6 @@ interface ApiResponse<T> {
 
 const formatISODateForInput = (isoString: string | null | undefined) => {
   if (!isoString) return '';
-  // Ensure the output format is YYYY-MM-DDTHH:MM, required for datetime-local
   return isoString.substring(0, 16);
 };
 
