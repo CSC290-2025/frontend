@@ -1,12 +1,9 @@
-type DistrictData = {
-  district: string;
-  aqi: number;
-  pm25: number;
-  category: string;
-  measured_at: string;
-};
+import type { District as DistrictType } from '@/types/district';
 
-type DistrictItemProps = DistrictData;
+type Props = Partial<
+  Pick<DistrictType, 'district' | 'aqi' | 'pm25' | 'category' | 'measured_at'>
+>;
+
 const getCategoryColors = (category: string) => {
   switch (category.toUpperCase()) {
     case 'UNHEALTHY':
@@ -27,18 +24,40 @@ export default function DistrictItem({
   pm25,
   category,
   measured_at,
-}: DistrictItemProps) {
-  const categoryUpper = category.toUpperCase();
+}: Props) {
+  const categorySafe = (category ?? 'Unknown').toString();
+  const categoryUpper = categorySafe.toUpperCase();
   const { categoryBg, categoryText } = getCategoryColors(categoryUpper);
-  const displayAqi = aqi;
-  const displayPm25 = pm25;
-  const time = new Date(measured_at).toLocaleTimeString('en-US', {
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  });
+
+  const displayAqi = aqi ?? '—';
+  const displayPm25 = pm25 ?? '—';
+
+  console.debug('DistrictItem measured_at:', measured_at);
+
+  const getFormattedTime = (iso?: string) => {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    if (Number.isNaN(d.getTime())) return '—';
+    try {
+      return new Intl.DateTimeFormat(undefined, {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+        timeZone: 'Asia/Bangkok',
+      }).format(d);
+    } catch {
+      return d.toLocaleTimeString(undefined, {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      });
+    }
+  };
+  const time = getFormattedTime(measured_at);
+
   const handleSelectDistrict = () => {
-    const urlDistrictName = district.toLowerCase().replace(/\s+/g, '-');
+    const name = (district ?? 'unknown').toLowerCase();
+    const urlDistrictName = name.replace(/\s+/g, '-');
     localStorage.setItem('selectedDistrict', urlDistrictName);
     window.location.href = `/dashboard/${urlDistrictName}`;
   };
