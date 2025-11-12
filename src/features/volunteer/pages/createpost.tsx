@@ -19,6 +19,7 @@ interface ApiPayload {
   description: string;
   start_at: string;
   end_at: string;
+  registration_deadline?: string;
   total_seats: number;
   created_by_user_id: number;
   department_id: number;
@@ -35,6 +36,7 @@ export default function CreateVolunteerPost() {
     date: '',
     startTime: '',
     endTime: '',
+    registration_deadline: '',
     maxVolunteers: '10',
     location: '',
     address: '',
@@ -96,6 +98,7 @@ export default function CreateVolunteerPost() {
       date,
       startTime,
       endTime,
+      registration_deadline,
       maxVolunteers,
       organization,
       location,
@@ -105,8 +108,9 @@ export default function CreateVolunteerPost() {
       difficulty,
     } = formData;
 
-    const start_at = `${date}T${startTime}:00.000Z`;
-    const end_at = `${date}T${endTime}:00.000Z`;
+    const start_at = `${date}T${startTime}`;
+    const end_at = `${date}T${endTime}`;
+    const registration_deadline_at = `${registration_deadline}T00:00:00.000Z`;
 
     const fullDescription = `
 ${description}
@@ -129,6 +133,7 @@ ${requirements.map((req) => `- ${req}`).join('\n')}
       description: fullDescription,
       start_at: start_at,
       end_at: end_at,
+      registration_deadline: registration_deadline_at,
       total_seats: parseInt(maxVolunteers, 10),
       image_url: typeof uploadedImage === 'string' ? uploadedImage : '', // Send base64 string
 
@@ -301,6 +306,21 @@ ${requirements.map((req) => `- ${req}`).join('\n')}
                   type="date"
                   value={formData.date}
                   onChange={(e) => handleInputChange('date', e.target.value)}
+                  className="w-full rounded-xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-gray-700">
+                  <Calendar className="mr-1 inline h-4 w-4" />
+                  Registration Deadline *
+                </label>
+                <input
+                  type="date"
+                  value={formData.registration_deadline}
+                  onChange={(e) =>
+                    handleInputChange('registration_deadline', e.target.value)
+                  }
                   className="w-full rounded-xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:outline-none"
                 />
               </div>

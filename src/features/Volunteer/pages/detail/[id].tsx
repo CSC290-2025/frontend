@@ -9,6 +9,7 @@ interface VolunteerEvent {
   description: string | null;
   start_at: string | null;
   end_at: string | null;
+  registration_deadline: string | null;
   current_participants: number;
   total_seats: number;
   image_url: string | null;
@@ -153,6 +154,11 @@ export default function VolunteerDetailPage() {
     });
     return `${startTime} - ${endTime}`;
   };
+  const getFormattedDeadline = (dateString: string | null) => {
+    return dateString
+      ? new Date(dateString).toLocaleDateString()
+      : 'No deadline';
+  };
   const getSpotsLeft = () => {
     if (!event) return 0;
     return event.total_seats - event.current_participants;
@@ -256,6 +262,15 @@ export default function VolunteerDetailPage() {
                 <div className="text-sm text-gray-600">Date</div>
                 <div className="font-semibold text-gray-800">
                   {getFormattedDate(event.start_at)}
+                </div>
+              </div>
+              <div className="rounded-xl border border-gray-200 bg-white p-4">
+                <Clock className="mb-2 h-6 w-6 text-blue-500" />
+                <div className="text-sm text-gray-600">
+                  Registration Deadline
+                </div>
+                <div className="font-semibold text-gray-800">
+                  {getFormattedDeadline(event.registration_deadline)}
                 </div>
               </div>
               <div className="rounded-xl border border-gray-200 bg-white p-4">

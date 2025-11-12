@@ -1,1 +1,1 @@
-export { default } from '@/features/Volunteer/pages/detail/[id]';
+export { default } from '@/features/Volunteer/pages/createpost';
