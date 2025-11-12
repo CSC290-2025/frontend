@@ -8,6 +8,7 @@ import DiscoverBanner from '@/features/freecycle/components/DiscoverBanner';
 import MyItemsPage from './MyItemsPage';
 import MyRequestsPage from './MyRequestsPage';
 import SearchBar from '@/features/freecycle/components/SearchBar';
+import { ArrowLeft } from 'lucide-react';
 
 type Page =
   | 'home'
@@ -58,60 +59,42 @@ export default function FreecycleHomepage() {
         );
       default:
         return (
-          <div className="space-y-8">
-            <div className="relative h-48 w-full overflow-hidden rounded-2xl shadow-lg">
+          <div className="space-y-6">
+            <div className="relative w-full overflow-hidden rounded-2xl">
               <DiscoverBanner />
             </div>
 
-            <div className="mx-auto max-w-2xl">
-              <SearchBar
-                value={searchQuery}
-                onChange={setSearchQuery}
-                placeholder="Search for items"
-              />
-              <div className="mt-4 text-center">
+            <div className="flex flex-col items-center gap-4 md:flex-row">
+              <div className="w-full md:flex-1">
+                <SearchBar
+                  value={searchQuery}
+                  onChange={setSearchQuery}
+                  placeholder="Search for items"
+                />
+              </div>
+
+              <div className="flex w-full justify-stretch gap-3 md:w-auto md:justify-start">
                 <button
-                  onClick={handleSearch}
-                  className="rounded-full bg-cyan-500 px-6 py-2 text-white transition-colors hover:bg-cyan-600"
+                  onClick={() => setCurrentPage('my-items')}
+                  className="flex-1 rounded-full bg-cyan-500 px-6 py-3 text-sm font-medium text-white shadow-md transition-colors hover:bg-cyan-600 md:flex-none"
                 >
-                  Search
+                  My Items
+                </button>
+                <button
+                  onClick={() => setCurrentPage('my-requests')}
+                  className="flex-1 rounded-full bg-cyan-500 px-6 py-3 text-sm font-medium text-white shadow-md transition-colors hover:bg-cyan-600 md:flex-none"
+                >
+                  Request Items
                 </button>
               </div>
             </div>
 
-            <div className="mt-8 grid grid-cols-2 gap-4">
-              <button
-                onClick={() => setCurrentPage('discover')}
-                className="rounded-2xl bg-white p-6 text-center shadow-md transition-all hover:shadow-lg"
-              >
-                <div className="mb-2 text-3xl text-cyan-500">🔍</div>
-                <h3 className="font-semibold text-gray-900">Discover Items</h3>
-                <p className="mt-1 text-sm text-gray-600">
-                  Browse available donations
-                </p>
-              </button>
-
-              {/* I want to show Discoverpage on Homepage */}
-              <div>
-                <DiscoverPage
-                  searchQuery={searchQuery}
-                  onViewItem={handleViewItem}
-                />
-              </div>
-
-              <button
-                onClick={() => setCurrentPage('post-item')}
-                className="rounded-2xl bg-white p-6 text-center shadow-md transition-all hover:shadow-lg"
-              >
-                <div className="mb-2 text-3xl text-cyan-500">➕</div>
-                <h3 className="font-semibold text-gray-900">Post Item</h3>
-                <p className="mt-1 text-sm text-gray-600">
-                  Donate something you do not need
-                </p>
-              </button>
+            <div>
+              <DiscoverPage
+                searchQuery={searchQuery}
+                onViewItem={handleViewItem}
+              />
             </div>
-
-            {/* DiscoverPage integrated into homepage */}
           </div>
         );
     }
@@ -123,29 +106,12 @@ export default function FreecycleHomepage() {
         {currentPage !== 'home' && (
           <button
             onClick={() => setCurrentPage('home')}
-            className="mb-6 font-medium text-cyan-600 hover:text-cyan-700"
+            className="mb-6 flex items-center gap-1 font-medium text-cyan-600 hover:text-cyan-700"
           >
-            ← Back to Home
+            {/* ← Back to Home */}
+            <ArrowLeft className="h-5 w-5" /> Back to Home
           </button>
         )}
-
-        {currentPage === 'home' && (
-          <div className="mb-6 flex flex-wrap justify-center gap-4">
-            <button
-              onClick={() => setCurrentPage('my-items')}
-              className="rounded-full bg-cyan-500 px-6 py-3 font-medium text-white transition-colors hover:bg-cyan-600"
-            >
-              My Items
-            </button>
-            <button
-              onClick={() => setCurrentPage('my-requests')}
-              className="rounded-full bg-cyan-500 px-6 py-3 font-medium text-white transition-colors hover:bg-cyan-600"
-            >
-              Request Items
-            </button>
-          </div>
-        )}
-
         {renderContent()}
       </div>
     </div>

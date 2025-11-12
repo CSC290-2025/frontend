@@ -9,7 +9,7 @@ export default function ItemCard({ item, onClick }: ItemCardProps) {
   return (
     <div
       onClick={onClick}
-      className="cursor-pointer overflow-hidden rounded-2xl bg-white shadow-md transition-all duration-200 hover:scale-[1.02] hover:shadow-lg"
+      className="cursor-pointer overflow-hidden rounded-2xl bg-white shadow-md transition-all duration-200 hover:scale-[1.03] hover:shadow-xl"
     >
       <div className="flex aspect-square items-center justify-center overflow-hidden bg-gray-200">
         {item.photo_url ? (

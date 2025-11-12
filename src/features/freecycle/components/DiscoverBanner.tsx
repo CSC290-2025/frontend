@@ -36,7 +36,7 @@ export default function DiscoverBanner() {
               key={index}
               className={`h-56 min-w-full bg-gradient-to-r ${banner.gradient} flex snap-start items-center justify-center`}
             >
-              <div className="text-center text-black">
+              <div className="p-4 text-center text-black">
                 <h2 className="mb-2 text-3xl font-bold">{banner.title}</h2>
                 <p className="text-lg opacity-90">{banner.subtitle}</p>
               </div>
