@@ -14,7 +14,7 @@ const MainLayout: FC<MainLayoutProps> = ({ children }) => {
           className='my-6 flex flex-row items-center justify-center'
             
         >
-          <MenuBar/>
+          <Menubar/>
         </div>
         <div className="grid flex-1 items-start gap-4 p-0">{children}</div>
       </div> */}
