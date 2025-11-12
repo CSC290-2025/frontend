@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import { useNavigate } from '@/router'; // Import from Generouted
+import { useNavigate } from '@/router';
 import {
   ArrowLeft,
   Upload,
@@ -32,7 +32,6 @@ export default function CreateVolunteerPost() {
   const [formData, setFormData] = useState({
     title: '',
     organization: '',
-    category: '',
     date: '',
     startTime: '',
     endTime: '',
@@ -43,7 +42,6 @@ export default function CreateVolunteerPost() {
     description: '',
     activities: [''],
     requirements: [''],
-    difficulty: 'beginner',
   });
   const [uploadedImage, setUploadedImage] = useState<
     string | ArrayBuffer | null
@@ -105,7 +103,6 @@ export default function CreateVolunteerPost() {
       address,
       activities,
       requirements,
-      difficulty,
     } = formData;
 
     // Basic validation to prevent crash (In a real app, this should be comprehensive)
@@ -132,7 +129,6 @@ ${description}
 **Organization:** ${organization || 'N/A'}
 **Location:** ${location || 'N/A'}
 **Address:** ${address || 'N/A'}
-**Difficulty:** ${difficulty}
 
 **Activities:**
 ${activities
@@ -288,35 +284,10 @@ ${requirements
                   className="w-full rounded-xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:outline-none"
                 />
               </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-medium text-gray-700">
-                  Category *
-                </label>
-                <select
-                  value={formData.category}
-                  onChange={(e) =>
-                    handleInputChange('category', e.target.value)
-                  }
-                  className="w-full rounded-xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:outline-none"
-                >
-                  <option value="">Select a category</option>
-                  <option value="education">Education</option>
-                  <option value="healthcare">Healthcare</option>
-                  <option value="environment">Environment</option>
-                  <option value="community">Community Service</option>
-                  <option value="elderly">Elderly Care</option>
-                  <option value="animals">Animal Welfare</option>
-                </select>
-              </div>
             </div>
           </div>
 
-          {/* Schedule & Capacity (Responsive Grid: Stacks on mobile, 2 columns on tablet/desktop) */}
           <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-6">
-            <h2 className="mb-4 text-lg font-bold text-gray-800">
-              Schedule & Capacity
-            </h2>
             {/* key responsive change: grid-cols-1 on mobile, md:grid-cols-2 on medium screens */}
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div>
@@ -391,30 +362,6 @@ ${requirements
                   onChange={(e) => handleInputChange('endTime', e.target.value)}
                   className="w-full rounded-xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:outline-none"
                 />
-              </div>
-            </div>
-
-            <div className="mt-4">
-              <label className="mb-2 block text-sm font-medium text-gray-700">
-                Difficulty Level
-              </label>
-              <div className="flex flex-wrap gap-3">
-                {' '}
-                {/* Use flex-wrap to handle overflow on tiny screens */}
-                {['beginner', 'intermediate', 'advanced'].map((level) => (
-                  <button
-                    key={level}
-                    type="button"
-                    onClick={() => handleInputChange('difficulty', level)}
-                    className={`rounded-full px-4 py-2 text-sm font-medium transition-colors sm:px-6 ${
-                      formData.difficulty === level
-                        ? 'bg-blue-500 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    {level.charAt(0).toUpperCase() + level.slice(1)}
-                  </button>
-                ))}
               </div>
             </div>
           </div>
@@ -561,13 +508,6 @@ ${requirements
 
           {/* Action Buttons (Responsive: Stacks on mobile, aligned right on desktop) */}
           <div className="flex flex-col-reverse justify-end gap-3 pt-4 sm:flex-row sm:gap-4">
-            <button
-              type="button"
-              onClick={() => alert('Saved as draft')}
-              className="w-full rounded-full border border-gray-300 px-8 py-3 font-medium text-gray-700 hover:bg-gray-50 sm:w-auto"
-            >
-              Save as Draft
-            </button>
             <button
               type="submit"
               onClick={handleSubmit}
