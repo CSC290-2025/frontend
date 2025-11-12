@@ -14,12 +14,19 @@ interface VolunteerEvent {
   total_seats: number;
   image_url: string | null;
   created_by_user_id: number | null;
+  // No changes needed here, as the is_joined status is passed separately in the API response.
 }
 
 interface ApiResponse<T> {
   success: boolean;
   data: T;
   message?: string;
+}
+
+// NOTE: We update the API response structure to explicitly include the 'is_joined' flag
+interface EventDetailResponse {
+  event: VolunteerEvent;
+  is_joined: boolean; // <--- The crucial piece of data from the server
 }
 
 export default function VolunteerDetailPage() {
@@ -30,11 +37,12 @@ export default function VolunteerDetailPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // isJoined starts as false, but is immediately corrected by the API call in useEffect
   const [isJoined, setIsJoined] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
-  // Simulated current user ID
+  // Simulated current user ID - IMPORTANT: In a real app, this would come from an auth context.
   const currentUserId = 1;
 
   useEffect(() => {
@@ -44,15 +52,23 @@ export default function VolunteerDetailPage() {
       setIsLoading(true);
       setError(null);
       try {
-        const response = await axios.get<
-          ApiResponse<{ event: VolunteerEvent }>
-        >(`http://localhost:3000/api/v1/volunteer/${id}`);
+        const response = await axios.get<ApiResponse<EventDetailResponse>>(
+          `http://localhost:3000/api/v1/volunteer/${id}`
+        );
+
         if (response.data.success) {
-          setEvent(response.data.data.event);
+          const { event: fetchedEvent, is_joined: userJoinedStatus } =
+            response.data.data;
+
+          setEvent(fetchedEvent);
+          // *** THIS IS THE CRITICAL LINE: Initializing state based on API data ***
+          // The API provides the source of truth, so the button will display correctly.
+          setIsJoined(userJoinedStatus);
         } else {
           throw new Error('API did not return success');
         }
       } catch (err: any) {
+        // ... (error handling remains the same)
         setError(err.response?.data?.message || err.message);
       } finally {
         setIsLoading(false);
@@ -60,7 +76,11 @@ export default function VolunteerDetailPage() {
     };
 
     fetchEvent();
+    // No dependency on isJoined here, as fetchEvent determines the initial state.
   }, [id]);
+
+  // --- Action Handlers ---
+  // ... (handleJoinEvent and handleLeaveEvent remain the same, as they correctly update the state: setEvent and setIsJoined) ...
 
   const handleJoinEvent = async () => {
     setIsSubmitting(true);
@@ -74,7 +94,7 @@ export default function VolunteerDetailPage() {
       );
       if (response.data.success) {
         setEvent(response.data.data.event);
-        setIsJoined(true);
+        setIsJoined(true); // Update state to Joined
         alert('Successfully joined event!');
       } else {
         throw new Error(response.data.message || 'Failed to join event');
@@ -98,7 +118,7 @@ export default function VolunteerDetailPage() {
       });
       if (response.data.success) {
         setEvent(response.data.data.event);
-        setIsJoined(false);
+        setIsJoined(false); // Update state to Not Joined
         alert('Successfully left event.');
       } else {
         throw new Error(response.data.message || 'Failed to leave event');
@@ -109,6 +129,8 @@ export default function VolunteerDetailPage() {
       setIsSubmitting(false);
     }
   };
+
+  // ... (handleDeleteEvent and Utility Functions remain the same) ...
 
   const handleDeleteEvent = async () => {
     if (
@@ -139,6 +161,8 @@ export default function VolunteerDetailPage() {
     }
   };
 
+  // --- Utility Functions ---
+
   const getFormattedDate = (dateString: string | null) => {
     return dateString ? new Date(dateString).toLocaleDateString() : 'Date TBD';
   };
@@ -168,6 +192,8 @@ export default function VolunteerDetailPage() {
     return `${(event.current_participants / event.total_seats) * 100}%`;
   };
 
+  // --- Loading/Error/Not Found States ---
+
   if (isLoading) {
     return <div className="p-8 text-center text-gray-500">Loading...</div>;
   }
@@ -180,8 +206,40 @@ export default function VolunteerDetailPage() {
     );
   }
 
+  // --- Derived State ---
   const isEventFull = event.current_participants >= event.total_seats;
   const isOwner = event.created_by_user_id === currentUserId;
+
+  // --- Render ---
+
+  // Unified button logic for the two main action buttons (Left and Right)
+  const renderActionButton = () => {
+    const disabled = isSubmitting || (isEventFull && !isJoined);
+    const className = `w-full rounded-full py-2 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+      isJoined
+        ? 'bg-gray-200 text-gray-800 hover:bg-gray-300'
+        : isEventFull
+          ? 'bg-gray-200 text-gray-500'
+          : 'bg-lime-400 text-gray-800 hover:bg-lime-500'
+    }`;
+    const text = isSubmitting
+      ? isJoined
+        ? 'Leaving...'
+        : 'Joining...'
+      : isJoined
+        ? 'Leave Event'
+        : isEventFull
+          ? 'Event Full'
+          : 'Join Now';
+
+    const handler = isJoined ? handleLeaveEvent : handleJoinEvent;
+
+    return (
+      <button onClick={handler} disabled={disabled} className={className}>
+        {text}
+      </button>
+    );
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -241,7 +299,11 @@ export default function VolunteerDetailPage() {
               src={event.image_url || 'https://via.placeholder.com/800x400'}
               alt={event.title}
               className="h-96 w-full rounded-2xl object-cover shadow-lg"
+              //
             />
+            {/* *** The action button will correctly reflect the fetched isJoined state *** */}
+            {renderActionButton()}
+            {/* *** END CHANGE *** */}
             <div>
               <div className="mb-4 flex items-start justify-between">
                 <div>
@@ -323,27 +385,9 @@ export default function VolunteerDetailPage() {
                   </div>
                 </div>
 
-                <button
-                  onClick={isJoined ? handleLeaveEvent : handleJoinEvent}
-                  disabled={isSubmitting || (isEventFull && !isJoined)}
-                  className={`mb-4 w-full rounded-full py-4 text-lg font-semibold transition-colors ${
-                    isJoined
-                      ? 'bg-gray-200 text-gray-800 hover:bg-gray-300'
-                      : isEventFull
-                        ? 'cursor-not-allowed bg-gray-200 text-gray-500'
-                        : 'bg-lime-400 text-gray-800 hover:bg-lime-500'
-                  }`}
-                >
-                  {isSubmitting
-                    ? isJoined
-                      ? 'Leaving...'
-                      : 'Joining...'
-                    : isJoined
-                      ? 'Leave Event'
-                      : isEventFull
-                        ? 'Event Full'
-                        : 'Join Now'}
-                </button>
+                {/* *** The action button will correctly reflect the fetched isJoined state *** */}
+                <div className="mb-4">{renderActionButton()}</div>
+                {/* *** END CHANGE *** */}
 
                 {actionError && (
                   <p className="mb-3 text-center text-sm text-red-600">

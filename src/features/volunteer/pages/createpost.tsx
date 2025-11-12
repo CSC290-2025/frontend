@@ -108,36 +108,55 @@ export default function CreateVolunteerPost() {
       difficulty,
     } = formData;
 
-    const start_at = `${date}T${startTime}`;
-    const end_at = `${date}T${endTime}`;
-    const registration_deadline_at = `${registration_deadline}T00:00:00.000Z`;
+    // Basic validation to prevent crash (In a real app, this should be comprehensive)
+    if (!title || !date || !startTime || !endTime) {
+      setError('Title, Date, Start Time, and End Time are required.');
+      setIsLoading(false);
+      return;
+    }
 
+    // API expects full ISO strings for dates
+    const start_at = `${date}T${startTime}:00`;
+    const end_at = `${date}T${endTime}:00`;
+    // Assumes deadline is end of day for the selected date. Adjust if API expects time.
+    const registration_deadline_at = registration_deadline
+      ? `${registration_deadline}T23:59:59`
+      : undefined;
+
+    // Combine form data into a single description field
     const fullDescription = `
+**Purpose:**
 ${description}
 
 ---
-**Organization:** ${organization}
-**Location:** ${location}
-**Address:** ${address}
+**Organization:** ${organization || 'N/A'}
+**Location:** ${location || 'N/A'}
+**Address:** ${address || 'N/A'}
 **Difficulty:** ${difficulty}
 
 **Activities:**
-${activities.map((act) => `- ${act}`).join('\n')}
+${activities
+  .filter((a) => a)
+  .map((act) => `- ${act}`)
+  .join('\n')}
 
 **Requirements:**
-${requirements.map((req) => `- ${req}`).join('\n')}
+${requirements
+  .filter((r) => r)
+  .map((req) => `- ${req}`)
+  .join('\n')}
     `;
 
     const payload: ApiPayload = {
       title: title,
-      description: fullDescription,
+      description: fullDescription.trim(),
       start_at: start_at,
       end_at: end_at,
       registration_deadline: registration_deadline_at,
       total_seats: parseInt(maxVolunteers, 10),
-      image_url: typeof uploadedImage === 'string' ? uploadedImage : '', // Send base64 string
+      image_url: typeof uploadedImage === 'string' ? uploadedImage : undefined, // Send base64 string or undefined
 
-      // testing with static IDs
+      // testing with static IDs - replace with actual dynamic values (e.g., from auth context)
       created_by_user_id: 1,
       department_id: 1,
       address_id: 1,
@@ -153,7 +172,8 @@ ${requirements.map((req) => `- ${req}`).join('\n')}
         alert('Event created successfully!');
         navigate('/volunteer/board'); // Redirect on success
       } else {
-        throw new Error('API returned an error');
+        // Use a more specific error message from the API if available
+        throw new Error(response.data.message || 'API returned an error');
       }
     } catch (err: any) {
       console.error('Error creating event:', err.response?.data || err.message);
@@ -167,31 +187,31 @@ ${requirements.map((req) => `- ${req}`).join('\n')}
     }
   };
 
-  // --- JSX (NO CHANGES NEEDED) ---
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="border-b border-gray-200 bg-white">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-8 py-4">
+        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4 sm:px-8">
           <button
             onClick={() => navigate(-1)}
             className="flex items-center gap-2 text-gray-600 hover:text-gray-800"
           >
             <ArrowLeft className="h-5 w-5" />
-            <span className="font-medium">Back</span>
+            <span className="hidden font-medium sm:inline">Back</span>
           </button>
-          <h1 className="text-xl font-bold text-gray-800">
-            Create Volunteer Opportunity
+          <h1 className="text-lg font-bold text-gray-800 sm:text-xl">
+            Create Opportunity
           </h1>
-          <div className="w-20"></div>
+          <div className="w-10 sm:w-20"></div> {/* Space placeholder */}
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="mx-auto max-w-5xl px-8 py-8">
+      {/* Reduced padding on mobile: px-4 */}
+      <div className="mx-auto max-w-5xl px-4 py-8 sm:px-8">
         <div className="space-y-6">
           {/* Image Upload Section */}
-          <div className="rounded-2xl border border-gray-200 bg-white p-6">
+          <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-6">
             <h2 className="mb-4 text-lg font-bold text-gray-800">
               Cover Image
             </h2>
@@ -205,7 +225,7 @@ ${requirements.map((req) => `- ${req}`).join('\n')}
                         : undefined
                     }
                     alt="Uploaded"
-                    className="h-64 w-full rounded-xl object-cover"
+                    className="h-48 w-full rounded-xl object-cover sm:h-64"
                   />
                   <button
                     onClick={() => setUploadedImage(null)}
@@ -215,9 +235,9 @@ ${requirements.map((req) => `- ${req}`).join('\n')}
                   </button>
                 </div>
               ) : (
-                <label className="flex h-64 w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 transition-colors hover:border-blue-400 hover:bg-blue-50">
-                  <Image className="mb-3 h-12 w-12 text-gray-400" />
-                  <span className="font-medium text-gray-600">
+                <label className="flex h-48 w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 transition-colors hover:border-blue-400 hover:bg-blue-50 sm:h-64">
+                  <Image className="mb-3 h-10 w-10 text-gray-400 sm:h-12 sm:w-12" />
+                  <span className="px-4 text-center font-medium text-gray-600">
                     Click to upload cover image
                   </span>
                   <span className="mt-1 text-sm text-gray-400">
@@ -235,11 +255,12 @@ ${requirements.map((req) => `- ${req}`).join('\n')}
           </div>
 
           {/* Basic Information */}
-          <div className="rounded-2xl border border-gray-200 bg-white p-6">
+          <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-6">
             <h2 className="mb-4 text-lg font-bold text-gray-800">
               Basic Information
             </h2>
             <div className="space-y-4">
+              {/* Title, Organization, Category fields remain full width (good for mobile) */}
               <div>
                 <label className="mb-2 block text-sm font-medium text-gray-700">
                   Opportunity Title *
@@ -291,12 +312,13 @@ ${requirements.map((req) => `- ${req}`).join('\n')}
             </div>
           </div>
 
-          {/* Schedule & Capacity */}
-          <div className="rounded-2xl border border-gray-200 bg-white p-6">
+          {/* Schedule & Capacity (Responsive Grid: Stacks on mobile, 2 columns on tablet/desktop) */}
+          <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-6">
             <h2 className="mb-4 text-lg font-bold text-gray-800">
               Schedule & Capacity
             </h2>
-            <div className="grid grid-cols-2 gap-4">
+            {/* key responsive change: grid-cols-1 on mobile, md:grid-cols-2 on medium screens */}
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div>
                 <label className="mb-2 block text-sm font-medium text-gray-700">
                   <Calendar className="mr-1 inline h-4 w-4" />
@@ -356,7 +378,9 @@ ${requirements.map((req) => `- ${req}`).join('\n')}
                 />
               </div>
 
-              <div>
+              <div className="md:col-span-2">
+                {' '}
+                {/* Added for cleaner alignment */}
                 <label className="mb-2 block text-sm font-medium text-gray-700">
                   <Clock className="mr-1 inline h-4 w-4" />
                   End Time *
@@ -374,13 +398,15 @@ ${requirements.map((req) => `- ${req}`).join('\n')}
               <label className="mb-2 block text-sm font-medium text-gray-700">
                 Difficulty Level
               </label>
-              <div className="flex gap-3">
+              <div className="flex flex-wrap gap-3">
+                {' '}
+                {/* Use flex-wrap to handle overflow on tiny screens */}
                 {['beginner', 'intermediate', 'advanced'].map((level) => (
                   <button
                     key={level}
-                    type="button" // Add type="button" to prevent form submission
+                    type="button"
                     onClick={() => handleInputChange('difficulty', level)}
-                    className={`rounded-full px-6 py-2 font-medium transition-colors ${
+                    className={`rounded-full px-4 py-2 text-sm font-medium transition-colors sm:px-6 ${
                       formData.difficulty === level
                         ? 'bg-blue-500 text-white'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
@@ -394,7 +420,7 @@ ${requirements.map((req) => `- ${req}`).join('\n')}
           </div>
 
           {/* Location */}
-          <div className="rounded-2xl border border-gray-200 bg-white p-6">
+          <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-6">
             <h2 className="mb-4 text-lg font-bold text-gray-800">
               <MapPin className="mr-2 inline h-5 w-5" />
               Location
@@ -431,7 +457,7 @@ ${requirements.map((req) => `- ${req}`).join('\n')}
           </div>
 
           {/* Description */}
-          <div className="rounded-2xl border border-gray-200 bg-white p-6">
+          <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-6">
             <h2 className="mb-4 text-lg font-bold text-gray-800">
               Description
             </h2>
@@ -445,11 +471,11 @@ ${requirements.map((req) => `- ${req}`).join('\n')}
           </div>
 
           {/* Activities */}
-          <div className="rounded-2xl border border-gray-200 bg-white p-6">
-            <div className="mb-4 flex items-center justify-between">
+          <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-6">
+            <div className="mb-4 flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
               <h2 className="text-lg font-bold text-gray-800">Activities</h2>
               <button
-                type="button" // Add type="button"
+                type="button"
                 onClick={() => addArrayItem('activities')}
                 className="flex items-center gap-2 rounded-full bg-blue-100 px-4 py-2 font-medium text-blue-600 hover:bg-blue-200"
               >
@@ -459,7 +485,7 @@ ${requirements.map((req) => `- ${req}`).join('\n')}
             </div>
             <div className="space-y-3">
               {formData.activities.map((activity, index) => (
-                <div key={index} className="flex gap-3">
+                <div key={index} className="flex items-start gap-3">
                   <div className="mt-2 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-lime-400 font-semibold text-gray-800">
                     {index + 1}
                   </div>
@@ -474,9 +500,9 @@ ${requirements.map((req) => `- ${req}`).join('\n')}
                   />
                   {formData.activities.length > 1 && (
                     <button
-                      type="button" // Add type="button"
+                      type="button"
                       onClick={() => removeArrayItem('activities', index)}
-                      className="rounded-xl p-3 text-red-500 hover:bg-red-50"
+                      className="flex-shrink-0 rounded-xl p-3 text-red-500 hover:bg-red-50"
                     >
                       <X className="h-5 w-5" />
                     </button>
@@ -486,12 +512,12 @@ ${requirements.map((req) => `- ${req}`).join('\n')}
             </div>
           </div>
 
-          {/* Requirements */}
-          <div className="rounded-2xl border border-gray-200 bg-white p-6">
-            <div className="mb-4 flex items-center justify-between">
+          {/* Requirements (Similar changes to Activities) */}
+          <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-6">
+            <div className="mb-4 flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
               <h2 className="text-lg font-bold text-gray-800">Requirements</h2>
               <button
-                type="button" // Add type="button"
+                type="button"
                 onClick={() => addArrayItem('requirements')}
                 className="flex items-center gap-2 rounded-full bg-blue-100 px-4 py-2 font-medium text-blue-600 hover:bg-blue-200"
               >
@@ -501,7 +527,7 @@ ${requirements.map((req) => `- ${req}`).join('\n')}
             </div>
             <div className="space-y-3">
               {formData.requirements.map((requirement, index) => (
-                <div key={index} className="flex gap-3">
+                <div key={index} className="flex items-start gap-3">
                   <div className="mt-4 h-2 w-2 flex-shrink-0 rounded-full bg-blue-500" />
                   <input
                     type="text"
@@ -514,9 +540,9 @@ ${requirements.map((req) => `- ${req}`).join('\n')}
                   />
                   {formData.requirements.length > 1 && (
                     <button
-                      type="button" // Add type="button"
+                      type="button"
                       onClick={() => removeArrayItem('requirements', index)}
-                      className="rounded-xl p-3 text-red-500 hover:bg-red-50"
+                      className="flex-shrink-0 rounded-xl p-3 text-red-500 hover:bg-red-50"
                     >
                       <X className="h-5 w-5" />
                     </button>
@@ -533,20 +559,20 @@ ${requirements.map((req) => `- ${req}`).join('\n')}
             </div>
           )}
 
-          {/* Action Buttons */}
-          <div className="flex justify-end gap-4 pt-4">
+          {/* Action Buttons (Responsive: Stacks on mobile, aligned right on desktop) */}
+          <div className="flex flex-col-reverse justify-end gap-3 pt-4 sm:flex-row sm:gap-4">
             <button
-              type="button" // Add type="button"
+              type="button"
               onClick={() => alert('Saved as draft')}
-              className="rounded-full border border-gray-300 px-8 py-3 font-medium text-gray-700 hover:bg-gray-50"
+              className="w-full rounded-full border border-gray-300 px-8 py-3 font-medium text-gray-700 hover:bg-gray-50 sm:w-auto"
             >
               Save as Draft
             </button>
             <button
-              type="submit" // This is the main submit button
+              type="submit"
               onClick={handleSubmit}
               disabled={isLoading}
-              className="rounded-full bg-lime-400 px-8 py-3 font-medium text-gray-800 hover:bg-lime-500 disabled:opacity-50"
+              className="w-full rounded-full bg-lime-400 px-8 py-3 font-medium text-gray-800 hover:bg-lime-500 disabled:opacity-50 sm:w-auto"
             >
               {isLoading ? 'Publishing...' : 'Publish Opportunity'}
             </button>

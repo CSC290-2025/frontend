@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useNavigate, useParams } from '@/router';
 import { ArrowLeft } from 'lucide-react';
 
+// ... (Interface definitions remain the same)
 interface VolunteerEvent {
   id: number;
   title: string;
@@ -30,6 +31,7 @@ interface ApiResponse<T> {
 
 const formatISODateForInput = (isoString: string | null | undefined) => {
   if (!isoString) return '';
+  // Ensure the output format is YYYY-MM-DDTHH:MM, required for datetime-local
   return isoString.substring(0, 16);
 };
 
@@ -98,8 +100,10 @@ export default function EditVolunteerPage() {
     setIsSubmitting(true);
     setError(null);
 
+    // Format datetime-local input back to ISO string expected by the API
     const payload = {
       ...formData,
+      // Append time zone information for the backend if needed (adjust :00.000Z as per your backend requirements)
       start_at: formData.start_at ? `${formData.start_at}:00.000Z` : undefined,
       end_at: formData.end_at ? `${formData.end_at}:00.000Z` : undefined,
     };
@@ -140,24 +144,25 @@ export default function EditVolunteerPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
+      {/* Header (Responsive adjustments applied to padding and title display) */}
       <div className="border-b border-gray-200 bg-white">
-        <div className="mx-auto flex max-w-5xl items-center px-8 py-4">
+        <div className="mx-auto flex max-w-5xl items-center px-4 py-4 sm:px-8">
           <button
             onClick={() => navigate(-1)}
             className="flex items-center gap-2 text-gray-600 hover:text-gray-800"
           >
             <ArrowLeft className="h-5 w-5" />
-            <span className="font-medium">Back to Event</span>
+            <span className="hidden font-medium sm:inline">Back to Event</span>
           </button>
-          <h1 className="ml-8 text-xl font-bold text-gray-800">
+          {/* Title hides on extra small screens, centers on small screens */}
+          <h1 className="flex-1 text-center text-xl font-bold text-gray-800 sm:ml-8 sm:text-left">
             Edit Volunteer Opportunity
           </h1>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="mx-auto max-w-5xl px-8 py-8">
+      {/* Main Content (Responsive adjustments applied to padding) */}
+      <div className="mx-auto max-w-5xl px-4 py-6 sm:px-8 sm:py-8">
         <form onSubmit={handleSubmit} className="space-y-6">
           {/* Basic Information */}
           <div className="rounded-2xl border border-gray-200 bg-white p-6">
@@ -194,12 +199,13 @@ export default function EditVolunteerPage() {
             </div>
           </div>
 
-          {/* Schedule & Capacity */}
+          {/* Schedule & Capacity (Responsive Grid: Stacks on mobile, 2 columns on tablet/desktop) */}
           <div className="rounded-2xl border border-gray-200 bg-white p-6">
             <h2 className="mb-4 text-lg font-bold text-gray-800">
               Schedule & Capacity
             </h2>
-            <div className="grid grid-cols-2 gap-4">
+            {/* Change to grid-cols-1 on small screens, grid-cols-2 on medium/larger */}
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div>
                 <label className="mb-2 block text-sm font-medium text-gray-700">
                   Start Time *
@@ -226,7 +232,8 @@ export default function EditVolunteerPage() {
                   className="w-full rounded-xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:outline-none"
                 />
               </div>
-              <div>
+              {/* Force Total Seats to span the entire width on small screens for better alignment with the two datetime inputs */}
+              <div className="md:col-span-2">
                 <label className="mb-2 block text-sm font-medium text-gray-700">
                   Total Seats *
                 </label>
@@ -270,19 +277,19 @@ export default function EditVolunteerPage() {
             </div>
           )}
 
-          {/* Action Buttons */}
-          <div className="flex justify-end gap-4 pt-4">
+          {/* Action Buttons (Responsive: full-width stack on mobile, right-aligned on desktop) */}
+          <div className="flex flex-col-reverse justify-end gap-4 pt-4 sm:flex-row">
             <button
               type="button"
               onClick={() => navigate(-1)}
-              className="rounded-full border border-gray-300 px-8 py-3 font-medium text-gray-700 hover:bg-gray-50"
+              className="w-full rounded-full border border-gray-300 px-8 py-3 font-medium text-gray-700 hover:bg-gray-50 sm:w-auto"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="rounded-full bg-blue-500 px-8 py-3 font-medium text-white hover:bg-blue-600 disabled:opacity-50"
+              className="w-full rounded-full bg-blue-500 px-8 py-3 font-medium text-white hover:bg-blue-600 disabled:opacity-50 sm:w-auto"
             >
               {isSubmitting ? 'Saving...' : 'Save Changes'}
             </button>
