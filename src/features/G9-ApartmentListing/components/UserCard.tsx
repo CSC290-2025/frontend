@@ -1,5 +1,5 @@
 // component of a page
-import { useUser } from '../../G9-ApartmentListing/hooks/useUser';
+import { useUser } from '@/features/G9-ApartmentListing/hooks/useUser';
 import type { User } from '@/types/user';
 
 interface UserCardProps {
