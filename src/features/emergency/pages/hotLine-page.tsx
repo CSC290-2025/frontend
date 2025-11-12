@@ -18,7 +18,6 @@ interface Contact {
 }
 
 export default function HotlinePage() {
-  const [activeTab, setActiveTab] = useState('family');
   const [searchTerm, setSearchTerm] = useState('');
 
   const familyContacts: Contact[] = [
@@ -71,7 +70,7 @@ export default function HotlinePage() {
         </div>
       </header>
 
-      <Tabs defaultValue="Ongoing" className="w-full">
+      <Tabs defaultValue="Family" className="w-full">
         <TabsList>
           <TabsTrigger value="Emergency service">Emergency service</TabsTrigger>
           <TabsTrigger value="Family">Family</TabsTrigger>
