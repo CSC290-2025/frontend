@@ -93,6 +93,7 @@ export default function FreecycleHomepage() {
               <DiscoverPage
                 searchQuery={searchQuery}
                 onViewItem={handleViewItem}
+                onPostItem={() => setCurrentPage('post-item')}
               />
             </div>
           </div>

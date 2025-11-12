@@ -9,21 +9,23 @@ import { useDiscoverPage } from '@/features/freecycle/hooks/useFreecycle';
 interface DiscoverPageProps {
   searchQuery: string;
   onViewItem: (item: PostItem) => void;
+  onPostItem?: () => void;
 }
 
 export default function DiscoverPage({
   searchQuery,
   onViewItem,
+  onPostItem,
 }: DiscoverPageProps) {
   const {
     filteredItems,
     categories: categoriesData,
     selectedCategories,
-    localSearch,
+    localSearch: _localSearch,
     showFilters,
     loading,
     hasError,
-    setLocalSearch,
+    setLocalSearch: _setLocalSearch,
     setShowFilters,
     toggleCategory,
   } = useDiscoverPage(searchQuery);
@@ -32,7 +34,10 @@ export default function DiscoverPage({
     <div className="space-y-6">
       <div className="flex items-center justify-start gap-4">
         <h1 className="text-3xl font-bold text-gray-900">Discover Items</h1>
-        <button className="flex items-center gap-1 rounded-full bg-cyan-500 px-3 py-1 text-sm font-medium text-white shadow-sm transition-colors hover:bg-cyan-600">
+        <button
+          onClick={onPostItem}
+          className="flex items-center gap-1 rounded-full bg-cyan-500 px-3 py-1 text-sm font-medium text-white shadow-sm transition-colors hover:bg-cyan-600"
+        >
           <Plus className="h-4 w-4" />
           Post Item
         </button>
