@@ -67,7 +67,6 @@ function ReportPage() {
       setOpen(false);
       setFile(null);
       setShowDetail(false);
-      reset();
 
       toast('Report successfully sent', {
         position: 'top-right',
@@ -251,7 +250,11 @@ function ReportPage() {
 
                 <div className="flex justify-end gap-2">
                   <DialogClose asChild>
-                    <Button type="button" variant="secondary">
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => reset()}
+                    >
                       Close
                     </Button>
                   </DialogClose>

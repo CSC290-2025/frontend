@@ -9,7 +9,6 @@ import {
 import { Input } from '@/features/emergency/components/ui/input';
 import { Button } from '@/features/emergency/components/ui/button';
 import { Card, CardContent } from '@/features/emergency/components/ui/card';
-import { cn } from '@/lib/utils';
 
 interface Contact {
   id: number;
@@ -49,12 +48,8 @@ export default function HotlinePage() {
     },
   ];
 
-  const filteredContacts = familyContacts.filter((contact) =>
-    contact.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
   return (
-    <div className="mx-auto max-w-4xl p-6">
+    <div className="p-2 sm:p-6">
       {/* Header */}
       <header className="mb-8 flex flex-col items-center justify-between gap-4 sm:flex-row">
         <div className="flex items-center gap-2">
@@ -76,71 +71,49 @@ export default function HotlinePage() {
         </div>
       </header>
 
-      {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="mb-6 grid w-fit grid-cols-2">
-          <TabsTrigger
-            value="emergency"
-            className={cn(
-              'data-[state=active]:border-b-2 data-[state=active]:border-blue-600 data-[state=active]:bg-transparent data-[state=active]:text-blue-600'
-            )}
-          >
-            Emergency service
-          </TabsTrigger>
-          <TabsTrigger
-            value="family"
-            className={cn(
-              'data-[state=active]:border-b-2 data-[state=active]:border-red-600 data-[state=active]:bg-transparent data-[state=active]:text-red-600'
-            )}
-          >
-            Family
-          </TabsTrigger>
+      <Tabs defaultValue="Ongoing" className="w-full">
+        <TabsList>
+          <TabsTrigger value="Emergency service">Emergency service</TabsTrigger>
+          <TabsTrigger value="Family">Family</TabsTrigger>
         </TabsList>
 
-        {/* Family contacts */}
-        <TabsContent value="family">
-          <div className="space-y-4">
-            {filteredContacts.map((contact) => (
-              <Card
-                key={contact.id}
-                className="flex items-center justify-between transition-shadow hover:shadow-sm"
-              >
-                <CardContent className="flex w-full items-center justify-between p-4">
-                  <div className="flex items-center gap-4">
-                    <div>
-                      <p className="text-lg font-semibold">{contact.name}</p>
-                      <p className="text-sm text-gray-500">{contact.phone}</p>
+        {/* Ongoing Tab */}
+        <TabsContent value="Family" className="mb-6">
+          <div className="h-auto">
+            {familyContacts.map((r) => (
+              <div key={r.id} className="mb-6">
+                <Card className="w-full">
+                  <CardContent>
+                    <div className="grid grid-cols-6">
+                      <div className="col-span-4 gap-2 pl-5">
+                        <div className="">{r.name}</div>
+                        <div className="flex items-center gap-3">
+                          <Button
+                            size="icon"
+                            className="rounded-full bg-gray-300 text-white hover:bg-gray-400"
+                          >
+                            <Phone className="h-5 w-5" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            className="rounded-full bg-gray-300 text-white hover:bg-gray-400"
+                          >
+                            <Edit className="h-5 w-5" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            className="rounded-full bg-gray-300 text-white hover:bg-gray-400"
+                          >
+                            <Copy className="h-5 w-5" />
+                          </Button>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <Button
-                      size="icon"
-                      className="rounded-full bg-gray-300 text-white hover:bg-gray-400"
-                    >
-                      <Phone className="h-5 w-5" />
-                    </Button>
-                    <Button
-                      size="icon"
-                      className="rounded-full bg-gray-300 text-white hover:bg-gray-400"
-                    >
-                      <Edit className="h-5 w-5" />
-                    </Button>
-                    <Button
-                      size="icon"
-                      className="rounded-full bg-gray-300 text-white hover:bg-gray-400"
-                    >
-                      <Copy className="h-5 w-5" />
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </div>
             ))}
           </div>
-        </TabsContent>
-
-        {/* Emergency contacts placeholder */}
-        <TabsContent value="emergency">
-          <p className="text-gray-500 italic">No emergency contacts yet.</p>
         </TabsContent>
       </Tabs>
     </div>
