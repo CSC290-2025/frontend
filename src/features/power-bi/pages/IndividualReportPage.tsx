@@ -48,6 +48,11 @@ function IndividualReportPage() {
   return (
     <div className="flex h-screen w-screen flex-col items-center justify-around p-10">
       <Nav />
+      <div className="w-full">
+        <Button variant="outline" onClick={() => navigate(-1)} className="mb-4">
+          ← Back
+        </Button>
+      </div>
       <h2 className="font-medium">
         {type === 'summary'
           ? 'Summary City Performance Dashboard'
@@ -65,12 +70,12 @@ function IndividualReportPage() {
       ></iframe>
       <p>{report.description}</p>
       {user.role === 'admin' && (
-        <Button
-          className="mt-4"
-          onClick={() => navigate(`/power-bi/edit/${id}`)}
-        >
-          Edit Report
-        </Button>
+        <div className="mt-4 flex gap-2">
+          <Button onClick={() => navigate(`/power-bi/edit/${id}`)}>
+            Edit Report
+          </Button>
+          <Button onClick={() => navigate('/power-bi')}>Delete Report</Button>
+        </div>
       )}
     </div>
   );

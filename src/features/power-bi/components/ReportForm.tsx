@@ -45,9 +45,22 @@ function ReportForm({ oldReport }) {
 
   return (
     <div className="flex h-screen w-screen flex-col justify-around p-7">
-      <h1 className="text-ll text-center font-medium">
-        {oldReport ? 'Edit Report' : 'Create New Report'}
-      </h1>
+      <div className="mb-5 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            type="button"
+            onClick={() => navigate(-1)} // goes back one page
+            className="px-3"
+          >
+            ← Back
+          </Button>
+          <h1 className="text-xl font-medium">
+            {oldReport ? 'Edit Report' : 'Create New Report'}
+          </h1>
+        </div>
+      </div>
+
       {/* {submitted && <div>report created successfully</div>} */}
       <form onSubmit={handleSubmit} className="flex justify-around gap-5">
         <div className="w-1/2">
