@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { getReports, type Report } from '../api/reports.api';
+import type { UserRole } from '@/types/reports';
 
-export function useReportById(params: { role: string; id?: string }) {
+export function useReportById(params: { role: UserRole; id?: string }) {
   const { role, id } = params;
   const [report, setReport] = useState<Report | null>(null);
   const [loading, setLoading] = useState<boolean>(true);

@@ -5,6 +5,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useNavigate } from '@/router';
 import React, { useEffect, useState } from 'react';
 import { createReport, updateReport } from '../api/reports.api';
+import { useUserRole } from '../hooks/useUserRole';
 import type { Report } from '@/types/reports';
 
 interface ReportFormProps {
@@ -44,6 +45,7 @@ function ReportForm({ oldReport }: ReportFormProps) {
   const [error, setError] = useState<string | null>(null);
 
   const navigate = useNavigate();
+  const { role } = useUserRole();
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -60,26 +62,37 @@ function ReportForm({ oldReport }: ReportFormProps) {
     setError(null);
 
     try {
+      if (role !== 'admin') {
+        throw new Error('You do not have permission to perform this action');
+      }
+
       if (oldReport) {
         // Update existing report
-        await updateReport(oldReport.report_id, {
-          title: form.title,
-          description: form.description || null,
-          category: form.category,
-          embedUrl: form.url || null,
-          visibility: form.visibility as 'citizens' | 'admin',
-          type: form.type as 'summary' | 'trends',
-        });
+        await updateReport(
+          oldReport.report_id,
+          {
+            title: form.title,
+            description: form.description || null,
+            category: form.category,
+            embedUrl: form.url || null,
+            visibility: form.visibility as 'citizens' | 'admin',
+            type: form.type as 'summary' | 'trends',
+          },
+          role
+        );
       } else {
         // Create new report
-        await createReport({
-          title: form.title,
-          description: form.description || null,
-          category: form.category,
-          embedUrl: form.url || null,
-          visibility: form.visibility as 'citizens' | 'admin',
-          type: form.type as 'summary' | 'trends',
-        });
+        await createReport(
+          {
+            title: form.title,
+            description: form.description || null,
+            category: form.category,
+            embedUrl: form.url || null,
+            visibility: form.visibility as 'citizens' | 'admin',
+            type: form.type as 'summary' | 'trends',
+          },
+          role
+        );
       }
       setSubmitted(true);
       navigate('/power-bi');
@@ -106,14 +119,14 @@ function ReportForm({ oldReport }: ReportFormProps) {
           <h1 className="text-xl font-medium">
             {oldReport ? 'Edit Report' : 'Create New Report'}
           </h1>
-             {error && (
-        <div className="rounded bg-red-100 p-2 text-red-700">{error}</div>
-      )}
-      {submitted && (
-        <div className="rounded bg-green-100 p-2 text-green-700">
-          Report {oldReport ? 'updated' : 'created'} successfully
-        </div>
-      )}
+          {error && (
+            <div className="rounded bg-red-100 p-2 text-red-700">{error}</div>
+          )}
+          {submitted && (
+            <div className="rounded bg-green-100 p-2 text-green-700">
+              Report {oldReport ? 'updated' : 'created'} successfully
+            </div>
+          )}
         </div>
       </div>
 

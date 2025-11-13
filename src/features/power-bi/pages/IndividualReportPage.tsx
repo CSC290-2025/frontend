@@ -17,12 +17,16 @@ function IndividualReportPage() {
   const { report, loading, error } = useReportById({ role, id });
   const onDelete = async () => {
     if (!id) return;
+    if (role !== 'admin') {
+      alert('You do not have permission to delete reports.');
+      return;
+    }
     const confirmed = window.confirm(
       'Delete this report? This cannot be undone.'
     );
     if (!confirmed) return;
     try {
-      await deleteReport(parseInt(id, 10));
+      await deleteReport(parseInt(id, 10), role);
       navigate('/power-bi');
     } catch (e) {
       alert(

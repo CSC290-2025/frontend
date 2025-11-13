@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 import { getReports, type Report } from '../api/reports.api';
+import type { UserRole } from '@/types/reports';
 
 type ReportType = 'summary' | 'trends' | string | undefined;
 
 export function useReportsByCategory(params: {
-  role: string;
+  role: UserRole;
   type: ReportType;
   category?: string;
 }) {

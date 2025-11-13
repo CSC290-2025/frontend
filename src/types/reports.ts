@@ -1,3 +1,6 @@
+export const VALID_ROLES = ['citizens', 'admin'] as const;
+export type UserRole = (typeof VALID_ROLES)[number];
+
 export interface Report {
   report_id: number;
   title_string: string;
