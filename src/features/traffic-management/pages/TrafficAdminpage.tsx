@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect } from 'react';
 import TrafficSettingPopup from '../components/TrafficSettingPopup';
 import ConfirmPopup from '../components/Comfirmpopup';
-import type { TrafficLight } from '../types/traffic.types';
+import type { trafficLight } from '../types/traffic.types';
 import { Wrapper } from '@/features/traffic-management/components/react-google-maps/wrapper.tsx';
 import { useTrafficLights } from '../hooks/useTrafficLights';
 
@@ -33,7 +33,7 @@ function MapContent({ refreshRateMs }: MapContentProps) {
   const markersRef = useRef<Map<number, google.maps.Marker>>(new Map());
   // popup control
   const [popupOpen, setPopupOpen] = useState(false);
-  const [selectedSignal, setSelectedSignal] = useState<TrafficLight | null>(
+  const [selectedSignal, setSelectedSignal] = useState<trafficLight | null>(
     null
   );
   const [showDebug, setShowDebug] = useState(false);
@@ -292,7 +292,7 @@ export default function TrafficAdminpage() {
   const [refreshrate, setrefreshrate] = useState(1);
   const [rrunit, setrrunit] = useState('sec');
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [LightRequest, setLightRequest] = useState<TrafficLight | null>(null);
+  const [LightRequest, setLightRequest] = useState<trafficLight | null>(null);
 
   // Sample emergency requests
   const emergencyRequests = [
