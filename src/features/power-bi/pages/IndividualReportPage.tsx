@@ -1,8 +1,9 @@
 import { useNavigate, useParams } from '@/router';
-import React, { useEffect, useState } from 'react';
 import Nav from '../components/Nav';
 import { Button } from '@/components/ui/button';
-import { getReports, type Report } from '../api/reports.api';
+import { useUserRole } from '../hooks/useUserRole';
+import { useReportById } from '../hooks/useReportById';
+import { deleteReport } from '../api/reports.api';
 
 function IndividualReportPage() {
   const user = {
@@ -12,49 +13,25 @@ function IndividualReportPage() {
 
   const { type, category, id } = useParams('/power-bi/:type/:category/:id');
   const navigate = useNavigate();
-  const [report, setReport] = useState<Report | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchReport = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        // TODO: Get role from user context/auth, defaulting to 'citizen' for now
-        const role = 'citizen';
-        const reportsByCategory = await getReports(role);
-
-        // Find the report by ID across all categories
-        let foundReport: Report | null = null;
-        for (const categoryName in reportsByCategory) {
-          const categoryData = reportsByCategory[categoryName];
-          const reportItem = categoryData.reports.find(
-            (r) => r.report_id === parseInt(id || '0', 10)
-          );
-          if (reportItem) {
-            foundReport = reportItem;
-            break;
-          }
-        }
-
-        if (!foundReport) {
-          setError('Report not found');
-        } else {
-          setReport(foundReport);
-        }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load report');
-        console.error('Error fetching report:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (id) {
-      fetchReport();
+  const { role } = useUserRole();
+  const { report, loading, error } = useReportById({ role, id });
+  const onDelete = async () => {
+    if (!id) return;
+    const confirmed = window.confirm(
+      'Delete this report? This cannot be undone.'
+    );
+    if (!confirmed) return;
+    try {
+      await deleteReport(parseInt(id, 10));
+      navigate('/power-bi');
+    } catch (e) {
+      alert(
+        e instanceof Error
+          ? e.message
+          : 'Failed to delete report. Please try again.'
+      );
     }
-  }, [id]);
+  };
 
   if (loading) {
     return (
@@ -100,10 +77,16 @@ function IndividualReportPage() {
       {report.description_string && <p>{report.description_string}</p>}
       {user.role === 'admin' && (
         <div className="mt-4 flex gap-2">
-          <Button onClick={() => navigate(`/power-bi/edit/${id}`)}>
+          <Button
+            onClick={() =>
+              navigate('/power-bi/edit/:id', { params: { id: id as string } })
+            }
+          >
             Edit Report
           </Button>
-          <Button onClick={() => navigate('/power-bi')}>Delete Report</Button>
+          <Button variant="destructive" onClick={onDelete}>
+            Delete Report
+          </Button>
         </div>
       )}
     </div>

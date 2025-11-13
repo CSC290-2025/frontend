@@ -9,7 +9,7 @@ import type {
 
 /**
  * Get reports by role
- * @param role - User role (citizen, official, admin)
+ * @param role - User role (citizens, admin)
  * @returns Reports organized by category
  */
 export const getReports = async (role: string): Promise<ReportsByCategory> => {
@@ -53,4 +53,12 @@ export const updateReport = async (
     throw new Error('Failed to update report');
   }
   return response.data.data.report;
+};
+
+/**
+ * Delete a report
+ * @param id - Report ID
+ */
+export const deleteReport = async (id: number): Promise<void> => {
+  await apiClient.delete<ApiResponse<unknown>>(`/reports/${id}`);
 };

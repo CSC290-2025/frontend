@@ -1,55 +1,17 @@
-import { Button } from '@/components/ui/button';
 import { Link, useNavigate, useParams } from '@/router';
-import React, { useEffect, useState } from 'react';
 import Nav from '../components/Nav';
-import { getReports, type Report } from '../api/reports.api';
+import { useUserRole } from '../hooks/useUserRole';
+import { useReportsByCategory } from '../hooks/useReportsByCategory';
 
 function ReportsPage() {
   const { type, category } = useParams('/power-bi/:type/:category');
   const navigate = useNavigate();
-  const [reports, setReports] = useState<Report[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchReports = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        // TODO: Get role from user context/auth, defaulting to 'citizen' for now
-        const role = 'citizen';
-        const reportsByCategory = await getReports(role);
-
-        // Get reports for the current category (backend returns lowercase category names)
-        const categoryKey = category?.toLowerCase();
-        const categoryData = reportsByCategory[categoryKey];
-        const categoryReports = categoryData?.reports || [];
-
-        // Filter reports by type based on route parameter
-        // - "summary" route should only show reports with power_bi_report_type="summary"
-        // - "trends" route should only show reports with power_bi_report_type="trends"
-        const filteredByType = categoryReports.filter((report) => {
-          if (type === 'summary') {
-            return report.power_bi_report_type === 'summary';
-          } else if (type === 'trends') {
-            return report.power_bi_report_type === 'trends';
-          }
-          return true; // If type is unknown, show all
-        });
-
-        setReports(filteredByType);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load reports');
-        console.error('Error fetching reports:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (category && type) {
-      fetchReports();
-    }
-  }, [category, type]);
+  const { role } = useUserRole();
+  const { reports, loading, error } = useReportsByCategory({
+    role,
+    type,
+    category,
+  });
 
   return (
     <div className="flex h-screen w-screen flex-col justify-around p-5">
@@ -65,7 +27,11 @@ function ReportsPage() {
         <div>
           <select
             value={category}
-            onChange={(e) => navigate(`/power-bi/${type}/${e.target.value}`)}
+            onChange={(e) =>
+              navigate('/power-bi/:type/:category', {
+                params: { type: type as string, category: e.target.value },
+              })
+            }
             className="border-0 bg-gray-100 px-1 py-2"
           >
             <option>healthcare</option>
@@ -90,7 +56,14 @@ function ReportsPage() {
       ) : (
         reports.map((report) => (
           <div key={report.report_id}>
-            <Link to={`/power-bi/${type}/${category}/${report.report_id}`}>
+            <Link
+              to="/power-bi/:type/:category/:id"
+              params={{
+                type: type as string,
+                category: category as string,
+                id: String(report.report_id),
+              }}
+            >
               <h2>{report.title_string}</h2>
               {report.power_bi_report_id_string && (
                 <iframe
