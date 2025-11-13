@@ -10,59 +10,126 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import ConfirmPopup from './Comfirmpopup';
-import type { TrafficSignal } from '../types/traffic.types';
+import type { TrafficLight } from '../types/traffic.types';
+import { putTrafficLight } from '../api/signal.api';
 
 interface TrafficSettingPopupProps {
   open: boolean;
-  signal: TrafficSignal | null;
-  onOpenChange?: (open: boolean) => void;
-  onSave?: (signal: TrafficSignal) => void;
+  trafficLight: TrafficLight | null;
+  onOpenChange: (open: boolean) => void;
+  onSave?: (trafficLight: TrafficLight) => void;
 }
 
 export default function TrafficSettingPopup({
   open,
-  signal,
+  trafficLight,
   onOpenChange,
   onSave,
 }: TrafficSettingPopupProps) {
-  const [intersectionId, setIntersectionId] = useState(1);
-  const [color, setColor] = useState<TrafficSignal['color']>('red');
-  const [duration, setDuration] = useState(30);
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [pendingUpdate, setPendingUpdate] = useState<TrafficSignal | null>(
-    null
+  const [intersectionId, setIntersectionId] = useState(
+    trafficLight?.intersection_id ?? 0
   );
-  const [Automode, setAutomode] = useState(true);
-  const [greenduration, setGreenduration] = useState(30);
-  const [redduration, setRedduration] = useState(120);
+  const [TrafficID, setTrafficID] = useState(trafficLight?.id ?? 0);
+  const [color, setColor] = useState(trafficLight?.current_color);
+  const [duration, setDuration] = useState(trafficLight?.status);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingUpdate, setPendingUpdate] = useState<TrafficLight | null>(null);
+  const [Automode, setAutomode] = useState(trafficLight?.auto_mode);
+  const [greenduration, setGreenduration] = useState(
+    trafficLight?.green_duration
+  );
+  const [redduration, setRedduration] = useState(trafficLight?.red_duration);
 
-  // Sync local state when signal or open changes
+  // Sync local state when the traffic light or open changes
   useEffect(() => {
-    if (signal) {
-      setIntersectionId(signal.intersectionId ?? 1);
-      setColor(signal.color ?? 'red');
-      setDuration(typeof signal.duration === 'number' ? signal.duration : 30);
+    if (trafficLight) {
+      setIntersectionId(trafficLight.intersection_id);
+      setTrafficID(trafficLight.id);
+
+      (async () => {
+        try {
+          const base = import.meta.env.VITE_API_BASE_URL ?? '';
+          const url = `http://localhost:3333/traffic-lights/${TrafficID}`;
+          const res = await fetch(url);
+          if (!res.ok) throw new Error('Failed to fetch traffic light');
+          const data: any = await res.json();
+
+          // Normalize current_color (API may return number or string)
+          if (typeof data.current_color === 'number') {
+            setColor(data.current_color);
+          } else if (typeof data.current_color === 'number') {
+            setColor(data.current_color);
+          }
+
+          setGreenduration(
+            data.green_duration ?? data.greenDuration ?? greenduration
+          );
+          setRedduration(data.red_duration ?? data.redDuration ?? redduration);
+          setAutomode(data.automode ?? data.auto_mode ?? Automode);
+        } catch (err) {
+          console.error('Error loading traffic light details', err);
+          // fallback to values from the provided signal
+          setColor(trafficLight.current_color);
+          setGreenduration(trafficLight.green_duration ?? greenduration);
+          setRedduration(trafficLight.red_duration ?? redduration);
+          setAutomode(trafficLight.auto_mode ?? Automode);
+        }
+      })();
+      setDuration(
+        typeof trafficLight.status === 'number' ? trafficLight.status : 0
+      );
     }
-  }, [signal, open]);
+  }, [trafficLight, open]);
 
   function handleSave() {
-    if (!signal) return;
-    const updated: TrafficSignal = {
-      ...signal,
-      intersectionId,
-      color,
-      duration: Number(duration),
-      automode: Automode,
+    if (!trafficLight) return;
+    const updated: TrafficLight = {
+      ...trafficLight,
+      // ensure we carry UI-edited values into the pending update
+      green_duration: greenduration ?? trafficLight.green_duration,
+      red_duration: redduration ?? trafficLight.red_duration,
+      auto_mode: Automode ?? trafficLight.auto_mode,
+      // status/current_color come from duration/color state
+      status:
+        typeof duration === 'number' && duration > 0
+          ? duration
+          : trafficLight.status,
+      current_color:
+        typeof color === 'number' && color > 0
+          ? color
+          : trafficLight.current_color,
     };
     setPendingUpdate(updated);
     setConfirmOpen(true);
   }
 
-  function handleConfirm() {
-    if (pendingUpdate) {
-      onSave?.(pendingUpdate);
-      onOpenChange?.(false);
+  async function handleConfirm() {
+    if (!pendingUpdate) return;
+
+    // Build request body following the API shape (snake_case)
+    const body = {
+      status: pendingUpdate.status,
+      current_color: pendingUpdate.current_color,
+      auto_mode: pendingUpdate.auto_mode,
+      ip_address: pendingUpdate.ip_address,
+      location: pendingUpdate.location,
+      density_level: pendingUpdate.density_level,
+      green_duration: pendingUpdate.green_duration,
+      red_duration: pendingUpdate.red_duration,
+      last_color: pendingUpdate.last_color,
+    } as any;
+
+    try {
+      const updatedFromServer = await putTrafficLight(TrafficID, body);
+
+      // Call onSave with the updated record (prefer server response)
+      onSave?.(updatedFromServer ?? pendingUpdate);
+      onOpenChange(false);
       setPendingUpdate(null);
+      setConfirmOpen(false);
+    } catch (err) {
+      console.error('Error updating traffic light', err);
+      alert('Error saving traffic light. See console for details.');
     }
   }
 
@@ -73,7 +140,7 @@ export default function TrafficSettingPopup({
           <DialogHeader>
             <DialogTitle>Traffic light Settings</DialogTitle>
             <DialogDescription>
-              View or edit settings for the selected traffic signal.
+              View or edit settings for the selected traffic light.
             </DialogDescription>
           </DialogHeader>
 
@@ -82,9 +149,9 @@ export default function TrafficSettingPopup({
               <label className="ml-2">Current Status</label>
               <div className="mt-1 flex flex-row gap-2 rounded-md bg-gray-200 p-2">
                 <div className="row flex w-1/2 items-center gap-4 rounded-lg bg-white p-4 shadow-md">
-                  {color == 'red' ? (
+                  {color == 1 ? (
                     <div className="h-15 w-15 rounded-full bg-red-500"></div>
-                  ) : color == 'yellow' ? (
+                  ) : color == 2 ? (
                     <div className="h-15 w-15 rounded-full bg-yellow-400"></div>
                   ) : (
                     <div className="h-15 w-15 rounded-full bg-green-500"></div>
@@ -93,16 +160,16 @@ export default function TrafficSettingPopup({
                 </div>
                 <div className="flex w-1/2 flex-col rounded-lg bg-white p-4 shadow-md">
                   <div className="ml-2 font-bold">
-                    Intersection : {intersectionId}
+                    Intersection : {trafficLight?.intersection_id}
                   </div>
                   <div className="ml-2 font-bold">
-                    Light NO : {intersectionId}
+                    Light NO : {trafficLight?.id}
                   </div>
                   <div className="ml-2 text-xs font-bold">
-                    Location : แยกนาหลวง
+                    Location : wait for connect with road
                   </div>
                   <div className="ml-2 text-xs font-bold">
-                    Auto-mode : {signal?.automode ? 'on' : 'off'}
+                    Auto-mode : {trafficLight?.auto_mode ? 'on' : 'off'}
                   </div>
                 </div>
               </div>
@@ -120,8 +187,8 @@ export default function TrafficSettingPopup({
                     <input
                       type="number"
                       min={1}
-                      value={greenduration}
-                      onChange={(e) => setGreenduration(Number(e.target.value))}
+                      value={redduration}
+                      onChange={(e) => setRedduration(Number(e.target.value))}
                       className="rounded-md border px-3 py-2"
                     />
                   </div>
@@ -135,8 +202,8 @@ export default function TrafficSettingPopup({
                     <input
                       type="number"
                       min={1}
-                      value={redduration}
-                      onChange={(e) => setRedduration(Number(e.target.value))}
+                      value={greenduration}
+                      onChange={(e) => setGreenduration(Number(e.target.value))}
                       className="rounded-md border px-3 py-2"
                     />
                   </div>
@@ -170,7 +237,7 @@ export default function TrafficSettingPopup({
         open={confirmOpen}
         onOpenChange={setConfirmOpen}
         title="Confirm Traffic light Settings"
-        description={`Are you sure you want to change the traffic light NO.${intersectionId} at intersection ${intersectionId}? This process will impact the system`}
+        description={`Are you sure you want to change the traffic light NO.${trafficLight?.id} at intersection ${trafficLight?.intersection_id}? This process will impact the system`}
         confirmText="Confirm"
         cancelText="Cancel"
         onConfirm={handleConfirm}
@@ -190,12 +257,12 @@ export default function TrafficSettingPopup({
               />
             </div>
 
-            <div className="grid grid-cols-1 gap-1">
+                <div className="grid grid-cols-1 gap-1">
               <label className="text-sm font-medium">Color</label>
               <select
                 value={color}
                 onChange={(e) =>
-                  setColor(e.target.value as TrafficSignal['color'])
+                  setColor(e.target.value as TrafficLight['color'])
                 }
                 className="rounded-md border px-3 py-2"
               >
