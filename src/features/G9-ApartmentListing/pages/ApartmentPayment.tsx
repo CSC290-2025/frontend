@@ -5,6 +5,15 @@ import LocationIcon from '@/features/G9-ApartmentListing/assets/LocationIcon.svg
 import BackIcon from '@/features/G9-ApartmentListing/assets/BackIcon.svg';
 import EWalletIcon from '@/features/G9-ApartmentListing/assets/EWalletIcon.svg';
 
+interface Apartment {
+  name: string;
+  rating: number;
+  address: string;
+  room: string;
+  size: string;
+  imageMain: string;
+}
+
 export default function ApartmentPayment() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -12,7 +21,7 @@ export default function ApartmentPayment() {
 
   const [balance, setBalance] = useState<number | null>(null);
   const [price, setPrice] = useState<number | null>(null);
-  const [apartment, setApartment] = useState<any>(null);
+  const [apartment, setApartment] = useState<Apartment | null>(null);
   const [showPopup, setShowPopup] = useState(false);
 
   useEffect(() => {
