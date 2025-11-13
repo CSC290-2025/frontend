@@ -1,12 +1,27 @@
 // Generouted, changes to this file will be overridden
- 
+/* eslint-disable */
 
 import { components, hooks, utils } from '@generouted/react-router/client';
 
-export type Path = `/` | `/example` | `/example/:id`;
+export type Path =
+  | `/`
+  | `/example`
+  | `/example/:id`
+  | `/power-bi`
+  | `/power-bi/:type/:category`
+  | `/power-bi/:type/:category/:id`
+  | `/power-bi/create`
+  | `/power-bi/edit/:id`;
 
 export type Params = {
   '/example/:id': { id: string };
+  '/power-bi/:type/:category': { type: string; category: string };
+  '/power-bi/:type/:category/:id': {
+    type: string;
+    category: string;
+    id: string;
+  };
+  '/power-bi/edit/:id': { id: string };
 };
 
 export type ModalPath = never;
