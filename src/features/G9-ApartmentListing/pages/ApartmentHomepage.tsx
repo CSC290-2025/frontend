@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from '@/router';
-import UserIcon from '@/assets/UserIcon.svg';
+import UserIcon from '@/assets/userIcon.svg';
 import ApartmentIcon from '@/assets/ApartmentIcon.svg';
 import SearchIcon from '@/assets/SearchIcon.svg';
 import UppageIcon from '@/assets/UppageIcon.svg';
