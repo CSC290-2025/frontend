@@ -36,7 +36,7 @@ export interface TrafficLightRequest {
   };
   timestamp: string;
 }
-export interface TrafficLight {
+export interface trafficLight {
   id: number;
   intersection_id: number;
   road_id: number;
@@ -55,7 +55,7 @@ export interface TrafficLight {
 export interface TrafficLightsResponse {
   success: boolean;
   data: {
-    trafficLights: TrafficLight[];
+    trafficLights: trafficLight[];
     total: number;
   };
   timestamp: string;

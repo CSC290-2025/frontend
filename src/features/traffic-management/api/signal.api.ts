@@ -1,7 +1,7 @@
 import { apiClient } from '@/lib/apiClient';
 import { ref, set, onValue, off, get } from 'firebase/database';
 import { database } from '@/lib/firebase';
-import type { TrafficSignal, TrafficLight } from '../types/traffic.types';
+import type { TrafficSignal, trafficLight } from '../types/traffic.types';
 
 // Get traffic signal status from Firebase
 export function subscribeToTrafficSignal(
@@ -63,8 +63,8 @@ export async function updateTrafficDurations(durations: {
 // Update traffic light via PUT endpoint
 export async function putTrafficLight(
   trafficLightId: number,
-  payload: Partial<TrafficLight>
-): Promise<TrafficLight> {
+  payload: Partial<trafficLight>
+): Promise<trafficLight> {
   const base = import.meta.env.VITE_API_BASE_URL ?? '';
   const url = `http://localhost:3333/traffic-lights/${trafficLightId}`;
 
@@ -84,5 +84,5 @@ export async function putTrafficLight(
     );
   }
 
-  return (await response.json()) as TrafficLight;
+  return (await response.json()) as trafficLight;
 }
