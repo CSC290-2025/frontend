@@ -1,18 +1,25 @@
-import React from 'react';
 import type { MetroCardItem } from './AmountBox';
 import { CreditCard } from 'lucide-react';
+import { useNavigate, useParams } from '@/router';
 
 interface MetroCardProps {
   card: MetroCardItem;
 }
 
 export default function MetroCard({ card }: MetroCardProps) {
-  const formatCardNumber = (cardNumber: string) => {
-    return cardNumber.replace(/(\d{4})(?=\d)/g, '$1 ');
-  };
+  const navigate = useNavigate();
+  const { user_id } = useParams('/financial/metro/:user_id');
 
   return (
     <div
+      onClick={() =>
+        navigate('/financial/metro/:user_id/info/:id', {
+          params: {
+            user_id,
+            id: String(card.id),
+          },
+        })
+      }
       key={card.id}
       className={`relative rounded-2xl p-6 text-white shadow-lg transition-shadow hover:shadow-xl ${
         card.status === 'suspended'
@@ -32,7 +39,7 @@ export default function MetroCard({ card }: MetroCardProps) {
       <div className="mb-6">
         <p className="mb-1 text-sm text-white/80">Card Number</p>
         <p className="font-mono text-lg font-semibold tracking-wider">
-          {formatCardNumber(card.card_number)}
+          {card.card_number}
         </p>
       </div>
 

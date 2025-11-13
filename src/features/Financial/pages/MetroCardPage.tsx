@@ -1,24 +1,48 @@
-import { useGetMetroCardsUserUserId } from '@/api/generated/metro-cards';
-import { useNavigate, useParams } from '@/router';
+import {
+  useGetMetroCardsUserUserId,
+  usePostMetroCards,
+} from '@/api/generated/metro-cards';
+import { useParams } from '@/router';
 import AmountBox from '../components/metro-cards/AmountBox';
 import { Plus } from 'lucide-react';
 import Loading from '../components/metro-cards/Loading';
 import ReuseableButton from '../components/metro-cards/ReuseableButton';
 import EmptyCard from '../components/metro-cards/EmptyCard';
 import MetroCard from '../components/metro-cards/MetroCard';
+import { toast } from 'sonner';
+import type {
+  PostMetroCards400Error,
+  PostMetroCards409Error,
+} from '@/api/generated/model';
+import type { AxiosError } from 'axios';
 
 export default function MetroCardPage() {
-  const { id } = useParams('/financial/metro/:id');
+  const { user_id } = useParams('/financial/metro/:user_id');
 
   const {
     data: metroCardResponse,
     refetch,
     isLoading,
-  } = useGetMetroCardsUserUserId(Number(id));
+  } = useGetMetroCardsUserUserId(Number(user_id));
+
+  const { mutate, isPending } = usePostMetroCards({
+    mutation: {
+      onSuccess: ({ data }) => {
+        refetch();
+        toast.success(data.message);
+      },
+      onError: (
+        error: AxiosError<PostMetroCards400Error | PostMetroCards409Error>
+      ) => {
+        const err = error.response?.data?.message;
+        toast.error(err);
+      },
+    },
+  });
 
   const metroCards = metroCardResponse?.data?.data.metroCards;
 
-  if (!id) {
+  if (!user_id) {
     return <div> no user id provided</div>;
   }
 
@@ -43,12 +67,15 @@ export default function MetroCardPage() {
           <ReuseableButton
             text="Add New Card"
             icon={<Plus />}
+            isPending={isPending}
+            spinner
             className="h-10"
-            onClick={() => console.log('ok')}
+            color="cyan"
+            onClick={() => mutate({ data: { user_id: Number(user_id) } })}
           />
         </div>
         {metroCards?.length === 0 ? (
-          <EmptyCard />
+          <EmptyCard isPending={isPending} mutate={mutate} />
         ) : (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
             {metroCards?.map((card) => (

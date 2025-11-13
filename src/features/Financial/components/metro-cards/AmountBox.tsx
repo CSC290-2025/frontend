@@ -17,7 +17,9 @@ interface AmountBoxProps {
 }
 
 export default function AmountBox({ metroCards, onRefetch }: AmountBoxProps) {
-  const totalBalance = metroCards.reduce((acc, card) => acc + card.balance!, 0);
+  const totalBalance = metroCards
+    .filter((card) => card.status === 'active')
+    .reduce((acc, card) => acc + card.balance!, 0);
 
   return (
     <Card className="mb-8">

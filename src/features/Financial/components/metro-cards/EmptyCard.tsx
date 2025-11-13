@@ -3,8 +3,13 @@ import { CreditCard, Plus } from 'lucide-react';
 import ReuseableButton from './ReuseableButton';
 import { useParams } from '@/router';
 
-export default function EmptyCard() {
-  const { id } = useParams('/financial/metro/:id');
+interface EmptyCardProps {
+  isPending: boolean;
+  mutate: (data: any) => void;
+}
+
+export default function EmptyCard({ isPending, mutate }: EmptyCardProps) {
+  const { user_id } = useParams('/financial/metro/:user_id');
 
   return (
     <Card>
@@ -19,8 +24,11 @@ export default function EmptyCard() {
         <ReuseableButton
           text="Create Metro Card"
           icon={<Plus />}
-          onClick={() => console.log('ok')}
+          onClick={() => mutate({ data: { user_id: Number(user_id) } })}
           className="h-10"
+          spinner
+          isPending={isPending}
+          color="cyan"
         />
       </CardContent>
     </Card>
