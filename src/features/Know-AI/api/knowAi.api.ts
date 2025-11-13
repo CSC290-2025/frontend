@@ -1,13 +1,25 @@
-// import { apiClient } from "@/lib/apiClient";
-// import { SuccessResponseInterface } from "../interfaces/api";
+import { apiClient } from '@/lib/apiClient';
 
-// export async function fetchAllCourses(params?: {
-//   search?: string;
-//   type?: CourseType;
-//   status?: CourseStatus;
-//   page?: number;
-//   limit?: number;
-// }) {
-//   const res = await apiClient.get<Course[]>("/courses", { params });
-//   return res.data;
-// }
+export const getAllCourses = async () => {
+  try {
+    const response = await apiClient.get(`/courses`);
+    console.log('response: ', response);
+    console.log('response.data: ', response);
+    console.log('response.data.data: ', response);
+    console.log('courses array: ', response.data.data.courses);
+    return response.data.data.courses;
+  } catch (error) {
+    console.error('Failed to fetch all courses: ', error);
+    throw error;
+  }
+};
+
+export const getCoursesByType = async (type: 'onsite' | 'online') => {
+  try {
+    const response = await apiClient.get(`/course/type/${type}`);
+    return response.data.data.courses;
+  } catch (error) {
+    console.error(`Failed to fetch courses by type ${type}: `, error);
+    throw error;
+  }
+};
