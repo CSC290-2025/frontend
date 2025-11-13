@@ -1,6 +1,7 @@
 import React from 'react';
 import Sidebar from '../components/Sidebar';
 import BusInfo from '../components/BusInfo';
+import MapView from '../components/MapView';
 
 export default function Home() {
   return (
@@ -38,11 +39,7 @@ export default function Home() {
         <div className="flex gap-6">
           {/* Map */}
           <div className="relative flex-1 overflow-hidden rounded-xl border border-gray-200">
-            <img
-              src="/map-placeholder.png"
-              alt="map"
-              className="h-[500px] w-full object-cover"
-            />
+            <MapView />
             <select className="absolute top-4 right-4 rounded-md border border-gray-300 bg-white px-3 py-1 text-sm">
               <option>Bus Station</option>
               <option>BTS Station</option>
