@@ -24,7 +24,7 @@ interface ReuseableButtonProps {
 const colorMap: Record<string, string> = {
   blue: 'bg-blue-500 hover:bg-blue-600 text-white',
   cyan: 'bg-cyan-400 hover:bg-cyan-500 text-white',
-  red: 'bg-red-500 hover:bg-red-500 text-white',
+  red: 'bg-red-500 hover:bg-red-300 text-white',
 };
 
 export default function ReuseableButton({
