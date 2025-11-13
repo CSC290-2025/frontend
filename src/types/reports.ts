@@ -4,6 +4,8 @@ export interface Report {
   description_string: string | null;
   category_id: number | null;
   power_bi_report_id_string: string | null;
+  visibility?: 'citizens' | 'admin' | null;
+  power_bi_report_type?: 'summary' | 'trends' | null;
   embedUrl?: string | null;
   dim_category?: {
     category_id: number;
@@ -26,6 +28,8 @@ export interface CreateReportData {
   description?: string | null;
   category: string;
   embedUrl?: string | null;
+  visibility?: 'citizens' | 'admin';
+  type?: 'summary' | 'trends';
 }
 
 export interface UpdateReportData {
@@ -33,6 +37,8 @@ export interface UpdateReportData {
   description?: string | null;
   category?: string;
   embedUrl?: string | null;
+  visibility?: 'citizens' | 'admin';
+  type?: 'summary' | 'trends';
 }
 
 export interface ApiResponse<T> {

@@ -25,7 +25,19 @@ function ReportsPage() {
         const categoryData = reportsByCategory[categoryKey];
         const categoryReports = categoryData?.reports || [];
 
-        setReports(categoryReports);
+        // Filter reports by type based on route parameter
+        // - "summary" route should only show reports with power_bi_report_type="summary"
+        // - "trends" route should only show reports with power_bi_report_type="trends"
+        const filteredByType = categoryReports.filter((report) => {
+          if (type === 'summary') {
+            return report.power_bi_report_type === 'summary';
+          } else if (type === 'trends') {
+            return report.power_bi_report_type === 'trends';
+          }
+          return true; // If type is unknown, show all
+        });
+
+        setReports(filteredByType);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to load reports');
         console.error('Error fetching reports:', err);
@@ -34,10 +46,10 @@ function ReportsPage() {
       }
     };
 
-    if (category) {
+    if (category && type) {
       fetchReports();
     }
-  }, [category]);
+  }, [category, type]);
 
   return (
     <div className="flex h-screen w-screen flex-col justify-around p-5">

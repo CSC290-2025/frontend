@@ -1,11 +1,11 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { useNavigate } from '@/router';
 import React, { useEffect, useState } from 'react';
-import { createReport, updateReport, type Report } from '../api/reports.api';
+import { createReport, updateReport } from '../api/reports.api';
+import type { Report } from '@/types/reports';
 
 interface ReportFormProps {
   oldReport?: Report | null;
@@ -26,8 +26,12 @@ function ReportForm({ oldReport }: ReportFormProps) {
       setForm({
         title: oldReport.title_string || '',
         url: oldReport.power_bi_report_id_string || '',
-        visibility: 'citizens', // Not in backend model, keeping for UI
-        type: 'summary', // Not in backend model, keeping for UI
+        visibility: (oldReport.visibility || 'citizens') as
+          | 'citizens'
+          | 'admin',
+        type: (oldReport.power_bi_report_type || 'summary') as
+          | 'summary'
+          | 'trends',
         category:
           oldReport.dim_category?.category_name?.toLowerCase() || 'healthcare',
         description: oldReport.description_string || '',
@@ -63,6 +67,8 @@ function ReportForm({ oldReport }: ReportFormProps) {
           description: form.description || null,
           category: form.category,
           embedUrl: form.url || null,
+          visibility: form.visibility as 'citizens' | 'admin',
+          type: form.type as 'summary' | 'trends',
         });
       } else {
         // Create new report
@@ -71,6 +77,8 @@ function ReportForm({ oldReport }: ReportFormProps) {
           description: form.description || null,
           category: form.category,
           embedUrl: form.url || null,
+          visibility: form.visibility as 'citizens' | 'admin',
+          type: form.type as 'summary' | 'trends',
         });
       }
       setSubmitted(true);
