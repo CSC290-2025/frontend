@@ -3,6 +3,11 @@ import type {
   Wallet,
   CreateWalletRequest,
   UpdateWalletRequest,
+  InsuranceCard,
+  CreateInsuranceCardData,
+  TopUpInsuranceCardData,
+  InsuranceCardResponse,
+  TopUpResponse,
 } from '@/features/Financial/types';
 
 // Fetch user wallet
@@ -10,7 +15,8 @@ export const fetchUserWallet = async (
   userId: number
 ): Promise<Wallet | null> => {
   const response = await apiClient.get(`/wallets/user/${userId}`);
-  return response.data?.data?.wallet || null;
+  const wallets = response.data?.data?.wallets || [];
+  return wallets[0] || null;
 };
 
 // Create wallet
@@ -58,5 +64,43 @@ export const transferFunds = async (
     to_user_id: toUserId,
     amount,
   });
+  return response.data?.data;
+};
+
+// Insurance Card API calls
+
+// Fetch user insurance cards
+export const fetchUserInsuranceCards = async (
+  userId: number
+): Promise<InsuranceCard[]> => {
+  const response = await apiClient.get(`/insurance-cards/user/${userId}`);
+  return response.data?.data?.cards || [];
+};
+
+// Fetch single insurance card
+export const fetchInsuranceCard = async (
+  cardId: number
+): Promise<InsuranceCard> => {
+  const response = await apiClient.get(`/insurance-cards/${cardId}`);
+  return response.data?.data?.card;
+};
+
+// Create insurance card
+export const createInsuranceCard = async (
+  data: CreateInsuranceCardData
+): Promise<InsuranceCard> => {
+  const response = await apiClient.post('/insurance-cards', data);
+  return response.data?.data?.card;
+};
+
+// Top up insurance card from wallet
+export const topUpInsuranceCard = async (
+  cardId: number,
+  data: TopUpInsuranceCardData
+): Promise<TopUpResponse> => {
+  const response = await apiClient.post(
+    `/insurance-cards/${cardId}/top-up`,
+    data
+  );
   return response.data?.data;
 };
