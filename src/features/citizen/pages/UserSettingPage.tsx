@@ -74,7 +74,7 @@ function UserSettingPage() {
       </div>
       <div className="flex gap-[20px]">
         <div>
-          <Picture username={account.Username} picture={account.Picture} />
+          <Picture username={account.Username} picture={picture} />
         </div>
         <div>
           <div className="mb-[39px] flex">
