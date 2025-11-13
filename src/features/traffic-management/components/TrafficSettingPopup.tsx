@@ -10,14 +10,15 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import ConfirmPopup from './Comfirmpopup';
-import type { TrafficLight } from '../types/traffic.types';
+import type { trafficLight } from '../types/traffic.types';
 import { putTrafficLight } from '../api/signal.api';
+import { set } from 'firebase/database';
 
 interface TrafficSettingPopupProps {
   open: boolean;
-  trafficLight: TrafficLight | null;
+  trafficLight: trafficLight | null;
   onOpenChange: (open: boolean) => void;
-  onSave?: (trafficLight: TrafficLight) => void;
+  onSave?: (trafficLight: trafficLight) => void;
 }
 
 export default function TrafficSettingPopup({
@@ -33,7 +34,7 @@ export default function TrafficSettingPopup({
   const [color, setColor] = useState(trafficLight?.current_color);
   const [duration, setDuration] = useState(trafficLight?.status);
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [pendingUpdate, setPendingUpdate] = useState<TrafficLight | null>(null);
+  const [pendingUpdate, setPendingUpdate] = useState<trafficLight | null>(null);
   const [Automode, setAutomode] = useState(trafficLight?.auto_mode);
   const [greenduration, setGreenduration] = useState(
     trafficLight?.green_duration
@@ -49,23 +50,19 @@ export default function TrafficSettingPopup({
       (async () => {
         try {
           const base = import.meta.env.VITE_API_BASE_URL ?? '';
-          const url = `http://localhost:3333/traffic-lights/${TrafficID}`;
+          const url = `http://localhost:3333/traffic-lights/${trafficLight.id}`;
           const res = await fetch(url);
           if (!res.ok) throw new Error('Failed to fetch traffic light');
-          const data: any = await res.json();
+          const response: any = await res.json();
 
+          console.log('This traffic light data:', response);
+
+          console.log('Current traffic data:', response.data.trafficLight);
           // Normalize current_color (API may return number or string)
-          if (typeof data.current_color === 'number') {
-            setColor(data.current_color);
-          } else if (typeof data.current_color === 'number') {
-            setColor(data.current_color);
-          }
-
-          setGreenduration(
-            data.green_duration ?? data.greenDuration ?? greenduration
-          );
-          setRedduration(data.red_duration ?? data.redDuration ?? redduration);
-          setAutomode(data.automode ?? data.auto_mode ?? Automode);
+          setColor(response.data.trafficLight.current_color);
+          setGreenduration(response.data.trafficLight.green_duration);
+          setRedduration(response.data.trafficLight.red_duration);
+          setAutomode(response.data.trafficLight.auto_mode);
         } catch (err) {
           console.error('Error loading traffic light details', err);
           // fallback to values from the provided signal
@@ -83,7 +80,7 @@ export default function TrafficSettingPopup({
 
   function handleSave() {
     if (!trafficLight) return;
-    const updated: TrafficLight = {
+    const updated: trafficLight = {
       ...trafficLight,
       // ensure we carry UI-edited values into the pending update
       green_duration: greenduration ?? trafficLight.green_duration,
@@ -169,7 +166,7 @@ export default function TrafficSettingPopup({
                     Location : wait for connect with road
                   </div>
                   <div className="ml-2 text-xs font-bold">
-                    Auto-mode : {trafficLight?.auto_mode ? 'on' : 'off'}
+                    Auto-mode : {Automode ? 'on' : 'off'}
                   </div>
                 </div>
               </div>
