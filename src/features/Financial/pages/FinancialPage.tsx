@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import {
-  useUserWallets,
+  useUserWallet,
   useCreateWallet,
   useUpdateWallet,
   useTopUpWallet,
   useGenerateQR,
+  useTransferFunds,
 } from '@/features/Financial/hooks/useUserWallets';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -29,21 +30,27 @@ export default function FinancialPage() {
   const [newOrgType, setNewOrgType] = useState('');
   const [qrRawData, setQrRawData] = useState('');
   const [topUpAmount, setTopUpAmount] = useState('');
+  const [transferToUserId, setTransferToUserId] = useState('');
+  const [transferAmount, setTransferAmount] = useState('');
 
-  const { data: wallets, refetch } = useUserWallets(Number(userId));
+  const { data: wallets, refetch } = useUserWallet(Number(userId));
+  const { data: recipientWallet } = useUserWallet(
+    transferToUserId ? Number(transferToUserId) : NaN
+  );
   const { mutateAsync: createWallet } = useCreateWallet();
   const { mutateAsync: updateWallet } = useUpdateWallet();
   const { mutateAsync: topUpWallet } = useTopUpWallet();
   const { mutateAsync: generateQR } = useGenerateQR();
+  const { mutateAsync: transferFunds } = useTransferFunds();
 
-  const wallet = wallets?.[0];
+  const wallet = wallets;
   const isOrg = wallet?.wallet_type === 'organization';
 
   return (
-    <div className="p-4">
+    <div className="space-y-4 p-4">
       <h1 className="mb-4">Financial Wallet</h1>
 
-      <div className="mb-4">
+      <div>
         <Label>User ID: </Label>
         <Input
           type="text"
@@ -62,7 +69,7 @@ export default function FinancialPage() {
       </div>
 
       {!wallet && (
-        <Card className="mb-4">
+        <Card>
           <CardContent className="space-y-4 pt-6">
             <div>
               <Label>Wallet Type</Label>
@@ -113,7 +120,7 @@ export default function FinancialPage() {
       {/* Wallet Info */}
       {wallet && (
         <>
-          <Card className="mb-4">
+          <Card>
             <CardContent className="p-4">
               <div className="mb-2">
                 <span className="font-semibold">Balance: </span>$
@@ -227,7 +234,6 @@ export default function FinancialPage() {
               </ul>
             </CardContent>
           </Card>
-
           <Card>
             <CardContent className="p-4">
               <div className="mb-2 font-semibold">Top Up</div>
@@ -276,6 +282,81 @@ export default function FinancialPage() {
                   </Button>
                 </div>
               )}
+            </CardContent>
+          </Card>
+
+          <Card className="mt-4">
+            <CardContent className="p-4">
+              <div className="mb-2 font-semibold">Transfer</div>
+              <p className="mb-4 text-sm text-gray-600">
+                Send money to another user.
+              </p>
+
+              <div className="space-y-4">
+                <div>
+                  <Label>Recipient User ID</Label>
+                  <Input
+                    type="number"
+                    placeholder="User ID to transfer to"
+                    value={transferToUserId}
+                    onChange={(e) => setTransferToUserId(e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <Label>Amount</Label>
+                  <Input
+                    type="number"
+                    placeholder="Amount to transfer"
+                    value={transferAmount}
+                    onChange={(e) => setTransferAmount(e.target.value)}
+                  />
+                  <Button
+                    onClick={async () => {
+                      const validations = [
+                        [
+                          userId === transferToUserId,
+                          'Cannot transfer to yourself',
+                        ],
+                        [
+                          wallet?.balance < Number(transferAmount),
+                          'Insufficient funds',
+                        ],
+                        [
+                          wallet?.status !== 'active',
+                          'Your wallet must be active',
+                        ],
+                        [!transferToUserId, 'Please enter a recipient user ID'],
+                        [!recipientWallet, 'Recipient wallet not found'],
+                        [
+                          recipientWallet?.status !== 'active',
+                          'Recipient wallet must be active',
+                        ],
+                      ];
+
+                      for (const [condition, errorMessage] of validations) {
+                        if (condition) {
+                          alert(errorMessage);
+                          return;
+                        }
+                      }
+
+                      await transferFunds({
+                        fromUserId: Number(userId),
+                        toUserId: Number(transferToUserId),
+                        amount: Number(transferAmount),
+                      });
+
+                      setTransferToUserId('');
+                      setTransferAmount('');
+                      refetch();
+                    }}
+                    disabled={!transferToUserId || !transferAmount}
+                  >
+                    Transfer
+                  </Button>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </>
