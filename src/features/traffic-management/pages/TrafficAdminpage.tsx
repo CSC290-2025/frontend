@@ -1,46 +1,56 @@
 import { useRef, useState, useEffect } from 'react';
 import TrafficSettingPopup from '../components/TrafficSettingPopup';
 import ConfirmPopup from '../components/Comfirmpopup';
-import type { TrafficSignal } from '../types/traffic.types';
+import type { TrafficLight } from '../types/traffic.types';
 import { Wrapper } from '@/features/traffic-management/components/react-google-maps/wrapper.tsx';
+import { useTrafficLights } from '../hooks/useTrafficLights';
 
-// Standalone traffic signal simulation
-function useStandaloneTrafficSignal() {
-  const [signal, setSignal] = useState({
-    lat: 13.647372072504554,
-    lng: 100.49553588244684,
-    duration: 45,
-    color: 'red' as 'red' | 'yellow' | 'green',
-    intersectionId: 1,
-  });
+// Convert TrafficLight to TrafficSignal for UI display
+{
+  /*function convertTrafficLightToSignal(light: TrafficLight): TrafficLight {
+  const colorMap: { [key: number]: 'red' | 'yellow' | 'green' } = {
+    0: 'red',
+    1: 'green',
+    2: 'yellow',
+  };
 
-  return { signal, setSignal, loading: false, error: null };
+  return {
+    status: light.current_color === 1 ? light.green_duration : light.red_duration,
+    current_color: light.current_color,
+    intersection_id: light.intersection_id,
+    auto_mode: light.auto_mode,
+  };
+}*/
 }
 
-function MapContent() {
+interface MapContentProps {
+  refreshRateMs: number;
+}
+
+function MapContent({ refreshRateMs }: MapContentProps) {
   const ref = useRef<HTMLDivElement>(null);
   const [map, setMap] = useState<google.maps.Map | null>(null);
-  const markerRef = useRef<google.maps.Marker | null>(null);
+  const markersRef = useRef<Map<number, google.maps.Marker>>(new Map());
   // popup control
   const [popupOpen, setPopupOpen] = useState(false);
-  const [selectedSignal, setSelectedSignal] = useState<TrafficSignal | null>(
+  const [selectedSignal, setSelectedSignal] = useState<TrafficLight | null>(
     null
   );
-  const signalRef = useRef<typeof signal | null>(null);
+  const [showDebug, setShowDebug] = useState(false);
 
-  const { signal, setSignal } = useStandaloneTrafficSignal();
+  // Fetch traffic lights with configurable refresh rate
+  const { trafficLights, loading, error, refetch, retryCount } =
+    useTrafficLights(refreshRateMs);
 
-  // keep a ref to latest signal so marker click handlers can read current value
+  // Initialize Map with first traffic light as center
   useEffect(() => {
-    signalRef.current = signal as any;
-  }, [signal]);
+    if (ref.current && !map && trafficLights.length > 0) {
+      const firstLight = trafficLights[0];
+      const [lng, lat] = firstLight.location.coordinates;
 
-  // Initialize Map
-  useEffect(() => {
-    if (ref.current && !map && signal) {
       const initialMap = new window.google.maps.Map(ref.current, {
-        center: { lat: signal.lat, lng: signal.lng },
-        zoom: 18,
+        center: { lat, lng },
+        zoom: 15,
         zoomControl: true,
         mapTypeControl: false,
         streetViewControl: false,
@@ -48,81 +58,223 @@ function MapContent() {
       });
       setMap(initialMap);
     }
-  }, [map, signal]);
+  }, [map, trafficLights]);
 
-  // Create and update marker with label
+  // Create and update markers for all traffic lights
   useEffect(() => {
-    if (!map || !signal) return;
+    if (!map) return;
 
-    const colorMap = {
-      red: '#ef4444',
-      yellow: '#fbbf24',
-      green: '#22c55e',
-    };
+    const currentMarkerIds = new Set(markersRef.current.keys());
+    const newMarkerIds = new Set(trafficLights.map((light) => light.id));
 
-    // Create SVG marker with duration text
-    const svgMarker = {
-      path: google.maps.SymbolPath.CIRCLE,
-      fillColor: colorMap[signal.color],
-      fillOpacity: 1,
-      strokeColor: '#ffffff',
-      strokeWeight: 3,
-      scale: 20,
-    };
+    // Remove markers that are no longer in the data
+    currentMarkerIds.forEach((id) => {
+      if (!newMarkerIds.has(id)) {
+        const marker = markersRef.current.get(id);
+        if (marker) {
+          marker.setMap(null);
+          markersRef.current.delete(id);
+        }
+      }
+    });
 
-    if (!markerRef.current) {
-      // Create marker first time
-      const marker = new google.maps.Marker({
-        map,
-        position: { lat: signal.lat, lng: signal.lng },
-        icon: svgMarker,
-        title: String(signal.intersectionId),
-        label: {
-          text: String(signal.duration),
+    // Create or update markers for all traffic lights
+    trafficLights.forEach((light) => {
+      const [lng, lat] = light.location.coordinates;
+
+      const colorMap = {
+        red: '#ef4444',
+        yellow: '#fbbf24',
+        green: '#22c55e',
+      };
+
+      const svgMarker = {
+        path: google.maps.SymbolPath.CIRCLE,
+        fillColor:
+          colorMap[
+            light.current_color === 1
+              ? 'red'
+              : light.current_color === 2
+                ? 'yellow'
+                : 'green'
+          ],
+        fillOpacity: 1,
+        strokeColor: '#ffffff',
+        strokeWeight: 3,
+        scale: 20,
+      };
+
+      const existingMarker = markersRef.current.get(light.id);
+
+      if (!existingMarker) {
+        // Create new marker
+        const marker = new google.maps.Marker({
+          map,
+          position: { lat, lng },
+          icon: svgMarker,
+          title: `INT-${light.intersection_id} (Road ${light.road_id})`,
+          label: {
+            text: String(light.status),
+            color: '#ffffff',
+            fontSize: '14px',
+            fontWeight: 'bold',
+          },
+        });
+
+        marker.addListener('click', () => {
+          setSelectedSignal(light);
+          setPopupOpen(true);
+        });
+
+        markersRef.current.set(light.id, marker);
+      } else {
+        // Update existing marker
+        existingMarker.setIcon(svgMarker);
+        existingMarker.setLabel({
+          text: String(light.status),
           color: '#ffffff',
-          fontSize: '16px',
+          fontSize: '14px',
           fontWeight: 'bold',
-        },
-      });
-      markerRef.current = marker;
-    } else {
-      // Update existing marker icon and label
-      markerRef.current.setIcon(svgMarker);
-      markerRef.current.setLabel({
-        text: String(signal.duration),
-        color: '#ffffff',
-        fontSize: '16px',
-        fontWeight: 'bold',
-      });
-      // nothing else needed here; popup is handled by React
-    }
-    // Attach marker click handler once (safe-guard using flag)
-    if (markerRef.current && !(markerRef.current as any)._reactClickAttached) {
-      markerRef.current.addListener('click', () => {
-        // use latest signal from ref
-        const latest = signalRef.current as any;
-        setSelectedSignal(latest ?? signal);
-        setPopupOpen(true);
-      });
-      (markerRef.current as any)._reactClickAttached = true;
-    }
+        });
+        existingMarker.setPosition({ lat, lng });
+      }
+    });
+  }, [map, trafficLights]);
 
-    // cleanup no-op
-    return () => undefined;
-  }, [map, signal]);
+  if (error) {
+    const apiBaseUrl =
+      import.meta.env.VITE_API_BASE_URL || 'http://localhost:3333';
 
-  // end MapContent
+    return (
+      <>
+        <div ref={ref} className="h-screen w-full bg-gray-100" />
+        <div className="absolute top-20 left-1/2 z-10 max-w-lg -translate-x-1/2 rounded-lg border border-red-400 bg-red-50 p-4 shadow-lg">
+          <div className="space-y-3">
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5 flex-shrink-0">
+                <svg
+                  className="h-5 w-5 text-red-600"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <p className="font-semibold text-red-800">Connection Error</p>
+                <p className="mt-1 text-sm text-red-700">{error.message}</p>
+                {error.type && (
+                  <p className="mt-1 text-xs text-red-600">
+                    Type: <span className="font-mono">{error.type}</span>
+                    {error.statusCode && ` (HTTP ${error.statusCode})`}
+                  </p>
+                )}
+                {retryCount > 0 && (
+                  <p className="mt-1 text-xs text-red-600">
+                    Retry attempts: {retryCount}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Troubleshooting tips */}
+            <div className="mt-3 border-t border-red-200 pt-3">
+              <button
+                onClick={() => setShowDebug(!showDebug)}
+                className="flex items-center gap-1 text-xs font-medium text-red-600 hover:text-red-700"
+              >
+                <span>{showDebug ? '▼' : '▶'}</span>
+                Troubleshooting Tips
+              </button>
+
+              {showDebug && (
+                <div className="mt-2 space-y-2 rounded bg-red-100 p-2 text-xs text-red-700">
+                  <p>
+                    <strong>API URL:</strong>{' '}
+                    <span className="font-mono break-all">{apiBaseUrl}</span>
+                  </p>
+                  <p>
+                    <strong>Endpoint:</strong>{' '}
+                    <span className="font-mono">
+                      {apiBaseUrl}/traffic-lights
+                    </span>
+                  </p>
+                  <div className="mt-2 space-y-1">
+                    <p className="font-semibold">Possible Issues:</p>
+                    <ul className="list-inside list-disc space-y-1">
+                      {error.type === 'network' && (
+                        <>
+                          <li>Backend server is not running</li>
+                          <li>Wrong API URL: check .env file</li>
+                          <li>Network/firewall blocking the connection</li>
+                        </>
+                      )}
+                      {error.type === 'timeout' && (
+                        <>
+                          <li>Backend server is slow or unresponsive</li>
+                          <li>Network connection is slow</li>
+                        </>
+                      )}
+                      {error.type === 'server' && error.statusCode === 404 && (
+                        <>
+                          <li>API endpoint /traffic-lights not found</li>
+                          <li>Backend routing may be incorrect</li>
+                        </>
+                      )}
+                      {(error.type === 'unknown' || !error.type) && (
+                        <>
+                          <li>Check browser console for more details</li>
+                          <li>
+                            Verify backend is running:{' '}
+                            <span className="font-mono">pnpm run dev</span>
+                          </li>
+                          <li>
+                            Check .env configuration in frontend/.env or
+                            .env.local
+                          </li>
+                        </>
+                      )}
+                    </ul>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Retry button */}
+            {error.retryable && (
+              <button
+                onClick={() => refetch()}
+                className="w-full rounded-md bg-red-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-red-700 active:bg-red-800"
+              >
+                {retryCount > 0
+                  ? `Retry (Attempt ${retryCount + 1})`
+                  : 'Retry Connection'}
+              </button>
+            )}
+          </div>
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
       <div ref={ref} className="h-screen w-full" />
+      {loading && trafficLights.length === 0 && (
+        <div className="absolute top-20 left-1/2 z-10 -translate-x-1/2 rounded-lg bg-blue-100 px-4 py-2 text-sm">
+          <p className="text-blue-800">Loading traffic lights...</p>
+        </div>
+      )}
       <TrafficSettingPopup
         open={popupOpen}
         onOpenChange={(v) => setPopupOpen(v)}
-        signal={selectedSignal}
+        trafficLight={selectedSignal}
         onSave={(updated) => {
-          // update the underlying signal state so marker updates
-          setSignal((prev: any) => ({ ...prev, ...updated }));
+          setSelectedSignal((prev) => (prev ? { ...prev, ...updated } : null));
           setPopupOpen(false);
         }}
       />
@@ -140,6 +292,7 @@ export default function TrafficAdminpage() {
   const [refreshrate, setrefreshrate] = useState(1);
   const [rrunit, setrrunit] = useState('sec');
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [LightRequest, setLightRequest] = useState<TrafficLight | null>(null);
 
   // Sample emergency requests
   const emergencyRequests = [
@@ -186,22 +339,25 @@ export default function TrafficAdminpage() {
 
   const refreshrange = (e: number) => {
     let sum = 0;
+    const MIN_REFRESH_MS = 500; // Minimum 0.5 seconds
+    const MAX_REFRESH_MS = 20000; // Maximum 20 seconds
+
     if (rrunit === 'sec') {
       sum = e * 1000;
     } else if (rrunit === 'milisec') {
       sum = e;
     }
 
-    if (sum > 20000) {
+    if (sum > MAX_REFRESH_MS) {
       if (rrunit === 'sec') setrefreshrate(20);
-      else if (rrunit === 'milisec') setrefreshrate(20000);
-    } else if (sum < 500) {
+      else if (rrunit === 'milisec') setrefreshrate(MAX_REFRESH_MS);
+    } else if (sum < MIN_REFRESH_MS) {
       if (rrunit === 'sec') {
         setrefreshrate(0.5);
       } else if (rrunit === 'milisec') {
-        setrefreshrate(500);
+        setrefreshrate(MIN_REFRESH_MS);
       }
-    } else if (sum >= 500 && sum <= 20000) {
+    } else if (sum >= MIN_REFRESH_MS && sum <= MAX_REFRESH_MS) {
       setrefreshrate(e);
     }
   };
@@ -347,24 +503,36 @@ export default function TrafficAdminpage() {
               </div>
 
               {/* refresh rate */}
-              <label className="text-sm">Map Refresh rate</label>
               <div>
-                <input
-                  type="number"
-                  placeholder="refresh rate (s)"
-                  value={refreshrate}
-                  onChange={(e) => setrefreshrate(Number(e.target.value))}
-                  className="mr-2 w-40 rounded-md px-3 py-2 outline-1"
-                />
+                <label className="text-sm font-medium text-gray-700">
+                  Map Refresh Rate
+                </label>
+                <div className="mt-2 flex items-center gap-2">
+                  <input
+                    type="number"
+                    placeholder="refresh rate"
+                    value={refreshrate}
+                    onChange={(e) => setrefreshrate(Number(e.target.value))}
+                    min={rrunit === 'sec' ? 0.5 : 500}
+                    max={rrunit === 'sec' ? 20 : 20000}
+                    step={rrunit === 'sec' ? 1 : 1000}
+                    className="w-32 rounded-md border border-gray-300 px-3 py-2 outline-none focus:border-blue-500"
+                  />
 
-                <select
-                  value={rrunit}
-                  onChange={(e) => setrrunit(e.target.value)}
-                  className="w-25 rounded-md border border-gray-300 px-3 py-2"
-                >
-                  <option>sec</option>
-                  <option>milisec</option>
-                </select>
+                  <select
+                    value={rrunit}
+                    onChange={(e) => setrrunit(e.target.value)}
+                    className="rounded-md border border-gray-300 px-3 py-2 outline-none focus:border-blue-500"
+                  >
+                    <option value="sec">seconds</option>
+                    <option value="milisec">milliseconds</option>
+                  </select>
+                </div>
+                <p className="mt-2 text-xs text-gray-600">
+                  {rrunit === 'sec'
+                    ? 'Valid range: 0.5 - 20 seconds'
+                    : 'Valid range: 500 - 20000 milliseconds'}
+                </p>
               </div>
 
               {/*sample setting */}
@@ -521,7 +689,13 @@ export default function TrafficAdminpage() {
       />
 
       <Wrapper apiKey={apiKey}>
-        <MapContent />
+        {(() => {
+          let refreshRateMs = 0;
+          if (refreshrate && refreshrate > 0) {
+            refreshRateMs = rrunit === 'sec' ? refreshrate * 1000 : refreshrate;
+          }
+          return <MapContent refreshRateMs={refreshRateMs} />;
+        })()}
       </Wrapper>
     </div>
   );
