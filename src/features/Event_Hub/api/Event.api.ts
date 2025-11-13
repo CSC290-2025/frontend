@@ -21,13 +21,13 @@ export const fetchEventById = (id: number) => {
 export const createEvent = (data: {
   host_user_id: number;
   title: string;
-  description?: string;
-  image_url?: string;
-  total_seats?: number;
+  description: undefined;
+  total_seats: number | undefined;
   start_at: string;
   end_at: string;
-  address_id?: number;
-  organization_id?: number;
+  organization_id: number | null;
+  address_id: number | null;
+  event_tag_id: number | null;
 }) => {
   return apiClient.post('/events', data);
 };
