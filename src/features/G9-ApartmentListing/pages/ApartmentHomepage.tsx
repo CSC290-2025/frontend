@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from '@/router';
-import userIcon from '@/assets/userIcon.svg';
-import apartmentIcon from '@/assets/apartmentIcon.svg';
-import searchIcon from '@/assets/searchIcon.svg';
-import uppage from '@/assets/uppage.svg';
+import UserIcon from '../../../assets/UserIcon.svg';
+import ApartmentIcon from '../../../assets/ApartmentIcon.svg';
+import SearchIcon from '../../../assets/SearchIcon.svg';
+import UppageIcon from '../../../assets/UppageIcon.svg';
+import LocationIcon from '../../../assets/LocationIcon.svg';
+import PhoneIcon from '../../../assets/PhoneIcon.svg';
 
 interface Apartment {
   id: number;
@@ -19,13 +21,16 @@ interface Apartment {
 }
 
 export default function ApartmentHomepage() {
-  const [searchTerm, setSearchTerm] = useState<string>(''); // For the search box
+  const [searchTerm, setSearchTerm] = useState<string>('');
   const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
   const [selectedRatings, setSelectedRatings] = useState<number[]>([]);
   const [minPrice, setMinPrice] = useState<number>(0);
   const [maxPrice, setMaxPrice] = useState<number>(20000);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const itemsPerPage = 5;
+
+  const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const apartments: Apartment[] = [
     {
@@ -107,6 +112,23 @@ export default function ApartmentHomepage() {
         'https://bcdn.renthub.in.th/listing_picture/201603/20160323/KFVR1t5u5w6KhpFVDWLY.jpg?class=moptimized',
     },
   ];
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsDropdownOpen(false);
+      }
+    }
+    if (isDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isDropdownOpen]);
 
   const filteredApartments = apartments.filter((apt) => {
     const matchesSearch = apt.name
@@ -198,8 +220,8 @@ export default function ApartmentHomepage() {
           <div className="flex items-center gap-3">
             <img
               className="h-12 w-12"
-              src={apartmentIcon}
-              alt="apartmentIcon"
+              src={ApartmentIcon}
+              alt="ApartmentIcon"
             />
             <h1 className="text-[40px] font-bold text-[#2B5991]">
               Apartment Hub
@@ -209,26 +231,57 @@ export default function ApartmentHomepage() {
             Looking for a new place? Find your next apartment right here
           </p>
         </div>
+        <div className="flex items-center gap-6">
+          {/* Search */}
+          <div className="relative flex w-80 items-center">
+            <span className="absolute top-1/2 left-4 -translate-y-1/2 text-gray-400">
+              <img className="h-5 w-5" src={SearchIcon} alt="SearchIcon" />
+            </span>
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={handleSearchChange}
+              placeholder="Search by name"
+              className="w-full rounded-lg border-1 border-gray-400 py-3 pr-16 pl-12 focus:border-[#2B5991] focus:outline-none"
+            />
+          </div>
 
-        {/* Search */}
-        <div className="relative flex w-80 items-center">
-          <span className="absolute top-1/2 left-4 -translate-y-1/2 text-gray-400">
-            <img className="h-5 w-5" src={searchIcon} alt="searchIcon" />
-          </span>
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={handleSearchChange}
-            placeholder="Search by name"
-            className="w-full rounded-2xl border-2 border-gray-300 py-3 pr-16 pl-12 focus:border-[#2B5991] focus:outline-none"
-          />
+          {/* User Icon and Dropdown */}
+          <div className="relative" ref={dropdownRef}>
+            <img
+              className="h-16 w-16 cursor-pointer"
+              src={UserIcon}
+              alt="UserIcon"
+              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            />
+
+            {/* Dropdown Menu*/}
+            {isDropdownOpen && (
+              <div className="ring-opacity-5 absolute right-0 z-10 mt-2 w-50 origin-top-right rounded-lg border-1 border-gray-400 bg-white shadow-lg focus:outline-none">
+                <div className="py-1" role="none">
+                  <Link
+                    to="/MyRentedAPT"
+                    className="text-md block w-full rounded-lg px-4 py-3 text-left text-gray-700 hover:bg-gray-100"
+                    role="menuitem"
+                    onClick={() => setIsDropdownOpen(false)}
+                  >
+                    My Rented Apartment
+                  </Link>
+                  {/* line */}
+                  <div className="border-t border-gray-300"></div>
+                  <Link
+                    to="/AdminListedAPT"
+                    className="text-md block w-full rounded-lg px-4 py-3 text-left text-gray-700 hover:bg-gray-100"
+                    role="menuitem"
+                    onClick={() => setIsDropdownOpen(false)}
+                  >
+                    My Listed Apartment
+                  </Link>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
-
-        <img
-          className="h-16 w-16 cursor-pointer"
-          src={userIcon}
-          alt="userIcon"
-        />
       </div>
 
       {/* Main Content */}
@@ -355,6 +408,14 @@ export default function ApartmentHomepage() {
                   cursor: pointer;
                   pointer-events: auto;
                 }
+                .no-spinners::-webkit-inner-spin-button,
+                .no-spinners::-webkit-outer-spin-button {
+                -webkit-appearance: none;
+                margin: 0;
+                }
+                .no-spinners {
+                -moz-appearance: textfield;
+                }
               `}</style>
             </div>
 
@@ -370,7 +431,7 @@ export default function ApartmentHomepage() {
                   min={0}
                   max={maxPrice - 1000}
                   onChange={(e) => handleMinChange(e)}
-                  className="w-32 rounded-xl border-2 border-gray-200 px-4 py-2 text-center font-semibold text-[#2B5991]"
+                  className="no-spinners w-32 rounded-xl border-2 border-gray-200 py-2 text-center font-semibold text-[#2B5991]"
                 />
               </div>
 
@@ -386,7 +447,7 @@ export default function ApartmentHomepage() {
                   min={minPrice + 1000}
                   max={20000}
                   onChange={(e) => handleMaxChange(e)}
-                  className="w-32 rounded-xl border-2 border-gray-200 px-4 py-2 text-center font-semibold text-[#2B5991]"
+                  className="no-spinners w-32 rounded-xl border-2 border-gray-200 py-2 text-center font-semibold text-[#2B5991]"
                 />
               </div>
             </div>
@@ -442,7 +503,7 @@ export default function ApartmentHomepage() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-xl font-bold text-gray-800">
+                    <p className="text-xl font-bold text-[#2B5991]">
                       {apartment.price.toLocaleString()}{' '}
                       <span className="text-sm font-normal text-gray-600">
                         Baht / Month
@@ -454,12 +515,16 @@ export default function ApartmentHomepage() {
                   </div>
                 </div>
                 <div className="mt-3 space-y-2 text-sm text-gray-600">
-                  <div className="flex items-center gap-2">
-                    <span className="text-gray-800">📍</span>
+                  <div className="mb-2 flex items-center gap-3">
+                    <span className="inline-block h-6 w-6 text-gray-800">
+                      <img src={LocationIcon} alt="LocationIcon" />
+                    </span>
                     <span>{apartment.address}</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-gray-800">📞</span>
+                  <div className="flex items-center gap-3">
+                    <span className="ml-1 inline-block h-4 w-4 text-gray-800">
+                      <img src={PhoneIcon} alt="PhoneIcon" />
+                    </span>
                     <span>{apartment.phone}</span>
                   </div>
                 </div>
@@ -508,6 +573,14 @@ export default function ApartmentHomepage() {
             >
               next ›
             </button>
+
+            <button
+              onClick={() => handlePageChange(totalPages)}
+              disabled={currentPage === totalPages}
+              className="flex h-10 items-center justify-center rounded-full border border-gray-300 bg-white px-4 hover:bg-gray-100 disabled:opacity-50"
+            >
+              last »
+            </button>
           </div>
         )}
       </main>
@@ -517,7 +590,7 @@ export default function ApartmentHomepage() {
         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
         className="fixed right-8 bottom-8 flex h-12 w-12 items-center justify-center rounded-full border border-gray-300 bg-white text-xl shadow-lg transition-colors hover:bg-gray-50"
       >
-        <img src={uppage} alt="uppage" />
+        <img src={UppageIcon} alt="Uppage" />
       </button>
     </div>
   );
