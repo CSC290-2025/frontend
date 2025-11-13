@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import UppageIcon from '@/assets/UppageIcon.svg';
-import LocationIcon from '@/assets/LocationIcon.svg';
-import PhoneIcon from '@/assets/PhoneIcon.svg';
-import ShareIcon from '@/assets/SearchIcon.svg';
+import UppageIcon from '@/assets/uppageIcon.svg';
+import LocationIcon from '@/assets/locationIcon.svg';
+import PhoneIcon from '@/assets/phoneIcon.svg';
+import ShareIcon from '@/assets/searchIcon.svg';
 import BackIcon from '@/assets/BackIcon.svg';
 import ShareModal from '@/features/G9-ApartmentListing/components/Share';
 import ReviewModal from '@/features/G9-ApartmentListing/components/Review';
