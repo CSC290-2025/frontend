@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import UppageIcon from '@/assets/UppageIcon.svg';
 import LocationIcon from '@/assets/locationIcon.svg';
 import PhoneIcon from '@/assets/phoneIcon.svg';
-import ShareIcon from '@/assets/searchIcon.svg';
+import ShareIcon from '@/assets/ShareIcon.svg';
 import BackIcon from '@/assets/BackIcon.svg';
 import ShareModal from '@/features/G9-ApartmentListing/components/Share';
 import ReviewModal from '@/features/G9-ApartmentListing/components/Review';
@@ -56,6 +57,8 @@ export default function ApartmentDetailPage() {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const reviewsPerPage = 3;
   const shareUrl = 'https://share.google/jZvJI3nwd7jcVDi48';
+
+  const navigate = useNavigate();
 
   const apartmentReviews: ReviewData[] = [
     {
@@ -137,7 +140,7 @@ export default function ApartmentDetailPage() {
     totalReviews: totalReviews,
     description: `READY TO MOVE IN!
 Apartment for rent modern style fully furnished with electronic appliances.
-Located at Soi Pracha Uthit45 near to KMUTT, Lotus, Big C, Bangkakok
+Located at Soi Pracha Uthit45 near to KMUTT, Lotus, Big C, Bangpakok
 Hospital and etc.
 Annual contract price starts from 4,600 Baht/Month
 FREE : Internet, cable TV
@@ -219,7 +222,7 @@ Facebook: https://www.facebook.com/cosmomansion/`,
   };
 
   const handleBookNow = () => {
-    window.location.href = '/ApartmentBooking';
+    navigate('/ApartmentBooking');
   };
 
   const handlePrevImage = () => {
@@ -489,7 +492,7 @@ Facebook: https://www.facebook.com/cosmomansion/`,
                       <th className="pb-3 text-left font-semibold">
                         <div>Monthly Rental</div>
                         <div className="text-xs font-normal text-gray-500">
-                          (Contact 1 year)
+                          (Contract 1 year)
                         </div>
                       </th>
                       <th className="pb-3 text-left font-semibold">
