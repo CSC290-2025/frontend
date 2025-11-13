@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
 import BookingComplete from '@/features/G9-ApartmentListing/components/BookingComplete';
 import LocationIcon from '@/features/G9-ApartmentListing/assets/LocationIcon.svg';
 import BackIcon from '@/features/G9-ApartmentListing/assets/BackIcon.svg';
@@ -15,9 +14,7 @@ interface Apartment {
 }
 
 export default function ApartmentPayment() {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { roomType } = location.state || {};
+  const roomType = 'Studio';
 
   const [balance, setBalance] = useState<number | null>(null);
   const [price, setPrice] = useState<number | null>(null);
@@ -53,19 +50,19 @@ export default function ApartmentPayment() {
 
   const handleViewBooking = () => {
     setShowPopup(false);
-    navigate('/MyRentedAPT');
+    window.location.href = '/MyRentedAPT';
   };
 
   return (
     <div className="relative flex min-h-screen flex-col items-center bg-[#F9FAFB] px-4 py-10">
       <div className="mb-6 w-full max-w-5xl">
         <div className="mb-6 flex w-full max-w-5xl items-center gap-3">
-          <button
-            onClick={() => navigate(-1)}
+          <a
+            href="/MyRentedAPT"
             className="flex h-10 w-10 items-center justify-center rounded-full transition duration-200 hover:bg-gray-100"
           >
             <img src={BackIcon} alt="Back" className="h-7 w-7" />
-          </button>
+          </a>
           <h1 className="text-[48px] font-bold text-gray-900">Room Booking</h1>
         </div>
 
@@ -123,9 +120,7 @@ export default function ApartmentPayment() {
                 </h3>
                 <div className="flex items-center gap-2">
                   <p className="text-[16px] font-medium text-gray-700">
-                    {apartment.rating
-                      ? parseFloat(apartment.rating).toFixed(1)
-                      : 'N/A'}
+                    {apartment.rating ? apartment.rating.toFixed(1) : 'N/A'}
                   </p>
 
                   <div className="flex">

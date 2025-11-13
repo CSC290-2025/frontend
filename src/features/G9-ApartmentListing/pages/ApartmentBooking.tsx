@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@/router';
 import BackIcon from '@/features/G9-ApartmentListing/assets/BackIcon.svg';
 import UserIcon from '@/features/G9-ApartmentListing/assets/UserIcon.svg';
 import RoomDetailIcon from '@/features/G9-ApartmentListing/assets/RoomDetailIcon.svg';
@@ -30,7 +30,7 @@ export default function ApartmentBooking() {
 
   const handleNext = () => {
     localStorage.setItem('bookingData', JSON.stringify(formData));
-    navigate('/Apartmentpayment', {
+    navigate('/ApartmentPayment', {
       state: { roomType: formData.roomType },
     });
   };

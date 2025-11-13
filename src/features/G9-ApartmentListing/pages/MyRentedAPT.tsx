@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import BackIcon from '@/features/G9-ApartmentListing/assets/BackIcon.svg';
 import Vineboom from '@/features/G9-ApartmentListing/assets/Vineboom.svg';
 
@@ -15,7 +14,6 @@ interface RentedApartment {
 }
 
 export default function MyRentedAPT() {
-  const navigate = useNavigate();
   const [apartments, setApartments] = useState<RentedApartment[]>([]);
 
   useEffect(() => {
@@ -46,19 +44,15 @@ export default function MyRentedAPT() {
     setApartments(mockData);
   }, []);
 
-  const handlePayNow = (apt: RentedApartment) => {
-    navigate('/Apartmentpayment', { state: { roomType: apt.roomType } });
-  };
-
   return (
     <div className="flex min-h-screen flex-col items-center bg-[#F9FAFB] px-4 py-10">
       <div className="mb-6 flex w-full max-w-5xl items-center gap-3">
-        <button
-          onClick={() => navigate('/ApartmentHomePage')}
+        <a
+          href="/ApartmentHomepage"
           className="flex h-10 w-10 items-center justify-center rounded-full transition duration-200 hover:bg-gray-100"
         >
           <img src={BackIcon} alt="Back" className="h-7 w-7" />
-        </button>
+        </a>
         <h1 className="text-[48px] font-bold text-gray-900">
           My Rented Apartments
         </h1>
@@ -111,12 +105,12 @@ export default function MyRentedAPT() {
 
               {apt.status === 'pending' && (
                 <div className="flex flex-col items-end">
-                  <button
-                    onClick={() => handlePayNow(apt)}
+                  <a
+                    href="/ApartmentPayment"
                     className="rounded-md bg-[#01CEF8] px-7 py-2 text-[16px] font-medium text-white transition hover:bg-[#4E8FB1]"
                   >
                     Pay Now
-                  </button>
+                  </a>
                   <div className="mt-2 flex items-center text-[14px] font-medium text-red-600">
                     <img src={Vineboom} alt="Alert" className="mr-2 h-5 w-5" />
                     <span>

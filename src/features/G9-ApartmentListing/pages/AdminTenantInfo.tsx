@@ -1,12 +1,9 @@
 import { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
 import { Pencil } from 'lucide-react';
 import ConfirmDelete from '@/features/G9-ApartmentListing/components/ConfirmDelete';
 
 export default function AdminTenantInfo() {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const apartmentName = location.state?.apartmentName || 'Current Tenants';
+  const apartmentName = 'Current Tenants';
   const [tenants, setTenants] = useState([
     {
       id: 1,
@@ -49,9 +46,6 @@ export default function AdminTenantInfo() {
           <div
             key={tenant.id}
             className="flex cursor-pointer flex-col items-center rounded-xl border border-gray-200 bg-white p-5 shadow-md transition hover:shadow-lg md:flex-row md:items-start"
-            onClick={() =>
-              navigate('/AdminEditTenant', { state: { tenant, apartmentName } })
-            }
           >
             <div className="mt-4 flex-1 md:mt-0 md:ml-6">
               <h3 className="text-xl font-semibold text-gray-800">
@@ -64,20 +58,13 @@ export default function AdminTenantInfo() {
               </p>
             </div>
 
-            <div
-              className="mt-4 flex flex-col items-end gap-20 md:mt-0 md:ml-4"
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button
-                onClick={() =>
-                  navigate('/AdminEditTenant', {
-                    state: { tenant, apartmentName },
-                  })
-                }
+            <div className="mt-4 flex flex-col items-end gap-20 md:mt-0 md:ml-4">
+              <a
+                href="/AdminEditTenant"
                 className="flex items-center justify-center gap-2 px-3 py-2 font-medium text-gray-700"
               >
                 <Pencil size={18} />
-              </button>
+              </a>
               <button
                 onClick={() => handleEndContractClick(tenant.id)}
                 className="flex items-center justify-center gap-2 rounded-md border border-gray-300 bg-white px-6 py-2 font-medium text-[#2B5991] hover:bg-gray-200"

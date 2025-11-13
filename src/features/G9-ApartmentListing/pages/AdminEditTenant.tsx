@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
 import { User, CalendarDays } from 'lucide-react';
 
 type Tenant = {
@@ -14,10 +13,17 @@ type Tenant = {
 };
 
 export default function AdminEditTenant() {
-  const navigate = useNavigate();
-  const location = useLocation();
-  const tenant = location.state?.tenant as Tenant | undefined;
-  const apartmentName = location.state?.apartmentName || 'Current Tenant';
+  //test data for now
+  const tenant = {
+    id: 1,
+    firstName: 'Charles',
+    lastName: 'Leclerc',
+    phone: '081-234-5678',
+    email: 'charlerc@example.com',
+    roomType: 'Studio',
+    checkin: '2025-10-01',
+  };
+  const apartmentName = 'Current Tenant';
 
   const [formData, setFormData] = useState<Tenant>({
     id: tenant?.id || Date.now(),
@@ -36,9 +42,6 @@ export default function AdminEditTenant() {
 
   const handleSave = () => {
     console.log('Saved tenant:', formData);
-    navigate('/AdminTenantInfo', {
-      state: { updatedTenant: formData, apartmentName: formData.apartmentName },
-    });
   };
 
   return (

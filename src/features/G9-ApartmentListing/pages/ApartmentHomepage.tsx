@@ -9,7 +9,7 @@ export default function ApartmentHomepage() {
         <div className="mb-1">
           <span className="mr-2 font-bold text-[#01CEF8]">Home</span>
           <a
-            href="/apartmenthomepage"
+            href="/ApartmentHomepage"
             className="text-gray-600 hover:text-[#4E8FB1] hover:underline"
           >
             HERE
@@ -18,7 +18,7 @@ export default function ApartmentHomepage() {
         <div className="mb-1">
           <span className="mr-2 font-bold text-[#01CEF8]">Booking</span>
           <a
-            href="/apartmentbooking"
+            href="/ApartmentBooking"
             className="text-gray-600 hover:text-[#4E8FB1] hover:underline"
           >
             HERE
@@ -27,7 +27,7 @@ export default function ApartmentHomepage() {
         <div className="mb-1">
           <span className="mr-2 font-bold text-[#01CEF8]">Payment</span>
           <a
-            href="/apartmentpayment"
+            href="/ApartmentPayment"
             className="text-gray-600 hover:text-[#4E8FB1] hover:underline"
           >
             HERE

@@ -1,5 +1,7 @@
 // import React from 'react';
+import { useParams } from '@/router';
 
 export default function ApartmentDetails() {
-  return <div>Apartment detail</div>;
+  const { id } = useParams('/ApartmentHomepage/:id');
+  return <div>Apartment detail for {id}</div>;
 }
