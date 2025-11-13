@@ -17,6 +17,12 @@ interface Contact {
   image: string;
 }
 
+interface E_num {
+  id: number;
+  name: string;
+  phone: string;
+}
+
 export default function HotlinePage() {
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -44,6 +50,19 @@ export default function HotlinePage() {
       name: 'T.M. Opera O',
       phone: '0624635984',
       image: 'https://i.imgur.com/zJbT2rI.png',
+    },
+  ];
+
+  const E_num: E_num[] = [
+    {
+      id: 1,
+      name: 'police',
+      phone: '191',
+    },
+    {
+      id: 2,
+      name: 'Hospital',
+      phone: '1691',
     },
   ];
 
@@ -80,6 +99,43 @@ export default function HotlinePage() {
         <TabsContent value="Family" className="mb-6">
           <div className="h-auto">
             {familyContacts.map((r) => (
+              <div key={r.id} className="mb-6">
+                <Card className="w-full">
+                  <CardContent>
+                    <div className="grid grid-cols-6">
+                      <div className="col-span-4 gap-2 pl-5">
+                        <div className="">{r.name}</div>
+                        <div className="flex items-center gap-3">
+                          <Button
+                            size="icon"
+                            className="rounded-full bg-gray-300 text-white hover:bg-gray-400"
+                          >
+                            <Phone className="h-5 w-5" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            className="rounded-full bg-gray-300 text-white hover:bg-gray-400"
+                          >
+                            <Edit className="h-5 w-5" />
+                          </Button>
+                          <Button
+                            size="icon"
+                            className="rounded-full bg-gray-300 text-white hover:bg-gray-400"
+                          >
+                            <Copy className="h-5 w-5" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            ))}
+          </div>
+        </TabsContent>
+        <TabsContent value="Emergency service" className="mb-6">
+          <div className="h-auto">
+            {E_num.map((r) => (
               <div key={r.id} className="mb-6">
                 <Card className="w-full">
                   <CardContent>
