@@ -5,6 +5,6 @@ import { useMemo } from 'react';
  */
 export function useUserRole(): { role: string } {
   // TODO: integrate with authentication/user context
-  const role = useMemo(() => 'citizens', []);
+  const role = useMemo(() => 'admin', []);
   return { role };
 }

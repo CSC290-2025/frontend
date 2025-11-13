@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Categories from '../components/Categories';
+import { useUserRole } from '../hooks/useUserRole';
 
 function Home() {
   const [openSection, setOpenSection] = useState(null);
@@ -8,10 +9,12 @@ function Home() {
     setOpenSection(openSection === section ? null : section);
   };
 
+  const { role } = useUserRole();
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center p-7">
       <h1 className="my-5 text-center text-xl font-bold">
-        Access your Citizen Portal
+        Access your {role} Portal
       </h1>
       <div className="flex items-center justify-around gap-5 text-center">
         <div

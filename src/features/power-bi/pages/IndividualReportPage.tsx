@@ -6,10 +6,10 @@ import { useReportById } from '../hooks/useReportById';
 import { deleteReport } from '../api/reports.api';
 
 function IndividualReportPage() {
-  const user = {
-    name: 'Alora',
-    role: 'admin', // TODO: Get from user context/auth
-  };
+  // const user = {
+  //   name: 'Alora',
+  //   role: 'admin',
+  // };
 
   const { type, category, id } = useParams('/power-bi/:type/:category/:id');
   const navigate = useNavigate();
@@ -75,7 +75,7 @@ function IndividualReportPage() {
         ></iframe>
       )}
       {report.description_string && <p>{report.description_string}</p>}
-      {user.role === 'admin' && (
+      {role === 'admin' && (
         <div className="mt-4 flex gap-2">
           <Button
             onClick={() =>
