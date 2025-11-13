@@ -8,12 +8,14 @@ export type Path =
   | `/example`
   | `/example/:id`
   | `/financial`
-  | `/financial/metro/:id`
+  | `/financial/metro/:user_id`
+  | `/financial/metro/:user_id/info/:id`
   | `/users`;
 
 export type Params = {
   '/example/:id': { id: string };
-  '/financial/metro/:id': { id: string };
+  '/financial/metro/:user_id': { user_id: string };
+  '/financial/metro/:user_id/info/:id': { user_id: string; id: string };
 };
 
 export type ModalPath = never;
