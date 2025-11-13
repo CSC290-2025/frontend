@@ -3,6 +3,7 @@ import { CitizenSetting } from '../../types';
 
 function Personal({ data }: CitizenSetting.PersonalProps) {
   const [editableData, setEditableData] = useState({
+    idCardNumber: data.IdCardNumber,
     firstname: data.Firstname,
     middleName: data.Middlename,
     lastName: data.Lastname,
@@ -30,9 +31,13 @@ function Personal({ data }: CitizenSetting.PersonalProps) {
       {/* ID card Number */}
       <div className="flex flex-col gap-[13px]">
         <h2 className="text-[20px] font-medium">ID card Number</h2>
-        <div className="h-[50px] w-[332px] gap-[10px] rounded-[10px] border border-[#00000040] bg-[#FAFAFA] px-[16px] py-[13px] text-[16px] text-[#2B5991]">
-          {data.IdCardNumber}
-        </div>
+        <input
+          type="text"
+          name="idCardNumber"
+          className="h-[50px] w-[332px] gap-[10px] rounded-[10px] border border-[#00000040] bg-[#FAFAFA] px-[16px] py-[13px] text-[16px] text-[#2B5991]"
+          value={editableData.idCardNumber}
+          onChange={handleChange}
+        />
       </div>
       {/* Full Name */}
       <div className="flex gap-[27px]">
