@@ -1,41 +1,28 @@
-import { useState } from 'react';
 import { CitizenSetting } from '../../types';
 
-function Personal({ data }: CitizenSetting.PersonalProps) {
-  const [editableData, setEditableData] = useState({
-    idCardNumber: data.IdCardNumber,
-    firstname: data.Firstname,
-    middleName: data.Middlename,
-    lastName: data.Lastname,
-    nationality: data.Nationality,
-    religion: data.Religion,
-    phoneNumber: data.PhoneNumber,
-    emergencyContact: data.EmergencyContact,
-    addressLine: data.AddressLine,
-    subDistrict: data.SubDistrict,
-    district: data.District,
-    province: data.Province,
-    postalCode: data.PostalCode,
-  });
+interface PersonalPropsWithSetter extends CitizenSetting.PersonalProps {
+  onDataChange: (newData: any) => void;
+}
 
+function Personal({ data, onDataChange }: PersonalPropsWithSetter) {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setEditableData((prevData) => ({
-      ...prevData,
+    onDataChange({
+      ...data,
       [name]: value,
-    }));
+    });
   };
 
   return (
     <div className="flex flex-col gap-[27px]">
-      {/* ID card Number */}
+      {/* ID card number */}
       <div className="flex flex-col gap-[13px]">
         <h2 className="text-[20px] font-medium">ID card Number</h2>
         <input
           type="text"
-          name="idCardNumber"
-          className="h-[50px] w-[332px] gap-[10px] rounded-[10px] border border-[#00000040] bg-[#FAFAFA] px-[16px] py-[13px] text-[16px] text-[#2B5991]"
-          value={editableData.idCardNumber}
+          name="IdCardNumber"
+          className="flex h-[50px] w-[332px] items-center gap-[10px] rounded-[10px] border border-[#00000040] bg-[#FAFAFA] px-[16px] py-[13px] text-[16px] text-[#2B5991]"
+          value={data.IdCardNumber}
           onChange={handleChange}
         />
       </div>
@@ -46,9 +33,9 @@ function Personal({ data }: CitizenSetting.PersonalProps) {
           <h2 className="text-[20px] font-medium">First name</h2>
           <input
             type="text"
-            name="firstname"
+            name="Firstname"
             className="h-[50px] w-[194px] gap-[10px] rounded-[10px] border border-[#00000040] bg-[#FAFAFA] px-[16px] py-[13px] text-[16px] text-[#2B5991]"
-            value={editableData.firstname}
+            value={data.Firstname}
             onChange={handleChange}
           />
         </div>
@@ -57,9 +44,9 @@ function Personal({ data }: CitizenSetting.PersonalProps) {
           <h2 className="text-[20px] font-medium">Middle name</h2>
           <input
             type="text"
-            name="middleName"
+            name="Middlename"
             className="h-[50px] w-[194px] gap-[10px] rounded-[10px] border border-[#00000040] bg-[#FAFAFA] px-[16px] py-[13px] text-[16px] text-[#2B5991]"
-            value={editableData.middleName}
+            value={data.Middlename}
             onChange={handleChange}
           />
         </div>
@@ -68,9 +55,9 @@ function Personal({ data }: CitizenSetting.PersonalProps) {
           <h2 className="text-[20px] font-medium">Last name</h2>
           <input
             type="text"
-            name="lastName"
+            name="Lastname"
             className="h-[50px] w-[194px] gap-[10px] rounded-[10px] border border-[#00000040] bg-[#FAFAFA] px-[16px] py-[13px] text-[16px] text-[#2B5991]"
-            value={editableData.lastName}
+            value={data.Lastname}
             onChange={handleChange}
           />
         </div>
@@ -84,18 +71,22 @@ function Personal({ data }: CitizenSetting.PersonalProps) {
           {/* Enthnicity */}
           <div className="flex flex-col gap-[13px]">
             <h2 className="text-[20px] font-medium">Enthnicity</h2>
-            <div className="h-[50px] w-[167px] gap-[10px] rounded-[10px] border border-[#00000040] bg-[#FAFAFA] px-[16px] py-[13px] text-[16px] text-[#2B5991]">
-              {data.Enthnicity}
-            </div>
+            <input
+              type="text"
+              name="Enthinicity"
+              className="flex h-[50px] w-[167px] items-center gap-[10px] rounded-[10px] border border-[#00000040] bg-[#FAFAFA] px-[16px] py-[13px] text-[16px] text-[#2B5991]"
+              value={data.Enthnicity}
+              onChange={handleChange}
+            />
           </div>
           {/* Nationality */}
           <div className="flex flex-col gap-[13px]">
             <h2 className="text-[20px] font-medium">Nationality</h2>
             <input
               type="text"
-              name="nationality"
+              name="Nationality"
               className="h-[50px] w-[167px] gap-[10px] rounded-[10px] border border-[#00000040] bg-[#FAFAFA] px-[16px] py-[13px] text-[16px] text-[#2B5991]"
-              value={editableData.nationality}
+              value={data.Nationality}
               onChange={handleChange}
             />
           </div>
@@ -104,9 +95,9 @@ function Personal({ data }: CitizenSetting.PersonalProps) {
             <h2 className="text-[20px] font-medium">Religion</h2>
             <input
               type="text"
-              name="religion"
+              name="Religion"
               className="h-[50px] w-[167px] gap-[10px] rounded-[10px] border border-[#00000040] bg-[#FAFAFA] px-[16px] py-[13px] text-[16px] text-[#2B5991]"
-              value={editableData.religion}
+              value={data.Religion}
               onChange={handleChange}
             />
           </div>
@@ -121,22 +112,18 @@ function Personal({ data }: CitizenSetting.PersonalProps) {
             <h2 className="text-[20px] font-medium">Phone number</h2>
             <input
               type="text"
-              name="phoneNumber"
+              name="PhoneNumber"
               className="h-[50px] w-[246px] gap-[10px] rounded-[10px] border border-[#00000040] bg-[#FAFAFA] px-[16px] py-[13px] text-[16px] text-[#2B5991]"
-              value={editableData.phoneNumber}
+              value={data.PhoneNumber}
               onChange={handleChange}
             />
           </div>
-          {/* Emergency Contact */}
+          {/* Emergency Contact - READ-ONLY */}
           <div className="flex flex-col gap-[13px]">
             <h2 className="text-[20px] font-medium">Emergency contact</h2>
-            <input
-              type="text"
-              name="emergencyContact"
-              className="h-[50px] w-[246px] gap-[10px] rounded-[10px] border border-[#00000040] bg-[#FAFAFA] px-[16px] py-[13px] text-[16px] text-[#2B5991]"
-              value={editableData.emergencyContact}
-              onChange={handleChange}
-            />
+            <div className="flex h-[50px] w-[246px] items-center gap-[10px] rounded-[10px] border border-[#00000040] bg-[#FAFAFA] px-[16px] py-[13px] text-[16px] text-[#2B5991]">
+              {data.EmergencyContact}
+            </div>
           </div>
         </div>
       </div>
@@ -148,9 +135,9 @@ function Personal({ data }: CitizenSetting.PersonalProps) {
             <h2 className="text-[20px] font-medium">Address line</h2>
             <input
               type="text"
-              name="addressLine"
+              name="AddressLine"
               className="h-[50px] w-[557px] gap-[10px] rounded-[10px] border border-[#00000040] bg-[#FAFAFA] px-[16px] py-[13px] text-[16px] text-[#2B5991]"
-              value={editableData.addressLine}
+              value={data.AddressLine}
               onChange={handleChange}
             />
           </div>
@@ -159,9 +146,9 @@ function Personal({ data }: CitizenSetting.PersonalProps) {
               <h2 className="text-[20px] font-medium">Sub-district</h2>
               <input
                 type="text"
-                name="subDistrict"
+                name="SubDistrict"
                 className="h-[50px] w-[226px] gap-[10px] rounded-[10px] border border-[#00000040] bg-[#FAFAFA] px-[16px] py-[13px] text-[16px] text-[#2B5991]"
-                value={editableData.subDistrict}
+                value={data.SubDistrict}
                 onChange={handleChange}
               />
             </div>
@@ -169,9 +156,9 @@ function Personal({ data }: CitizenSetting.PersonalProps) {
               <h2 className="text-[20px] font-medium">District</h2>
               <input
                 type="text"
-                name="district"
+                name="District"
                 className="h-[50px] w-[226px] gap-[10px] rounded-[10px] border border-[#00000040] bg-[#FAFAFA] px-[16px] py-[13px] text-[16px] text-[#2B5991]"
-                value={editableData.district}
+                value={data.District}
                 onChange={handleChange}
               />
             </div>
@@ -181,9 +168,9 @@ function Personal({ data }: CitizenSetting.PersonalProps) {
               <h2 className="text-[20px] font-medium">Province</h2>
               <input
                 type="text"
-                name="province"
+                name="Province"
                 className="h-[50px] w-[226px] gap-[10px] rounded-[10px] border border-[#00000040] bg-[#FAFAFA] px-[16px] py-[13px] text-[16px] text-[#2B5991]"
-                value={editableData.province}
+                value={data.Province}
                 onChange={handleChange}
               />
             </div>
@@ -191,9 +178,9 @@ function Personal({ data }: CitizenSetting.PersonalProps) {
               <h2 className="text-[20px] font-medium">Postal Code</h2>
               <input
                 type="text"
-                name="postalCode"
+                name="PostalCode"
                 className="h-[50px] w-[226px] gap-[10px] rounded-[10px] border border-[#00000040] bg-[#FAFAFA] px-[16px] py-[13px] text-[16px] text-[#2B5991]"
-                value={editableData.postalCode}
+                value={data.PostalCode}
                 onChange={handleChange}
               />
             </div>

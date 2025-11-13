@@ -1,24 +1,21 @@
-import { useState } from 'react';
 import { CitizenSetting } from '../../types';
 import ChangePasswordModal from './ChangePasswordModal';
+import { useState } from 'react';
 
-function Account({ data }: CitizenSetting.AccountProps) {
-  const [editableData, setEditableData] = useState({
-    username: data.Username,
-    email: data.Email,
-  });
+interface AccountPropsWithSetter extends CitizenSetting.AccountProps {
+  onDataChange: (newData: any) => void;
+}
 
-  // 👇 state สำหรับควบคุม modal
+function Account({ data, onDataChange }: AccountPropsWithSetter) {
   const [isModalOpen, setIsModalOpen] = useState(false);
-
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-    setEditableData((prevData) => ({
-      ...prevData,
+    onDataChange({
+      ...data,
       [name]: value,
-    }));
+    });
   };
 
   const changePasswordModal = () => {
@@ -32,9 +29,9 @@ function Account({ data }: CitizenSetting.AccountProps) {
           <h2 className="text-[20px] font-medium">Username</h2>
           <input
             type="text"
-            name="username"
+            name="Username"
             className="h-[50px] w-[289px] gap-[10px] rounded-[10px] border border-[#00000040] bg-[#FAFAFA] px-[16px] py-[13px] text-[16px] text-[#2B5991]"
-            value={editableData.username}
+            value={data.Username}
             onChange={handleChange}
           />
         </div>
@@ -43,9 +40,9 @@ function Account({ data }: CitizenSetting.AccountProps) {
           <h2 className="text-[20px] font-medium">Email</h2>
           <input
             type="text"
-            name="email"
+            name="Email"
             className="h-[50px] w-[320px] gap-[10px] rounded-[10px] border border-[#00000040] bg-[#FAFAFA] px-[16px] py-[13px] text-[16px] text-[#2B5991]"
-            value={editableData.email}
+            value={data.Email}
             onChange={handleChange}
           />
         </div>

@@ -62,12 +62,45 @@ function UserSettingPage() {
     getUser();
   }, [userID]);
 
+  const handlePersonalChange = (newData: any) => {
+    setUser((prev: any) => ({
+      ...prev,
+      personal: newData,
+    }));
+  };
+
+  const handleHealthChange = (newData: any) => {
+    setUser((prev: any) => ({
+      ...prev,
+      health: newData,
+    }));
+  };
+
+  const handleAccountChange = (newData: any) => {
+    setUser((prev: any) => ({
+      ...prev,
+      account: newData,
+    }));
+  };
+
   if (!user) return <div>Loading...</div>;
 
   const { personal, health, account, picture } = user;
 
+  const handleSave = async () => {
+    try {
+      await UserAPI.updateUserPersonal(userID, personal);
+      await UserAPI.updateUserHealth(userID, health);
+      await UserAPI.updateUserAccount(userID, account);
+      alert('Saved successfully!');
+    } catch (err) {
+      console.error(err);
+      alert('Failed to save.');
+    }
+  };
+
   return (
-    <div className="absolute top-[70px] left-[258px] flex h-[1297px] w-[1082px] flex-col gap-[37px] rounded-[20px] border opacity-100">
+    <div className="absolute top-[70px] left-[258px] flex w-[1082px] flex-col gap-[37px] rounded-[20px] border opacity-100">
       <div className="mt-[48px] ml-[80px] flex h-[78px] w-[373px] gap-[26px]">
         {/* icon */}
         <h1 className="text-[48px] text-[#2B5991]">Edit Profile</h1>
@@ -103,9 +136,23 @@ function UserSettingPage() {
               <h2 className="text-[20px] text-[#2B5991]">Account</h2>
             </div>
           </div>
-          {user && activeTab === 'personal' && <Personal data={personal} />}
-          {user && activeTab === 'health' && <Health data={health} />}
-          {user && activeTab === 'account' && <Account data={account} />}
+          {user && activeTab === 'personal' && (
+            <Personal data={personal} onDataChange={handlePersonalChange} />
+          )}
+          {user && activeTab === 'health' && (
+            <Health data={health} onDataChange={handleHealthChange} />
+          )}
+          {user && activeTab === 'account' && (
+            <Account data={account} onDataChange={handleAccountChange} />
+          )}
+          <div className="mt-4 mb-[27px] flex justify-center">
+            <button
+              className="cursor-pointer rounded bg-blue-500 px-6 py-2 text-white hover:bg-blue-600"
+              onClick={handleSave}
+            >
+              Save
+            </button>
+          </div>
         </div>
       </div>
     </div>
