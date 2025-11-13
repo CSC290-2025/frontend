@@ -2,8 +2,7 @@ import { useRef, useState, useEffect } from 'react';
 import TrafficSettingPopup from '../components/TrafficSettingPopup';
 import ConfirmPopup from '../components/Comfirmpopup';
 import type { TrafficSignal } from '../types/traffic.types';
-import { Wrapper, Status } from '@googlemaps/react-wrapper';
-import { set } from 'firebase/database';
+import { Wrapper } from '@/features/traffic-management/components/react-google-maps/wrapper.tsx';
 
 // Standalone traffic signal simulation
 function useStandaloneTrafficSignal() {
@@ -14,37 +13,6 @@ function useStandaloneTrafficSignal() {
     color: 'red' as 'red' | 'yellow' | 'green',
     intersectionId: 1,
   });
-
-  // Simulate traffic light countdown
-  {
-    /*useEffect(() => {
-    const timer = setInterval(() => {
-      setSignal((prev) => {
-        if (prev.duration <= 1) {
-          // Switch to next color
-          const nextColor =
-            prev.color === 'red'
-              ? 'green'
-              : prev.color === 'green'
-                ? 'yellow'
-                : 'red';
-
-          const nextDuration =
-            nextColor === 'red' ? 45 : nextColor === 'green' ? 30 : 5;
-
-          return {
-            ...prev,
-            color: nextColor,
-            duration: nextDuration,
-          };
-        }
-        return { ...prev, duration: prev.duration - 1 };
-      });
-  }, 1000);
-
-    return () => clearInterval(timer);
-  }, []);*/
-  }
 
   return { signal, setSignal, loading: false, error: null };
 }
@@ -162,26 +130,6 @@ function MapContent() {
   );
 }
 
-const render = (status: Status) => {
-  if (status === Status.FAILURE)
-    return (
-      <div className="flex h-screen items-center justify-center text-red-500">
-        Error loading map.
-      </div>
-    );
-  if (status === Status.LOADING)
-    return (
-      <div className="flex h-screen items-center justify-center">
-        Loading Map...
-      </div>
-    );
-  return (
-    <div className="flex h-screen items-center justify-center">
-      Initializing map...
-    </div>
-  );
-};
-
 export default function TrafficAdminpage() {
   const apiKey = 'AIzaSyCSfRzShn1CNQhK1WRbcBYao-veqTr201w';
   const [currentLocation, setCurrentLocation] = useState('');
@@ -236,7 +184,7 @@ export default function TrafficAdminpage() {
     console.log('Start navigation:', { currentLocation, destination });
   };
 
-  const refreshrange = (e) => {
+  const refreshrange = (e: number) => {
     let sum = 0;
     if (rrunit === 'sec') {
       sum = e * 1000;
@@ -572,7 +520,7 @@ export default function TrafficAdminpage() {
         }}
       />
 
-      <Wrapper apiKey={apiKey} render={render}>
+      <Wrapper apiKey={apiKey}>
         <MapContent />
       </Wrapper>
     </div>
