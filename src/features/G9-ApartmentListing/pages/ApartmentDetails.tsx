@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import UppageIcon from '@/assets/uppageIcon.svg';
+import UppageIcon from '@/assets/UppageIcon.svg';
 import LocationIcon from '@/assets/locationIcon.svg';
 import PhoneIcon from '@/assets/phoneIcon.svg';
 import ShareIcon from '@/assets/searchIcon.svg';

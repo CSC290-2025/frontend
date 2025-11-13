@@ -3,7 +3,7 @@ import { Link } from '@/router';
 import UserIcon from '@/assets/userIcon.svg';
 import ApartmentIcon from '@/assets/apartmentIcon.svg';
 import SearchIcon from '@/assets/searchIcon.svg';
-import UppageIcon from '@/assets/uppageIcon.svg';
+import UppageIcon from '@/assets/UppageIcon.svg';
 import LocationIcon from '@/assets/locationIcon.svg';
 import PhoneIcon from '@/assets/phoneIcon.svg';
 
