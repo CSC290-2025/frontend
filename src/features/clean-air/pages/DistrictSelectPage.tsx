@@ -3,7 +3,6 @@ import DistrictSearch from '../components/DistrictSearch';
 import DistrictList from '../components/DistrictList';
 
 export default function DistrictSelectPage() {
-  console.debug('DistrictSelectPage mounted');
   const [searchTerm, setSearchTerm] = useState('');
 
   return (

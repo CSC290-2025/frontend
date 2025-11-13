@@ -8,7 +8,6 @@ export function useDistrictsQuery() {
   return useQuery<District[], Error>(
     ['districts'],
     async () => {
-      console.log('useDistricts queryFn running');
       const data = await getDistricts();
       return data ?? [];
     },

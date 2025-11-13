@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import type { District as DistrictType } from '@/types/district';
 
 type Props = Partial<
@@ -11,7 +12,7 @@ const getCategoryColors = (category: string) => {
       return { categoryBg: 'bg-red-600', categoryText: 'text-white' };
     case 'MODERATE':
       return { categoryBg: 'bg-yellow-500', categoryText: 'text-black' };
-    case 'HEALTHY':
+    case 'GOOD':
       return { categoryBg: 'bg-green-500', categoryText: 'text-white' };
     default:
       return { categoryBg: 'bg-gray-400', categoryText: 'text-black' };
@@ -25,14 +26,13 @@ export default function DistrictItem({
   category,
   measured_at,
 }: Props) {
+  const navigate = useNavigate();
   const categorySafe = (category ?? 'Unknown').toString();
   const categoryUpper = categorySafe.toUpperCase();
   const { categoryBg, categoryText } = getCategoryColors(categoryUpper);
 
   const displayAqi = aqi ?? '—';
   const displayPm25 = pm25 ?? '—';
-
-  console.debug('DistrictItem measured_at:', measured_at);
 
   const getFormattedTime = (iso?: string) => {
     if (!iso) return '—';
@@ -56,11 +56,11 @@ export default function DistrictItem({
   const time = getFormattedTime(measured_at);
 
   const handleSelectDistrict = () => {
-    const name = (district ?? 'unknown').toLowerCase();
-    const urlDistrictName = name.replace(/\s+/g, '-');
-    localStorage.setItem('selectedDistrict', urlDistrictName);
-    window.location.href = `/dashboard/${urlDistrictName}`;
+    if (district) {
+      navigate(`/district-detail/${encodeURIComponent(district)}`);
+    }
   };
+
   return (
     <div
       onClick={handleSelectDistrict}
@@ -68,30 +68,22 @@ export default function DistrictItem({
         'flex cursor-pointer items-center justify-between rounded-2xl border border-black bg-white p-4 text-black shadow-lg transition-colors hover:bg-gray-100'
       }
     >
-           {' '}
       <div className="flex flex-col gap-1">
-                <div className="text-2xl font-bold">{district}</div>       {' '}
-        <div className="text-sm text-gray-700">{time}</div>     {' '}
+        <div className="text-2xl font-bold">{district}</div>
+        <div className="text-sm text-gray-700">{time}</div>
       </div>
-           {' '}
       <div className="flex flex-col items-end">
-               {' '}
         <div className="flex items-baseline">
-                    <div className="text-3xl font-bold">{displayAqi}</div>     
-              <div className="ml-1 text-base text-gray-700">AQI</div>     
-           {' '}
+          <div className="text-3xl font-bold">{displayAqi}</div>
+          <div className="ml-1 text-base text-gray-700">AQI</div>
         </div>
-               {' '}
-        <div className="text-sm text-gray-700">PM2.5: {displayPm25} µg/m³</div> 
-             {' '}
+        <div className="text-sm text-gray-700">PM2.5: {displayPm25} µg/m³</div>
         <div
           className={`text-sm font-semibold ${categoryText} ${categoryBg} mt-1 rounded px-2 py-0.5`}
         >
-                    {categoryUpper}       {' '}
+          {categoryUpper}
         </div>
-             {' '}
       </div>
-         {' '}
     </div>
   );
 }

@@ -1,4 +1,5 @@
 import React from 'react';
+import { useParams } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import {
@@ -8,6 +9,7 @@ import {
   faFaceFrown,
   faFaceDizzy,
 } from '@fortawesome/free-regular-svg-icons';
+import { useDistrictDetailQuery } from '../hooks/useDistrictDetail';
 
 interface CurrentAqiCardProps {
   onDocumentationClick: () => void;
@@ -19,58 +21,95 @@ interface StatusDetails {
   icon: IconDefinition;
 }
 
-interface CurrentAqiData {
-  aqi: number;
-  pm25: number;
-  location: string;
-  lastUpdated: string;
-}
-
-const mockData: CurrentAqiData = {
-  aqi: 162,
-  pm25: 56,
-  location: 'Sathon, Bangkok',
-  lastUpdated: '3 Oct 2025, 20:05',
+const getStatusAndStyle = (category: string): StatusDetails => {
+  switch (category.toUpperCase()) {
+    case 'UNHEALTHY':
+    case 'BAD':
+      return {
+        status: 'Unhealthy',
+        style: 'bg-red-600 text-white',
+        icon: faFaceFrown,
+      };
+    case 'MODERATE':
+      return {
+        status: 'Moderate',
+        style: 'bg-yellow-500 text-black',
+        icon: faFaceMeh,
+      };
+    case 'HEALTHY':
+    case 'GOOD':
+      return {
+        status: 'Good',
+        style: 'bg-green-500 text-white',
+        icon: faFaceGrinWide,
+      };
+    case 'DANGEROUS':
+      return {
+        status: 'Dangerous',
+        style: 'bg-red-500 text-white',
+        icon: faFaceDizzy,
+      };
+    default:
+      return {
+        status: 'Unknown',
+        style: 'bg-gray-400 text-black',
+        icon: faFaceSmile,
+      };
+  }
 };
 
-const getStatusAndStyle = (pm25: number): StatusDetails => {
-  if (pm25 <= 25) {
-    return {
-      status: 'Good',
-      style: 'bg-green-500 text-white',
-      icon: faFaceGrinWide,
-    };
-  } else if (pm25 <= 37.5) {
-    return {
-      status: 'Moderate',
-      style: 'bg-lime-500 text-gray-900',
-      icon: faFaceSmile,
-    };
-  } else if (pm25 <= 50) {
-    return {
-      status: 'Unhealthy (Sens.)',
-      style: 'bg-yellow-500 text-gray-900',
-      icon: faFaceMeh,
-    };
-  } else if (pm25 <= 90) {
-    return {
-      status: 'Unhealthy',
-      style: 'bg-orange-500 text-white',
-      icon: faFaceFrown,
-    };
-  } else {
-    return {
-      status: 'Dangerous',
-      style: 'bg-red-500 text-white',
-      icon: faFaceDizzy,
-    };
+const getFormattedTime = (iso?: string) => {
+  if (!iso) return 'No data';
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return 'Invalid date';
+  try {
+    return new Intl.DateTimeFormat('en-GB', {
+      year: 'numeric',
+      month: 'short',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: 'Asia/Bangkok',
+    }).format(d);
+  } catch {
+    return d.toLocaleString();
   }
 };
 
 export function CurrentAqiCard({ onDocumentationClick }: CurrentAqiCardProps) {
-  const { aqi, pm25, location, lastUpdated } = mockData;
+  const { district } = useParams<{ district: string }>();
+  const {
+    data: districtDetail,
+    isLoading,
+    error,
+  } = useDistrictDetailQuery(district);
 
-  const { status, style: statusStyle, icon } = getStatusAndStyle(pm25);
+  if (isLoading) {
+    return (
+      <div className="rounded-xl border border-gray-900 bg-white p-6 text-gray-900 shadow-2xl shadow-gray-400">
+        <div className="text-center">Loading air quality data...</div>
+      </div>
+    );
+  }
+
+  if (error || !districtDetail?.currentData) {
+    return (
+      <div className="rounded-xl border border-gray-900 bg-white p-6 text-gray-900 shadow-2xl shadow-gray-400">
+        <div className="text-center text-red-600">
+          {error?.message || 'No air quality data available'}
+        </div>
+      </div>
+    );
+  }
+
+  const currentData = districtDetail.currentData;
+  const aqi = currentData.aqi || 0;
+  const pm25 = currentData.pm25 || 0;
+  const category = currentData.category || 'Unknown';
+
+  const lastUpdated = getFormattedTime(currentData.measured_at);
+
+  const { status, style: statusStyle, icon } = getStatusAndStyle(category);
 
   const badgeColorClass = statusStyle.split(' ')[0];
   const iconColorClass = badgeColorClass.replace('bg-', 'text-');
@@ -108,7 +147,7 @@ export function CurrentAqiCard({ onDocumentationClick }: CurrentAqiCardProps) {
             className={`text-6xl ${iconColorClass}`}
           />
 
-          <p className="mt-2 text-lg font-medium">{location}</p>
+          <h2 className="mt-6 text-xl text-black">{district}, Bangkok</h2>
           <p className="text-sm text-gray-600">Last updated: {lastUpdated}</p>
         </div>
       </div>
