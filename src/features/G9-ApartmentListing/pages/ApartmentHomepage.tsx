@@ -220,7 +220,7 @@ export default function ApartmentHomepage() {
             value={searchTerm}
             onChange={handleSearchChange}
             placeholder="Search by name"
-            className="w-full rounded-[16px] border-2 border-gray-300 py-3 pr-16 pl-12 focus:border-[#2B5991] focus:outline-none"
+            className="w-full rounded-2xl border-2 border-gray-300 py-3 pr-16 pl-12 focus:border-[#2B5991] focus:outline-none"
           />
         </div>
 
