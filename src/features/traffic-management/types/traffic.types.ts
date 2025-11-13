@@ -52,6 +52,16 @@ export interface trafficLight {
   last_updated: string;
 }
 
+export interface lightRequest {
+  priority: string;
+  reason: string;
+  request_id: string;
+  requested_at: string;
+  requested_by: string;
+  status: string;
+  traffic_light_id: number;
+}
+
 export interface TrafficLightsResponse {
   success: boolean;
   data: {
