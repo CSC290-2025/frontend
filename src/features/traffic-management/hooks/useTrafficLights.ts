@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react';
 import { getTrafficLights } from '../api/traffic-feature.api';
-import type { TrafficLight } from '../types/traffic.types';
+import type { trafficLight } from '../types/traffic.types';
 
 export interface NetworkError extends Error {
   type: 'network' | 'timeout' | 'server' | 'unknown';
@@ -9,7 +9,7 @@ export interface NetworkError extends Error {
 }
 
 interface UseTrafficLightsReturn {
-  trafficLights: TrafficLight[];
+  trafficLights: trafficLight[];
   total: number;
   loading: boolean;
   error: NetworkError | null;
@@ -45,7 +45,7 @@ const createNetworkError = (err: unknown): NetworkError => {
 };
 
 export function useTrafficLights(refreshRate?: number): UseTrafficLightsReturn {
-  const [trafficLights, setTrafficLights] = useState<TrafficLight[]>([]);
+  const [trafficLights, setTrafficLights] = useState<trafficLight[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<NetworkError | null>(null);

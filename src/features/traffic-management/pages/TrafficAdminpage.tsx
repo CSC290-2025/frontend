@@ -1,9 +1,12 @@
 import { useRef, useState, useEffect } from 'react';
 import TrafficSettingPopup from '../components/TrafficSettingPopup';
 import ConfirmPopup from '../components/Comfirmpopup';
-import type { trafficLight } from '../types/traffic.types';
+import type { trafficLight, lightRequest } from '../types/traffic.types';
 import { Wrapper } from '@/features/traffic-management/components/react-google-maps/wrapper.tsx';
 import { useTrafficLights } from '../hooks/useTrafficLights';
+import { limitTiltRange } from '@vis.gl/react-google-maps';
+import { getLightrequest } from '../api/traffic-feature.api';
+import { set } from 'firebase/database';
 
 // Convert TrafficLight to TrafficSignal for UI display
 {
@@ -292,7 +295,26 @@ export default function TrafficAdminpage() {
   const [refreshrate, setrefreshrate] = useState(1);
   const [rrunit, setrrunit] = useState('sec');
   const [confirmOpen, setConfirmOpen] = useState(false);
-  const [LightRequest, setLightRequest] = useState<trafficLight | null>(null);
+  const [LightRequest, setLightRequest] = useState<lightRequest[]>([]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const base = import.meta.env.VITE_API_BASE_URL ?? '';
+        const url = `http://localhost:3333/api/light-requests`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('Failed to get request details');
+        const response: any = await res.json();
+
+        console.log('This traffic light data:', response);
+        console.log('Current traffic data:', response.data.data);
+        console.log('Light request data:', response.data.data[0].reason);
+        setLightRequest(response.data.data);
+      } catch (err) {
+        console.error('Error loading request details', err);
+      }
+    })();
+  }, []);
 
   // Sample emergency requests
   const emergencyRequests = [
@@ -632,15 +654,15 @@ export default function TrafficAdminpage() {
               </div>
 
               <div className="max-h-96 space-y-3 overflow-y-auto">
-                {offlineSignals.length > 0 ? (
-                  offlineSignals.map((signal) => (
+                {LightRequest.length > 0 ? (
+                  LightRequest.map((LR) => (
                     <div
-                      key={signal.id}
+                      key={LR.traffic_light_id}
                       className="rounded-md border border-yellow-200 bg-yellow-50 p-3 hover:bg-yellow-100"
                     >
                       <div className="mb-2 flex items-start justify-between">
                         <div className="font-semibold text-gray-800">
-                          {signal.location}
+                          Traffic Light NO. {LR.traffic_light_id}
                         </div>
                         <span className="rounded-full bg-yellow-100 px-2 py-1 text-xs font-bold text-yellow-700">
                           Offline
@@ -648,10 +670,13 @@ export default function TrafficAdminpage() {
                       </div>
                       <div className="text-sm text-gray-600">
                         <p>
-                          <strong>Reason:</strong> {signal.reason}
+                          <strong>Reason:</strong> {LR.reason}
                         </p>
                         <p>
-                          <strong>Last Seen:</strong> {signal.lastSeen}
+                          <strong>Request by</strong> {LR.requested_by}
+                        </p>
+                        <p>
+                          <strong>Last Seen:</strong> {LR.requested_at}
                         </p>
                       </div>
                     </div>
