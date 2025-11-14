@@ -480,7 +480,7 @@ export default function ApartmentHomepage() {
                       {apartment.name}
                     </h3>
                     <div className="mt-2 flex items-center gap-2">
-                      <span className="font-bold text-blue-600">
+                      <span className="font-md text-black">
                         {apartment.rating.toFixed(1)}
                       </span>
                       <div className="flex gap-0.5">

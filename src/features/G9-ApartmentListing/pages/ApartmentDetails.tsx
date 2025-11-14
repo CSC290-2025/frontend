@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from '@/router';
 import UppageIcon from '@/assets/UppageIcon.svg';
 import LocationIcon from '@/assets/locationIcon.svg';
 import PhoneIcon from '@/assets/phoneIcon.svg';
@@ -58,7 +58,7 @@ export default function ApartmentDetailPage() {
   const reviewsPerPage = 3;
   const shareUrl = 'https://share.google/jZvJI3nwd7jcVDi48';
 
-  const navigate = useNavigate();
+  // use Link from '@/router' for navigation links instead of useNavigate
 
   const apartmentReviews: ReviewData[] = [
     {
@@ -221,9 +221,7 @@ Facebook: https://www.facebook.com/cosmomansion/`,
     }
   };
 
-  const handleBookNow = () => {
-    navigate('/ApartmentBooking');
-  };
+  // navigation handled via <Link> in JSX
 
   const handlePrevImage = () => {
     setCurrentImageIndex((prev) =>
@@ -582,12 +580,12 @@ Facebook: https://www.facebook.com/cosmomansion/`,
             </div>
 
             {/* Book now */}
-            <button
-              onClick={handleBookNow}
-              className="w-full rounded-lg bg-cyan-400 py-4 text-xl font-bold text-white hover:bg-cyan-500"
+            <Link
+              to="/ApartmentBooking"
+              className="flex w-full items-center justify-center rounded-lg bg-cyan-400 py-4 text-xl font-bold text-white hover:bg-cyan-500"
             >
               Book now !
-            </button>
+            </Link>
           </div>
         </div>
       </div>
