@@ -73,7 +73,7 @@ function Personal({ data, onDataChange }: PersonalPropsWithSetter) {
             <h2 className="text-[20px] font-medium">Enthnicity</h2>
             <input
               type="text"
-              name="Enthinicity"
+              name="Enthnicity"
               className="flex h-[50px] w-[167px] items-center gap-[10px] rounded-[10px] border border-[#00000040] bg-[#FAFAFA] px-[16px] py-[13px] text-[16px] text-[#2B5991]"
               value={data.Enthnicity}
               onChange={handleChange}

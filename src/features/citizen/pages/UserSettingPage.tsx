@@ -22,12 +22,12 @@ function UserSettingPage() {
         Nationality: user.user_profiles?.nationality || '',
         Religion: user.user_profiles?.religion || '',
         PhoneNumber: user.phone || '',
-        EmergencyContact: user.emergency_contacts?.[0]?.phone || '',
-        AddressLine: user.user_profiles?.addresses?.[0]?.address_line || '',
-        SubDistrict: user.user_profiles?.addresses?.[0]?.subdistrict || '',
-        District: user.user_profiles?.addresses?.[0]?.district || '',
-        Province: user.user_profiles?.addresses?.[0]?.province || '',
-        PostalCode: user.user_profiles?.addresses?.[0]?.postal_code || '',
+        EmergencyContact: user.emergency_contacts?.[0]?.phone,
+        AddressLine: user.user_profiles?.addresses?.address_line,
+        SubDistrict: user.user_profiles?.addresses?.subdistrict,
+        District: user.user_profiles?.addresses?.district,
+        Province: user.user_profiles?.addresses?.province,
+        PostalCode: user.user_profiles?.addresses?.postal_code,
       },
       health: {
         BirthDate: user.user_profiles?.birth_date
@@ -53,6 +53,8 @@ function UserSettingPage() {
     const getUser = async () => {
       try {
         const apiData = await UserAPI.getUserProflie(userID);
+        console.log(apiData);
+
         const mappedData = mapUserData(apiData);
         setUser(mappedData);
       } catch (err) {
