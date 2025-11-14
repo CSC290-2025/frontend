@@ -3,10 +3,18 @@
 
 import { components, hooks, utils } from '@generouted/react-router/client';
 
-export type Path = `/` | `/example` | `/example/:id`;
+export type Path =
+  | `/`
+  | `/volunteer/board`
+  | `/volunteer/createpost`
+  | `/volunteer/detail/:id`
+  | `/volunteer/edit/:id`
+  | `/volunteer/userjoin`;
 
 export type Params = {
   '/example/:id': { id: string };
+  '/volunteer/detail/:id': { id: string };
+  '/volunteer/edit/:id': { id: string };
 };
 
 export type ModalPath = never;
