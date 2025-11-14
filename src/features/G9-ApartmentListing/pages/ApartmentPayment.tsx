@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from '@/router';
 import BookingComplete from '@/features/G9-ApartmentListing/components/BookingComplete';
 import LocationIcon from '@/features/G9-ApartmentListing/assets/LocationIcon.svg';
 import BackIcon from '@/features/G9-ApartmentListing/assets/BackIcon.svg';
@@ -14,7 +15,9 @@ interface Apartment {
 }
 
 export default function ApartmentPayment() {
-  const roomType = 'Studio';
+  const bookingData = localStorage.getItem('bookingData');
+  const roomType = bookingData ? JSON.parse(bookingData).roomType : 'Studio';
+  const navigate = useNavigate();
 
   const [balance, setBalance] = useState<number | null>(null);
   const [price, setPrice] = useState<number | null>(null);
@@ -36,7 +39,7 @@ export default function ApartmentPayment() {
         name: 'Cosmo mansion',
         rating: 4.0,
         address: 'Pracha Uthit road, Bangmod, Thungkru, Bangkok',
-        room: roomType || 'Studio',
+        room: roomType,
         size: '24 sq.m.',
         imageMain:
           'https://bcdn.renthub.in.th/listing_picture/201603/20160323/KFVR1t5u5w6KhpFVDWLY.jpg?class=moptimized',
@@ -57,12 +60,12 @@ export default function ApartmentPayment() {
     <div className="relative flex min-h-screen flex-col items-center bg-[#F9FAFB] px-4 py-10">
       <div className="mb-6 w-full max-w-5xl">
         <div className="mb-6 flex w-full max-w-5xl items-center gap-3">
-          <a
-            href="/MyRentedAPT"
+          <button
+            onClick={() => navigate('/ApartmentBooking')}
             className="flex h-10 w-10 items-center justify-center rounded-full transition duration-200 hover:bg-gray-100"
           >
             <img src={BackIcon} alt="Back" className="h-7 w-7" />
-          </a>
+          </button>
           <h1 className="text-[48px] font-bold text-gray-900">Room Booking</h1>
         </div>
 

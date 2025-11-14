@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { Pencil } from 'lucide-react';
+import { useNavigate } from '@/router';
 import ConfirmDelete from '@/features/G9-ApartmentListing/components/ConfirmDelete';
 
 export default function AdminTenantInfo() {
+  const navigate = useNavigate();
   const apartmentName = 'Current Tenants';
   const [tenants, setTenants] = useState([
     {
@@ -59,12 +61,12 @@ export default function AdminTenantInfo() {
             </div>
 
             <div className="mt-4 flex flex-col items-end gap-20 md:mt-0 md:ml-4">
-              <a
-                href="/AdminEditTenant"
+              <button
+                onClick={() => navigate('/AdminEditTenant')}
                 className="flex items-center justify-center gap-2 px-3 py-2 font-medium text-gray-700"
               >
                 <Pencil size={18} />
-              </a>
+              </button>
               <button
                 onClick={() => handleEndContractClick(tenant.id)}
                 className="flex items-center justify-center gap-2 rounded-md border border-gray-300 bg-white px-6 py-2 font-medium text-[#2B5991] hover:bg-gray-200"

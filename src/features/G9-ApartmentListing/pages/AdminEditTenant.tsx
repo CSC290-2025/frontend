@@ -31,7 +31,7 @@ export default function AdminEditTenant() {
     lastName: tenant?.lastName || '',
     phone: tenant?.phone || '',
     email: tenant?.email || '',
-    roomType: tenant?.roomType || 'Studio',
+    roomType: tenant?.roomType,
     checkin: tenant?.checkin || '',
     apartmentName,
   });
