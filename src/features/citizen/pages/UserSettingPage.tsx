@@ -91,9 +91,45 @@ function UserSettingPage() {
 
   const handleSave = async () => {
     try {
-      await UserAPI.updateUserPersonal(userID, personal);
-      await UserAPI.updateUserHealth(userID, health);
-      await UserAPI.updateUserAccount(userID, account);
+      const personalPayload = {
+        user: {
+          id_card_number: personal.IdCardNumber,
+          first_name: personal.Firstname,
+          middle_name: personal.Middlename,
+          last_name: personal.Lastname,
+          ethnicity: personal.Enthnicity,
+          nationality: personal.Nationality,
+          religion: personal.Religion,
+        },
+        address: {
+          address_line: personal.AddressLine,
+          province: personal.Province,
+          district: personal.District,
+          subdistrict: personal.SubDistrict,
+          postal_code: personal.PostalCode,
+        },
+      };
+
+      const healthPayload = {
+        birth_date: health.BirthDate,
+        blood_type: health.BloodType,
+        congenital_disease: health.CongenitalDisease,
+        allergy: health.Allergic,
+        height: Number(health.Height),
+        weight: Number(health.Weight),
+        gender: health.Gender,
+      };
+
+      const accountPayload = {
+        username: account.Username,
+        email: account.Email,
+        profile_picture: picture,
+      };
+
+      await UserAPI.updateUserPersonal(userID, personalPayload);
+      await UserAPI.updateUserHealth(userID, healthPayload);
+      await UserAPI.updateUserAccount(userID, accountPayload);
+
       alert('Saved successfully!');
     } catch (err) {
       console.error(err);
