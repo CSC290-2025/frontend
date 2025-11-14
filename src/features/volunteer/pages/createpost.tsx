@@ -50,7 +50,28 @@ export default function CreateVolunteerPost() {
   const [error, setError] = useState<string | null>(null);
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    // START OF MODIFICATION
+    if (field === 'maxVolunteers') {
+      const numValue = parseInt(value, 10);
+
+      // Allow empty string to clear the field, but enforce minimum 1 if a number is entered
+      if (value === '' || (numValue > 0 && !isNaN(numValue))) {
+        setFormData((prev) => ({ ...prev, [field]: value }));
+      } else if (numValue <= 0 && value !== '') {
+        // Optional: Set a specific error or default to 1
+        setError('Max Volunteers must be a positive number (minimum 1).');
+        // Prevent setting the state to an invalid number, keep the previous value or set to a valid one
+        // setFormData((prev) => ({ ...prev, [field]: '1' }));
+        return;
+      }
+    } else {
+      // END OF MODIFICATION
+      setFormData((prev) => ({ ...prev, [field]: value }));
+    }
+    // Clear the error if the user starts typing a valid value after an error
+    if (error && field === 'maxVolunteers' && parseInt(value, 10) > 0) {
+      setError(null);
+    }
   };
 
   const handleArrayChange = (
@@ -105,9 +126,19 @@ export default function CreateVolunteerPost() {
       requirements,
     } = formData;
 
-    // Basic validation to prevent crash (In a real app, this should be comprehensive)
-    if (!title || !date || !startTime || !endTime) {
-      setError('Title, Date, Start Time, and End Time are required.');
+    // Enhanced validation: check for required fields AND maxVolunteers > 0
+    const totalSeats = parseInt(maxVolunteers, 10);
+    if (
+      !title ||
+      !date ||
+      !startTime ||
+      !endTime ||
+      !maxVolunteers ||
+      totalSeats <= 0
+    ) {
+      setError(
+        'Title, Date, Start Time, End Time, and Max Volunteers (must be > 0) are required.'
+      );
       setIsLoading(false);
       return;
     }
@@ -149,7 +180,8 @@ ${requirements
       start_at: start_at,
       end_at: end_at,
       registration_deadline: registration_deadline_at,
-      total_seats: parseInt(maxVolunteers, 10),
+      // Use the validated totalSeats
+      total_seats: totalSeats,
       image_url: typeof uploadedImage === 'string' ? uploadedImage : undefined, // Send base64 string or undefined
 
       // testing with static IDs - replace with actual dynamic values (e.g., from auth context)
@@ -331,6 +363,8 @@ ${requirements
                   }
                   placeholder="55"
                   className="w-full rounded-xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                  // Added min attribute for better UI experience
+                  min="1"
                 />
               </div>
 

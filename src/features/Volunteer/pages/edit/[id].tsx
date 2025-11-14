@@ -9,6 +9,7 @@ interface VolunteerEvent {
   description: string | null;
   start_at: string | null;
   end_at: string | null;
+  registration_deadline: string | null;
   total_seats: number;
   image_url: string | null;
 }
@@ -17,7 +18,8 @@ interface UpdateEventData {
   title?: string;
   description?: string;
   start_at?: string;
-  end_at?: string;
+  end_at?: string; // This will hold 'HH:MM' string from the form
+  registration_deadline?: string; // This will hold 'YYYY-MM-DD' string from the form
   total_seats?: number;
   image_url?: string;
 }
@@ -28,9 +30,29 @@ interface ApiResponse<T> {
   message?: string;
 }
 
-const formatISODateForInput = (isoString: string | null | undefined) => {
+// 1. UPDATED: Function now accepts a 'type' to format the ISO string correctly
+const formatISODateForInput = (
+  isoString: string | null | undefined,
+  type: 'datetime-local' | 'date' | 'time'
+) => {
   if (!isoString) return '';
-  return isoString.substring(0, 16);
+  const date = new Date(isoString);
+  // Date objects created from ISO strings are often in UTC,
+  // so we format them to avoid timezone issues with input values.
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+
+  if (type === 'date') {
+    return `${year}-${month}-${day}`; // YYYY-MM-DD
+  }
+  if (type === 'time') {
+    return `${hours}:${minutes}`; // HH:MM
+  }
+  // Default (for start_at)
+  return `${year}-${month}-${day}T${hours}:${minutes}`; // YYYY-MM-DDTHH:MM
 };
 
 export default function EditVolunteerPage() {
@@ -41,7 +63,8 @@ export default function EditVolunteerPage() {
     title: '',
     description: '',
     start_at: '',
-    end_at: '',
+    end_at: '', // Will store HH:MM
+    registration_deadline: '', // Will store YYYY-MM-DD
     total_seats: 10,
     image_url: '',
   });
@@ -65,8 +88,14 @@ export default function EditVolunteerPage() {
           setFormData({
             title: event.title,
             description: event.description || '',
-            start_at: formatISODateForInput(event.start_at),
-            end_at: formatISODateForInput(event.end_at),
+            start_at: formatISODateForInput(event.start_at, 'datetime-local'),
+            // Use 'time' format for end_at
+            end_at: formatISODateForInput(event.end_at, 'time'),
+            // Use 'date' format for registration_deadline
+            registration_deadline: formatISODateForInput(
+              event.registration_deadline,
+              'date'
+            ),
             total_seats: event.total_seats,
             image_url: event.image_url || '',
           });
@@ -93,16 +122,48 @@ export default function EditVolunteerPage() {
     }));
   };
 
+  // Helper function to get the base date part of the start_at field
+  const getStartDatePart = () => {
+    if (!formData.start_at) return '';
+    // Assumes start_at is in 'YYYY-MM-DDTHH:MM' format
+    return formData.start_at.substring(0, 10); // YYYY-MM-DD
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     setError(null);
 
+    // 2. UPDATED: Reconstruct ISO strings for submission
+    const startDatePart = getStartDatePart();
     const payload = {
       ...formData,
-      start_at: formData.start_at ? `${formData.start_at}:00.000Z` : undefined,
-      end_at: formData.end_at ? `${formData.end_at}:00.000Z` : undefined,
+      start_at: formData.start_at ? `${formData.start_at}` : undefined,
+
+      // If end_at is only time ('HH:MM'), we need to combine it with a date
+      // For simplicity, we'll use the date from 'start_at'
+      end_at:
+        formData.end_at && startDatePart
+          ? `${startDatePart}T${formData.end_at}`
+          : undefined,
+
+      // If registration_deadline is only date ('YYYY-MM-DD'), we'll set the time to midnight (00:00)
+      registration_deadline: formData.registration_deadline
+        ? `${formData.registration_deadline}`
+        : undefined,
+
+      // Ensure total_seats is a number if it exists
+      total_seats: formData.total_seats
+        ? Number(formData.total_seats)
+        : undefined,
     };
+
+    // Remove undefined values from payload before sending
+    Object.keys(payload).forEach(
+      (key) =>
+        payload[key as keyof typeof payload] === undefined &&
+        delete payload[key as keyof typeof payload]
+    );
 
     try {
       const response = await axios.put(
@@ -200,9 +261,10 @@ export default function EditVolunteerPage() {
               Schedule & Capacity
             </h2>
             <div className="grid grid-cols-2 gap-4">
+              {/* Start Time remains datetime-local */}
               <div>
                 <label className="mb-2 block text-sm font-medium text-gray-700">
-                  Start Time *
+                  Start Time (Date & Time) *
                 </label>
                 <input
                   type="datetime-local"
@@ -213,14 +275,31 @@ export default function EditVolunteerPage() {
                   className="w-full rounded-xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:outline-none"
                 />
               </div>
+
+              {/* 3. UPDATED: End Time is now 'time' */}
               <div>
                 <label className="mb-2 block text-sm font-medium text-gray-700">
-                  End Time *
+                  End Time (Time Only) *
                 </label>
                 <input
-                  type="datetime-local"
+                  type="time"
                   name="end_at"
                   value={formData.end_at || ''}
+                  onChange={handleChange}
+                  required
+                  className="w-full rounded-xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                />
+              </div>
+
+              {/* 3. UPDATED: Registration Deadline is now 'date' */}
+              <div>
+                <label className="mb-2 block text-sm font-medium text-gray-700">
+                  Registration Deadline (Date Only) *
+                </label>
+                <input
+                  type="date"
+                  name="registration_deadline"
+                  value={formData.registration_deadline || ''}
                   onChange={handleChange}
                   required
                   className="w-full rounded-xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:outline-none"
@@ -233,7 +312,7 @@ export default function EditVolunteerPage() {
                 <input
                   type="number"
                   name="total_seats"
-                  value={formData.total_seats}
+                  value={formData.total_seats || 1} // Ensure value is not null/undefined for type="number"
                   onChange={handleChange}
                   min="1"
                   required
