@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link } from '@/router';
 import UppageIcon from '@/assets/UppageIcon.svg';
 import LocationIcon from '@/assets/locationIcon.svg';
@@ -274,7 +274,7 @@ Facebook: https://www.facebook.com/cosmomansion/`,
       </div>
 
       {/* Pictures */}
-      <div className="mx-auto mt-[-20px] max-w-7xl px-8 py-8">
+      <div className="mx-auto -mt-5 max-w-7xl px-8 py-8">
         <div className="grid grid-cols-2 gap-8">
           <div>
             <div className="mb-6">
@@ -303,7 +303,7 @@ Facebook: https://www.facebook.com/cosmomansion/`,
                   <button
                     key={index}
                     onClick={() => handleThumbnailClick(index)}
-                    className={`h-32 w-32 flex-shrink-0 overflow-hidden rounded-lg ${
+                    className={`h-32 w-32 shrink-0 overflow-hidden rounded-lg ${
                       currentImageIndex === index ? 'ring-4 ring-cyan-400' : ''
                     }`}
                   >
@@ -369,7 +369,7 @@ Facebook: https://www.facebook.com/cosmomansion/`,
                     >
                       <div className="mb-3 flex items-start justify-between">
                         <div className="flex gap-3">
-                          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-gray-200 text-xl">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gray-200 text-xl">
                             {review.avatar}
                           </div>
                           <div>

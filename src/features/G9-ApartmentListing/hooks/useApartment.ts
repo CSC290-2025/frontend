@@ -7,6 +7,7 @@ export function useApartment(id: number) {
   return useQuery({
     queryKey: ['apartment', id],
     queryFn: () => APTapi.fetchApartmentById(id),
+    select: (data) => data.data, // Extract just the data from AxiosResponse
     enabled: !!id,
   });
 }
@@ -15,7 +16,16 @@ export function useApartment(id: number) {
 export function useApartments() {
   return useQuery({
     queryKey: ['apartments'],
-    queryFn: APTapi.fetchAllApartments,
+    queryFn: () => APTapi.fetchAllApartments(),
+    select: (response) => {
+      // Handle the API response structure
+      // If response.data has the structure { success: true, data: [...], timestamp: "..." }
+      if (response.data && response.data.data) {
+        return response.data.data;
+      }
+      // Fallback to response.data if it's already the array
+      return response.data;
+    },
   });
 }
 
@@ -24,6 +34,7 @@ export function useApartmentsByUser(userId: number) {
   return useQuery({
     queryKey: ['apartments', 'user', userId],
     queryFn: () => APTapi.fetchApartmentsByUser(userId),
+    select: (data) => data.data, // Extract just the data from AxiosResponse
     enabled: !!userId,
   });
 }
@@ -33,6 +44,7 @@ export function useAvailableRoomsCount(id: number) {
   return useQuery({
     queryKey: ['apartment', 'available-rooms', id],
     queryFn: () => APTapi.countAvailableRooms(id),
+    select: (data) => data.data, // Extract just the data from AxiosResponse
     enabled: !!id,
   });
 }
@@ -45,6 +57,7 @@ export function useFilteredApartments(
   return useQuery({
     queryKey: ['apartments', 'filter', filters],
     queryFn: () => APTapi.filterApartments(filters),
+    select: (data) => data.data, // Extract just the data from AxiosResponse
     enabled: enabled && Object.keys(filters).length > 0,
   });
 }
@@ -100,6 +113,7 @@ export function useRoomPriceRange(apartmentId: number) {
   return useQuery({
     queryKey: ['apartment', apartmentId, 'room-price-range'],
     queryFn: () => APTapi.getRoomPriceRange(apartmentId),
+    select: (data) => data.data, // Extract just the data from AxiosResponse
     enabled: !!apartmentId,
   });
 }

@@ -6,7 +6,7 @@ export const fetchRatingsByApartmentId = (id: number) => {
 };
 
 export const fetchAverageRatingByApartmentId = (id: number) => {
-  return apiClient.get(`/ratings/apartment/${id}/average`);
+  return apiClient.get(`/apartments/${id}/ratings/average`);
 };
 
 export const createRating = (data: ratingTypes.createRating) => {

@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { AxiosError } from 'axios';
 import {
   fetchRatingsByApartmentId,
   fetchAverageRatingByApartmentId,
@@ -23,8 +24,44 @@ export function useRatingsByApartment(apartmentId: number) {
 export function useAverageRating(apartmentId: number) {
   return useQuery({
     queryKey: ['ratings', 'apartment', apartmentId, 'average'],
-    queryFn: () => fetchAverageRatingByApartmentId(apartmentId),
+    queryFn: async () => {
+      try {
+        const response = await fetchAverageRatingByApartmentId(apartmentId);
+        return response;
+      } catch (error) {
+        // If the endpoint returns 404 (not found), return default rating of 0
+        if (error instanceof AxiosError && error.response?.status === 404) {
+          return { data: { average: 0 } };
+        }
+        throw error; // Re-throw other errors
+      }
+    },
+    select: (data) => {
+      // Handle the actual backend response structure
+      // If data.data is a number (like 0), convert it to the expected format
+      if (typeof data.data === 'number') {
+        return { average: data.data };
+      }
+      // If data.data is already an object with average property, return it as is
+      if (
+        data.data &&
+        typeof data.data === 'object' &&
+        'average' in data.data
+      ) {
+        return data.data;
+      }
+      // Fallback
+      return { average: 0 };
+    },
     enabled: !!apartmentId,
+    retry: (failureCount, error) => {
+      // Don't retry on 404 errors since we handle them gracefully
+      if (error instanceof AxiosError && error.response?.status === 404) {
+        return false;
+      }
+      // Default retry behavior for other errors
+      return failureCount < 3;
+    },
   });
 }
 
