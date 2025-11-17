@@ -17,35 +17,31 @@ export default function MyRentedAPT() {
   const [apartments, setApartments] = useState<RentedApartment[]>([]);
 
   useEffect(() => {
-    const mockData: RentedApartment[] = [
-      {
-        id: 1,
-        name: 'Cosmo Mansion',
-        tenantName: 'Natthanicha Bualoi',
-        email: 'lnwZa007@gmail.com',
-        phone: '08X-XXX-XXXX',
-        roomType: 'Studio',
-        status: 'pending',
-        image:
-          'https://bcdn.renthub.in.th/listing_picture/201603/20160323/KFVR1t5u5w6KhpFVDWLY.jpg?class=moptimized',
-      },
-      {
-        id: 2,
-        name: 'Sukkhawat Mansion',
-        tenantName: 'Kalyathorn Yakyailaiyaklek',
-        email: 'kalYak05@example.com',
-        phone: '09X-XXX-XXXX',
-        roomType: 'Double',
-        status: 'current',
-        image:
-          'https://bcdn.renthub.in.th/listing_picture/201811/20181130/GHriKPK4npXx7HRtsMR1.jpg?class=doptimized',
-      },
-    ];
-    setApartments(mockData);
+    const saved = localStorage.getItem('bookingData');
+
+    if (saved) {
+      const data = JSON.parse(saved);
+
+      const rented: RentedApartment[] = [
+        {
+          id: 1,
+          name: 'Cosmo Mansion',
+          tenantName: `${data.firstName} ${data.lastName}`,
+          email: data.email,
+          phone: data.phone,
+          roomType: data.roomType,
+          status: 'pending',
+          image:
+            'https://bcdn.renthub.in.th/listing_picture/201603/20160323/KFVR1t5u5w6KhpFVDWLY.jpg?class=moptimized',
+        },
+      ];
+
+      setApartments(rented);
+    }
   }, []);
 
   return (
-    <div className="flex min-h-screen flex-col items-center bg-[#F9FAFB] px-4 py-10">
+    <div className="font-poppins flex min-h-screen flex-col items-center bg-[#F9FAFB] px-4 py-10">
       <div className="mb-6 flex w-full max-w-5xl items-center gap-3">
         <a
           href="/ApartmentHomepage"

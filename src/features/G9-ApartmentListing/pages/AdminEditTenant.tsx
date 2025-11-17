@@ -1,69 +1,87 @@
-import { useState } from 'react';
-import { User, CalendarDays } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from '@/router';
 
-type Tenant = {
-  id: number;
-  firstName: string;
-  lastName: string;
-  phone: string;
-  email: string;
-  roomType: string;
-  checkin: string;
-  apartmentName?: string;
-};
+import BackIcon from '@/features/G9-ApartmentListing/assets/BackIcon.svg';
+import UserIcon from '@/features/G9-ApartmentListing/assets/UserIcon.svg';
+import RoomDetailIcon from '@/features/G9-ApartmentListing/assets/RoomDetailIcon.svg';
 
 export default function AdminEditTenant() {
-  //test data for now
-  const tenant = {
-    id: 1,
-    firstName: 'Charles',
-    lastName: 'Leclerc',
-    phone: '081-234-5678',
-    email: 'charlerc@example.com',
-    roomType: 'Studio',
-    checkin: '2025-10-01',
-  };
-  const apartmentName = 'Current Tenant';
+  const navigate = useNavigate();
 
-  const [formData, setFormData] = useState<Tenant>({
-    id: tenant?.id || Date.now(),
-    firstName: tenant?.firstName || '',
-    lastName: tenant?.lastName || '',
-    phone: tenant?.phone || '',
-    email: tenant?.email || '',
-    roomType: tenant?.roomType,
-    checkin: tenant?.checkin || '',
-    apartmentName,
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    phone: '',
+    email: '',
+    checkin: '',
+    roomType: 'Single',
+    confirmed: true,
   });
 
-  const handleChange = <K extends keyof Tenant>(field: K, value: Tenant[K]) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+  // โหลดข้อมูล booking ที่ user เคยกรอกมา
+  useEffect(() => {
+    const saved = localStorage.getItem('bookingData');
+    if (saved) {
+      setFormData(JSON.parse(saved));
+    }
+  }, []);
+
+  const handleChange = (field: string, value: string | boolean) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
   };
 
   const handleSave = () => {
-    console.log('Saved tenant:', formData);
+    // admin แก้ไขแล้ว update กลับไปยัง localStorage
+    localStorage.setItem('bookingData', JSON.stringify(formData));
+
+    // navigate ไปหน้า list ของ admin
+    navigate('/AdminTenantInfo');
   };
 
+  const isFormValid =
+    formData.firstName &&
+    formData.lastName &&
+    formData.phone &&
+    formData.email &&
+    formData.checkin;
+
   return (
-    <div className="flex min-h-screen flex-col items-center bg-[#F9FAFB] px-4 py-10">
+    <div className="relative flex min-h-screen flex-col items-center bg-[#F9FAFB] px-4 py-10">
+      {/* HEADER */}
       <div className="mb-6 w-full max-w-5xl">
-        <h1 className="text-4xl font-bold text-gray-800">Edit Tenant Info.</h1>
+        <div className="mb-6 flex w-full max-w-5xl items-center gap-3">
+          <button
+            onClick={() => navigate('/AdminTenantInfo')}
+            className="flex h-10 w-10 items-center justify-center rounded-full transition duration-200 hover:bg-gray-100"
+          >
+            <img src={BackIcon} alt="Back" className="h-6 w-6" />
+          </button>
+
+          <h1 className="text-[48px] font-bold text-gray-900">
+            Edit Tenant Booking
+          </h1>
+        </div>
       </div>
 
+      {/* MAIN CARD */}
       <div className="w-full max-w-5xl rounded-3xl border border-gray-200 bg-white p-10 shadow-lg">
+        {/* PERSONAL DETAILS */}
         <div className="mb-8">
           <div className="mb-3 flex items-center space-x-2">
-            <User className="text-gray-600" />
-            <h2 className="text-lg font-semibold text-gray-800">
+            <img src={UserIcon} alt="UserIcon" className="h-10 w-10" />
+            <h2 className="text-[24px] font-semibold text-gray-800">
               Personal details
             </h2>
           </div>
-          <hr className="mb-6 border-gray-200" />
+          <hr className="mb-6 border-gray-300" />
 
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
-                First Name :
+              <label className="mb-1 block text-[20px] font-medium text-gray-700">
+                First Name :<span className="text-[20px] text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -74,8 +92,8 @@ export default function AdminEditTenant() {
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
-                Last Name :
+              <label className="mb-1 block text-[20px] font-medium text-gray-700">
+                Last Name :<span className="text-[20px] text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -86,8 +104,8 @@ export default function AdminEditTenant() {
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
-                Phone :
+              <label className="mb-1 block text-[20px] font-medium text-gray-700">
+                Phone :<span className="text-[20px] text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -98,8 +116,8 @@ export default function AdminEditTenant() {
             </div>
 
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
-                Email :
+              <label className="mb-1 block text-[20px] font-medium text-gray-700">
+                Email :<span className="text-[20px] text-red-500">*</span>
               </label>
               <input
                 type="email"
@@ -111,34 +129,25 @@ export default function AdminEditTenant() {
           </div>
         </div>
 
+        {/* ROOM DETAILS */}
         <div className="mb-8">
           <div className="mb-3 flex items-center space-x-2">
-            <CalendarDays className="text-gray-600" />
-            <h2 className="text-lg font-semibold text-gray-800">
+            <img
+              src={RoomDetailIcon}
+              alt="RoomDetailIcon"
+              className="h-10 w-10"
+            />
+            <h2 className="text-[24px] font-semibold text-gray-800">
               Room details
             </h2>
           </div>
-          <hr className="mb-6 border-gray-200" />
+          <hr className="mb-6 border-gray-300" />
 
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
             <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
-                Room Type :
-              </label>
-              <select
-                value={formData.roomType}
-                onChange={(e) => handleChange('roomType', e.target.value)}
-                className="w-full rounded-md border border-gray-300 p-2 focus:ring-1 focus:ring-[#01CEF8] focus:outline-none"
-              >
-                <option value="Studio">Studio</option>
-                <option value="Single">Single</option>
-                <option value="Double">Double</option>
-              </select>
-            </div>
-
-            <div>
-              <label className="mb-1 block text-sm font-medium text-gray-700">
-                Check-in Date :
+              <label className="mb-1 block text-[20px] font-medium text-gray-700">
+                Check-in date :
+                <span className="text-[20px] text-red-500">*</span>
               </label>
               <input
                 type="date"
@@ -147,15 +156,36 @@ export default function AdminEditTenant() {
                 className="w-full rounded-md border border-gray-300 p-2 focus:ring-1 focus:ring-[#01CEF8] focus:outline-none"
               />
             </div>
+
+            <div>
+              <label className="mb-1 block text-[20px] font-medium text-gray-700">
+                Room Type :<span className="text-[20px] text-red-500">*</span>
+              </label>
+              <select
+                value={formData.roomType}
+                onChange={(e) => handleChange('roomType', e.target.value)}
+                className="w-full rounded-md border border-gray-300 p-2 focus:ring-1 focus:ring-[#01CEF8] focus:outline-none"
+              >
+                <option value="Single">Single</option>
+                <option value="Double">Double</option>
+                <option value="Studio">Studio</option>
+              </select>
+            </div>
           </div>
         </div>
 
-        <div className="mt-8 flex justify-end">
+        {/* SAVE BUTTON */}
+        <div className="flex justify-end">
           <button
             onClick={handleSave}
-            className="rounded-md bg-[#01CEF8] px-6 py-2 font-medium text-white hover:bg-[#4E8FB1]"
+            disabled={!isFormValid}
+            className={`rounded-md px-6 py-2 text-[20px] font-medium text-white transition-colors duration-200 ${
+              isFormValid
+                ? 'bg-[#01CEF8] hover:bg-[#4E8FB1]'
+                : 'cursor-not-allowed bg-gray-400'
+            }`}
           >
-            Save
+            Save Changes
           </button>
         </div>
       </div>
