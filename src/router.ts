@@ -3,9 +3,16 @@
 
 import { components, hooks, utils } from '@generouted/react-router/client';
 
-export type Path = `/` | `/example` | `/example/:id`;
+export type Path =
+  | `/`
+  | `/dashboard`
+  | `/district-detail/:district`
+  | `/district-selection`
+  | `/example`
+  | `/example/:id`;
 
 export type Params = {
+  '/district-detail/:district': { district: string };
   '/example/:id': { id: string };
 };
 
