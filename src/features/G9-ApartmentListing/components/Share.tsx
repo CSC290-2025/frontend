@@ -30,7 +30,7 @@ export default function ShareModal({
   return (
     <>
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-        <div className="relative w-full max-w-lg rounded-2xl bg-white p-8 shadow-xl">
+        <div className="max-w-2sm relative w-md rounded-2xl bg-white p-5 shadow-xl">
           <button
             onClick={onClose}
             className="absolute top-6 right-6 flex h-8 w-8 items-center justify-center text-2xl text-gray-600 hover:text-gray-900"
