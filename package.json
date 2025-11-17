@@ -12,7 +12,9 @@
     "format": "prettier --write .",
     "check": "eslint . && prettier --check .",
     "preview": "vite preview",
-    "prepare": "husky"
+    "prepare": "husky",
+    "api:generate": "curl -s http://localhost:3000/doc > ../openapi.json && orval",
+    "api:types": "orval"
   },
   "dependencies": {
     "@generouted/react-router": "^1.20.0",
