@@ -1,14 +1,17 @@
 // src/App.tsx
 import { useEffect, useState } from 'react';
+import { ShimmerButton } from '@/components/ui/shimmer-button'; //pnpm dlx shadcn@latest add @magicui/shimmer-button
+import { AuroraText } from '@/components/ui/aurora-text'; //pnpm dlx shadcn@latest add @magicui/aurora-text
 
 // type
 type LocalImg = { file: File; url: string };
 type DetectResponse = {
   ok: boolean;
-  is_danger?: boolean;
+  has_issue?: boolean;
   confidence?: number;
-  danger_types?: string[];
+  types?: string[];
   reasons?: string[];
+  category?: 'harm' | 'health' | 'trash' | 'traffic' | 'other';
   marker?: {
     id: string;
     lat: number;
@@ -108,7 +111,9 @@ export default function DetectHarm() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 p-6">
       <div className="w-full max-w-md space-y-5 rounded-2xl border bg-white p-6 shadow-sm">
-        <h1 className="text-xl font-semibold tracking-tight">Detect Harm</h1>
+        <h1 className="px-34 text-xl font-semibold tracking-tight">
+          <AuroraText>Detect issue</AuroraText>
+        </h1>
 
         {/* from */}
         <form onSubmit={onSubmit} className="space-y-4">
@@ -119,7 +124,7 @@ export default function DetectHarm() {
               type="file"
               accept="image/*"
               onChange={pickFile}
-              className="mt-2 w-full cursor-pointer rounded-lg border px-3 py-2 file:mr-3 file:rounded-md file:border-0 file:bg-black file:px-3 file:py-2 file:text-white hover:file:bg-gray-800"
+              className="mt-2 w-full cursor-pointer rounded-lg border px-3 py-2 file:mr-3 file:rounded-md file:border-0 file:bg-black file:px-3 file:py-2 file:text-white"
             />
           </label>
 
@@ -175,13 +180,19 @@ export default function DetectHarm() {
 
           {/* button */}
           <div className="flex justify-center gap-3">
-            <button
+            {/* <button
               type="submit"
               className="rounded-lg bg-black px-4 py-2 text-sm text-white disabled:opacity-60"
               disabled={loading || !img}
             >
               {loading ? 'Detecting...' : 'Detect Harm'}
-            </button>
+            </button> */}
+
+            <ShimmerButton>
+              {' '}
+              {loading ? 'Detecting...' : 'Detect Harm'}{' '}
+            </ShimmerButton>
+
             <button
               type="button"
               onClick={clearAll}
@@ -199,16 +210,21 @@ export default function DetectHarm() {
         {res && (
           <div className="space-y-1 rounded-xl border bg-gray-50 p-3 text-sm">
             <div>
-              <b>Danger:</b> {res.is_danger ? 'YES' : 'No'}
+              <b>has_issue:</b> {res.has_issue ? 'YES' : 'No'}
             </div>
             {typeof res.confidence === 'number' && (
               <div>
                 <b>Confidence:</b> {(res.confidence * 100).toFixed(1)}%
               </div>
             )}
-            {!!res.danger_types?.length && (
+            {!!res.types?.length && (
               <div>
-                <b>Danger Types:</b> {res.danger_types.join(', ')}
+                <b>Types:</b> {res.types.join(', ')}
+              </div>
+            )}
+            {res.category && (
+              <div>
+                <b>Category:</b> {res.category}
               </div>
             )}
             {!!res.reasons?.length && (
