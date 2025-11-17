@@ -60,7 +60,10 @@ export default function AdminTenantInfo() {
               </p>
             </div>
 
-            <div className="mt-4 flex flex-col items-end gap-20 md:mt-0 md:ml-4">
+            <div
+              className="md:ml- 4 mt-4 flex flex-col items-end gap-20 md:mt-0"
+              onClick={(e) => e.stopPropagation()}
+            >
               <button
                 onClick={() => navigate('/AdminEditTenant')}
                 className="flex items-center justify-center gap-2 px-3 py-2 font-medium text-gray-700"
