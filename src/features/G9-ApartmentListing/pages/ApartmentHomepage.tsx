@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from '@/router';
-import { APT } from '@/features/G9-ApartmentListing/hooks/index';
+import { APT, Upload } from '@/features/G9-ApartmentListing/hooks/index';
 import type {
   apartmentTypes,
   roomTypes,
@@ -13,6 +13,43 @@ import SearchIcon from '@/assets/searchIcon.svg';
 import UppageIcon from '@/assets/UppageIcon.svg';
 import LocationIcon from '@/assets/locationIcon.svg';
 import PhoneIcon from '@/assets/phoneIcon.svg';
+
+// Component to display apartment image with fallback
+const ApartmentImage: React.FC<{
+  apartmentId: number;
+  apartmentName: string;
+}> = ({ apartmentId, apartmentName }) => {
+  const { data: images, isLoading: imageLoading } =
+    Upload.usePicturesByApartment(apartmentId);
+
+  const defaultImage =
+    'https://i.pinimg.com/736x/e6/b6/87/e6b6879516fe0c7e046dfc83922626d6.jpg';
+
+  if (imageLoading) {
+    return (
+      <div className="h-36 w-52 animate-pulse rounded-lg bg-gray-300"></div>
+    );
+  }
+
+  const imageUrl =
+    images && images.data && images.data.length > 0
+      ? images.data[0].url
+      : defaultImage;
+
+  return (
+    <img
+      src={imageUrl}
+      alt={apartmentName}
+      className="h-36 w-52 rounded-lg object-cover"
+      onError={(e) => {
+        const target = e.target as HTMLImageElement;
+        if (target.src !== defaultImage) {
+          target.src = defaultImage;
+        }
+      }}
+    />
+  );
+};
 
 // Extended apartment interface that includes the rating and room arrays from API response
 interface ExtendedApartment extends apartmentTypes.Apartment {
@@ -432,10 +469,9 @@ export default function ApartmentHomepage() {
                   params={{ id: apartment.id.toString() }}
                   className="flex gap-6 rounded-lg bg-white p-6 shadow-sm transition-shadow hover:shadow-md"
                 >
-                  <img
-                    src="https://i.pinimg.com/736x/e6/b6/87/e6b6879516fe0c7e046dfc83922626d6.jpg"
-                    alt={apartment.name}
-                    className="h-36 w-52 rounded-lg object-cover"
+                  <ApartmentImage
+                    apartmentId={apartment.id}
+                    apartmentName={apartment.name}
                   />
                   <div className="flex flex-1 flex-col justify-between">
                     <div className="flex justify-between">
@@ -505,8 +541,11 @@ export default function ApartmentHomepage() {
                           <img src={LocationIcon} alt="LocationIcon" />
                         </span>
                         <span>
-                          {apartment.addresses?.address_line ||
-                            'Address not available'}
+                          {apartment.addresses
+                            ? `${apartment.addresses.address_line || ''}, ${apartment.addresses.subdistrict || ''}, ${apartment.addresses.district || ''}, ${apartment.addresses.province || ''} ${apartment.addresses.postal_code || ''}`
+                                .replace(/,\s*,/g, ',')
+                                .replace(/^,\s*|,\s*$/g, '')
+                            : 'Address not available'}
                         </span>
                       </div>
                       <div className="flex items-center gap-3">
