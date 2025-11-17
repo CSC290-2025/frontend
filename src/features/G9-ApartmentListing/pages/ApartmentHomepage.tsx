@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from '@/router';
-import UserIcon from '@/assets/userIcon.svg';
-import ApartmentIcon from '@/assets/apartmentIcon.svg';
-import SearchIcon from '@/assets/searchIcon.svg';
-import UppageIcon from '@/assets/UppageIcon.svg';
-import LocationIcon from '@/assets/locationIcon.svg';
-import PhoneIcon from '@/assets/phoneIcon.svg';
+import UserIcon from '@/features/G9-ApartmentListing/assets/UserIcon.svg';
+import ApartmentIcon from '@/features/G9-ApartmentListing/assets/ApartmentIcon.svg';
+import SearchIcon from '@/features/G9-ApartmentListing/assets/SearchIcon.svg';
+import UppageIcon from '@/features/G9-ApartmentListing/assets/UppageIcon.svg';
+import LocationIcon from '@/features/G9-ApartmentListing/assets/LocationIcon.svg';
+import PhoneIcon from '@/features/G9-ApartmentListing/assets/PhoneIcon.svg';
 
 interface Apartment {
   id: number;

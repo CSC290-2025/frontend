@@ -1,6 +1,9 @@
 import { useState } from 'react';
-import { Pencil, Star } from 'lucide-react';
 import ConfirmDelete from '@/features/G9-ApartmentListing/components/ConfirmDelete';
+import EditIcon from '@/features/G9-ApartmentListing/assets/EditIcon.svg';
+import LocationIcon from '@/features/G9-ApartmentListing/assets/LocationIcon.svg';
+import StarIcon from '@/features/G9-ApartmentListing/assets/StarIcon.svg';
+import GrayStarIcon from '@/features/G9-ApartmentListing/assets/GrayStarIcon.svg';
 
 export default function AdminListedAPT() {
   const [apartments, setApartments] = useState([
@@ -10,7 +13,7 @@ export default function AdminListedAPT() {
       rating: 4.0,
       reviews: 17,
       address: 'Pracha Uthit road, Bangmod, Thungkru, Bangkok',
-      phone: '02 xxx xxxx',
+      phone: '081-234-5678',
       image:
         'https://bcdn.renthub.in.th/listing_picture/201603/20160323/KFVR1t5u5w6KhpFVDWLY.jpg?class=moptimized',
     },
@@ -58,16 +61,32 @@ export default function AdminListedAPT() {
               alt={apt.name}
               className="h-40 w-full rounded-xl object-cover md:w-48"
             />
+
             <div className="mt-4 flex-1 md:mt-0 md:ml-6">
               <h3 className="text-xl font-semibold text-gray-800">
                 {apt.name}
               </h3>
-              <div className="flex items-center gap-1 text-sm text-yellow-500">
-                {Array.from({ length: apt.rating }).map((_, i) => (
-                  <Star key={i} size={16} fill="#FFD700" stroke="#FFD700" />
-                ))}
-                <span className="ml-1 text-gray-600">({apt.reviews})</span>
+
+              <div className="mt-1 flex items-center gap-2">
+                <p className="text-sm text-gray-700">{apt.rating.toFixed(1)}</p>
+
+                <div className="flex">
+                  {Array.from({ length: 5 }, (_, i) => {
+                    const filledStars = Math.floor(apt.rating);
+                    return (
+                      <img
+                        key={i}
+                        src={i < filledStars ? StarIcon : GrayStarIcon}
+                        alt={i < filledStars ? 'Star' : 'Gray Star'}
+                        className="h-4 w-4"
+                      />
+                    );
+                  })}
+                </div>
+
+                <span className="text-sm text-gray-600">({apt.reviews})</span>
               </div>
+
               <p className="mt-2 text-sm text-gray-700">{apt.address}</p>
               <p className="text-sm text-gray-700">{apt.phone}</p>
             </div>
@@ -77,8 +96,9 @@ export default function AdminListedAPT() {
                 href="/AdminEditAPT"
                 className="flex items-center justify-center gap-2 px-3 py-2 font-medium text-gray-700"
               >
-                <Pencil size={18} />
+                <img src={EditIcon} alt="Edit" className="h-4 w-4" />
               </a>
+
               <button
                 onClick={() => handleDeleteClick(apt.id)}
                 className="flex items-center justify-center gap-2 rounded-md border border-gray-300 bg-white px-7 py-2 font-medium text-[#2B5991] hover:bg-gray-200"

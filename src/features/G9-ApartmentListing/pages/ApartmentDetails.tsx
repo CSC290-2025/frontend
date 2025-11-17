@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { Link } from '@/router';
-import UppageIcon from '@/assets/UppageIcon.svg';
-import LocationIcon from '@/assets/locationIcon.svg';
-import PhoneIcon from '@/assets/phoneIcon.svg';
-import ShareIcon from '@/assets/ShareIcon.svg';
-import BackIcon from '@/assets/BackIcon.svg';
+import UppageIcon from '@/features/G9-ApartmentListing/assets/UppageIcon.svg';
+import LocationIcon from '@/features/G9-ApartmentListing/assets/LocationIcon.svg';
+import PhoneIcon from '@/features/G9-ApartmentListing/assets/PhoneIcon.svg';
+import ShareIcon from '@/features/G9-ApartmentListing/assets/ShareIcon.svg';
+import BackIcon from '@/features/G9-ApartmentListing/assets/BackIcon.svg';
 import ShareModal from '@/features/G9-ApartmentListing/components/Share';
 import ReviewModal from '@/features/G9-ApartmentListing/components/Review';
 
