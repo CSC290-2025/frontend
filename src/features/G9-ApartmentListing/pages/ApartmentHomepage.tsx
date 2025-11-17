@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from '@/router';
-import UserIcon from '@/assets/userIcon.svg';
-import ApartmentIcon from '@/assets/apartmentIcon.svg';
-import SearchIcon from '@/assets/searchIcon.svg';
-import UppageIcon from '@/assets/UppageIcon.svg';
-import LocationIcon from '@/assets/locationIcon.svg';
-import PhoneIcon from '@/assets/phoneIcon.svg';
+import UserIcon from '@/features/G9-ApartmentListing/assets/UserIcon.svg';
+import ApartmentIcon from '@/features/G9-ApartmentListing/assets/ApartmentIcon.svg';
+import SearchIcon from '@/features/G9-ApartmentListing/assets/SearchIcon.svg';
+import UppageIcon from '@/features/G9-ApartmentListing/assets/UppageIcon.svg';
+import LocationIcon from '@/features/G9-ApartmentListing/assets/LocationIcon.svg';
+import PhoneIcon from '@/features/G9-ApartmentListing/assets/PhoneIcon.svg';
+import StarIcon from '@/features/G9-ApartmentListing/assets/StarIcon.svg';
+import GrayStarIcon from '@/features/G9-ApartmentListing/assets/GrayStarIcon.svg';
 
 interface Apartment {
   id: number;
@@ -328,7 +330,7 @@ export default function ApartmentHomepage() {
                     onChange={() => handleRatingChange(rating)}
                   />
                   <span>{rating}</span>
-                  <span className="text-xl text-yellow-400">★</span>
+                  <img src={StarIcon} alt="star" className="h-6 w-6" />
                 </label>
               ))}
             </div>
@@ -485,16 +487,16 @@ export default function ApartmentHomepage() {
                       </span>
                       <div className="flex gap-0.5">
                         {[...Array(5)].map((_, i) => (
-                          <span
+                          <img
                             key={i}
-                            className={
+                            src={
                               i < Math.floor(apartment.rating)
-                                ? 'text-yellow-400'
-                                : 'text-gray-300'
+                                ? StarIcon
+                                : GrayStarIcon
                             }
-                          >
-                            ★
-                          </span>
+                            alt="star"
+                            className="h-5 w-5"
+                          />
                         ))}
                       </div>
                       <span className="text-sm text-gray-600">

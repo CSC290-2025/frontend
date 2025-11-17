@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import CloseIcon from '@/features/G9-ApartmentListing/assets/CloseIcon.svg';
 
 interface ShareModalProps {
   isOpen: boolean;
@@ -30,12 +31,16 @@ export default function ShareModal({
   return (
     <>
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-        <div className="max-w-2sm relative w-md rounded-2xl bg-white p-5 shadow-xl">
+        <div className="max-w-2sm relative w-md rounded-2xl bg-white p-6 shadow-xl">
           <button
             onClick={onClose}
-            className="absolute top-6 right-6 flex h-8 w-8 items-center justify-center text-2xl text-gray-600 hover:text-gray-900"
+            className="absolute top-6 right-6 flex h-8 w-8 items-center justify-center rounded-full text-2xl text-gray-600 hover:bg-gray-100"
           >
-            ✕
+            <img
+              src={CloseIcon}
+              alt="Closepage"
+              className="transition-opacity hover:opacity-80"
+            />
           </button>
 
           <h2 className="mb-6 text-2xl font-bold">Link to share</h2>
