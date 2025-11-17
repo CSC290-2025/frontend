@@ -1,10 +1,12 @@
 // Generouted, changes to this file will be overridden
-/* eslint-disable */
 
 import { components, hooks, utils } from '@generouted/react-router/client';
 
 export type Path =
   | `/`
+  | `/dashboard`
+  | `/district-detail/:district`
+  | `/district-selection`
   | `/example`
   | `/example/:id`
   | `/power-bi`
@@ -14,6 +16,7 @@ export type Path =
   | `/power-bi/edit/:id`;
 
 export type Params = {
+  '/district-detail/:district': { district: string };
   '/example/:id': { id: string };
   '/power-bi/:type/:category': { type: string; category: string };
   '/power-bi/:type/:category/:id': {
