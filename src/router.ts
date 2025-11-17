@@ -9,6 +9,7 @@ export type Path =
   | `/district-selection`
   | `/example`
   | `/example/:id`
+  | `/healthcare`
   | `/power-bi`
   | `/power-bi/:type/:category`
   | `/power-bi/:type/:category/:id`
