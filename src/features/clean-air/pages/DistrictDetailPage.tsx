@@ -1,7 +1,7 @@
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from '@/router';
 import { ArrowLeft } from 'lucide-react';
 import { useState } from 'react';
-import { CurrentDataCard } from '../components/CurrentDataCard';
+import { CurrentDataCard } from '@/features/clean-air/components/CurrentDataCard';
 import { CurrentAqiCard } from '@/features/clean-air/components/CurrentAqiCard';
 import { Pm25GuideModal } from '@/features/clean-air/components/Pm25GuideModal';
 

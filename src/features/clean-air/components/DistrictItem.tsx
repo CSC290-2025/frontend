@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@/router';
 import type { District as DistrictType } from '@/types/district';
 
 type Props = Partial<

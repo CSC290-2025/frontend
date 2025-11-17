@@ -1,4 +1,4 @@
-import { useParams } from 'react-router-dom';
+import { useParams } from '@/router';
 import { useDistrictDetailQuery } from '../hooks/useDistrictDetail';
 
 export function CurrentDataCard() {

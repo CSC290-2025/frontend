@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import DistrictItem from './DistrictItem';
 import { useDistrictsQuery } from '../hooks/useDistricts';
 import type { District } from '@/types/district';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from '@/router';
 
 type Props = {
   searchTerm?: string;
