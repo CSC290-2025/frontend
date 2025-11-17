@@ -190,7 +190,7 @@ export default function DetectHarm() {
 
             <ShimmerButton>
               {' '}
-              {loading ? 'Detecting...' : 'Detect Harm'}{' '}
+              {loading ? 'Detecting...' : 'Detect issue'}{' '}
             </ShimmerButton>
 
             <button
