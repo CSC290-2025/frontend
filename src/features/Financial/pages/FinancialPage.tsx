@@ -38,11 +38,27 @@ export default function FinancialPage() {
     transferToUserId ? Number(transferToUserId) : undefined
   );
   const recipientWallet = recipientWalletResponse?.data?.data?.wallet;
-  const { mutateAsync: createWallet } = usePostWallets();
-  const { mutateAsync: updateWallet } = usePutWalletsWalletId();
-  const { mutateAsync: topUpWallet } = usePostWalletsWalletIdTopUp();
+  const { mutateAsync: createWallet } = usePostWallets({
+    mutation: {
+      onSuccess: () => refetch(),
+    },
+  });
+  const { mutateAsync: updateWallet } = usePutWalletsWalletId({
+    mutation: {
+      onSuccess: () => refetch(),
+    },
+  });
+  const { mutateAsync: topUpWallet } = usePostWalletsWalletIdTopUp({
+    mutation: {
+      onSuccess: () => refetch(),
+    },
+  });
   const { mutateAsync: generateQR } = usePostScbQrCreate();
-  const { mutateAsync: transferFunds } = usePostWalletsTransfer();
+  const { mutateAsync: transferFunds } = usePostWalletsTransfer({
+    mutation: {
+      onSuccess: () => refetch(),
+    },
+  });
 
   const wallet = wallets?.data?.data?.wallet;
   const isOrg = wallet?.wallet_type === 'organization';
@@ -364,7 +380,6 @@ export default function FinancialPage() {
 
                       setTransferToUserId('');
                       setTransferAmount('');
-                      refetch();
                     }}
                     disabled={!transferToUserId || !transferAmount}
                   >
