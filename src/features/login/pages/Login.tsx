@@ -1,5 +1,5 @@
-import bgImg from '../../../components/img/smartcitybackground_login.png';
-import logo from '../../../components/img/smartcitylogo.png';
+import bgImg from '../../../../public/smartcitybackground_login.png';
+import logo from '../../../../public/smartcityhub.png';
 import LoginUI from '../components/LoginUI';
 function Login() {
   return (

@@ -1,5 +1,5 @@
 import RegisterFormUI from '../components/RegisterForm';
-import bgImg from '../../../components/img/smartcitybackground_login.png';
+import bgImg from '../../../../public/smartcitybackground_login.png';
 
 export default function RegisterForm() {
   return (
