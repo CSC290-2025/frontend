@@ -6,7 +6,6 @@ import type {
   InsuranceCard,
   CreateInsuranceCardData,
   TopUpInsuranceCardData,
-  InsuranceCardResponse,
   TopUpResponse,
 } from '@/features/Financial/types';
 
@@ -15,8 +14,8 @@ export const fetchUserWallet = async (
   userId: number
 ): Promise<Wallet | null> => {
   const response = await apiClient.get(`/wallets/user/${userId}`);
-  const wallets = response.data?.data?.wallets || [];
-  return wallets[0] || null;
+  const wallet = response.data?.data?.wallet || null;
+  return wallet;
 };
 
 // Create wallet
@@ -74,7 +73,8 @@ export const fetchUserInsuranceCards = async (
   userId: number
 ): Promise<InsuranceCard[]> => {
   const response = await apiClient.get(`/insurance-cards/user/${userId}`);
-  return response.data?.data?.cards || [];
+  const cards = response.data?.data?.cards;
+  return cards || [];
 };
 
 // Fetch single insurance card
