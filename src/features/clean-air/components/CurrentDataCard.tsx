@@ -25,7 +25,6 @@ export function CurrentDataCard() {
 
   const currentData = data.currentData;
 
-  // Create pollutants array from actual API data
   const pollutants = [
     {
       name: 'PM2.5',

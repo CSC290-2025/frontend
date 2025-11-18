@@ -1,6 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
 import type { DistrictDetail } from '@/types/districtDetail';
-import { useDistrictsQuery } from './useDistricts';
 import { getDistrictDetail } from '../api/clean-air.api';
 
 export function useDistrictDetailQuery(district?: string) {

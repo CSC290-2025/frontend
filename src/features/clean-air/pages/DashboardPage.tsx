@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { CurrentAqiCard } from '@/features/clean-air/components/CurrentAqiCard';
 import { HealthTips } from '@/features/clean-air/components/HealthTips';
-import { PollutantsCard } from '@/features/clean-air/components/PollutantsCard';
 import { HistoricalTable } from '@/features/clean-air/components/HistoricalTable';
 import { Summary } from '@/features/clean-air/components/Summary';
 import Pm25GuideModal from '@/features/clean-air/components/Pm25GuideModal';
@@ -29,7 +28,6 @@ export function DashboardPage() {
           <HealthTips />
         </div>
 
-        <PollutantsCard />
         <HistoricalTable />
       </div>
       <Pm25GuideModal isOpen={isModalOpen} onClose={closeModal} />
