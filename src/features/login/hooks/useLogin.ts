@@ -8,7 +8,7 @@ export const useLogin = () => {
     onSuccess: (response) => {
       // Cookies set automatically
       // Redirect or update app state
-      console.log(response);
+      window.location.href = '/';
     },
   });
 };
