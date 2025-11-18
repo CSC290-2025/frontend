@@ -185,6 +185,7 @@ function Home() {
           {selectedSection && <Categories type={selectedSection.id} />}
         </div>
       </div>
+      <div></div>
     </div>
   );
 }
