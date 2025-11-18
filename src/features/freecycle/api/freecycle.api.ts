@@ -32,6 +32,7 @@ interface CreatePostPayload {
   photo_url: string | null;
   description: string | null;
   donate_to_department_id: number | null;
+  category_ids?: number[];
 }
 
 // Posts API
@@ -79,8 +80,6 @@ export const updatePost = async (
   );
   return response.data.data.post;
 };
-
-// Removed: createPost, updatePost (would need PostFormData type definition)
 
 export const deletePost = async (id: number): Promise<void> => {
   await apiClient.delete(`/posts/${id}`);
@@ -145,6 +144,16 @@ export const updateCategory = async (
 
 export const deleteCategory = async (categoryId: number): Promise<void> => {
   await apiClient.delete(`/categories/${categoryId}`);
+};
+
+// Post Categories API
+export const addCategoriesToPost = async (
+  postId: number,
+  categoryIds: number[]
+): Promise<void> => {
+  await apiClient.post(`/posts/${postId}/categories/add`, {
+    category_ids: categoryIds,
+  });
 };
 
 // // Make for fetching Freecycle data from the Freecycle API
