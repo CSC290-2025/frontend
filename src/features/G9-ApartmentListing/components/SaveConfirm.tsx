@@ -13,9 +13,11 @@ export default function SaveConfirmationPopup({
 
   return (
     <div className="font-poppins fixed inset-0 z-50 flex items-center justify-center bg-black/30">
-      <div className="w-120 rounded-xl bg-white p-6 text-center shadow-xl">
-        <p className="mb-4 text-xl font-bold text-gray-800">Save Changes?</p>
-        <p className="mb-6 text-gray-600">
+      <div className="w-90 rounded-xl bg-white p-6 text-center shadow-xl">
+        <p className="mb-4 text-[24px] font-bold text-gray-800">
+          Save Changes?
+        </p>
+        <p className="mb-6 text-[14px] text-gray-600">
           Are you sure you want to save the changes you made?
         </p>
 

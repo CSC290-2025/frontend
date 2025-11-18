@@ -4,11 +4,13 @@ import BackIcon from '@/features/G9-ApartmentListing/assets/BackIcon.svg';
 import UserIcon from '@/features/G9-ApartmentListing/assets/UserIcon.svg';
 import RoomDetailIcon from '@/features/G9-ApartmentListing/assets/RoomDetailIcon.svg';
 import SaveConfirm from '@/features/G9-ApartmentListing/components/SaveConfirm';
+import SuccessModal from '@/features/G9-ApartmentListing/components/SuccessModal';
 
 export default function AdminEditTenant() {
   const navigate = useNavigate();
 
   const [isPopupOpen, setIsPopupOpen] = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false); // ← state สำหรับ success modal
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -36,8 +38,14 @@ export default function AdminEditTenant() {
 
   const handleSave = () => {
     localStorage.setItem('bookingData', JSON.stringify(formData));
+
     setIsPopupOpen(false);
-    navigate('/AdminTenantInfo');
+    setShowSuccess(true); // ← แสดง SuccessToast
+
+    setTimeout(() => {
+      setShowSuccess(false);
+      navigate('/AdminTenantInfo');
+    }, 2000); // ← หายเองหลัง 2 วินาทีและ navigate
   };
 
   const isFormValid =
@@ -49,11 +57,15 @@ export default function AdminEditTenant() {
 
   return (
     <>
+      {/* Popup Confirm */}
       <SaveConfirm
         isOpen={isPopupOpen}
         onClose={() => setIsPopupOpen(false)}
         onConfirm={handleSave}
       />
+
+      {/* Success Toast */}
+      {showSuccess && <SuccessModal message="Save changes successfully" />}
 
       <div className="font-poppins relative flex min-h-screen flex-col items-center bg-[#F9FAFB] px-4 py-10">
         <div className="mb-6 w-full max-w-5xl">
@@ -66,7 +78,7 @@ export default function AdminEditTenant() {
             </button>
 
             <h1 className="text-[48px] font-bold text-gray-900">
-              Edit Tenant Booking
+              Edit Tenant Information
             </h1>
           </div>
         </div>

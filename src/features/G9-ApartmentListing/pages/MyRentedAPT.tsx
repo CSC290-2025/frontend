@@ -73,14 +73,14 @@ export default function MyRentedAPT() {
                     <h3 className="text-[24px] font-bold text-gray-800">
                       {apt.name}
                     </h3>
-                    <p className="mt-1 text-[16px] text-gray-700">
+                    <p className="mt-1 text-[18px] text-gray-700">
                       {apt.tenantName}
                       <br />
                       {apt.email}
                       <br />
                       {apt.phone}
                     </p>
-                    <p className="mt-2 text-[16px] font-medium text-gray-700">
+                    <p className="mt-2 text-[18px] font-medium text-gray-700">
                       Room Type: {apt.roomType}
                     </p>
                   </div>

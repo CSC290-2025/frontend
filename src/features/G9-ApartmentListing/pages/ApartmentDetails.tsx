@@ -250,7 +250,7 @@ Facebook: https://www.facebook.com/cosmomansion/`,
           <div className="flex items-center gap-4">
             {/* Back Icon */}
             <button
-              onClick={() => window.history.back()}
+              onClick={() => (window.location.href = '/ApartmentHomepage')}
               className="flex h-10 w-10 items-center justify-center rounded-full text-2xl hover:bg-gray-100"
             >
               <img src={BackIcon} alt="Backpage" />
