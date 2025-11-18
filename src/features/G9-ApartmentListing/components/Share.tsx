@@ -30,7 +30,7 @@ export default function ShareModal({
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+      <div className="font-poppins fixed inset-0 z-50 flex items-center justify-center bg-black/50">
         <div className="max-w-2sm relative w-md rounded-2xl bg-white p-6 shadow-xl">
           <button
             onClick={onClose}
