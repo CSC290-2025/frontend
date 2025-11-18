@@ -5,6 +5,10 @@ import LocationIcon from '@/features/G9-ApartmentListing/assets/LocationIcon.svg
 import PhoneIcon from '@/features/G9-ApartmentListing/assets/PhoneIcon.svg';
 import ShareIcon from '@/features/G9-ApartmentListing/assets/ShareIcon.svg';
 import BackIcon from '@/features/G9-ApartmentListing/assets/BackIcon.svg';
+import StarIcon from '@/features/G9-ApartmentListing/assets/StarIcon.svg';
+import GrayStarIcon from '@/features/G9-ApartmentListing/assets/GrayStarIcon.svg';
+import LeftIcon from '@/features/G9-ApartmentListing/assets/LeftIcon.svg';
+import RightIcon from '@/features/G9-ApartmentListing/assets/RightIcon.svg';
 import ShareModal from '@/features/G9-ApartmentListing/components/Share';
 import ReviewModal from '@/features/G9-ApartmentListing/components/Review';
 
@@ -27,7 +31,7 @@ interface RoomType {
 interface NearbyPlace {
   name: string;
   distance: string;
-  type: 'bus' | 'hospital' | 'university';
+  type: 'bus' | 'hospital' | 'pharmacy' | 'atm' | 'bank';
 }
 
 interface ApartmentDetail {
@@ -57,8 +61,6 @@ export default function ApartmentDetailPage() {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const reviewsPerPage = 3;
   const shareUrl = 'https://share.google/jZvJI3nwd7jcVDi48';
-
-  // use Link from '@/router' for navigation links instead of useNavigate
 
   const apartmentReviews: ReviewData[] = [
     {
@@ -160,6 +162,8 @@ Facebook: https://www.facebook.com/cosmomansion/`,
       'https://bcdn.renthub.in.th/listing_picture/201603/20160323/KFVR1t5u5w6KhpFVDWLY.jpg?class=moptimized',
       'https://bcdn.renthub.in.th/listing_picture/201809/20180902/F2fJpr4Vz3CKeAVwV5ZD.jpg?class=doptimized',
       'https://bcdn.renthub.in.th/listing_picture/202012/20201223/ZMrUqc8KqZY34TwiMB52.jpg?class=doptimized',
+      'https://bcdn.renthub.in.th/listing_picture/202012/20201223/ZMrUqc8KqZY34TwiMB52.jpg?class=doptimized',
+      'https://bcdn.renthub.in.th/listing_picture/202012/20201223/ZMrUqc8KqZY34TwiMB52.jpg?class=doptimized',
     ],
     waterPrice: '7 THB/unit',
     electricityPrice: '17 THB/unit',
@@ -186,12 +190,22 @@ Facebook: https://www.facebook.com/cosmomansion/`,
     ],
     nearbyPlaces: [
       { name: 'Prachauthit 39', distance: '120 m', type: 'bus' },
-      { name: 'Prachauthit 42', distance: '360m', type: 'bus' },
+      { name: 'Prachauthit 42', distance: '360 m', type: 'bus' },
       { name: 'Suksawat Hospital', distance: '2.9 km', type: 'hospital' },
       {
-        name: "King Mongkut's University of Technology Thonburi",
-        distance: '360 m',
-        type: 'university',
+        name: 'Ya Nueng',
+        distance: '221 m',
+        type: 'pharmacy',
+      },
+      {
+        name: 'Bangkok ATM',
+        distance: '123 m',
+        type: 'atm',
+      },
+      {
+        name: 'Bangkok Bank',
+        distance: '123 m',
+        type: 'bank',
       },
     ],
     reviews: apartmentReviews,
@@ -206,12 +220,12 @@ Facebook: https://www.facebook.com/cosmomansion/`,
 
   const renderStars = (rating: number) => {
     return [...Array(5)].map((_, i) => (
-      <span
+      <img
         key={i}
-        className={i < rating ? 'text-yellow-400' : 'text-gray-300'}
-      >
-        ★
-      </span>
+        src={i < rating ? StarIcon : GrayStarIcon}
+        alt="star"
+        className={`flex-shrink-0 ${i < rating ? 'h-6 w-6' : 'h-5.5 w-5.5'}`}
+      />
     ));
   };
 
@@ -220,8 +234,6 @@ Facebook: https://www.facebook.com/cosmomansion/`,
       setCurrentReviewPage(page);
     }
   };
-
-  // navigation handled via <Link> in JSX
 
   const handlePrevImage = () => {
     setCurrentImageIndex((prev) =>
@@ -244,7 +256,7 @@ Facebook: https://www.facebook.com/cosmomansion/`,
   };
 
   return (
-    <div className="min-h-screen bg-[#F9FAFB] font-sans">
+    <div className="font-poppins min-h-screen bg-[#F9FAFB] font-sans">
       <div className="mx-auto max-w-7xl px-8 py-6">
         <div className="grid grid-cols-2 items-center gap-8">
           <div className="flex items-center gap-4">
@@ -262,7 +274,7 @@ Facebook: https://www.facebook.com/cosmomansion/`,
           <div className="flex justify-end">
             <button
               onClick={() => setIsShareModalOpen(true)}
-              className="flex flex-col items-center gap-1 rounded-lg p-2 hover:bg-gray-100"
+              className="flex flex-col items-center gap-1 rounded-full p-2 hover:bg-gray-100"
             >
               <span className="h-8 w-8">
                 <img src={ShareIcon} alt="ShareIcon" />
@@ -288,22 +300,30 @@ Facebook: https://www.facebook.com/cosmomansion/`,
                   onClick={handlePrevImage}
                   className="absolute top-1/2 left-4 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-2xl opacity-0 shadow-md transition-opacity duration-300 group-hover:opacity-100 hover:bg-white"
                 >
-                  ‹
+                  <img
+                    src={LeftIcon}
+                    alt="LeftIcon"
+                    className="transition-opacity hover:opacity-80"
+                  />
                 </button>
                 <button
                   onClick={handleNextImage}
                   className="absolute top-1/2 right-4 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-2xl opacity-0 shadow-md transition-opacity duration-300 group-hover:opacity-100 hover:bg-white"
                 >
-                  ›
+                  <img
+                    src={RightIcon}
+                    alt="RightIcon"
+                    className="transition-opacity hover:opacity-80"
+                  />
                 </button>
               </div>
 
-              <div className="flex gap-4">
-                {apartment.images.map((img, index) => (
+              <div className="overflow-x-4 my-5 flex gap-4">
+                {apartment.images.slice(0, 5).map((img, index) => (
                   <button
                     key={index}
                     onClick={() => handleThumbnailClick(index)}
-                    className={`h-32 w-32 shrink-0 overflow-hidden rounded-lg ${
+                    className={`h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg ${
                       currentImageIndex === index ? 'ring-4 ring-cyan-400' : ''
                     }`}
                   >
@@ -562,10 +582,44 @@ Facebook: https://www.facebook.com/cosmomansion/`,
 
                 <div>
                   <div className="mb-2 flex items-center gap-2 font-semibold text-gray-800">
-                    <span>University</span>
+                    <span>Pharmacy</span>
                   </div>
                   {apartment.nearbyPlaces
-                    .filter((p) => p.type === 'university')
+                    .filter((p) => p.type === 'pharmacy')
+                    .map((place, i) => (
+                      <div
+                        key={i}
+                        className="ml-5 flex justify-between py-1 text-sm"
+                      >
+                        <span className="text-gray-700">{place.name}</span>
+                        <span className="text-gray-600">{place.distance}</span>
+                      </div>
+                    ))}
+                </div>
+
+                <div>
+                  <div className="mb-2 flex items-center gap-2 font-semibold text-gray-800">
+                    <span>ATM</span>
+                  </div>
+                  {apartment.nearbyPlaces
+                    .filter((p) => p.type === 'atm')
+                    .map((place, i) => (
+                      <div
+                        key={i}
+                        className="ml-5 flex justify-between py-1 text-sm"
+                      >
+                        <span className="text-gray-700">{place.name}</span>
+                        <span className="text-gray-600">{place.distance}</span>
+                      </div>
+                    ))}
+                </div>
+
+                <div>
+                  <div className="mb-2 flex items-center gap-2 font-semibold text-gray-800">
+                    <span>Bank</span>
+                  </div>
+                  {apartment.nearbyPlaces
+                    .filter((p) => p.type === 'bank')
                     .map((place, i) => (
                       <div
                         key={i}

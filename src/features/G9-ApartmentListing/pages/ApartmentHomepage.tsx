@@ -13,6 +13,8 @@ import SearchIcon from '@/features/G9-ApartmentListing/assets/SearchIcon.svg';
 import UppageIcon from '@/features/G9-ApartmentListing/assets/UppageIcon.svg';
 import LocationIcon from '@/features/G9-ApartmentListing/assets/LocationIcon.svg';
 import PhoneIcon from '@/features/G9-ApartmentListing/assets/PhoneIcon.svg';
+import StarIcon from '@/features/G9-ApartmentListing/assets/StarIcon.svg';
+import GrayStarIcon from '@/features/G9-ApartmentListing/assets/GrayStarIcon.svg';
 
 // Component to display apartment image with fallback
 const ApartmentImage: React.FC<{
@@ -295,7 +297,7 @@ export default function ApartmentHomepage() {
                     onChange={() => handleRatingChange(rating)}
                   />
                   <span>{rating}</span>
-                  <span className="text-xl text-yellow-400">★</span>
+                  <img src={StarIcon} alt="star" className="h-6 w-6" />
                 </label>
               ))}
             </div>
@@ -504,16 +506,14 @@ export default function ApartmentHomepage() {
                                     ) / apartment.rating.length
                                   : 0;
                               return (
-                                <span
+                                <img
                                   key={i}
-                                  className={
+                                  src={
                                     i < Math.floor(avgRating)
-                                      ? 'text-yellow-400'
-                                      : 'text-gray-300'
+                                      ? StarIcon
+                                      : GrayStarIcon
                                   }
-                                >
-                                  ★
-                                </span>
+                                />
                               );
                             })}
                           </div>
