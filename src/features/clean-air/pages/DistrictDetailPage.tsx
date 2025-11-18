@@ -7,11 +7,11 @@ import { Pm25GuideModal } from '@/features/clean-air/components/Pm25GuideModal';
 import { HealthTips } from '../components/HealthTips';
 
 export function DistrictDetailPage() {
-  const { district } = useParams('/district-detail/:district');
+  const { district } = useParams('/clean-air/district-detail/:district');
   const navigate = useNavigate();
 
   const handleBackClick = () => {
-    navigate('/district-selection');
+    navigate('/clean-air/district-selection');
   };
 
   const [isModalOpen, setIsModalOpen] = useState(false);
