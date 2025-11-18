@@ -52,7 +52,7 @@ export default function TrafficLightsList({
 }: TrafficLightsListProps) {
   const [signals, setSignals] = useState<SignalWithMeta[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const team10Ref = ref(database, 'teams/10/junctions');

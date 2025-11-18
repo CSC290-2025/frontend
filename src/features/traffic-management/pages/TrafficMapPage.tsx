@@ -462,7 +462,7 @@ function MapContent({
 }
 
 export default function TrafficMapPage() {
-  const apiKey = 'AIzaSyCSfRzShn1CNQhK1WRbcBYao-veqTr201w';
+  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
   const [currentLocation, setCurrentLocation] = useState('');
   const [destination, setDestination] = useState('');
   const [showSettings, setShowSettings] = useState(false);
