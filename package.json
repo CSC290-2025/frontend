@@ -15,8 +15,8 @@
     "prepare": "husky",
     "api:generate": "curl -s http://localhost:3000/doc > ../openapi.json && orval",
     "api:types": "orval",
-    "api:financial:generate": "curl -s http://localhost:3000/doc > src/features/openapi.json && pnpm exec orval --config src/features/Financial/orval.financial.config.ts",
-    "api:financial:types": "pnpm exec orval --config src/features/Financial/orval.financial.config.ts"
+    "api:financial:generate": "curl -s http://localhost:3000/doc > ../openapi.json && pnpm exec orval --config ./orval.financial.config.ts",
+    "api:financial:types": "pnpm exec orval --config ./orval.financial.config.ts"
   },
   "dependencies": {
     "@fortawesome/fontawesome-svg-core": "^7.1.0",

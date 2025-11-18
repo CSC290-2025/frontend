@@ -1,13 +1,13 @@
 import { useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import {
-  useUserWallet,
-  useCreateWallet,
-  useUpdateWallet,
-  useTopUpWallet,
-  useGenerateQR,
-  useTransferFunds,
-} from '@/features/Financial/hooks/useUserWallets';
+  useGetWalletsUserUserId,
+  usePostWallets,
+  usePutWalletsWalletId,
+  usePostWalletsWalletIdTopUp,
+  usePostWalletsTransfer,
+} from '@/api/generated/wallets';
+import { usePostScbQrCreate } from '@/api/generated/scb';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
@@ -33,17 +33,18 @@ export default function FinancialPage() {
   const [transferToUserId, setTransferToUserId] = useState('');
   const [transferAmount, setTransferAmount] = useState('');
 
-  const { data: wallets, refetch } = useUserWallet(Number(userId));
-  const { data: recipientWallet } = useUserWallet(
-    transferToUserId ? Number(transferToUserId) : NaN
+  const { data: wallets, refetch } = useGetWalletsUserUserId(Number(userId));
+  const { data: recipientWalletResponse } = useGetWalletsUserUserId(
+    transferToUserId ? Number(transferToUserId) : undefined
   );
-  const { mutateAsync: createWallet } = useCreateWallet();
-  const { mutateAsync: updateWallet } = useUpdateWallet();
-  const { mutateAsync: topUpWallet } = useTopUpWallet();
-  const { mutateAsync: generateQR } = useGenerateQR();
-  const { mutateAsync: transferFunds } = useTransferFunds();
+  const recipientWallet = recipientWalletResponse?.data?.data?.wallet;
+  const { mutateAsync: createWallet } = usePostWallets();
+  const { mutateAsync: updateWallet } = usePutWalletsWalletId();
+  const { mutateAsync: topUpWallet } = usePostWalletsWalletIdTopUp();
+  const { mutateAsync: generateQR } = usePostScbQrCreate();
+  const { mutateAsync: transferFunds } = usePostWalletsTransfer();
 
-  const wallet = wallets;
+  const wallet = wallets?.data?.data?.wallet;
   const isOrg = wallet?.wallet_type === 'organization';
 
   return (
@@ -103,10 +104,12 @@ export default function FinancialPage() {
             <Button
               onClick={() =>
                 createWallet({
-                  user_id: Number(userId),
-                  wallet_type: walletType,
-                  organization_type:
-                    walletType === 'organization' ? orgType : undefined,
+                  data: {
+                    user_id: Number(userId),
+                    wallet_type: walletType,
+                    organization_type:
+                      walletType === 'organization' ? orgType : undefined,
+                  },
                 })
               }
               className="mt-4"
@@ -145,13 +148,13 @@ export default function FinancialPage() {
                   <Button
                     onClick={() =>
                       updateWallet({
-                        walletId: wallet.id,
                         data: isOrg
                           ? { wallet_type: 'individual' }
                           : {
                               wallet_type: 'organization',
                               organization_type: 'Business',
                             },
+                        walletId: wallet.id,
                       })
                     }
                     variant="secondary"
@@ -175,8 +178,8 @@ export default function FinancialPage() {
                         <Button
                           onClick={async () => {
                             await updateWallet({
-                              walletId: wallet.id,
                               data: { organization_type: newOrgType },
+                              walletId: wallet.id,
                             });
                             setEditingOrgType(false);
                           }}
@@ -214,11 +217,11 @@ export default function FinancialPage() {
                   <Button
                     onClick={() =>
                       updateWallet({
-                        walletId: wallet.id,
                         data: {
                           status:
                             wallet.status === 'active' ? 'suspended' : 'active',
                         },
+                        walletId: wallet.id,
                       })
                     }
                     variant="secondary"
@@ -244,7 +247,7 @@ export default function FinancialPage() {
               {qrRawData ? (
                 <div className="space-y-4">
                   <div className="inline-block border p-4">
-                    <QRCodeSVG value={qrRawData} size={200} />
+                    <QRCodeSVG value={qrRawData || 'test'} size={200} />
                   </div>
                   <div>Amount: ${topUpAmount}</div>
                   <p className="text-sm text-gray-600">
@@ -255,8 +258,8 @@ export default function FinancialPage() {
                   <Button
                     onClick={async () => {
                       await topUpWallet({
+                        data: { amount: Number(topUpAmount) },
                         walletId: wallet.id,
-                        amount: Number(topUpAmount),
                       });
                       setQrRawData('');
                       setTopUpAmount('');
@@ -274,9 +277,19 @@ export default function FinancialPage() {
                     onChange={(e) => setTopUpAmount(e.target.value)}
                   />
                   <Button
-                    onClick={async () =>
-                      setQrRawData(await generateQR(topUpAmount))
-                    }
+                    onClick={async () => {
+                      const response = await generateQR({
+                        data: { amount: topUpAmount, user_id: Number(userId) },
+                      });
+                      console.log('QR Response:', response);
+                      const qrData = (
+                        response.data.data as unknown as {
+                          qrResponse: { qrRawData: string };
+                        }
+                      ).qrResponse.qrRawData;
+                      console.log('QR Data:', qrData);
+                      setQrRawData(qrData);
+                    }}
                   >
                     Generate QR
                   </Button>
@@ -319,17 +332,17 @@ export default function FinancialPage() {
                           'Cannot transfer to yourself',
                         ],
                         [
-                          wallet?.balance < Number(transferAmount),
+                          wallet.balance! < Number(transferAmount),
                           'Insufficient funds',
                         ],
                         [
-                          wallet?.status !== 'active',
+                          wallet.status !== 'active',
                           'Your wallet must be active',
                         ],
                         [!transferToUserId, 'Please enter a recipient user ID'],
                         [!recipientWallet, 'Recipient wallet not found'],
                         [
-                          recipientWallet?.status !== 'active',
+                          recipientWallet!.status !== 'active',
                           'Recipient wallet must be active',
                         ],
                       ];
@@ -342,9 +355,11 @@ export default function FinancialPage() {
                       }
 
                       await transferFunds({
-                        fromUserId: Number(userId),
-                        toUserId: Number(transferToUserId),
-                        amount: Number(transferAmount),
+                        data: {
+                          from_user_id: Number(userId),
+                          to_user_id: Number(transferToUserId),
+                          amount: Number(transferAmount),
+                        },
                       });
 
                       setTransferToUserId('');

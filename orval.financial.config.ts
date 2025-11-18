@@ -19,8 +19,8 @@ export default defineConfig({
     output: {
       // Use tags mode so each tag comes out as its own file
       mode: 'tags',
-      target: './src/api/generated/financial',
-      schemas: './src/api/generated/financial/model',
+      target: './src/api/generated',
+      schemas: './src/api/generated/model',
       client: 'react-query',
       httpClient: 'axios',
       mock: false,
