@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   fetchNotGivenPosts,
   fetchAllCategories,
@@ -8,7 +8,9 @@ import {
   deletePost,
   markPostAsGiven,
   markPostAsNotGiven,
+  fetchCategoriesByPostId,
 } from '@/features/freecycle/api/freecycle.api';
+import type { ApiPost } from '@/types/postItem';
 
 export function useNotGivenPosts() {
   return useQuery({
@@ -96,6 +98,35 @@ export function useDiscoverPage(searchQuery: string) {
   const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
   const [localSearch, setLocalSearch] = useState(searchQuery);
   const [showFilters, setShowFilters] = useState(false);
+  const [postCategories, setPostCategories] = useState<Map<number, number[]>>(
+    new Map()
+  );
+
+  // Fetch categories for posts when they load
+  useEffect(() => {
+    if (!posts || selectedCategories.length === 0) return;
+
+    const fetchCategoriesForPosts = async () => {
+      const categoriesMap = new Map<number, number[]>();
+      for (const post of posts) {
+        try {
+          const postCats = await fetchCategoriesByPostId(post.id);
+          categoriesMap.set(
+            post.id,
+            postCats.map((cat) => cat.category_id)
+          );
+        } catch (error) {
+          console.error(
+            `Failed to fetch categories for post ${post.id}:`,
+            error
+          );
+        }
+      }
+      setPostCategories(categoriesMap);
+    };
+
+    fetchCategoriesForPosts();
+  }, [posts, selectedCategories]);
 
   // Filter and map posts
   const filteredItems = useMemo(() => {
@@ -113,15 +144,16 @@ export function useDiscoverPage(searchQuery: string) {
       );
     }
 
-    // Apply category filter (when implemented in backend)
+    // Apply category filter (OR logic - show items in ANY selected category)
     if (selectedCategories.length > 0) {
-      // filtered = filtered.filter((item) =>
-      //   selectedCategories.includes(item.category_id)
-      // );
+      filtered = filtered.filter((item) => {
+        const itemCategories = postCategories.get(item.id) || [];
+        return selectedCategories.some((cat) => itemCategories.includes(cat));
+      });
     }
 
     return filtered;
-  }, [posts, localSearch, selectedCategories]);
+  }, [posts, localSearch, selectedCategories, postCategories]);
 
   const toggleCategory = (categoryId: number) => {
     setSelectedCategories((prev) =>

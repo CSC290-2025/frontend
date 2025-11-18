@@ -116,6 +116,8 @@ export default function PostItemForm({ onSuccess }: PostItemFormProps) {
           <Upload className="mb-2 h-12 w-12 text-gray-400" />
           <p className="text-sm text-gray-600">upload photo</p>
           <input
+            id="photo-url"
+            name="photo_url"
             type="text"
             placeholder="Photo URL (Pexels link)"
             value={formData.photo_url || ''}
@@ -131,6 +133,8 @@ export default function PostItemForm({ onSuccess }: PostItemFormProps) {
             Item name
           </label>
           <input
+            id="item-name"
+            name="item_name"
             type="text"
             required
             value={formData.item_name}
@@ -147,6 +151,8 @@ export default function PostItemForm({ onSuccess }: PostItemFormProps) {
             Weight (kg)
           </label>
           <input
+            id="item-weight"
+            name="item_weight"
             type="number"
             step="0.01"
             value={formData.item_weight || ''}
@@ -230,6 +236,8 @@ export default function PostItemForm({ onSuccess }: PostItemFormProps) {
             Description
           </label>
           <textarea
+            id="description"
+            name="description"
             value={formData.description}
             onChange={(e) =>
               setFormData({ ...formData, description: e.target.value })
