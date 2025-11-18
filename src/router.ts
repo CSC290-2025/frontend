@@ -1,14 +1,8 @@
 // Generouted, changes to this file will be overridden
- 
 
 import { components, hooks, utils } from '@generouted/react-router/client';
 
-export type Path =
-  | `/`
-  | `/example`
-  | `/example/:id`
-  | `/freecycle`
-  | `/postEvent`;
+export type Path = `/` | `/example` | `/example/:id` | `/freecycle`;
 
 export type Params = {
   '/example/:id': { id: string };
