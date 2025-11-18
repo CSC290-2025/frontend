@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from '@/router';
 
 type WeatherData = {
   temperature: number;
@@ -14,94 +15,36 @@ type WeatherData = {
 };
 
 const WeatherDashboard: React.FC<{ data: WeatherData }> = ({ data }) => {
+  const navigate = useNavigate();
   const [selected, setSelected] = useState<{
     title: string;
     icon?: string;
     temp?: number;
     type: 'main' | 'hourly' | 'weekly';
   } | null>(null);
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [selectedDistrict, setSelectedDistrict] = useState('All Districts');
-  const [searchInput, setSearchInput] = useState('');
   const [warningSelected, setWarningSelected] = useState(false);
-
-  const districts = [
-    'All Districts',
-    'Chom Thong',
-    'Rat Burana',
-    'Thon Buri',
-    'Thung Khru',
-  ];
 
   const closeModal = () => setSelected(null);
 
   return (
     <div className="relative mx-auto max-w-5xl bg-white p-6 font-sans text-black select-none">
-      {/* Header ส่วนหัวค่อทำให้click แล้ว navigationไปของclean air */}
+      {/* Header */}
       <div className="mb-6 flex gap-4">
-        <div className="rounded-xl border px-4 py-2 text-sm">
-          Weather reports <div className="text-gray-500">Weather forecast</div>
-        </div>
-        <div className="rounded-xl border px-4 py-2 text-sm">
-          Clean Air <div className="text-gray-500">Air quality</div>
-        </div>
+        <button
+          onClick={() => navigate('/weatherMain')}
+          className="cursor-pointer rounded-xl border px-4 py-2 text-sm transition-all hover:border-blue-400 hover:bg-blue-50"
+        >
+          Weather reports <div className="text-gray-500"></div>
+        </button>
+        <button
+          onClick={() => navigate('/air-quality')}
+          className="cursor-pointer rounded-xl border px-4 py-2 text-sm transition-all hover:border-blue-400 hover:bg-blue-50"
+        >
+          Clean Air <div className="text-gray-500"></div>
+        </button>
       </div>
 
       <h1 className="mb-4 text-3xl font-bold">Weather</h1>
-
-      {/* Search with District Dropdown */}
-      <div className="relative mb-6 flex gap-2">
-        <div className="relative flex-1">
-          <div className="flex overflow-hidden rounded-lg border bg-white shadow-sm">
-            <button
-              onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="flex items-center gap-2 border-r bg-gray-50 px-4 py-3 whitespace-nowrap text-gray-600 transition-all hover:bg-gray-100"
-            >
-              {selectedDistrict}
-              <span
-                className={`transform text-sm transition-transform ${dropdownOpen ? 'rotate-180' : ''}`}
-              >
-                ▼
-              </span>
-            </button>
-            <input
-              type="text"
-              placeholder="Search for your location"
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              className="flex-1 px-4 py-3 text-gray-600 outline-none select-text"
-            />
-            {searchInput.length > 1 && (
-              <button
-                onClick={() => setSearchInput('')}
-                className="px-3 py-3 text-gray-400 transition-all hover:text-gray-600"
-              >
-                ✕
-              </button>
-            )}
-          </div>
-          {dropdownOpen && (
-            <div className="absolute top-full left-0 z-20 mt-1 max-h-64 w-48 overflow-y-auto rounded-lg border bg-white shadow-lg">
-              {districts.map((district) => (
-                <button
-                  key={district}
-                  onClick={() => {
-                    setSelectedDistrict(district);
-                    setSearchInput(district);
-                    setDropdownOpen(false);
-                  }}
-                  className="w-full px-4 py-2 text-left transition-all hover:bg-blue-50"
-                >
-                  {district}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-        <button className="transform rounded-lg bg-blue-500 px-6 py-3 font-medium text-white transition-all hover:bg-blue-600 active:scale-95">
-          Search
-        </button>
-      </div>
 
       {/* Main Info (clickable) */}
       <div className="flex gap-6">
@@ -148,35 +91,37 @@ const WeatherDashboard: React.FC<{ data: WeatherData }> = ({ data }) => {
 
       {/* Weekly Forecast */}
       <div className="mt-6 flex gap-4">
-        {data.forecastWeekly.map((d, i) => (
-          <div
-            key={i}
-            className="flex-1 transform cursor-pointer rounded-2xl border py-4 text-center shadow-sm transition-all hover:bg-gray-100 hover:shadow-md active:scale-95"
-            onClick={() =>
-              setSelected({
-                title: d.day,
-                icon: d.icon,
-                temp: d.temp,
-                type: 'weekly',
-              })
-            }
-          >
-            <div className="font-semibold">{d.day}</div>
-            <div className="text-2xl">{d.icon}</div>
-            <div>{d.temp}°</div>
-          </div>
-        ))}
-
-        {/* Warning Box */}
+        <div className="flex flex-[3] gap-4 rounded-2xl border p-6 shadow-sm">
+          {data.forecastWeekly.map((d, i) => (
+            <div
+              key={i}
+              className="flex-1 transform cursor-pointer rounded-xl p-2 text-center transition-all hover:bg-gray-100 hover:shadow active:scale-95"
+              onClick={() =>
+                setSelected({
+                  title: d.day,
+                  icon: d.icon,
+                  temp: d.temp,
+                  type: 'weekly',
+                })
+              }
+            >
+              <div className="font-semibold">{d.day}</div>
+              <div className="text-2xl">{d.icon}</div>
+              <div>{d.temp}°</div>
+            </div>
+          ))}
+        </div>
+        {/* Disaster Warning Box (smaller) */}
         {data.warning && (
           <div
-            className="flex-1 animate-pulse cursor-pointer rounded-2xl border border-red-400 bg-red-50 px-3 py-4 text-red-700 shadow-sm transition-all hover:shadow-md"
+            className="max-w-xs flex-1 animate-pulse cursor-pointer rounded-2xl border border-red-400 bg-red-50 px-2 py-3 text-center text-red-700 shadow-sm transition-all hover:shadow-md"
             onClick={() => setWarningSelected(true)}
           >
-            <div className="flex items-center gap-2 font-bold">
+            <div className="flex flex-col items-center gap-2 text-lg font-bold">
+              {/* text-lg for bigger, font-bold for bold */}
               ⚠️ {data.warning}
             </div>
-            <div className="mt-1 text-sm">{data.warningDetail}</div>
+            <div className="mt-1 text-base font-bold">{data.warningDetail}</div>
           </div>
         )}
       </div>
@@ -188,9 +133,17 @@ const WeatherDashboard: React.FC<{ data: WeatherData }> = ({ data }) => {
           onClick={() => setWarningSelected(false)}
         >
           <div
-            className="animate-popup w-[420px] rounded-2xl bg-gradient-to-b from-red-50 to-white p-6 text-center shadow-2xl transition-all"
+            className="animate-popup relative w-[420px] rounded-2xl bg-gradient-to-b from-red-50 to-white p-6 text-center shadow-2xl transition-all"
             onClick={(e) => e.stopPropagation()}
           >
+            {/* Close Button (Top Right) */}
+            <button
+              className="absolute top-4 right-4 text-xl text-gray-500 hover:text-gray-700"
+              onClick={() => setWarningSelected(false)}
+            >
+              ✕
+            </button>
+
             <h2 className="mb-3 text-2xl font-bold text-red-700">
               ⚠️ {data.warning}
             </h2>
@@ -232,9 +185,17 @@ const WeatherDashboard: React.FC<{ data: WeatherData }> = ({ data }) => {
           onClick={closeModal}
         >
           <div
-            className="animate-popup w-[420px] rounded-2xl bg-gradient-to-b from-blue-50 to-white p-6 text-center shadow-2xl transition-all"
+            className="animate-popup relative w-[420px] rounded-2xl bg-gradient-to-b from-blue-50 to-white p-6 text-center shadow-2xl transition-all"
             onClick={(e) => e.stopPropagation()}
           >
+            {/* Close Button (Top Right) */}
+            <button
+              className="absolute top-4 right-4 text-xl text-gray-500 hover:text-gray-700"
+              onClick={closeModal}
+            >
+              ✕
+            </button>
+
             <h2 className="mb-3 text-2xl font-bold text-blue-700">
               {selected.type === 'main'
                 ? '🌦 Current Weather Details'
@@ -334,6 +295,7 @@ const sampleData: WeatherData = {
     { time: '18:00', temp: 25, icon: '🌧' },
     { time: '19:00', temp: 25, icon: '🌧' },
   ],
+  // expanded to 7-day weekly forecast
   forecastWeekly: [
     { day: 'MON', temp: 32, icon: '🌤' },
     { day: 'TUE', temp: 32, icon: '🌤' },
