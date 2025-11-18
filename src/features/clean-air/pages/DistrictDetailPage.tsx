@@ -5,6 +5,8 @@ import { CurrentDataCard } from '@/features/clean-air/components/CurrentDataCard
 import { CurrentAqiCard } from '@/features/clean-air/components/CurrentAqiCard';
 import { Pm25GuideModal } from '@/features/clean-air/components/Pm25GuideModal';
 import { HealthTips } from '../components/HealthTips';
+import { Summary } from '../components/Summary';
+import { HistoricalTable } from '../components/HistoricalTable';
 
 export function DistrictDetailPage() {
   const { district } = useParams('/clean-air/district-detail/:district');
@@ -44,6 +46,8 @@ export function DistrictDetailPage() {
         <CurrentAqiCard onDocumentationClick={openModal} />
         <CurrentDataCard />
         <HealthTips />
+        <Summary />
+        <HistoricalTable />
       </div>
 
       <Pm25GuideModal isOpen={isModalOpen} onClose={closeModal} />
