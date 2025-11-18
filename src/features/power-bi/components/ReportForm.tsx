@@ -144,6 +144,7 @@ function ReportForm({ oldReport }: ReportFormProps) {
               placeholder="title"
               value={form.title}
               onChange={handleChange}
+              className="text-[#2B5991] placeholder:text-[#2B5991]"
             />
           </div>
           <div className="mb-7 flex flex-col gap-1">
@@ -154,6 +155,7 @@ function ReportForm({ oldReport }: ReportFormProps) {
               placeholder="link"
               value={form.url}
               onChange={handleChange}
+              className="text-[#2B5991] placeholder:text-[#2B5991]"
             />
           </div>
           <div className="mb-7 flex flex-col gap-1">
@@ -162,6 +164,7 @@ function ReportForm({ oldReport }: ReportFormProps) {
               name="visibility"
               value={form.visibility}
               onChange={handleChange}
+              className="rounded-lg border p-2 text-[#2B5991]"
             >
               {/* change to select from ui folder later*/}
               <option value="citizens">Citizens</option>
@@ -170,11 +173,20 @@ function ReportForm({ oldReport }: ReportFormProps) {
           </div>
           <div className="mb-7 flex flex-col gap-1">
             <Label>Type of Report</Label>
-            <select name="type" value={form.type} onChange={handleChange}>
+            <select
+              name="type"
+              value={form.type}
+              onChange={handleChange}
+              className="rounded-lg border p-2 text-[#2B5991]"
+            >
               <option value="summary">
                 Summary City Performance Dashboard
               </option>
               <option value="trends">Public Trends Report</option>
+              <option value="detailed">Detailed Operational Dashboards</option>
+              <option value="planning">Financial & Resource Planning</option>
+              <option value="usage">Report Usage Analysis</option>
+              <option value="data">Data Quality Dashboard</option>
             </select>
           </div>
           <div className="mb-7 flex flex-col gap-1">
@@ -183,6 +195,7 @@ function ReportForm({ oldReport }: ReportFormProps) {
               name="category"
               value={form.category}
               onChange={handleChange}
+              className="rounded-lg border p-2 text-[#2B5991]"
             >
               <option value="healthcare">Healthcare</option>
               <option value="weather">Weather</option>
@@ -196,7 +209,7 @@ function ReportForm({ oldReport }: ReportFormProps) {
           <Textarea
             name="description"
             placeholder="description"
-            className="h-full w-full"
+            className="h-full w-full text-[#2B5991] placeholder:text-[#2B5991]"
             value={form.description}
             onChange={handleChange}
           />

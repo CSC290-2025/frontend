@@ -40,7 +40,7 @@ function ReportsPage() {
                 params: { type: type as string, category: e.target.value },
               })
             }
-            className="rounded-2xl border border-[#D9D9D9] bg-white px-1 py-2 hover:bg-gray-100"
+            className="cursor-pointer rounded-2xl border border-[#D9D9D9] bg-[#01CCFF] py-2 text-center font-normal text-white hover:bg-[#0091B5]"
           >
             <option>healthcare</option>
             <option>weather</option>
