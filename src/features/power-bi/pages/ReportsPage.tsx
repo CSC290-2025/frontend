@@ -14,7 +14,7 @@ function ReportsPage() {
   });
 
   return (
-    <div className="flex h-screen w-screen flex-col justify-around p-5">
+    <div className="flex h-screen w-screen flex-col justify-around bg-[#F9FaFB] p-5">
       <Nav />
       <div className="flex items-center gap-2">
         <h2 className="font-medium">
@@ -22,7 +22,15 @@ function ReportsPage() {
             ? 'Summary City Performance Dashboard'
             : type === 'trends'
               ? 'Public Trends Report'
-              : 'No information found.'}
+              : type === 'detailed'
+                ? 'Detailed Operational Dashboards'
+                : type === 'planning'
+                  ? 'Financial & Resource Planning'
+                  : type === 'usage'
+                    ? 'Report Usage Analysis'
+                    : type === 'data'
+                      ? 'Data Quality Dashboard'
+                      : 'No information found.'}
         </h2>
         <div>
           <select
@@ -32,7 +40,7 @@ function ReportsPage() {
                 params: { type: type as string, category: e.target.value },
               })
             }
-            className="border-0 bg-gray-100 px-1 py-2"
+            className="rounded-2xl border border-[#D9D9D9] bg-white px-1 py-2 hover:bg-gray-100"
           >
             <option>healthcare</option>
             <option>weather</option>

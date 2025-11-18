@@ -105,9 +105,9 @@ function ReportForm({ oldReport }: ReportFormProps) {
   };
 
   return (
-    <div className="flex h-screen w-screen flex-col justify-around p-7">
+    <div className="flex h-screen w-screen flex-col justify-between p-7">
       <div className="mb-5 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 font-bold">
           <Button
             variant="outline"
             type="button"
@@ -131,8 +131,11 @@ function ReportForm({ oldReport }: ReportFormProps) {
       </div>
 
       {/* {submitted && <div>report created successfully</div>} */}
-      <form onSubmit={handleSubmit} className="flex justify-around gap-5">
-        <div className="w-1/2">
+      <form
+        onSubmit={handleSubmit}
+        className="grid grid-cols-1 justify-around gap-5 text-sm md:grid-cols-2"
+      >
+        <div className="w-full">
           <div className="mb-7 flex flex-col gap-1">
             <Label>Report Title</Label>
             <Input
@@ -188,7 +191,7 @@ function ReportForm({ oldReport }: ReportFormProps) {
             </select>
           </div>
         </div>
-        <div className="h-full w-1/2">
+        <div className="h-full w-full">
           <Label className="mb-1">Description</Label>
           <Textarea
             name="description"
@@ -202,7 +205,7 @@ function ReportForm({ oldReport }: ReportFormProps) {
       <Button
         type="submit"
         onClick={handleSubmit}
-        className="w-1/4 self-center px-2"
+        className="self-center bg-[#01CCFF] px-2 px-5 hover:bg-[#0091B5]"
         disabled={loading}
       >
         {loading ? 'Saving...' : oldReport ? 'Save Changes' : 'Create'}
