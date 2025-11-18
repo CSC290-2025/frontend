@@ -5,6 +5,7 @@ import CategoryFilter from '@/features/freecycle/components/CategoryFilter';
 import type { PostItem } from '@/types/postItem';
 import { mapApiPostToItem } from '@/types/postItem';
 import { useDiscoverPage } from '@/features/freecycle/hooks/useFreecycle';
+import SearchBar from '../components/SearchBar';
 
 interface DiscoverPageProps {
   searchQuery: string;
@@ -50,11 +51,11 @@ export default function DiscoverPage({
         </button>
       </div>
 
-      {/* <SearchBar
-        value={localSearch}
-        onChange={setLocalSearch}
+      <SearchBar
+        value={_localSearch}
+        onChange={_setLocalSearch}
         placeholder="Search items..."
-      /> */}
+      />
 
       {showFilters && (
         <div className="rounded-2xl bg-white p-6 shadow-md">

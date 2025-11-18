@@ -10,7 +10,7 @@ export const banners = [
     subtitle: 'Come to our Giveaway event – see items and take what you like!',
   },
   {
-    gradient: 'from-white-100 to-purple-300',
+    gradient: 'from-white to-purple-300',
     title: 'Join Our Team',
     subtitle:
       'We are looking for experts from various fields to join our event!',

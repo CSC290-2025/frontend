@@ -65,13 +65,13 @@ export default function FreecycleHomepage() {
             </div>
 
             <div className="flex flex-col items-center gap-4 md:flex-row">
-              <div className="w-full md:flex-1">
+              {/* <div className="w-full md:flex-1">
                 <SearchBar
                   value={searchQuery}
                   onChange={setSearchQuery}
                   placeholder="Search for items"
                 />
-              </div>
+              </div> */}
 
               <div className="flex w-full justify-stretch gap-3 md:w-auto md:justify-start">
                 <button

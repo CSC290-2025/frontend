@@ -4,6 +4,7 @@ import type { Category } from '@/types/postItem';
 import {
   createPost,
   fetchAllCategories,
+  addCategoriesToPost,
 } from '@/features/freecycle/api/freecycle.api';
 
 interface PostItem {
@@ -24,7 +25,7 @@ export default function PostItemForm({ onSuccess }: PostItemFormProps) {
   const [formData, setFormData] = useState<PostItem>({
     item_name: '',
     item_weight: null,
-    photo_url: '',
+    photo_url: null,
     description: '',
     donate_to_department_id: null,
   });
@@ -56,8 +57,8 @@ export default function PostItemForm({ onSuccess }: PostItemFormProps) {
     setError(null);
 
     try {
-      // Create the post
-      await createPost({
+      // Step 1: Create the post
+      const createdPost = await createPost({
         item_name: formData.item_name,
         item_weight: formData.item_weight,
         photo_url: formData.photo_url || null,
@@ -65,8 +66,10 @@ export default function PostItemForm({ onSuccess }: PostItemFormProps) {
         donate_to_department_id: formData.donate_to_department_id,
       });
 
-      // TODO: Link categories to post once backend supports it
-      // For now, the post is created successfully
+      // Step 2: Add categories to the post if any are selected
+      if (selectedCategories.length > 0) {
+        await addCategoriesToPost(createdPost.id, selectedCategories);
+      }
 
       setLoading(false);
       onSuccess();
@@ -122,7 +125,7 @@ export default function PostItemForm({ onSuccess }: PostItemFormProps) {
             className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
           />
         </div>
-        {/* น้ำหนักสิ่งของ */}
+        {/* Weight */}
         <div>
           <label className="mb-2 block text-sm font-medium text-gray-900">
             Weight (kg)
