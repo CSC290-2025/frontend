@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ArrowLeft } from 'lucide-react';
-import type { PostItem } from '@/types/postItem';
+import type { PostItem, Category, CategoryWithName } from '@/types/postItem';
+import { fetchCategoriesByPostId } from '@/features/freecycle/api/freecycle.api';
 
 interface ItemDetailPageProps {
   _item?: PostItem;
@@ -12,6 +13,25 @@ export default function ItemDetailPage({
   _onBack,
 }: ItemDetailPageProps) {
   const [requesting, setRequesting] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
+
+  // Load categories for the item
+  useEffect(() => {
+    if (_item?.id) {
+      fetchCategoriesByPostId(_item.id)
+        .then((cats: CategoryWithName[]) => {
+          // Transform CategoryWithName to Category (map category_id to id)
+          const transformedCategories: Category[] = cats.map((cat) => ({
+            id: cat.category_id,
+            category_name: cat.category_name,
+          }));
+          setCategories(transformedCategories);
+        })
+        .catch((err) => {
+          console.error('Failed to load categories:', err);
+        });
+    }
+  }, [_item?.id]);
 
   // Mock item for display when no item is provided
   const mockItem: PostItem = {
@@ -111,6 +131,25 @@ export default function ItemDetailPage({
                       Weight
                     </h3>
                     <p className="text-gray-600">{item.item_weight} kg</p>
+                  </div>
+                )}
+
+                {/* Display Categories if available */}
+                {categories.length > 0 && (
+                  <div>
+                    <h3 className="mb-2 text-sm font-semibold text-gray-700">
+                      Categories
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      {categories.map((category) => (
+                        <span
+                          key={`category-${_item?.id}-${category.id}`}
+                          className="inline-block rounded-full bg-cyan-100 px-3 py-1 text-sm text-cyan-800"
+                        >
+                          {category.category_name}
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 )}
 

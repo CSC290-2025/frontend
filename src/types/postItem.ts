@@ -5,6 +5,11 @@ export interface Category {
   updated_at?: string;
 }
 
+export interface CategoryWithName {
+  category_id: number;
+  category_name: string;
+}
+
 export interface PostItem {
   id: number;
   item_name: string;
@@ -12,6 +17,7 @@ export interface PostItem {
   photo_url?: string;
   description?: string;
   is_given: boolean;
+  categories?: Category[];
 }
 
 export interface ApiPost {
@@ -23,6 +29,7 @@ export interface ApiPost {
   is_given: boolean;
   created_at: string;
   updated_at: string;
+  categories?: Category[];
 }
 
 // Helper: map ApiPost -> PostItem (same mapping used in DiscoverPage)

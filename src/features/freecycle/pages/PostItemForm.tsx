@@ -57,24 +57,40 @@ export default function PostItemForm({ onSuccess }: PostItemFormProps) {
     setError(null);
 
     try {
-      // Step 1: Create the post
+      // Temporary user ID for demo (replace with actual auth later)
+      const demoUserId = 1;
+
+      // Step 1: Create the post with donater_id
       const createdPost = await createPost({
         item_name: formData.item_name,
         item_weight: formData.item_weight,
         photo_url: formData.photo_url || null,
         description: formData.description,
         donate_to_department_id: formData.donate_to_department_id,
+        donater_id: demoUserId,
       });
+
+      console.log('Post created successfully:', createdPost);
 
       // Step 2: Add categories to the post if any are selected
       if (selectedCategories.length > 0) {
-        await addCategoriesToPost(createdPost.id, selectedCategories);
+        console.log('Adding categories:', selectedCategories);
+        await addCategoriesToPost(
+          createdPost.id,
+          selectedCategories,
+          demoUserId
+        );
+        console.log('Categories added successfully');
       }
 
       setLoading(false);
       onSuccess();
     } catch (err) {
-      console.error('Failed to create post:', err);
+      console.error('Full error:', err);
+      if (err instanceof Error && 'response' in err) {
+        const error = err as { response?: { data: unknown } };
+        console.error('Error response:', error.response?.data);
+      }
       setError('Failed to create post. Please try again.');
       setLoading(false);
     }
@@ -179,6 +195,34 @@ export default function PostItemForm({ onSuccess }: PostItemFormProps) {
               );
             })}
           </div>
+
+          {/* Selected Categories Display */}
+          {selectedCategories.length > 0 && (
+            <div className="mt-4 rounded-lg bg-cyan-50 p-4">
+              <p className="mb-2 text-sm font-medium text-cyan-900">
+                Selected Categories ({selectedCategories.length}):
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {categories
+                  .filter((cat) => selectedCategories.includes(cat.id))
+                  .map((category) => (
+                    <span
+                      key={category.id}
+                      className="inline-flex items-center gap-2 rounded-full bg-cyan-200 px-3 py-1 text-sm text-cyan-800"
+                    >
+                      {category.category_name}
+                      <button
+                        type="button"
+                        onClick={() => toggleCategory(category.id)}
+                        className="font-bold hover:text-cyan-600"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+              </div>
+            </div>
+          )}
         </div>
 
         <div>

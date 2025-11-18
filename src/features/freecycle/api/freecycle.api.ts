@@ -1,6 +1,6 @@
 // API functions for fetching Freecycle data from the backend
 import { apiClient } from '@/lib/apiClient';
-import type { ApiPost, Category } from '@/types/postItem';
+import type { ApiPost, Category, CategoryWithName } from '@/types/postItem';
 
 // Response types matching backend structure
 interface ApiResponseWrapper<T> {
@@ -33,6 +33,7 @@ interface CreatePostPayload {
   description: string | null;
   donate_to_department_id: number | null;
   category_ids?: number[];
+  donater_id?: number | null;
 }
 
 // Posts API
@@ -149,11 +150,22 @@ export const deleteCategory = async (categoryId: number): Promise<void> => {
 // Post Categories API
 export const addCategoriesToPost = async (
   postId: number,
-  categoryIds: number[]
+  categoryIds: number[],
+  donaterId: number = 1
 ): Promise<void> => {
   await apiClient.post(`/posts/${postId}/categories/add`, {
     category_ids: categoryIds,
+    donater_id: donaterId,
   });
+};
+
+export const fetchCategoriesByPostId = async (
+  postId: number
+): Promise<CategoryWithName[]> => {
+  const response = await apiClient.get<
+    ApiResponseWrapper<{ categories: CategoryWithName[] }>
+  >(`/posts/${postId}/categories`);
+  return response.data.data.categories;
 };
 
 // // Make for fetching Freecycle data from the Freecycle API
