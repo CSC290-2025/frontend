@@ -22,8 +22,8 @@ function Picture({ username, picture }: PhotoProps) {
   };
 
   return (
-    <div className="flex h-[281px] w-[295px] flex-col items-center justify-center gap-[22px]">
-      <div className="flex h-[146px] w-[146px] items-center justify-center overflow-hidden rounded-[10px] border bg-gray-50">
+    <div className="flex flex-col items-center justify-center lg:h-[281px] lg:w-[295px] lg:gap-[22px]">
+      <div className="flex items-center justify-center overflow-hidden rounded-[10px] border bg-gray-50 lg:h-[146px] lg:w-[146px]">
         {previewUrl ? (
           <img
             src={previewUrl}
@@ -35,10 +35,12 @@ function Picture({ username, picture }: PhotoProps) {
         )}
       </div>
 
-      <h1 className="text-[32px] font-semibold text-[#2B5991]">{username}</h1>
+      <h1 className="font-semibold text-[#2B5991] lg:text-[32px]">
+        {username}
+      </h1>
       <button
         onClick={handleButtonClick}
-        className="h-[53px] w-[201px] cursor-pointer rounded-[10px] border border-[#01CEF8] bg-[#FFF6E5] transition-colors duration-200 hover:bg-[#01CEF8] hover:text-white focus:ring-2 focus:ring-[#01CEF8] focus:outline-none"
+        className="cursor-pointer rounded-[10px] border border-[#01CEF8] bg-[#FFF6E5] transition-colors duration-200 hover:bg-[#01CEF8] hover:text-white focus:ring-2 focus:ring-[#01CEF8] focus:outline-none lg:h-[53px] lg:w-[201px]"
       >
         Upload your picture
       </button>

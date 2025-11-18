@@ -138,40 +138,40 @@ function UserSettingPage() {
   };
 
   return (
-    <div className="absolute top-[70px] left-[258px] flex w-[1082px] flex-col gap-[37px] rounded-[20px] border opacity-100">
-      <div className="mt-[48px] ml-[80px] flex h-[78px] w-[373px] gap-[26px]">
+    <div className="absolute flex flex-col rounded-[20px] border opacity-100 lg:top-[70px] lg:left-[258px] lg:w-[1082px] lg:gap-[37px]">
+      <div className="flex lg:mt-[48px] lg:ml-[80px] lg:h-[78px] lg:w-[373px] lg:gap-[26px]">
         {/* icon */}
-        <h1 className="text-[48px] text-[#2B5991]">Edit Profile</h1>
+        <h1 className="text-[#2B5991] lg:text-[48px]">Edit Profile</h1>
       </div>
-      <div className="flex gap-[20px]">
+      <div className="flex lg:gap-[20px]">
         <div>
           <Picture username={account.Username} picture={picture} />
         </div>
         <div>
-          <div className="mb-[39px] flex">
+          <div className="flex lg:mb-[39px]">
             <div
-              className={`flex h-[47px] w-[209px] cursor-pointer items-center justify-center transition-colors ${
+              className={`flex cursor-pointer items-center justify-center transition-colors lg:h-[47px] lg:w-[209px] ${
                 activeTab === 'personal' ? 'bg-[#96E0E1]' : 'bg-white'
               }`}
               onClick={() => setActiveTab('personal')}
             >
-              <h2 className="text-[20px] text-[#2B5991]">Personal</h2>
+              <h2 className="text-[#2B5991] lg:text-[20px]">Personal</h2>
             </div>
             <div
-              className={`flex h-[47px] w-[209px] cursor-pointer items-center justify-center transition-colors ${
+              className={`flex cursor-pointer items-center justify-center transition-colors lg:h-[47px] lg:w-[209px] ${
                 activeTab === 'health' ? 'bg-[#96E0E1]' : 'bg-white'
               }`}
               onClick={() => setActiveTab('health')}
             >
-              <h2 className="text-[20px] text-[#2B5991]">Health</h2>
+              <h2 className="text-[#2B5991] lg:text-[20px]">Health</h2>
             </div>
             <div
-              className={`flex h-[47px] w-[209px] cursor-pointer items-center justify-center transition-colors ${
+              className={`flex cursor-pointer items-center justify-center transition-colors lg:h-[47px] lg:w-[209px] ${
                 activeTab === 'account' ? 'bg-[#96E0E1]' : 'bg-white'
               }`}
               onClick={() => setActiveTab('account')}
             >
-              <h2 className="text-[20px] text-[#2B5991]">Account</h2>
+              <h2 className="text-[#2B5991] lg:text-[20px]">Account</h2>
             </div>
           </div>
           {user && activeTab === 'personal' && (
@@ -183,7 +183,7 @@ function UserSettingPage() {
           {user && activeTab === 'account' && (
             <Account data={account} onDataChange={handleAccountChange} />
           )}
-          <div className="mt-4 mb-[27px] flex justify-center">
+          <div className="flex justify-center lg:mt-4 lg:mb-[27px]">
             <button
               className="cursor-pointer rounded bg-blue-500 px-6 py-2 text-white hover:bg-blue-600"
               onClick={handleSave}
