@@ -1,67 +1,50 @@
-import { useEffect, useState } from 'react';
 import { Edit, Trash2 } from 'lucide-react';
 import type { PostItem } from '@/types/postItem';
+import { mapApiPostToItem } from '@/types/postItem';
 import ItemCard from '@/features/freecycle/components/ItemCard';
+import {
+  useUserPosts,
+  useDeletePost,
+  useMarkPostAsGiven,
+  useMarkPostAsNotGiven,
+} from '@/features/freecycle/hooks/useFreecycle';
 
 interface MyItemsPageProps {
   _onViewItem?: (item: PostItem) => void;
 }
 
-// Mock data for My Items
-const MOCK_ITEMS: PostItem[] = [
-  {
-    id: 1,
-    item_name: 'Vintage Wooden Chair',
-    description: 'A comfortable wooden chair in good condition',
-    photo_url:
-      'https://images.pexels.com/photos/1350789/pexels-photo-1350789.jpeg?auto=compress&cs=tinysrgb&w=400',
-    item_weight: 5,
-    is_given: false,
-  },
-  {
-    id: 2,
-    item_name: 'Set of Books',
-    description: 'Collection of fiction and non-fiction books',
-    photo_url:
-      'https://images.pexels.com/photos/1181690/pexels-photo-1181690.jpeg?auto=compress&cs=tinysrgb&w=400',
-    item_weight: 3,
-    is_given: false,
-  },
-  {
-    id: 3,
-    item_name: 'Coffee Maker',
-    description: 'Barely used coffee maker, works perfectly',
-    photo_url:
-      'https://images.pexels.com/photos/312418/pexels-photo-312418.jpeg?auto=compress&cs=tinysrgb&w=400',
-    item_weight: 1.5,
-    is_given: true,
-  },
-];
-
 export default function MyItemsPage({ _onViewItem }: MyItemsPageProps) {
-  const [items, setItems] = useState<PostItem[]>(MOCK_ITEMS);
-  const [loading, setLoading] = useState(false);
+  const { data: posts, isLoading, isError, error } = useUserPosts();
+  const deletePostMutation = useDeletePost();
+  const markAsGivenMutation = useMarkPostAsGiven();
+  const markAsNotGivenMutation = useMarkPostAsNotGiven();
 
-  useEffect(() => {
-    // Simulate loading delay
-    setLoading(true);
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, []);
+  const items = posts ? posts.map(mapApiPostToItem) : [];
 
-  const handleDelete = (itemId: number) => {
+  const handleDelete = async (itemId: number) => {
     if (!confirm('Are you sure you want to delete this item?')) {
       return;
     }
-    setItems((prev) => prev.filter((item) => item.id !== itemId));
+
+    try {
+      await deletePostMutation.mutateAsync(itemId);
+    } catch (err) {
+      console.error('Failed to delete item:', err);
+      alert('Failed to delete item. Please try again.');
+    }
   };
 
-  const handleToggleGiven = (item: PostItem) => {
-    setItems((prev) =>
-      prev.map((i) => (i.id === item.id ? { ...i, is_given: !i.is_given } : i))
-    );
+  const handleToggleGiven = async (item: PostItem) => {
+    try {
+      if (item.is_given) {
+        await markAsNotGivenMutation.mutateAsync(item.id);
+      } else {
+        await markAsGivenMutation.mutateAsync(item.id);
+      }
+    } catch (err) {
+      console.error('Failed to update item status:', err);
+      alert('Failed to update item status. Please try again.');
+    }
   };
 
   return (
@@ -71,7 +54,15 @@ export default function MyItemsPage({ _onViewItem }: MyItemsPageProps) {
         <p className="text-gray-600">{items.length} items</p>
       </div>
 
-      {loading ? (
+      {isError && (
+        <div className="rounded-lg bg-red-50 p-4 text-red-700">
+          {error instanceof Error
+            ? error.message
+            : 'Failed to load your items. Please try again.'}
+        </div>
+      )}
+
+      {isLoading ? (
         <div className="py-12 text-center">
           <p className="text-gray-600">Loading your items...</p>
         </div>

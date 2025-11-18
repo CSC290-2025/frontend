@@ -1,9 +1,13 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState, useMemo } from 'react';
 import {
   fetchNotGivenPosts,
   fetchAllCategories,
   fetchCategoryById,
+  fetchUserPosts,
+  deletePost,
+  markPostAsGiven,
+  markPostAsNotGiven,
 } from '@/features/freecycle/api/freecycle.api';
 
 export function useNotGivenPosts() {
@@ -13,6 +17,48 @@ export function useNotGivenPosts() {
     retry: 2,
     meta: {
       errorMessage: 'Failed to load items',
+    },
+  });
+}
+
+// User Posts Hook
+export function useUserPosts() {
+  return useQuery({
+    queryKey: ['posts', 'user'],
+    queryFn: fetchUserPosts,
+    retry: 2,
+  });
+}
+
+// Delete Post Mutation
+export function useDeletePost() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: deletePost,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['posts', 'user'] });
+    },
+  });
+}
+
+// Mark Post as Given Mutation
+export function useMarkPostAsGiven() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: markPostAsGiven,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['posts', 'user'] });
+    },
+  });
+}
+
+// Mark Post as Not Given Mutation
+export function useMarkPostAsNotGiven() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: markPostAsNotGiven,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['posts', 'user'] });
     },
   });
 }
