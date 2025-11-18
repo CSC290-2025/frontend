@@ -7,7 +7,12 @@ export default defineConfig({
     input: {
       // if putting frontend & backend repos in the same root folder
       // otherwise, use './{name}.json' maybe and put it in gitignore
+      // add your backend tags like below if needed
       target: '../openapi.json',
+      filters: {
+        mode: 'include',
+        tags: ['Wallets', 'MetroCards', 'Insurance Cards', 'SCB'],
+      },
       // target: `${BACKEND_URL}/doc`,
     },
     output: {
