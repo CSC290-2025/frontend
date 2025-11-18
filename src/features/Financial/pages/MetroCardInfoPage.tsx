@@ -139,7 +139,7 @@ export default function MetroCardInfoPage() {
               </div>
               <div>
                 <Label htmlFor="balance">Balance</Label>
-                <div className="relative mt-2">
+                <div className="mt-2 flex gap-3">
                   <Input
                     id="balance"
                     type="text"
@@ -147,6 +147,16 @@ export default function MetroCardInfoPage() {
                     disabled
                     className="pr-12 text-lg"
                     required
+                  />
+                  <ReuseableButton
+                    text="Top up"
+                    onClick={() =>
+                      navigate('/financial/topup', {
+                        state: { cardNumber: formatCardNumber(number!) },
+                      })
+                    }
+                    className="flex-1 cursor-pointer"
+                    color="green"
                   />
                 </div>
               </div>

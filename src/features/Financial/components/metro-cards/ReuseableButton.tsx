@@ -9,7 +9,7 @@ interface ReuseableButtonProps {
   onClick: any;
   spinner?: boolean;
   isPending?: boolean;
-  color?: 'blue' | 'cyan' | string;
+  color?: 'blue' | 'cyan' | 'green' | string;
   variant?:
     | 'link'
     | 'default'
@@ -25,6 +25,7 @@ const colorMap: Record<string, string> = {
   blue: 'bg-blue-500 hover:bg-blue-600 text-white',
   cyan: 'bg-cyan-400 hover:bg-cyan-500 text-white',
   red: 'bg-red-500 hover:bg-red-300 text-white',
+  green: 'bg-green-500 hover:bg-green-600 text-white',
 };
 
 export default function ReuseableButton({
