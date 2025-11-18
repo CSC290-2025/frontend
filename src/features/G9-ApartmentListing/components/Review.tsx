@@ -47,7 +47,7 @@ export default function ReviewModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div className="font-poppins fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="relative w-full max-w-2xl rounded-2xl bg-white p-8 shadow-xl">
         <button
           onClick={onClose}

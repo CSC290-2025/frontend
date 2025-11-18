@@ -149,8 +149,7 @@ FREE : Internet, cable TV
 Furniture and appliances includes: refrigerator, water heater, air conditioner
 
 Contact us
-Line: UFA888
-Facebook: https://www.facebook.com/cosmomansion/`,
+Line : UFA888`,
     address:
       '110, 112 Pracha Uthit Soi 45, Pracha Uthit Road, Bang Mod, Thung Khru District, Bangkok 10140',
     phone: '0999999999',
@@ -262,7 +261,7 @@ Facebook: https://www.facebook.com/cosmomansion/`,
           <div className="flex items-center gap-4">
             {/* Back Icon */}
             <button
-              onClick={() => window.history.back()}
+              onClick={() => (window.location.href = '/ApartmentHomepage')}
               className="flex h-10 w-10 items-center justify-center rounded-full text-2xl hover:bg-gray-100"
             >
               <img src={BackIcon} alt="Backpage" />
@@ -471,9 +470,23 @@ Facebook: https://www.facebook.com/cosmomansion/`,
               <h2 className="mb-4 text-xl font-bold">About this place</h2>
 
               <h3 className="mb-2 font-semibold">Description</h3>
-              <p className="mb-4 text-sm leading-relaxed whitespace-pre-line text-gray-700">
+              <p className="text-sm leading-relaxed whitespace-pre-line text-gray-700">
                 {apartment.description}
               </p>
+
+              <div className="mb-4 text-sm">
+                <p className="text-gray-700">
+                  <span className="font-md">Facebook : </span>
+                  <a
+                    href={apartment.facebook}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-cyan-00 text-cyan-500 hover:underline"
+                  >
+                    {apartment.facebook}
+                  </a>
+                </p>
+              </div>
 
               <div className="space-y-2 rounded-lg bg-gray-50 p-4 text-sm">
                 <div className="flex justify-between">
@@ -484,7 +497,7 @@ Facebook: https://www.facebook.com/cosmomansion/`,
                   <span>100 THB (minimum)</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-600">Electricity Price:</span>
+                  <span className="text-gray-600">Electricity Price :</span>
                   <span className="font-medium">
                     {apartment.electricityPrice}
                   </span>
