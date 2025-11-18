@@ -7,7 +7,7 @@ export default function BookingComplete({
   onViewBooking,
 }: BookingCompleteProps) {
   return (
-    <div className="bg-opacity-40 fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+    <div className="font-poppins bg-opacity-40 fixed inset-0 z-50 flex items-center justify-center bg-black/30">
       <div className="w-100 rounded-2xl bg-white p-8 text-center shadow-lg">
         <img
           src={CompleteIcon}

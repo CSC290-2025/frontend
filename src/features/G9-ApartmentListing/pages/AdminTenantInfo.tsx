@@ -1,22 +1,33 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from '@/router';
 import ConfirmDelete from '@/features/G9-ApartmentListing/components/ConfirmDelete';
 import EditIcon from '@/features/G9-ApartmentListing/assets/EditIcon.svg';
+import BackIcon from '@/features/G9-ApartmentListing/assets/BackIcon.svg';
 
 export default function AdminTenantInfo() {
   const navigate = useNavigate();
   const apartmentName = 'Current Tenants';
-  const [tenants, setTenants] = useState([
-    {
-      id: 1,
-      firstName: 'Charles',
-      lastName: 'Leclerc',
-      phone: '081-234-5678',
-      email: 'charlerc@example.com',
-      roomType: 'Studio',
-      checkin: '2025-10-01',
-    },
-  ]);
+
+  const [tenants, setTenants] = useState<any[]>([]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem('bookingData');
+    if (saved) {
+      const data = JSON.parse(saved);
+
+      setTenants([
+        {
+          id: 1,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          phone: data.phone,
+          email: data.email,
+          roomType: data.roomType,
+          checkin: data.checkin,
+        },
+      ]);
+    }
+  }, []);
 
   const [showPopup, setShowPopup] = useState(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -34,9 +45,17 @@ export default function AdminTenantInfo() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center bg-[#F9FAFB] px-4 py-10">
-      <div className="mb-6 w-full max-w-5xl">
-        <h1 className="mb-6 text-4xl font-bold">Tenant Information</h1>
+    <div className="font-poppins flex min-h-screen flex-col items-center bg-[#F9FAFB] px-4 py-10">
+      <div className="mb-6 flex w-full max-w-5xl items-center gap-3">
+        <a
+          href="/AdminListedAPT"
+          className="flex h-10 w-10 items-center justify-center rounded-full transition duration-200 hover:bg-gray-100"
+        >
+          <img src={BackIcon} alt="Back" className="h-7 w-7" />
+        </a>
+        <h1 className="text-[48px] font-bold text-gray-900">
+          Tenant Information
+        </h1>
       </div>
 
       <div className="mb-6 flex w-full max-w-5xl items-center justify-between">
