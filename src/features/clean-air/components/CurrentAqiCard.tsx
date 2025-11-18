@@ -77,7 +77,8 @@ const getFormattedTime = (iso?: string) => {
 };
 
 export function CurrentAqiCard({ onDocumentationClick }: CurrentAqiCardProps) {
-  const { district } = useParams<{ district: string }>();
+  const { district } = useParams('/district-detail/:district');
+  const displayDistrict = decodeURIComponent(district || '');
   const {
     data: districtDetail,
     isLoading,
@@ -147,7 +148,9 @@ export function CurrentAqiCard({ onDocumentationClick }: CurrentAqiCardProps) {
             className={`text-6xl ${iconColorClass}`}
           />
 
-          <h2 className="mt-6 text-xl text-black">{district}, Bangkok</h2>
+          <h2 className="mt-6 text-xl text-black">
+            {displayDistrict}, Bangkok
+          </h2>
           <p className="text-sm text-gray-600">Last updated: {lastUpdated}</p>
         </div>
       </div>

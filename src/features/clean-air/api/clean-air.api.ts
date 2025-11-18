@@ -15,7 +15,7 @@ export async function getDistrictDetail(
 ): Promise<DistrictDetail> {
   if (!district) throw new Error('district parameter is required');
 
-  const encoded = encodeURIComponent(district);
+  const encoded = district;
   const res = await api.get(`/clean-air/districts/${encoded}`);
   const detail = res?.data?.data?.detail;
 

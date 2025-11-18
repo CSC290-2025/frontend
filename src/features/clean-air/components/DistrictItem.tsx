@@ -57,7 +57,9 @@ export default function DistrictItem({
 
   const handleSelectDistrict = () => {
     if (district) {
-      navigate(`/district-detail/${encodeURIComponent(district)}`);
+      navigate('/district-detail/:district', {
+        params: { district: district },
+      });
     }
   };
 

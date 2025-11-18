@@ -6,7 +6,7 @@ import { CurrentAqiCard } from '@/features/clean-air/components/CurrentAqiCard';
 import { Pm25GuideModal } from '@/features/clean-air/components/Pm25GuideModal';
 
 export function DistrictDetailPage() {
-  const { district } = useParams<{ district: string }>();
+  const { district } = useParams('/district-detail/:district');
   const navigate = useNavigate();
 
   const handleBackClick = () => {

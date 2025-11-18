@@ -2,7 +2,7 @@ import { useParams } from '@/router';
 import { useDistrictDetailQuery } from '../hooks/useDistrictDetail';
 
 export function CurrentDataCard() {
-  const { district } = useParams<{ district: string }>();
+  const { district } = useParams('/district-detail/:district');
   const { data, isLoading, error } = useDistrictDetailQuery(district);
 
   if (isLoading) {
