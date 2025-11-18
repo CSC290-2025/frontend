@@ -4,13 +4,14 @@ import { useState } from 'react';
 import { CurrentDataCard } from '@/features/clean-air/components/CurrentDataCard';
 import { CurrentAqiCard } from '@/features/clean-air/components/CurrentAqiCard';
 import { Pm25GuideModal } from '@/features/clean-air/components/Pm25GuideModal';
+import { HealthTips } from '../components/HealthTips';
 
 export function DistrictDetailPage() {
-  const { district } = useParams('/district-detail/:district');
+  const { district } = useParams('/clean-air/district-detail/:district');
   const navigate = useNavigate();
 
   const handleBackClick = () => {
-    navigate('/district-selection');
+    navigate('/clean-air/district-selection');
   };
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -42,6 +43,7 @@ export function DistrictDetailPage() {
       <div className="mx-auto max-w-4xl space-y-6 p-4 sm:p-8">
         <CurrentAqiCard onDocumentationClick={openModal} />
         <CurrentDataCard />
+        <HealthTips />
       </div>
 
       <Pm25GuideModal isOpen={isModalOpen} onClose={closeModal} />

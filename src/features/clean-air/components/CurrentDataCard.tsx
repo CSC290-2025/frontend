@@ -2,7 +2,7 @@ import { useParams } from '@/router';
 import { useDistrictDetailQuery } from '../hooks/useDistrictDetail';
 
 export function CurrentDataCard() {
-  const { district } = useParams('/district-detail/:district');
+  const { district } = useParams('/clean-air/district-detail/:district');
   const { data, isLoading, error } = useDistrictDetailQuery(district);
 
   if (isLoading) {
@@ -25,7 +25,6 @@ export function CurrentDataCard() {
 
   const currentData = data.currentData;
 
-  // Create pollutants array from actual API data
   const pollutants = [
     {
       name: 'PM2.5',

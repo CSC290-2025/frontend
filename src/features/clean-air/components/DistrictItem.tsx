@@ -57,7 +57,7 @@ export default function DistrictItem({
 
   const handleSelectDistrict = () => {
     if (district) {
-      navigate('/district-detail/:district', {
+      navigate('/clean-air/district-detail/:district', {
         params: { district: district },
       });
     }

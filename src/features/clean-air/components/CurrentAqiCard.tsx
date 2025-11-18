@@ -77,7 +77,7 @@ const getFormattedTime = (iso?: string) => {
 };
 
 export function CurrentAqiCard({ onDocumentationClick }: CurrentAqiCardProps) {
-  const { district } = useParams('/district-detail/:district');
+  const { district } = useParams('/clean-air/district-detail/:district');
   const displayDistrict = decodeURIComponent(district || '');
   const {
     data: districtDetail,
