@@ -66,7 +66,7 @@ export default function TrafficSettingPopup({
         } catch (err) {
           console.error('Error loading traffic light details', err);
           // fallback to values from the provided signal
-          setColor(trafficLight.current_color);
+          setColor(trafficLight.current_color ?? color);
           setGreenduration(trafficLight.green_duration ?? greenduration);
           setRedduration(trafficLight.red_duration ?? redduration);
           setAutomode(trafficLight.auto_mode ?? Automode);

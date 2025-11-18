@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
-import type { TrafficLight } from '../types/traffic.types';
+import type { trafficLight } from '../types/traffic.types';
 
 interface TrafficSignalMarkerProps {
-  Light: TrafficLight;
-  onUpdate?: (Light: TrafficLight) => void;
+  Light: trafficLight;
+  onUpdate?: (Light: trafficLight) => void;
 }
 
 /*const colorClasses: Record<'red' | 'yellow' | 'green', string> = {

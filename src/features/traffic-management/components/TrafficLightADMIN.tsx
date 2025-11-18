@@ -1,8 +1,8 @@
 import { cn } from '@/lib/utils';
-import type { TrafficLight } from '../types/traffic.types';
+import type { trafficLight } from '../types/traffic.types';
 
 interface TrafficLightSignalProps {
-  Light: TrafficLight;
+  Light: trafficLight;
 }
 
 const colorClasses: Record<'red' | 'yellow' | 'green', string> = {

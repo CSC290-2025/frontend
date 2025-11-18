@@ -300,7 +300,7 @@ export default function TrafficAdminpage() {
   useEffect(() => {
     (async () => {
       try {
-        const base = import.meta.env.VITE_API_BASE_URL ?? '';
+        //const base = import.meta.env.VITE_API_BASE_URL ?? '';
         const url = `http://localhost:3333/api/light-requests`;
         const res = await fetch(url);
         if (!res.ok) throw new Error('Failed to get request details');
@@ -342,18 +342,6 @@ export default function TrafficAdminpage() {
   ];
 
   const emptyemergencyRequests = [];
-
-  // Sample offline signals
-  const offlineSignals = [
-    { id: 1, location: 'INT-002', lastSeen: '14:45', reason: 'Network Error' },
-    { id: 2, location: 'INT-007', lastSeen: '14:30', reason: 'Power Loss' },
-    {
-      id: 3,
-      location: 'INT-010',
-      lastSeen: '13:50',
-      reason: 'Device Malfunction',
-    },
-  ];
 
   const handleStart = () => {
     console.log('Start navigation:', { currentLocation, destination });
@@ -484,7 +472,7 @@ export default function TrafficAdminpage() {
             onClick={() => setsignalOpen(!signalOpen)}
             className="relative flex items-center gap-2 rounded-lg bg-yellow-500 px-6 py-3 text-white shadow-lg hover:bg-yellow-600"
           >
-            {offlineSignals.length > 0 && (
+            {LightRequest.length > 0 && (
               <>
                 <span className="absolute -top-2 -right-2 h-5 w-5 rounded-full border-2 border-white bg-red-500" />
                 {/*<span className="absolute -top-2.75 -right-2 h-5 w-5 text-red-500 text-center" >{emergencyRequests.length}</span>*/}
