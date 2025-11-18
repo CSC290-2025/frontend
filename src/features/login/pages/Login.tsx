@@ -1,6 +1,10 @@
 import bgImg from '../../../../public/smartcitybackground_login.png';
 import logo from '../../../../public/smartcityhub.png';
 import LoginUI from '../components/LoginUI';
+import { useAuthenticated } from '@/hooks/useAuthenticated';
+import { useEffect } from 'react';
+import { useNavigate } from '@/router';
+
 function Login() {
   return (
     <div
