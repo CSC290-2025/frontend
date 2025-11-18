@@ -13,40 +13,50 @@ export interface Pm25GuideModalProps {
   onClose: () => void;
 }
 
-const data = [
+interface AQIData {
+  range: string;
+  status: string;
+  color: string;
+  text: string;
+  icon: typeof faFaceGrinWide;
+}
+const data: AQIData[] = [
   {
-    range: '0 - 25',
-    status: 'Good air quality. Safe for health.',
+    range: '0 - 50',
+    status:
+      'Good air quality. Safe for health. (Equivalent to PM 2.5 ≤ 12.0 µg/m³)',
     color: 'bg-green-500',
     text: 'text-green-500',
     icon: faFaceGrinWide,
   },
   {
-    range: '26 - 37.5',
+    range: '51 - 100',
     status:
-      "Air quality is moderate. It's starting to be unhealthy for sensitive people.",
+      'Air quality is moderate. Acceptable, but starting to affect sensitive people. (Equivalent to PM 2.5 ≤ 35.4 µg/m³)',
     color: 'bg-lime-500',
     text: 'text-lime-500',
     icon: faFaceSmile,
   },
   {
-    range: '37.6 - 50',
+    range: '101 - 150',
     status:
-      'It is starting to affect health. Outdoor activities should be reduced.',
+      'Unhealthy for sensitive groups. It is starting to affect health. Outdoor activities should be reduced.',
     color: 'bg-yellow-500',
     text: 'text-yellow-500',
     icon: faFaceMeh,
   },
   {
-    range: '50.1 - 90',
-    status: 'Very unhealthy. You should avoid outdoor activities.',
+    range: '151 - 200',
+    status:
+      'Unhealthy. Everyone may begin to experience health effects. You should avoid outdoor activities.',
     color: 'bg-orange-500',
     text: 'text-orange-500',
     icon: faFaceFrown,
   },
   {
-    range: 'more than 90',
-    status: 'Dangerous for your health. Avoid all outdoor activities.',
+    range: 'more than 200',
+    status:
+      'Very Unhealthy / Hazardous. Dangerous for your health. Avoid all outdoor activities.',
     color: 'bg-red-500',
     text: 'text-red-500',
     icon: faFaceDizzy,
@@ -58,8 +68,11 @@ export function Pm25GuideModal({ isOpen, onClose }: Pm25GuideModalProps) {
 
   return (
     <div
-      className="bg-non bg-opacity-40 fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
       onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modal-title"
     >
       <div
         className="relative w-full max-w-2xl scale-100 transform overflow-hidden rounded-lg border border-gray-900 bg-white shadow-2xl transition-all duration-300"
@@ -68,14 +81,18 @@ export function Pm25GuideModal({ isOpen, onClose }: Pm25GuideModalProps) {
         <button
           className="absolute top-4 right-4 z-10 p-1 text-3xl font-bold text-gray-800 transition hover:text-red-500"
           onClick={onClose}
+          aria-label="Close modal"
         >
           &times;
         </button>
 
         <div className="overflow-hidden border-b border-gray-200 bg-gray-50 p-6">
-          <h2 className="flex items-center text-xl font-bold whitespace-nowrap text-gray-800">
-            How high does <span className="mx-1 text-red-600">PM 2.5</span> have
-            to be to be dangerous?
+          <h2
+            id="modal-title"
+            className="flex items-center text-xl font-bold whitespace-nowrap text-gray-800"
+          >
+            How high does <span className="mx-1 text-red-600">AQI</span> have to
+            be to be dangerous?
           </h2>
         </div>
 
@@ -103,11 +120,13 @@ export function Pm25GuideModal({ isOpen, onClose }: Pm25GuideModalProps) {
         </div>
 
         <div className="flex items-start border-t border-gray-200 bg-gray-50 p-6 text-xs text-gray-600">
-          <div className="mr-2 font-semibold text-blue-600">Longevity:</div>
+          <div className="mr-2 font-semibold whitespace-nowrap text-blue-600">
+            Note:
+          </div>
           <p>
-            *Air quality control data sets the PM 2.5 health impact threshold at
-            50 µg/m³ &nbsp;However, the data defined in this table is based on a
-            24-hour daily average.
+            *AQI is a comprehensive index based on multiple pollutants. The
+            ranges shown are primarily derived from the PM 2.5 component
+            thresholds set by the US EPA for a 24-hour average.
           </p>
         </div>
       </div>
