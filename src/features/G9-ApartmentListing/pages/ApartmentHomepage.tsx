@@ -16,11 +16,11 @@ import PhoneIcon from '@/features/G9-ApartmentListing/assets/PhoneIcon.svg';
 
 // Component to display apartment image with fallback
 const ApartmentImage: React.FC<{
-  apartmentId: number;
-  apartmentName: string;
-}> = ({ apartmentId, apartmentName }) => {
+  apartment_id: number;
+  name: string;
+}> = ({ apartment_id, name }) => {
   const { data: images, isLoading: imageLoading } =
-    Upload.usePicturesByApartment(apartmentId);
+    Upload.usePicturesByApartment(apartment_id);
 
   const defaultImage =
     'https://i.pinimg.com/736x/e6/b6/87/e6b6879516fe0c7e046dfc83922626d6.jpg';
@@ -31,15 +31,17 @@ const ApartmentImage: React.FC<{
     );
   }
 
+  // Handle the backend response structure: { success: true, data: [...], timestamp: "..." }
+  const imageArray = images?.data?.data || images?.data || [];
   const imageUrl =
-    images && images.data && images.data.length > 0
-      ? images.data[0].url
+    imageArray && imageArray.length > 0
+      ? imageArray[0].file_path // Use file_path from apartment_picture table
       : defaultImage;
 
   return (
     <img
       src={imageUrl}
-      alt={apartmentName}
+      alt={name}
       className="h-36 w-52 rounded-lg object-cover"
       onError={(e) => {
         const target = e.target as HTMLImageElement;
@@ -470,8 +472,8 @@ export default function ApartmentHomepage() {
                   className="flex gap-6 rounded-lg bg-white p-6 shadow-sm transition-shadow hover:shadow-md"
                 >
                   <ApartmentImage
-                    apartmentId={apartment.id}
-                    apartmentName={apartment.name}
+                    apartment_id={apartment.id}
+                    name={apartment.name}
                   />
                   <div className="flex flex-1 flex-col justify-between">
                     <div className="flex justify-between">
