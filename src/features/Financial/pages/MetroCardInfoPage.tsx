@@ -131,7 +131,7 @@ export default function MetroCardInfoPage() {
                 <Button
                   type="button"
                   variant="outline"
-                  className="whitespace-nowrap"
+                  className="cursor-pointer whitespace-nowrap"
                   onClick={() => setIsEyeOff((prev) => !prev)}
                 >
                   {isEyeOff ? <EyeOff /> : <Eye />}
@@ -161,12 +161,15 @@ export default function MetroCardInfoPage() {
                       },
                     })
                   }
-                  className="flex-1"
+                  className="flex-1 cursor-pointer"
                   variant={'outline'}
                 />
                 <ReusableDialog
                   trigger={
-                    <Button variant="destructive" className="flex-1">
+                    <Button
+                      variant="destructive"
+                      className="flex-1 cursor-pointer"
+                    >
                       Delete
                     </Button>
                   }

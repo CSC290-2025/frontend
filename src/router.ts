@@ -13,6 +13,7 @@ export type Path =
   | `/financial`
   | `/financial/metro/:user_id`
   | `/financial/metro/:user_id/info/:id`
+  | `/financial/topup`
   | `/healthcare`
   | `/power-bi`
   | `/power-bi/:type/:category`

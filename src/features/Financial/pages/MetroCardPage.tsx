@@ -69,7 +69,7 @@ export default function MetroCardPage() {
             icon={<Plus />}
             isPending={isPending}
             spinner
-            className="h-10"
+            className="h-10 cursor-pointer"
             color="cyan"
             onClick={() => mutate({ data: { user_id: Number(user_id) } })}
           />
@@ -79,7 +79,9 @@ export default function MetroCardPage() {
         ) : (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
             {metroCards?.map((card) => (
-              <MetroCard card={card} key={card.id} />
+              <div key={card.id} className="cursor-pointer">
+                <MetroCard card={card} />
+              </div>
             ))}
           </div>
         )}
