@@ -15,7 +15,7 @@ function Categories({ type }) {
               params: { type, category: 'healthcare' },
             })
           }
-          className="bg-[#01CCFF] hover:bg-[#0091B5]"
+          className="cursor-pointer bg-[#01CCFF] hover:bg-[#0091B5]"
         >
           Healthcare
         </Button>
@@ -25,7 +25,7 @@ function Categories({ type }) {
               params: { type, category: 'weather' },
             })
           }
-          className="bg-[#01CCFF] hover:bg-[#0091B5]"
+          className="cursor-pointer bg-[#01CCFF] hover:bg-[#0091B5]"
         >
           Weather
         </Button>
@@ -35,7 +35,7 @@ function Categories({ type }) {
               params: { type, category: 'demographic' },
             })
           }
-          className="bg-[#01CCFF] hover:bg-[#0091B5]"
+          className="cursor-pointer bg-[#01CCFF] hover:bg-[#0091B5]"
         >
           Demographic
         </Button>
@@ -45,7 +45,7 @@ function Categories({ type }) {
               params: { type, category: 'traffic' },
             })
           }
-          className="bg-[#01CCFF] hover:bg-[#0091B5]"
+          className="cursor-pointer bg-[#01CCFF] hover:bg-[#0091B5]"
         >
           Traffic
         </Button>

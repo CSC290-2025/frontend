@@ -2,6 +2,7 @@ import { Link, useNavigate, useParams } from '@/router';
 import Nav from '../components/Nav';
 import { useUserRole } from '../hooks/useUserRole';
 import { useReportsByCategory } from '../hooks/useReportsByCategory';
+import { useState } from 'react';
 
 function ReportsPage() {
   const { type, category } = useParams('/power-bi/:type/:category');
@@ -12,6 +13,12 @@ function ReportsPage() {
     type,
     category,
   });
+  const [page, setPage] = useState(1);
+  const perPage = 3;
+
+  const totalPages = Math.max(3, Math.ceil(reports.length / perPage));
+  const start = (page - 1) * perPage;
+  const currentReports = reports.slice(start, start + perPage);
 
   return (
     <div className="flex h-screen w-screen flex-col justify-around bg-[#F9FaFB] p-5">
@@ -62,7 +69,7 @@ function ReportsPage() {
           <p className="mt-10 text-lg">No reports yet — check back later.</p>
         </div>
       ) : (
-        reports.map((report) => (
+        currentReports.map((report) => (
           <div key={report.report_id}>
             <Link
               to="/power-bi/:type/:category/:id"
@@ -85,6 +92,20 @@ function ReportsPage() {
           </div>
         ))
       )}
+      <div className="flex justify-center gap-1">
+        {Array.from({ length: totalPages }).map((_, i) => {
+          const pageNum = i + 1;
+          return (
+            <button
+              key={pageNum}
+              onClick={() => setPage(pageNum)}
+              className={`cursor-pointer rounded-full border px-3 py-1 ${page === pageNum ? 'bg-[#01CCFF] text-white' : 'bg-white text-[#01CCFF] hover:bg-[#01CCFF50]'}`}
+            >
+              {pageNum}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

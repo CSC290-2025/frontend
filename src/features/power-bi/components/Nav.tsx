@@ -23,7 +23,7 @@ function Nav() {
         <Button
           onClick={() => navigate('/power-bi')}
           variant="outline"
-          className="border-[#01CCFF] bg-white text-[#01CCFF] hover:text-[#01CCFF]"
+          className="cursor-pointer border-[#01CCFF] bg-white text-[#01CCFF] hover:text-[#01CCFF]"
         >
           Home
         </Button>
@@ -31,7 +31,7 @@ function Nav() {
         {role === 'admin' && (
           <Button
             onClick={() => navigate('/power-bi/create')}
-            className="bg-[#01CCFF] hover:bg-[#0091B5]"
+            className="cursor-pointer bg-[#01CCFF] hover:bg-[#0091B5]"
           >
             + New Report
           </Button>

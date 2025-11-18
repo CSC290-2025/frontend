@@ -112,7 +112,7 @@ function ReportForm({ oldReport }: ReportFormProps) {
             variant="outline"
             type="button"
             onClick={() => navigate(-1)} // goes back one page
-            className="px-3"
+            className="cursor-pointer px-3"
           >
             ← Back
           </Button>
@@ -164,7 +164,7 @@ function ReportForm({ oldReport }: ReportFormProps) {
               name="visibility"
               value={form.visibility}
               onChange={handleChange}
-              className="rounded-lg border p-2 text-[#2B5991]"
+              className="cursor-pointer rounded-lg border p-2 text-[#2B5991]"
             >
               {/* change to select from ui folder later*/}
               <option value="citizens">Citizens</option>
@@ -177,7 +177,7 @@ function ReportForm({ oldReport }: ReportFormProps) {
               name="type"
               value={form.type}
               onChange={handleChange}
-              className="rounded-lg border p-2 text-[#2B5991]"
+              className="cursor-pointer rounded-lg border p-2 text-[#2B5991]"
             >
               <option value="summary">
                 Summary City Performance Dashboard
@@ -195,7 +195,7 @@ function ReportForm({ oldReport }: ReportFormProps) {
               name="category"
               value={form.category}
               onChange={handleChange}
-              className="rounded-lg border p-2 text-[#2B5991]"
+              className="cursor-pointer rounded-lg border p-2 text-[#2B5991]"
             >
               <option value="healthcare">Healthcare</option>
               <option value="weather">Weather</option>
@@ -218,7 +218,7 @@ function ReportForm({ oldReport }: ReportFormProps) {
       <Button
         type="submit"
         onClick={handleSubmit}
-        className="self-center bg-[#01CCFF] px-2 px-5 hover:bg-[#0091B5]"
+        className="cursor-pointer self-center bg-[#01CCFF] px-5 hover:bg-[#0091B5]"
         disabled={loading}
       >
         {loading ? 'Saving...' : oldReport ? 'Save Changes' : 'Create'}
