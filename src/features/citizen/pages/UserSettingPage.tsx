@@ -11,6 +11,7 @@ function UserSettingPage() {
   const userID = 7;
   const [user, setUser] = useState<any>(null);
   const [specialists, setSpecialists] = useState<any[]>([]);
+  const [userRoles, setUserRoles] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState('personal');
   const navigate = useNavigate();
 
@@ -88,8 +89,28 @@ function UserSettingPage() {
       }
     };
 
+    const getUserRoles = async () => {
+      try {
+        const response = await UserAPI.getUserRoles(userID);
+        console.log('User roles response:', response);
+
+        // Handle the response structure
+        if (response?.roles) {
+          setUserRoles(response.roles);
+        } else if (Array.isArray(response)) {
+          setUserRoles(response);
+        } else {
+          setUserRoles([]);
+        }
+      } catch (err) {
+        console.error('Error fetching user roles:', err);
+        setUserRoles([]);
+      }
+    };
+
     getUser();
     getSpecialists();
+    getUserRoles();
   }, [userID]);
 
   const handlePersonalChange = (newData: any) => {
@@ -171,6 +192,24 @@ function UserSettingPage() {
     }
   };
 
+  // --- New Tabs component for easy reuse ---
+  const Tabs = () => (
+    <div className="mb-6 flex overflow-x-auto border-b pb-2 md:mb-8 md:border-none md:pb-0 lg:mb-[39px]">
+      {['personal', 'health', 'account'].map((tab) => (
+        <div
+          key={tab}
+          className={`flex h-10 min-w-[100px] flex-1 cursor-pointer items-center justify-center transition-colors md:h-[47px] md:max-w-[209px] ${activeTab === tab ? 'bg-[#96E0E1]' : 'bg-white'}`}
+          onClick={() => setActiveTab(tab)}
+        >
+          <h2 className="text-sm text-[#2B5991] capitalize md:text-base lg:text-[20px]">
+            {tab}
+          </h2>
+        </div>
+      ))}
+    </div>
+  );
+  // ------------------------------------------
+
   return (
     <div className="flex min-h-screen w-full justify-center bg-white pb-10">
       {/* Main Container */}
@@ -186,6 +225,12 @@ function UserSettingPage() {
           </h1>
         </div>
 
+        {/* --- Mobile Tabs (visible on small screens only) --- */}
+        <div className="md:hidden">
+          <Tabs />
+        </div>
+        {/* ---------------------------------------------------- */}
+
         {/* Content Body */}
         <div className="flex flex-col gap-8 md:flex-row lg:gap-[20px]">
           {/* Left Sidebar - Picture */}
@@ -195,20 +240,11 @@ function UserSettingPage() {
 
           {/* Right Content - Forms */}
           <div className="w-full min-w-0 flex-1">
-            {/* Tabs */}
-            <div className="mb-6 flex overflow-x-auto border-b pb-2 md:mb-8 md:border-none md:pb-0 lg:mb-[39px]">
-              {['personal', 'health', 'account'].map((tab) => (
-                <div
-                  key={tab}
-                  className={`flex h-10 min-w-[100px] flex-1 cursor-pointer items-center justify-center transition-colors md:h-[47px] md:max-w-[209px] ${activeTab === tab ? 'bg-[#96E0E1]' : 'bg-white'}`}
-                  onClick={() => setActiveTab(tab)}
-                >
-                  <h2 className="text-sm text-[#2B5991] capitalize md:text-base lg:text-[20px]">
-                    {tab}
-                  </h2>
-                </div>
-              ))}
+            {/* --- Desktop Tabs (hidden on small screens, shown on md and above) --- */}
+            <div className="hidden md:block">
+              <Tabs />
             </div>
+            {/* ---------------------------------------------------------------------- */}
 
             {/* Form Components */}
             <div className="w-full">
@@ -225,7 +261,11 @@ function UserSettingPage() {
               )}
 
               {user && activeTab === 'account' && (
-                <Account data={account} onDataChange={handleAccountChange} />
+                <Account
+                  data={account}
+                  onDataChange={handleAccountChange}
+                  roles={userRoles}
+                />
               )}
             </div>
 
