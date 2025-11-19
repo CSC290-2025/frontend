@@ -2,18 +2,21 @@ import { useState, useEffect } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import type { PostItem, Category, CategoryWithName } from '@/types/postItem';
 import { fetchCategoriesByPostId } from '@/features/freecycle/api/freecycle.api';
+import { useCreateRequest } from '@/features/freecycle/hooks/useFreecycle';
 
 interface ItemDetailPageProps {
   _item?: PostItem;
   _onBack?: () => void;
+  _isRequestView?: boolean;
 }
 
 export default function ItemDetailPage({
   _item,
   _onBack,
+  _isRequestView,
 }: ItemDetailPageProps) {
-  const [requesting, setRequesting] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
+  const createRequestMutation = useCreateRequest();
 
   // Load categories for the item
   useEffect(() => {
@@ -47,36 +50,14 @@ export default function ItemDetailPage({
 
   const item = _item || mockItem;
 
-  // TODO: INTEGRATION - Uncomment when backend integration is ready
-  // const handleRequest = async () => {
-  //   setRequesting(true);
-  //   try {
-  //     const response = await fetch('/api/requests', {
-  //       method: 'POST',
-  //       headers: { 'Content-Type': 'application/json' },
-  //       body: JSON.stringify({
-  //         item_id: item.id,
-  //         status: 'pending',
-  //       }),
-  //     });
-  //     if (response.ok) {
-  //       alert('Request sent successfully!');
-  //     } else {
-  //       alert('Failed to send request');
-  //     }
-  //   } catch (err) {
-  //     alert('Failed to send request');
-  //   }
-  //   setRequesting(false);
-  // };
-
-  // Mock handler for now
-  const handleRequest = () => {
-    setRequesting(true);
-    setTimeout(() => {
-      alert('Request sent successfully! (Mock)');
-      setRequesting(false);
-    }, 500);
+  const handleRequest = async () => {
+    try {
+      await createRequestMutation.mutateAsync(item.id);
+      alert('Request sent successfully!');
+    } catch (err) {
+      console.error('Failed to send request:', err);
+      alert('Failed to send request. Please try again.');
+    }
   };
 
   return (
@@ -166,6 +147,7 @@ export default function ItemDetailPage({
                   </div>
                 )}
 
+
                 {item.email && (
                   <div>
                     <div className="flex items-center gap-2 text-gray-600">
@@ -177,13 +159,15 @@ export default function ItemDetailPage({
               </div>
             </div>
 
-            {!item.is_given && (
+            {!item.is_given && !_isRequestView && (
               <button
                 onClick={handleRequest}
-                disabled={requesting}
+                disabled={createRequestMutation.isPending}
                 className="mt-6 w-full rounded-lg bg-cyan-500 py-3 font-medium text-white transition-colors hover:bg-cyan-600 disabled:opacity-50"
               >
-                {requesting ? 'Sending Request...' : 'Request Item'}
+                {createRequestMutation.isPending
+                  ? 'Sending Request...'
+                  : 'Request Item'}
               </button>
             )}
           </div>

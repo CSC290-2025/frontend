@@ -56,7 +56,6 @@ export const fetchNotGivenPosts = async (): Promise<ApiPost[]> => {
 };
 
 export const fetchUserPosts = async (): Promise<ApiPost[]> => {
-  console.log('aaa');
   const response =
     await apiClient.get<ApiResponseWrapper<PostsData>>('/posts/me');
   return response.data.data.posts;
@@ -178,10 +177,65 @@ export const fetchPostsByUserId = async (
   return response.data.data.posts;
 };
 
-// export const fetchPostsByUserId = async (userId: number): Promise<ApiPost[]> => {
-//   const res = await apiClient.get(`/posts/user/${userId}`);
-//   return res.data.data.posts;
-// };
+// Receiver Requests API
+export interface ReceiverRequest {
+  id: number;
+  post_id: number;
+  receiver_id: number;
+  status: 'pending' | 'accepted' | 'rejected';
+  created_at: string;
+  updated_at: string;
+}
+
+interface RequestsData {
+  requests: ReceiverRequest[];
+}
+
+interface RequestData {
+  request: ReceiverRequest;
+}
+
+export const fetchUserRequests = async (): Promise<ReceiverRequest[]> => {
+  const response =
+    await apiClient.get<ApiResponseWrapper<RequestsData>>('/requests/me');
+  const data = response.data.data;
+  console.log('Fetched user requests:', data);
+  return Array.isArray(data.requests) ? data.requests : [];
+};
+
+export const fetchRequestById = async (
+  id: number
+): Promise<ReceiverRequest> => {
+  const response = await apiClient.get<ApiResponseWrapper<RequestData>>(
+    `/requests/${id}`
+  );
+  return response.data.data.request;
+};
+
+export const createRequest = async (
+  postId: number
+): Promise<ReceiverRequest> => {
+  const response = await apiClient.post<ApiResponseWrapper<RequestData>>(
+    '/requests',
+    { post_id: postId }
+  );
+  return response.data.data.request;
+};
+
+export const cancelRequest = async (id: number): Promise<void> => {
+  await apiClient.delete(`/requests/${id}`);
+};
+
+export const updateRequestStatus = async (
+  id: number,
+  status: 'pending' | 'accepted' | 'rejected'
+): Promise<ReceiverRequest> => {
+  const response = await apiClient.put<ApiResponseWrapper<RequestData>>(
+    `/requests/${id}/status`,
+    { status }
+  );
+  return response.data.data.request;
+};
 
 // // Make for fetching Freecycle data from the Freecycle API
 

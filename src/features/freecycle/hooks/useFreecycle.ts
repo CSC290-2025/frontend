@@ -10,6 +10,11 @@ import {
   markPostAsNotGiven,
   fetchCategoriesByPostId,
   fetchPostsByUserId,
+  fetchUserRequests,
+  createRequest,
+  cancelRequest,
+  updateRequestStatus,
+  type ReceiverRequest,
 } from '@/features/freecycle/api/freecycle.api';
 import type { ApiPost } from '@/types/postItem';
 
@@ -218,6 +223,54 @@ export function useDiscoverPage(searchQuery: string) {
     setShowFilters,
     toggleCategory,
   };
+}
+
+// User Requests Hook
+export function useUserRequests() {
+  return useQuery({
+    queryKey: ['requests', 'user'],
+    queryFn: fetchUserRequests,
+    retry: 5,
+  });
+}
+
+// Create Request Mutation
+export function useCreateRequest() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: createRequest,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['requests', 'user'] });
+    },
+  });
+}
+
+// Cancel Request Mutation
+export function useCancelRequest() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: cancelRequest,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['requests', 'user'] });
+    },
+  });
+}
+
+// Update Request Status Mutation
+export function useUpdateRequestStatus() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      id,
+      status,
+    }: {
+      id: number;
+      status: 'pending' | 'accepted' | 'rejected';
+    }) => updateRequestStatus(id, status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['requests', 'user'] });
+    },
+  });
 }
 
 // export function usePostsByUserId(userId?: number) {
