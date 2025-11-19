@@ -11,6 +11,7 @@ export default class ReportApi {
       '/reports',
       data
     );
+    console.log(response);
     return response;
   }
 

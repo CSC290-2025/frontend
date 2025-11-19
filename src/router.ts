@@ -7,6 +7,7 @@ export type Path =
   | `/`
   | `/activity`
   | `/chat`
+  | `/demo-tracking`
   | `/example`
   | `/example/:id`
   | `/hotLine`

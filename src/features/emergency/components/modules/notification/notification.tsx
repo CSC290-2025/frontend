@@ -1,8 +1,5 @@
 import { useEffect, useState } from 'react';
-import {
-  getFCMToken,
-  messaging,
-} from '@/features/emergency/config/firebase.ts';
+import { getFCMToken, message } from '@/features/emergency/config/firebase.ts';
 import { onMessage } from 'firebase/messaging';
 import FCMApi from '@/features/emergency/api/fcm.api.ts';
 import { toast } from 'sonner';
@@ -116,7 +113,7 @@ export default function NotificationModule() {
     };
   }, []);
 
-  onMessage(messaging, (payload) => {
+  onMessage(message, (payload) => {
     console.log('Received Foreground message ', payload);
     toast(`${payload.notification?.title}`, {
       description: payload.notification?.body,
