@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BookUser, Phone, Edit, Copy } from 'lucide-react';
+import { BookUser } from 'lucide-react';
 import {
   Tabs,
   TabsList,
@@ -8,19 +8,8 @@ import {
 } from '@/features/emergency/components/ui/tabs';
 import { Input } from '@/features/emergency/components/ui/input';
 import { Button } from '@/features/emergency/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardTitle,
-} from '@/features/emergency/components/ui/card';
+import ContactCard from '@/features/emergency/components/modules/card/contact-card.tsx';
 import { useContactForm } from '@/features/emergency/hooks/contact-from.tsx';
-
-interface Contact {
-  id: number;
-  name: string;
-  phone: string;
-  image: string;
-}
 
 interface E_num {
   id: number;
@@ -31,35 +20,6 @@ interface E_num {
 export default function HotlinePage() {
   const [searchTerm, setSearchTerm] = useState('');
   const { contact } = useContactForm();
-
-  console.log(contact);
-
-  const familyContacts: Contact[] = [
-    {
-      id: 1,
-      name: 'Dad',
-      phone: '0624635984',
-      image: 'https://i.imgur.com/9P8yY8R.png',
-    },
-    {
-      id: 2,
-      name: 'Mom',
-      phone: '062769394',
-      image: 'https://i.imgur.com/xkSkkzB.png',
-    },
-    {
-      id: 3,
-      name: 'Bro',
-      phone: '0624635984',
-      image: 'https://i.imgur.com/0RrWvRr.png',
-    },
-    {
-      id: 4,
-      name: 'T.M. Opera O',
-      phone: '0624635984',
-      image: 'https://i.imgur.com/zJbT2rI.png',
-    },
-  ];
 
   const E_num: E_num[] = [
     {
@@ -103,75 +63,24 @@ export default function HotlinePage() {
           <TabsTrigger value="Family">Family</TabsTrigger>
         </TabsList>
 
-        {/* Ongoing Tab */}
         <TabsContent value="Family" className="mb-6">
           <div className="h-auto">
             {contact.map((c) => (
               <div key={c.id} className="mb-6">
-                <Card className="w-full">
-                  <CardContent>
-                    <div className="flex items-center justify-between">
-                      <CardTitle>{c.contact_name}</CardTitle>
-                      <div className="flex items-center gap-3">
-                        <Button
-                          size="icon"
-                          className="rounded-full bg-gray-300 text-white hover:bg-gray-400"
-                        >
-                          <Phone className="h-5 w-5" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          className="rounded-full bg-gray-300 text-white hover:bg-gray-400"
-                        >
-                          <Edit className="h-5 w-5" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          className="rounded-full bg-gray-300 text-white hover:bg-gray-400"
-                        >
-                          <Copy className="h-5 w-5" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                <ContactCard
+                  contactName={c.contact_name}
+                  phoneNumber={c.phone}
+                />
               </div>
             ))}
           </div>
         </TabsContent>
+
         <TabsContent value="Emergency service" className="mb-6">
           <div className="h-auto">
-            {E_num.map((r) => (
-              <div key={r.id} className="mb-6">
-                <Card className="w-full">
-                  <CardContent>
-                    <div className="grid grid-cols-6">
-                      <div className="col-span-4 gap-2 pl-5">
-                        <div className="">{r.name}</div>
-                        <div className="flex items-center gap-3">
-                          <Button
-                            size="icon"
-                            className="rounded-full bg-gray-300 text-white hover:bg-gray-400"
-                          >
-                            <Phone className="h-5 w-5" />
-                          </Button>
-                          <Button
-                            size="icon"
-                            className="rounded-full bg-gray-300 text-white hover:bg-gray-400"
-                          >
-                            <Edit className="h-5 w-5" />
-                          </Button>
-                          <Button
-                            size="icon"
-                            className="rounded-full bg-gray-300 text-white hover:bg-gray-400"
-                          >
-                            <Copy className="h-5 w-5" />
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+            {E_num.map((e) => (
+              <div key={e.id} className="mb-6">
+                <ContactCard phoneNumber={e.phone} contactName={e.name} />
               </div>
             ))}
           </div>
