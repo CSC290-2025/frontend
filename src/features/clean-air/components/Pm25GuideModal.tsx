@@ -63,7 +63,10 @@ const data: AQIData[] = [
   },
 ];
 
-export function Pm25GuideModal({ isOpen, onClose }: Pm25GuideModalProps) {
+export default function Pm25GuideModal({
+  isOpen,
+  onClose,
+}: Pm25GuideModalProps) {
   if (!isOpen) return null;
 
   return (
@@ -133,4 +136,3 @@ export function Pm25GuideModal({ isOpen, onClose }: Pm25GuideModalProps) {
     </div>
   );
 }
-export default Pm25GuideModal;

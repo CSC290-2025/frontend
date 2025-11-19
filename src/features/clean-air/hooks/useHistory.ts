@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getDistrictHistory } from '../api/clean-air.api';
 import type { DistrictHistory } from '@/types/districtHistory';
 
-export function useHistoryQuery(district: string | undefined) {
+export default function useHistoryQuery(district: string | undefined) {
   return useQuery<DistrictHistory, Error>(
     ['districts', district, 'history'],
     async () => {

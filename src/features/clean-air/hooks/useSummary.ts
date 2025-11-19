@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getDistrictSummary } from '../api/clean-air.api';
 import type { DistrictSummary } from '@/types/districtSummary';
 
-export function useSummaryQuery(district: string | undefined) {
+export default function useSummaryQuery(district: string | undefined) {
   return useQuery<DistrictSummary, Error>(
     ['districts', district, 'summary'],
     async () => {

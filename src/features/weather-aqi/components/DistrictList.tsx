@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import DistrictItem from './DistrictItem';
-import useDistrictsQuery from '@/features/clean-air/hooks/useDistricts';
+import { useDistrictsQuery } from '@/features/clean-air';
 import type { District } from '@/types/district';
 
 type Props = {

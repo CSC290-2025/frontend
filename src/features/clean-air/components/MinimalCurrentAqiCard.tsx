@@ -11,10 +11,6 @@ import {
 } from '@fortawesome/free-regular-svg-icons';
 import useDistrictDetailQuery from '../hooks/useDistrictDetail';
 
-interface CurrentAqiCardProps {
-  onDocumentationClick: () => void;
-}
-
 interface StatusDetails {
   status: string;
   style: string;
@@ -92,9 +88,7 @@ const getFormattedTime = (iso?: string) => {
   }
 };
 
-export default function CurrentAqiCard({
-  onDocumentationClick,
-}: CurrentAqiCardProps) {
+export default function MinimalCurrentAqiCard() {
   const { district } = useParams('/clean-air/district-detail/:district');
   const displayDistrict = decodeURIComponent(district || '');
   const {
@@ -141,13 +135,6 @@ export default function CurrentAqiCard({
     <div className="rounded-xl border border-gray-900 bg-white p-6 text-gray-900 shadow-2xl shadow-gray-400">
       <div className="relative mb-4 flex items-start justify-between">
         <h1 className="text-xl font-semibold">Current Air Quality</h1>
-
-        <span
-          className="cursor-pointer rounded-full border border-gray-300 bg-gray-100 px-3 py-1 text-sm text-gray-700 transition-colors hover:bg-gray-200"
-          onClick={onDocumentationClick}
-        >
-          Information
-        </span>
       </div>
 
       <div className="mb-6 flex items-center justify-between">

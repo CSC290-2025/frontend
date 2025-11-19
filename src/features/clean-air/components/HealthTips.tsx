@@ -1,7 +1,7 @@
 import { useParams } from '@/router';
-import { useHealthTipsQuery } from '../hooks/useHealthTips';
+import useHealthTipsQuery from '@/features/clean-air/hooks/useHealthTips';
 
-export function HealthTips() {
+export default function HealthTips() {
   const { district } = useParams('/clean-air/district-detail/:district');
   const { data: healthTips, isLoading, error } = useHealthTipsQuery(district);
   if (isLoading) {
