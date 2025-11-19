@@ -52,8 +52,8 @@ export default function ApartmentDetailPage() {
   const totalRatings = ratingArray.length;
   const imageArray: uploadTypes.uploadData[] =
     images?.data?.data || images?.data || [];
-  const roomArray: roomTypes.Room[] = room?.data?.data || room?.data || [];
-
+  const roomArray: roomTypes.Room[] =
+    room || room?.data?.data || room?.data || [];
   // Calculate manual average from rating array as fallback
   const manualAverage =
     totalRatings > 0

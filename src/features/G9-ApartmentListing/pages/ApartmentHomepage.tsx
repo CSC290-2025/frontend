@@ -16,29 +16,21 @@ import PhoneIcon from '@/features/G9-ApartmentListing/assets/PhoneIcon.svg';
 import StarIcon from '@/features/G9-ApartmentListing/assets/StarIcon.svg';
 import GrayStarIcon from '@/features/G9-ApartmentListing/assets/GrayStarIcon.svg';
 
-// Component to display apartment image with fallback
+// Component to display apartment image with graceful loading
 const ApartmentImage: React.FC<{
   apartment_id: number;
   name: string;
 }> = ({ apartment_id, name }) => {
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
   const {
     data: images,
     isLoading: imageLoading,
-    error: imageError,
+    error: apiError,
   } = Upload.usePicturesByApartment(apartment_id);
 
   const defaultImage =
     'https://i.pinimg.com/736x/e6/b6/87/e6b6879516fe0c7e046dfc83922626d6.jpg';
-
-  if (imageLoading) {
-    return (
-      <div className="h-36 w-52 animate-pulse rounded-lg bg-gray-300"></div>
-    );
-  }
-
-  if (imageError) {
-    console.error('Image loading error:', imageError);
-  }
 
   // Handle multiple possible response structures
   let imageArray = [];
@@ -55,18 +47,90 @@ const ApartmentImage: React.FC<{
       ? imageArray[0].file_path || imageArray[0].url || imageArray[0].preview // Try multiple possible field names
       : defaultImage;
 
+  useEffect(() => {
+    if (!imageLoading && imageUrl) {
+      setImageLoaded(false);
+      setImageError(false);
+    }
+  }, [imageUrl, imageLoading]);
+
+  if (apiError) {
+    console.error('API error loading images:', apiError);
+  }
+
+  const handleImageLoad = () => {
+    setImageLoaded(true);
+  };
+
+  const handleImageError = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    const target = e.target as HTMLImageElement;
+    if (target.src !== defaultImage) {
+      target.src = defaultImage;
+      setImageError(false);
+    } else {
+      setImageError(true);
+    }
+  };
+
   return (
-    <img
-      src={imageUrl}
-      alt={name}
-      className="h-36 w-52 rounded-lg object-cover"
-      onError={(e) => {
-        const target = e.target as HTMLImageElement;
-        if (target.src !== defaultImage) {
-          target.src = defaultImage;
-        }
-      }}
-    />
+    <div className="relative h-36 w-52 overflow-hidden rounded-lg">
+      {/* Enhanced loading skeleton with shimmer effect */}
+      {(imageLoading || !imageLoaded) && (
+        <div className="absolute inset-0 rounded-lg bg-gray-200">
+          <div className="shimmer-animation h-full w-full rounded-lg">
+            <div className="flex h-full w-full items-center justify-center">
+              <div className="rounded-md bg-gray-400 px-3 py-1 text-xs text-white opacity-60">
+                Loading...
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Error state */}
+      {imageError && (
+        <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-gray-100">
+          <div className="text-center text-gray-500">
+            <div className="mb-2 text-2xl">🏢</div>
+            <div className="text-xs">Image unavailable</div>
+          </div>
+        </div>
+      )}
+
+      {/* Actual image with fade-in effect */}
+      {!imageLoading && (
+        <img
+          src={imageUrl}
+          alt={name}
+          className={`h-full w-full rounded-lg object-cover transition-opacity duration-500 ease-in-out ${
+            imageLoaded ? 'opacity-100' : 'opacity-0'
+          }`}
+          onLoad={handleImageLoad}
+          onError={handleImageError}
+        />
+      )}
+
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
+          .shimmer-animation, .shimmer-skeleton {
+            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+          }
+          
+          @keyframes shimmer {
+            0% {
+              background-position: -200% 0;
+            }
+            100% {
+              background-position: 200% 0;
+            }
+          }
+        `,
+        }}
+      />
+    </div>
   );
 };
 
@@ -452,43 +516,51 @@ export default function ApartmentHomepage() {
 
         <div className="space-y-5">
           {isLoading
-            ? // Loading skeleton
+            ? // Enhanced loading skeleton
               Array.from({ length: itemsPerPage }).map((_, index) => (
                 <div
                   key={index}
                   className="flex animate-pulse gap-6 rounded-lg bg-white p-6 shadow-sm"
                 >
-                  <div className="h-36 w-52 rounded-lg bg-gray-300"></div>
+                  <div className="h-36 w-52 rounded-lg bg-gray-200">
+                    <div className="shimmer-skeleton h-full w-full rounded-lg">
+                      <div className="flex h-full w-full items-center justify-center">
+                        <div className="rounded bg-gray-400 px-2 py-1 text-xs text-white opacity-60">
+                          Loading...
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                   <div className="flex flex-1 flex-col justify-between">
                     <div className="flex justify-between">
-                      <div className="flex-1">
-                        <div className="mb-3 h-6 w-3/4 rounded bg-gray-300"></div>
+                      <div className="flex-1 space-y-3">
+                        <div className="shimmer-skeleton h-6 w-3/4 rounded bg-gray-200"></div>
                         <div className="mb-2 flex items-center gap-2">
-                          <div className="h-4 w-8 rounded bg-gray-300"></div>
+                          <div className="shimmer-skeleton h-4 w-8 rounded bg-gray-200"></div>
                           <div className="flex gap-0.5">
                             {[...Array(5)].map((_, i) => (
                               <div
                                 key={i}
-                                className="h-4 w-4 rounded bg-gray-300"
+                                className="shimmer-skeleton h-4 w-4 rounded bg-gray-200"
                               ></div>
                             ))}
                           </div>
-                          <div className="h-4 w-12 rounded bg-gray-300"></div>
+                          <div className="shimmer-skeleton h-4 w-12 rounded bg-gray-200"></div>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className="mb-2 h-6 w-32 rounded bg-gray-300"></div>
-                        <div className="h-4 w-24 rounded bg-gray-300"></div>
+                      <div className="space-y-2 text-right">
+                        <div className="shimmer-skeleton h-6 w-32 rounded bg-gray-200"></div>
+                        <div className="shimmer-skeleton h-4 w-24 rounded bg-gray-200"></div>
                       </div>
                     </div>
                     <div className="mt-3 space-y-2">
                       <div className="flex items-center gap-3">
-                        <div className="h-6 w-6 rounded bg-gray-300"></div>
-                        <div className="h-4 w-3/4 rounded bg-gray-300"></div>
+                        <div className="shimmer-skeleton h-6 w-6 rounded bg-gray-200"></div>
+                        <div className="shimmer-skeleton h-4 w-3/4 rounded bg-gray-200"></div>
                       </div>
                       <div className="flex items-center gap-3">
-                        <div className="ml-1 h-4 w-4 rounded bg-gray-300"></div>
-                        <div className="h-4 w-32 rounded bg-gray-300"></div>
+                        <div className="shimmer-skeleton ml-1 h-4 w-4 rounded bg-gray-200"></div>
+                        <div className="shimmer-skeleton h-4 w-32 rounded bg-gray-200"></div>
                       </div>
                     </div>
                   </div>
@@ -553,7 +625,21 @@ export default function ApartmentHomepage() {
                       <div className="text-right">
                         <p className="text-xl font-bold text-[#2B5991]">
                           {apartment.room && apartment.room.length > 0
-                            ? `${Math.min(...apartment.room.map((r: roomTypes.Room) => r.price_start)).toLocaleString()} - ${Math.max(...apartment.room.map((r: roomTypes.Room) => r.price_end)).toLocaleString()}`
+                            ? (() => {
+                                const minPrice = Math.min(
+                                  ...apartment.room.map(
+                                    (r: roomTypes.Room) => r.price_start
+                                  )
+                                );
+                                const maxPrice = Math.max(
+                                  ...apartment.room.map(
+                                    (r: roomTypes.Room) => r.price_end
+                                  )
+                                );
+                                return minPrice === maxPrice
+                                  ? minPrice.toLocaleString()
+                                  : `${minPrice.toLocaleString()} - ${maxPrice.toLocaleString()}`;
+                              })()
                             : 'N/A'}{' '}
                           <span className="text-sm font-normal text-gray-600">
                             Baht / Month
