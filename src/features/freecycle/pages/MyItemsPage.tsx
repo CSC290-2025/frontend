@@ -145,13 +145,13 @@ export default function MyItemsPage() {
                 <ItemCard
                   item={item}
                   onClick={() => {
-                    window.location.href = `/items/${item.id}`;
+                    // *** Router Navigation ***
+                    navigate(`/freecycle/items/${item.id}` as any);
                   }}
                 />
 
-                {/* ACTION BUTTONS - Improved Visibility */}
+                {/* ACTION BUTTONS */}
                 <div className="absolute top-2 right-2 flex gap-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-                  {/* Mark Given / Not Given */}
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -166,14 +166,10 @@ export default function MyItemsPage() {
                         ? 'bg-cyan-500 hover:bg-cyan-600'
                         : 'bg-gray-500 hover:bg-gray-600'
                     } disabled:cursor-not-allowed disabled:opacity-50`}
-                    title={
-                      item.is_given ? 'Mark as not given' : 'Mark as given'
-                    }
                   >
                     <Edit className="h-4 w-4" />
                   </button>
 
-                  {/* Delete */}
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
@@ -181,20 +177,19 @@ export default function MyItemsPage() {
                     }}
                     disabled={deletePostMutation.isPending}
                     className="rounded-full bg-red-500 p-2 text-white shadow-lg transition-all hover:bg-red-600 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-50"
-                    title="Delete item"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
 
-                {/* GIVEN TAG - Enhanced */}
+                {/* GIVEN TAG */}
                 {item.is_given && (
                   <div className="absolute top-2 left-2 rounded-full bg-cyan-500 px-3 py-1 text-xs font-semibold text-white shadow-lg">
                     Given
                   </div>
                 )}
 
-                {/* Loading Overlay for Mutations */}
+                {/* Loading Overlay */}
                 {(deletePostMutation.isPending ||
                   markAsGivenMutation.isPending ||
                   markAsNotGivenMutation.isPending) && (

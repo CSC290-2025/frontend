@@ -8,12 +8,14 @@ export type Path =
   | `/example`
   | `/example/:id`
   | `/freecycle`
+  | `/freecycle/items/:id`
   | `/freecycle/my-items`
   | `/freecycle/post-event`
   | `/freecycle/post-item`;
 
 export type Params = {
   '/example/:id': { id: string };
+  '/freecycle/items/:id': { id: string };
 };
 
 export type ModalPath = never;

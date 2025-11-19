@@ -1,26 +1,43 @@
 import { useState, useEffect } from 'react';
 import { ArrowLeft } from 'lucide-react';
+import { useNavigate } from '@/router';
+import { useParams } from 'react-router-dom';
+
 import type { PostItem, Category, CategoryWithName } from '@/types/postItem';
 import { fetchCategoriesByPostId } from '@/features/freecycle/api/freecycle.api';
+import {
+  useCreateRequest,
+  usePostById,
+} from '@/features/freecycle/hooks/useFreecycle';
 
-interface ItemDetailPageProps {
-  _item?: PostItem;
-  _onBack?: () => void;
-}
-
-export default function ItemDetailPage({
-  _item,
-  _onBack,
-}: ItemDetailPageProps) {
-  const [requesting, setRequesting] = useState(false);
+export default function ItemDetailPage() {
+  const navigate = useNavigate();
   const [categories, setCategories] = useState<Category[]>([]);
+  const createRequestMutation = useCreateRequest();
 
-  // Load categories for the item
+  const { id: itemId } = useParams<{ id: string }>();
+  const postId = Number(itemId);
+
+  const { data: post, isLoading, isError } = usePostById(postId);
+
+  const item: PostItem | null = post
+    ? {
+        id: post.id,
+        item_name: post.item_name,
+        description: post.description || '',
+        photo_url: post.photo_url || '',
+        item_weight:
+          typeof post.item_weight === 'string'
+            ? parseFloat(post.item_weight)
+            : post.item_weight,
+        is_given: post.is_given || false,
+      }
+    : null;
+
   useEffect(() => {
-    if (_item?.id) {
-      fetchCategoriesByPostId(_item.id)
+    if (item?.id) {
+      fetchCategoriesByPostId(item.id)
         .then((cats: CategoryWithName[]) => {
-          // Transform CategoryWithName to Category (map category_id to id)
           const transformedCategories: Category[] = cats.map((cat) => ({
             id: cat.category_id,
             category_name: cat.category_name,
@@ -31,58 +48,47 @@ export default function ItemDetailPage({
           console.error('Failed to load categories:', err);
         });
     }
-  }, [_item?.id]);
+  }, [item?.id]);
 
-  // Mock item for display when no item is provided
-  const mockItem: PostItem = {
-    id: 1,
-    item_name: 'Vintage Wooden Chair',
-    description:
-      'A beautiful and comfortable wooden chair in excellent condition. Perfect for any room.',
-    photo_url:
-      'https://images.pexels.com/photos/1350789/pexels-photo-1350789.jpeg?auto=compress&cs=tinysrgb&w=600',
-    item_weight: 5,
-    is_given: false,
+  const handleRequest = async () => {
+    if (!item) return;
+
+    try {
+      await createRequestMutation.mutateAsync(item.id);
+      alert('Request sent successfully!');
+    } catch (err) {
+      console.error('Failed to send request:', err);
+      alert('Failed to send request. Please try again.');
+    }
   };
 
-  const item = _item || mockItem;
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-cyan-600"></div>
+      </div>
+    );
+  }
 
-  // TODO: INTEGRATION - Uncomment when backend integration is ready
-  // const handleRequest = async () => {
-  //   setRequesting(true);
-  //   try {
-  //     const response = await fetch('/api/requests', {
-  //       method: 'POST',
-  //       headers: { 'Content-Type': 'application/json' },
-  //       body: JSON.stringify({
-  //         item_id: item.id,
-  //         status: 'pending',
-  //       }),
-  //     });
-  //     if (response.ok) {
-  //       alert('Request sent successfully!');
-  //     } else {
-  //       alert('Failed to send request');
-  //     }
-  //   } catch (err) {
-  //     alert('Failed to send request');
-  //   }
-  //   setRequesting(false);
-  // };
-
-  // Mock handler for now
-  const handleRequest = () => {
-    setRequesting(true);
-    setTimeout(() => {
-      alert('Request sent successfully! (Mock)');
-      setRequesting(false);
-    }, 500);
-  };
+  if (isError || !item) {
+    return (
+      <div className="mx-auto max-w-4xl p-4">
+        <h1 className="text-2xl font-bold text-red-600">Item Not Found</h1>
+        <button
+          onClick={() => navigate('/freecycle')}
+          className="mt-4 flex items-center gap-2 font-medium text-cyan-600 hover:text-cyan-700"
+        >
+          <ArrowLeft className="h-5 w-5" />
+          Back to Home
+        </button>
+      </div>
+    );
+  }
 
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="mx-auto mt-12 max-w-4xl p-4 sm:p-0">
       <button
-        onClick={() => _onBack?.()}
+        onClick={() => navigate('/freecycle/my-items')}
         className="mb-6 flex items-center gap-2 font-medium text-cyan-600 hover:text-cyan-700"
       >
         <ArrowLeft className="h-5 w-5" />
@@ -143,7 +149,7 @@ export default function ItemDetailPage({
                     <div className="flex flex-wrap gap-2">
                       {categories.map((category) => (
                         <span
-                          key={`category-${_item?.id}-${category.id}`}
+                          key={`category-${item.id}-${category.id}`}
                           className="inline-block rounded-full bg-cyan-100 px-3 py-1 text-sm text-cyan-800"
                         >
                           {category.category_name}
@@ -152,38 +158,19 @@ export default function ItemDetailPage({
                     </div>
                   </div>
                 )}
-
-                {/* TODO: INTEGRATION - Uncomment when phone and email are added to backend schema */}
-                {/* {item.phone && (
-                  <div>
-                    <h3 className="text-sm font-semibold text-gray-700 mb-1">
-                      Contact
-                    </h3>
-                    <div className="flex items-center gap-2 text-gray-600">
-                      <Phone className="w-4 h-4" />
-                      <span>{item.phone}</span>
-                    </div>
-                  </div>
-                )}
-
-                {item.email && (
-                  <div>
-                    <div className="flex items-center gap-2 text-gray-600">
-                      <Mail className="w-4 h-4" />
-                      <span>{item.email}</span>
-                    </div>
-                  </div>
-                )} */}
               </div>
             </div>
 
+            {/* ปุ่ม Request Item - ซ่อนเมื่อ item ถูกยกให้ไปแล้ว */}
             {!item.is_given && (
               <button
                 onClick={handleRequest}
-                disabled={requesting}
+                disabled={createRequestMutation.isPending}
                 className="mt-6 w-full rounded-lg bg-cyan-500 py-3 font-medium text-white transition-colors hover:bg-cyan-600 disabled:opacity-50"
               >
-                {requesting ? 'Sending Request...' : 'Request Item'}
+                {createRequestMutation.isPending
+                  ? 'Sending Request...'
+                  : 'Request Item'}
               </button>
             )}
           </div>

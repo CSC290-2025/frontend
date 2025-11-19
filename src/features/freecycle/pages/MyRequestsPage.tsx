@@ -1,95 +1,82 @@
 import { useEffect, useState } from 'react';
-
-interface RequestItem {
-  id: number;
-  item_name: string;
-  status: 'pending' | 'accepted' | 'denied' | 'completed';
-  created_at: string;
-}
-
-// Mock data for requests
-const MOCK_REQUESTS: RequestItem[] = [
-  {
-    id: 1,
-    item_name: 'Vintage Wooden Chair',
-    status: 'pending',
-    created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: 2,
-    item_name: 'Set of Books',
-    status: 'accepted',
-    created_at: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: 3,
-    item_name: 'Coffee Maker',
-    status: 'completed',
-    created_at: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: 4,
-    item_name: 'Desk Lamp',
-    status: 'denied',
-    created_at: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-  {
-    id: 5,
-    item_name: 'Plant Pot',
-    status: 'pending',
-    created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(),
-  },
-];
+import {
+  useUserRequests,
+  useCancelRequest,
+} from '@/features/freecycle/hooks/useFreecycle';
+import { fetchPostById } from '@/features/freecycle/api/freecycle.api';
+import RequestCard from '@/features/freecycle/components/RequestCard';
+import type { ReceiverRequest } from '@/features/freecycle/api/freecycle.api';
+import type { ApiPost, PostItem } from '@/types/postItem';
+import { useNavigate } from '@/router';
 
 export default function MyRequestsPage() {
-  const [requests] = useState<RequestItem[]>(MOCK_REQUESTS);
-  const [loading, setLoading] = useState(false);
+  const navigate = useNavigate();
+  const { data: requests, isLoading, isError, error } = useUserRequests();
+  const cancelRequestMutation = useCancelRequest();
+  const [localRequests, setLocalRequests] = useState<ReceiverRequest[]>([]);
+  const [postsMap, setPostsMap] = useState<Record<number, ApiPost | null>>({});
 
   useEffect(() => {
-    // Simulate loading delay
-    setLoading(true);
-    const timer = setTimeout(() => {
-      setLoading(false);
-    }, 500);
-    return () => clearTimeout(timer);
-  }, []);
+    if (Array.isArray(requests)) {
+      setLocalRequests(requests);
+      // Fetch post details for each request
+      const fetchPosts = async () => {
+        const newPostsMap: Record<number, ApiPost | null> = {};
+        const postIds = requests.map((r) => r.post_id);
+        const uniquePostIds = [...new Set(postIds)];
 
-  // TODO: INTEGRATION - Uncomment when backend integration is ready
-  // const fetchMyRequests = async () => {
-  //   setLoading(true);
-  //   try {
-  //     const response = await fetch('/api/requests');
-  //     if (response.ok) {
-  //       const data = await response.json();
-  //       setRequests(data.data);
-  //     }
-  //   } catch (err) {
-  //     console.error('Failed to fetch requests:', err);
-  //   }
-  //   setLoading(false);
-  // };
+        for (const postId of uniquePostIds) {
+          if (!postsMap[postId]) {
+            try {
+              const post = await fetchPostById(postId);
+              newPostsMap[postId] = post;
+            } catch (err) {
+              console.error(`Failed to fetch post ${postId}:`, err);
+              newPostsMap[postId] = null;
+            }
+          }
+        }
+        setPostsMap((prev) => ({ ...prev, ...newPostsMap }));
+      };
+      fetchPosts();
+    } else {
+      setLocalRequests([]);
+      setPostsMap({});
+    }
+  }, [requests]);
 
-  const getStatusCount = (status: string) => {
-    return requests.filter((r) => r.status === status).length;
-  };
+  const handleCancelRequest = async (requestId: number) => {
+    if (!confirm('Are you sure you want to cancel this request?')) {
+      return;
+    }
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return 'bg-yellow-50 text-yellow-800';
-      case 'accepted':
-        return 'bg-green-50 text-green-800';
-      case 'denied':
-        return 'bg-red-50 text-red-800';
-      case 'completed':
-        return 'bg-blue-50 text-blue-800';
-      default:
-        return 'bg-gray-50 text-gray-800';
+    try {
+      await cancelRequestMutation.mutateAsync(requestId);
+    } catch (err) {
+      console.error('Failed to cancel request:', err);
+      alert('Failed to cancel request. Please try again.');
     }
   };
 
+  const handleRequestCardClick = (post: ApiPost | null | undefined) => {
+    if (post) {
+      // *** Router Navigation ***
+      navigate(`/freecycle/items/${post.id}` as any);
+    }
+  };
+
+  const getStatusCount = (status: string) => {
+    return localRequests.filter((r) => r.status === status).length;
+  };
+
+  const getRequestsByStatus = (status: string) => {
+    return localRequests.filter((r) => r.status === status);
+  };
+
+  // ลบ Logic การแสดงผล ItemDetailPage ออกแล้ว
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div>
         <h1 className="mb-4 text-3xl font-bold text-gray-900">Request Items</h1>
         <div className="flex flex-wrap gap-4">
@@ -105,52 +92,115 @@ export default function MyRequestsPage() {
           </div>
           <div className="rounded-lg bg-red-50 px-4 py-2">
             <span className="text-sm text-red-800">
-              Denied: {getStatusCount('denied')}
-            </span>
-          </div>
-          <div className="rounded-lg bg-blue-50 px-4 py-2">
-            <span className="text-sm text-blue-800">
-              Completed: {getStatusCount('completed')}
+              Rejected: {getStatusCount('rejected')}
             </span>
           </div>
         </div>
       </div>
 
-      {loading ? (
+      {isError && (
+        <div className="rounded-lg bg-red-50 p-4 text-red-700">
+          {error instanceof Error
+            ? error.message
+            : 'Failed to load your requests. Please try again.'}
+        </div>
+      )}
+
+      {isLoading ? (
         <div className="py-12 text-center">
           <p className="text-gray-600">Loading your requests...</p>
         </div>
-      ) : requests.length === 0 ? (
+      ) : localRequests.length === 0 ? (
         <div className="py-12 text-center">
           <p className="text-gray-600">
             You haven&apos;t made any requests yet
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {requests.map((request) => (
-            <div
-              key={request.id}
-              className="rounded-xl bg-white p-4 shadow-md transition-shadow hover:shadow-lg"
-            >
-              <div className="mb-3">
-                <p className="font-semibold text-gray-900">
-                  {request.item_name}
-                </p>
-              </div>
-              <div className="flex items-center justify-between">
-                <span
-                  className={`rounded-full px-3 py-1 text-xs font-medium ${getStatusColor(request.status)}`}
+        <div className="space-y-8">
+          {/* Pending Requests */}
+          {getRequestsByStatus('pending').length > 0 && (
+            <div>
+              <h2 className="mb-4 text-xl font-semibold text-yellow-800">
+                Pending Requests
+              </h2>
+              <div className="overflow-x-auto">
+                <div
+                  className="flex gap-6 pb-2"
+                  style={{ minWidth: 'min-content' }}
                 >
-                  {request.status.charAt(0).toUpperCase() +
-                    request.status.slice(1)}
-                </span>
+                  {getRequestsByStatus('pending').map((request) => (
+                    <div key={request.id} className="w-48 shrink-0">
+                      <RequestCard
+                        request={request}
+                        post={postsMap[request.post_id]}
+                        onCancel={handleCancelRequest}
+                        onClick={() =>
+                          handleRequestCardClick(postsMap[request.post_id])
+                        }
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
-              <p className="mt-2 text-xs text-gray-500">
-                {new Date(request.created_at).toLocaleDateString()}
-              </p>
             </div>
-          ))}
+          )}
+
+          {/* Accepted Requests */}
+          {getRequestsByStatus('accepted').length > 0 && (
+            <div>
+              <h2 className="mb-4 text-xl font-semibold text-green-800">
+                Accepted Requests
+              </h2>
+              <div className="overflow-x-auto">
+                <div
+                  className="flex gap-6 pb-2"
+                  style={{ minWidth: 'min-content' }}
+                >
+                  {getRequestsByStatus('accepted').map((request) => (
+                    <div key={request.id} className="w-48 shrink-0">
+                      <RequestCard
+                        request={request}
+                        post={postsMap[request.post_id]}
+                        onCancel={handleCancelRequest}
+                        onClick={() =>
+                          handleRequestCardClick(postsMap[request.post_id])
+                        }
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Rejected Requests */}
+          {getRequestsByStatus('rejected').length > 0 && (
+            <div>
+              <h2 className="mb-4 text-xl font-semibold text-red-800">
+                Rejected Requests
+              </h2>
+              <div className="overflow-x-auto">
+                <div
+                  className="flex gap-6 pb-2"
+                  style={{ minWidth: 'min-content' }}
+                >
+                  {getRequestsByStatus('rejected').map((request) => (
+                    <div key={request.id} className="w-48 shrink-0">
+                      <RequestCard
+                        request={request}
+                        post={postsMap[request.post_id]}
+                        onCancel={handleCancelRequest}
+                        onClick={() =>
+                          handleRequestCardClick(postsMap[request.post_id])
+                        }
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
