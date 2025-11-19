@@ -4,9 +4,13 @@ import BackIcon from '@/features/G9-ApartmentListing/assets/BackIcon.svg';
 import TrashIcon from '@/features/G9-ApartmentListing/assets/TrashIcon.svg';
 import UppageIcon from '@/features/G9-ApartmentListing/assets/UppageIcon.svg';
 import AddedSuccess from '@/features/G9-ApartmentListing/components/AddedSuccess';
-import type { apartmentTypes } from '@/features/G9-ApartmentListing/types/index';
+import type {
+  apartmentTypes,
+  roomTypes,
+} from '@/features/G9-ApartmentListing/types/index';
 import {
   APT,
+  Room,
   Upload as UploadHooks,
 } from '@/features/G9-ApartmentListing/hooks/index';
 
@@ -28,6 +32,7 @@ export default function AddApartment(): React.ReactElement {
   // Hooks for API calls
   const createApartmentMutation = APT.useCreateApartment();
   const uploadMultipleFilesMutation = UploadHooks.useUploadMultipleFiles();
+  const createRoomMutation = Room.useCreateRoom();
 
   const locationData: LocationData = {
     asoke: {
@@ -51,10 +56,20 @@ export default function AddApartment(): React.ReactElement {
   };
 
   // Create a custom form data interface since the actual Apartment type doesn't have all the form fields
+  interface RoomFormData {
+    name: string;
+    type: string;
+    size: string;
+    price_start: number;
+    price_end: number;
+    room_status: roomTypes.RoomStatus;
+  }
+
   interface FormData {
     name: string;
     phone: string;
     description: string;
+    apartment_type: apartmentTypes.ApartmentType;
     apartment_location: apartmentTypes.ApartmentLocation;
     address_line: string;
     province: string;
@@ -65,10 +80,9 @@ export default function AddApartment(): React.ReactElement {
     water_price: number;
     internet_price: number;
     internetFree: boolean;
-    roomTypes: string[];
+    roomTypes: RoomFormData[];
     confirmed: boolean;
   }
-
   // Separate state for images that will be uploaded
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
@@ -77,6 +91,7 @@ export default function AddApartment(): React.ReactElement {
     name: '',
     phone: '',
     description: '',
+    apartment_type: 'apartment',
     apartment_location: 'asoke',
     address_line: '',
     province: '',
@@ -149,16 +164,30 @@ export default function AddApartment(): React.ReactElement {
     setImagePreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleRoomTypeChange = (index: number, value: string): void => {
+  const handleRoomFieldChange = (
+    index: number,
+    field: keyof RoomFormData,
+    value: string | number
+  ): void => {
     const newRoomTypes = [...formData.roomTypes];
-    newRoomTypes[index] = value;
+    newRoomTypes[index] = { ...newRoomTypes[index], [field]: value };
     setFormData((prev) => ({ ...prev, roomTypes: newRoomTypes }));
   };
 
   const addRoomType = (): void => {
     setFormData((prev) => ({
       ...prev,
-      roomTypes: [...prev.roomTypes, ''],
+      roomTypes: [
+        ...prev.roomTypes,
+        {
+          name: '',
+          type: '',
+          size: '',
+          price_start: 0,
+          price_end: 0,
+          room_status: 'available',
+        },
+      ],
     }));
   };
 
@@ -176,6 +205,7 @@ export default function AddApartment(): React.ReactElement {
       formData.name,
       formData.phone,
       formData.description,
+      formData.apartment_type,
       formData.apartment_location,
       formData.address_line,
       formData.province,
@@ -190,7 +220,21 @@ export default function AddApartment(): React.ReactElement {
 
     const roomTypesValid =
       formData.roomTypes.length > 0 &&
-      formData.roomTypes.every((roomType) => roomType.trim() !== '');
+      formData.roomTypes.every(
+        (room) =>
+          room.name.trim() !== '' &&
+          room.type.trim() !== '' &&
+          room.size.trim() !== '' &&
+          room.price_start >= 0 &&
+          room.price_end >= 0 &&
+          room.price_start <= room.price_end &&
+          room.name.length >= 2 &&
+          room.name.length <= 255 &&
+          room.type.length >= 2 &&
+          room.type.length <= 255 &&
+          room.size.length >= 1 &&
+          ['available', 'occupied', 'pending'].includes(room.room_status)
+      );
 
     return (
       requiredStringFields.every(
@@ -212,27 +256,51 @@ export default function AddApartment(): React.ReactElement {
     setIsSubmitting(true);
 
     try {
-      // Prepare apartment data
+      // Prepare apartment data with validation and cleaning
       const apartmentData: apartmentTypes.CreateApartmentPayload = {
-        name: formData.name,
-        phone: formData.phone,
-        description: formData.description,
-        apartment_type: 'apartment', // Default to apartment
+        name: formData.name.trim(),
+        phone: formData.phone.trim(),
+        description: formData.description.trim() || null,
+        apartment_type: formData.apartment_type,
         apartment_location: formData.apartment_location,
-        electric_price: formData.electric_price,
-        water_price: formData.water_price,
+        electric_price: Number(formData.electric_price),
+        water_price: Number(formData.water_price),
         internet: formData.internetFree ? 'free' : 'not_free',
-        internet_price: formData.internetFree ? null : formData.internet_price,
+        internet_price: formData.internetFree
+          ? null
+          : Number(formData.internet_price),
         userId: 1, // TODO: Get from user context/auth
         address: {
-          address_line: formData.address_line,
-          province: formData.province,
-          district: formData.district,
-          subdistrict: formData.subdistrict,
-          postal_code: formData.postal_code,
+          address_line: formData.address_line.trim(),
+          province: formData.province.trim(),
+          district: formData.district.trim(),
+          subdistrict: formData.subdistrict.trim(),
+          postal_code: formData.postal_code.trim(),
         },
       };
-      console.log(apartmentData);
+
+      // Validate required fields
+      if (!apartmentData.name || apartmentData.name.length < 2) {
+        throw new Error('Apartment name must be at least 2 characters');
+      }
+      if (!apartmentData.phone || apartmentData.phone.length < 10) {
+        throw new Error('Phone number must be at least 10 characters');
+      }
+      if (apartmentData.electric_price <= 0) {
+        throw new Error('Electric price must be greater than 0');
+      }
+      if (apartmentData.water_price <= 0) {
+        throw new Error('Water price must be greater than 0');
+      }
+      if (
+        !formData.internetFree &&
+        (!apartmentData.internet_price || apartmentData.internet_price <= 0)
+      ) {
+        throw new Error('Internet price must be greater than 0 when not free');
+      }
+
+      console.log('Validated apartment data:', apartmentData);
+
       // Create the apartment first
       const apartmentResult =
         await createApartmentMutation.mutateAsync(apartmentData);
@@ -253,6 +321,26 @@ export default function AddApartment(): React.ReactElement {
         });
       }
 
+      // Create rooms for each room type specified
+      if (formData.roomTypes.length > 0) {
+        const roomCreationPromises = formData.roomTypes.map((room) => {
+          const roomData: roomTypes.CreateRoom = {
+            name: room.name,
+            type: room.type,
+            size: room.size,
+            price_start: room.price_start,
+            price_end: room.price_end,
+          };
+
+          return createRoomMutation.mutateAsync({
+            apartmentId,
+            data: roomData,
+          });
+        });
+
+        await Promise.all(roomCreationPromises);
+      }
+
       // Success - show popup and reset form
       setShowSuccessPopup(true);
 
@@ -264,6 +352,7 @@ export default function AddApartment(): React.ReactElement {
         name: '',
         phone: '',
         description: '',
+        apartment_type: 'apartment',
         apartment_location: 'asoke',
         address_line: '',
         province: '',
@@ -281,6 +370,31 @@ export default function AddApartment(): React.ReactElement {
       setImagePreviews([]);
     } catch (error) {
       console.error('Error creating apartment:', error);
+
+      // Log more detailed error information
+      if (error && typeof error === 'object' && 'response' in error) {
+        interface AxiosError {
+          response?: {
+            data?: unknown;
+            status?: number;
+            headers?: unknown;
+          };
+        }
+        const axiosError = error as AxiosError;
+        console.error('Error response data:', axiosError.response?.data);
+        console.error('Error status:', axiosError.response?.status);
+        console.error('Error headers:', axiosError.response?.headers);
+
+        // Log the detailed error message if available
+        if (
+          axiosError.response?.data &&
+          typeof axiosError.response.data === 'object'
+        ) {
+          const errorData = axiosError.response.data as { error?: unknown };
+          console.error('Detailed error:', errorData.error);
+        }
+      }
+
       setErrorMessage(
         error instanceof Error
           ? `Failed to create apartment: ${error.message}`
@@ -361,7 +475,37 @@ export default function AddApartment(): React.ReactElement {
               className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none"
             />
           </div>
-
+          <div className="mb-6">
+            <label className="mb-3 block font-semibold">Apartment Type</label>
+            <div className="flex gap-6">
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="apartment_type"
+                  value="dormitory"
+                  checked={formData.apartment_type === 'dormitory'}
+                  onChange={(_e) =>
+                    handleInputChange('apartment_type', 'dormitory')
+                  }
+                  className="h-4 w-4"
+                />
+                <span>Dormitory</span>
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="apartment_type"
+                  value="apartment"
+                  checked={formData.apartment_type === 'apartment'}
+                  onChange={(_e) =>
+                    handleInputChange('apartment_type', 'apartment')
+                  }
+                  className="h-4 w-4"
+                />
+                <span>Apartment</span>
+              </label>
+            </div>
+          </div>
           <div className="mb-6">
             <label className="mb-3 block font-semibold">
               Apartment Location
@@ -408,7 +552,6 @@ export default function AddApartment(): React.ReactElement {
               </label>
             </div>
           </div>
-
           <div className="mb-6">
             <label className="mb-3 block font-semibold">
               Apartment Address
@@ -426,26 +569,6 @@ export default function AddApartment(): React.ReactElement {
                   placeholder="House number, street, etc."
                 />
               </div>
-              {/* Commented out non-existent fields:
-              <div>
-                <label className="mb-1 block text-sm">Soi</label>
-                <input
-                  type="text"
-                  value={formData.soi}
-                  onChange={(e) => handleInputChange('soi', e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm">Street</label>
-                <input
-                  type="text"
-                  value={formData.street}
-                  onChange={(e) => handleInputChange('street', e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
-                />
-              </div>
-              */}
             </div>
             <div className="grid grid-cols-4 gap-4">
               <div>
@@ -553,20 +676,6 @@ export default function AddApartment(): React.ReactElement {
               />
               <span className="text-sm">THB/unit</span>
             </div>
-            {/* Commented out complex water pricing that doesn't match the apartment type:
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <span className="text-sm">unit used</span>
-                <input type="text" value={formData.waterUnit} />
-                <span className="text-sm">THB/unit</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm">Minimum</span>
-                <input type="text" value={formData.waterMinimum} />
-                <span className="text-sm">THB/unit</span>
-              </div>
-            </div>
-            */}
           </div>
 
           <div className="mb-6">
@@ -646,14 +755,28 @@ export default function AddApartment(): React.ReactElement {
           </div>
 
           <div className="mb-6">
-            <label className="mb-3 block font-semibold">Room Type</label>
-            {formData.roomTypes.map((roomType, index) => (
+            <div className="mb-3 flex items-center justify-between">
+              <label className="block font-semibold">Room Types</label>
+              {formData.roomTypes.length > 0 && (
+                <button
+                  onClick={() => {
+                    // Clear all rooms from form
+                    setFormData((prev) => ({ ...prev, roomTypes: [] }));
+                  }}
+                  type="button"
+                  className="rounded-lg bg-red-100 px-3 py-1 text-sm font-medium text-red-600 hover:bg-red-200"
+                >
+                  Clear All Rooms
+                </button>
+              )}
+            </div>
+            {formData.roomTypes.map((room, index) => (
               <div
                 key={index}
-                className="relative mb-4 rounded-lg border border-gray-200 p-4"
+                className="relative mb-6 rounded-lg border border-gray-200 p-4"
               >
                 <div className="mb-3 flex items-center justify-between">
-                  <h3 className="font-semibold">Type {index + 1}:</h3>
+                  <h3 className="font-semibold">Room {index + 1}:</h3>
                   {index > 0 && (
                     <button
                       onClick={() => removeRoomType(index)}
@@ -664,18 +787,108 @@ export default function AddApartment(): React.ReactElement {
                     </button>
                   )}
                 </div>
-                <div>
-                  <label className="mb-1 block text-sm">Room type name</label>
-                  <input
-                    type="text"
-                    value={roomType}
-                    onChange={(e) =>
-                      handleRoomTypeChange(index, e.target.value)
-                    }
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
-                    placeholder="e.g., Studio, 1 Bedroom, 2 Bedroom"
-                  />
+
+                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div>
+                    <label className="mb-1 block text-sm font-medium">
+                      Room Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={room.name}
+                      onChange={(e) =>
+                        handleRoomFieldChange(index, 'name', e.target.value)
+                      }
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                      placeholder="e.g., Studio Room A"
+                      minLength={2}
+                      maxLength={255}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-sm font-medium">
+                      Room Type <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={room.type}
+                      onChange={(e) =>
+                        handleRoomFieldChange(index, 'type', e.target.value)
+                      }
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                      placeholder="e.g., Studio, 1 Bedroom, 2 Bedroom"
+                      minLength={2}
+                      maxLength={255}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-sm font-medium">
+                      Size (sq.m) <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={room.size}
+                      onChange={(e) =>
+                        handleRoomFieldChange(index, 'size', e.target.value)
+                      }
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                      placeholder="e.g., 30"
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-sm font-medium">
+                      Price Start (THB) <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      value={room.price_start}
+                      onChange={(e) =>
+                        handleRoomFieldChange(
+                          index,
+                          'price_start',
+                          parseFloat(e.target.value) || 0
+                        )
+                      }
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                      placeholder="e.g., 8000"
+                      min={0}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1 block text-sm font-medium">
+                      Price End (THB) <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      value={room.price_end}
+                      onChange={(e) =>
+                        handleRoomFieldChange(
+                          index,
+                          'price_end',
+                          parseFloat(e.target.value) || 0
+                        )
+                      }
+                      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                      placeholder="e.g., 12000"
+                      min={0}
+                      required
+                    />
+                  </div>
                 </div>
+
+                {room.price_start > room.price_end && room.price_end > 0 && (
+                  <div className="mt-2 text-sm text-red-500">
+                    Price start must be less than or equal to price end
+                  </div>
+                )}
               </div>
             ))}
             <button
