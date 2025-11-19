@@ -39,9 +39,17 @@ const initMapAndMarkers = async ({
       // when click marker show popup
       marker.addListener('click', () => {
         infoWindow.close();
+
+        const titleWithoutConfident = (opt.title ?? '')
+          .replace(/\(\d+%\)/, '')
+          .trim();
+        // const raw = opt.title ?? "";
+        // const typeOnly = raw.split(":")[1]
+        //                   ?.replace(/\(.*\)/, "");
+
         infoWindow.setContent(`
-          <div style="min-width:180px">
-            <strong>${opt.title}</strong><br />
+          <div style="min-width:180px; font-size: 14px">
+            <strong>${titleWithoutConfident}</strong><br />
             Lat: ${opt.position.lat}<br />
             Lng: ${opt.position.lng}
           </div>
