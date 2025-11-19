@@ -67,7 +67,7 @@ export default function DistrictItem({
     <div
       onClick={handleSelectDistrict}
       className={
-        'mx-auto mt-4 flex max-w-2xl cursor-pointer items-center justify-between rounded-2xl border border-gray-100 bg-white p-6 text-black shadow-md transition-all duration-200 hover:shadow-lg'
+        'mx-auto mt-4 flex max-w-2xl cursor-pointer items-center justify-between rounded-2xl border border-gray-100 bg-white p-4 text-black shadow-md transition-all duration-200 hover:shadow-lg'
       }
     >
            {' '}
