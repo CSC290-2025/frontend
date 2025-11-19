@@ -1,79 +1,187 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from '@/router';
 import BookingComplete from '@/features/G9-ApartmentListing/components/BookingComplete';
-import { postWalletsTransfer } from '@/api/generated/wallets';
+import {
+  postWalletsTransfer,
+  useGetWalletsUserUserId,
+} from '@/api/generated/wallets';
+import { useBooking } from '@/features/G9-ApartmentListing/hooks/useBooking';
+import {
+  APT,
+  Room,
+  Rating,
+  Upload,
+} from '@/features/G9-ApartmentListing/hooks/index';
+import {
+  apartmentTypes,
+  roomTypes,
+  addressTypes,
+} from '@/features/G9-ApartmentListing/types';
 import LocationIcon from '@/features/G9-ApartmentListing/assets/LocationIcon.svg';
 import BackIcon from '@/features/G9-ApartmentListing/assets/BackIcon.svg';
 import EWalletIcon from '@/features/G9-ApartmentListing/assets/EWalletIcon.svg';
 
-interface Apartment {
-  name: string;
-  rating: number;
-  address: string;
-  room: string;
-  size: string;
-  imageMain: string;
+interface ExtendedApartment extends apartmentTypes.Apartment {
+  room?: roomTypes.Room[];
+  addresses?: addressTypes.Address;
 }
 
+// Component to display apartment image with fallback
+const ApartmentImage: React.FC<{
+  apartment_id: number;
+  name: string;
+}> = ({ apartment_id, name }) => {
+  const { data: images, isLoading: imageLoading } =
+    Upload.usePicturesByApartment(apartment_id);
+
+  const defaultImage =
+    'https://i.pinimg.com/736x/e6/b6/87/e6b6879516fe0c7e046dfc83922626d6.jpg';
+
+  if (imageLoading) {
+    return (
+      <div className="h-48 w-full animate-pulse rounded-lg bg-gray-300 object-cover md:w-64"></div>
+    );
+  }
+
+  // Handle the backend response structure: { success: true, data: [...], timestamp: "..." }
+  const imageArray = images?.data?.data || images?.data || [];
+  const imageUrl =
+    imageArray && imageArray.length > 0
+      ? imageArray[0].file_path // Use file_path from apartment_picture table
+      : defaultImage;
+
+  return (
+    <img
+      src={imageUrl}
+      alt={name}
+      className="w-full object-cover md:w-64"
+      onError={(e) => {
+        const target = e.target as HTMLImageElement;
+        if (target.src !== defaultImage) {
+          target.src = defaultImage;
+        }
+      }}
+    />
+  );
+};
+
 export default function ApartmentPayment() {
-  const bookingData = localStorage.getItem('bookingData');
-  const roomType = bookingData ? JSON.parse(bookingData).roomType : 'Studio';
   const navigate = useNavigate();
 
-  const [balance, setBalance] = useState<number | null>(null);
+  // Get booking ID from URL parameters
+  const urlParams = new URLSearchParams(window.location.search);
+  const bookingIdParam = urlParams.get('bookingId');
+  const bookingId = bookingIdParam ? parseInt(bookingIdParam) : 0;
+  console.log('Booking ID from URL:', bookingId);
+  // Fetch booking details using the booking ID
+  const {
+    data: bookingData,
+    isLoading: _bookingLoading,
+    error: bookingError,
+  } = useBooking(bookingId);
+
+  // Fetch apartment data based on booking
+  const { data: apartmentData, isLoading: _apartmentLoading } =
+    APT.useApartment(bookingData?.apartment_id || 0);
+
+  // Fetch all rooms for the apartment, then filter for the specific room
+  const { data: allRoomsData, isLoading: _roomLoading } = Room.useRooms(
+    bookingData?.apartment_id || 0
+  );
+
+  // Filter to get the specific room from the booking
+  const roomData = allRoomsData?.find(
+    (room: roomTypes.Room) => room.id === bookingData?.room_id
+  );
+
+  // Fetch average rating for the apartment
+  const { data: averageRatingData } = Rating.useAverageRating(
+    bookingData?.apartment_id || 0
+  );
+
+  // Fetch user wallet data
+  // Using booking user ID or fallback to default user for demo
+  const userId = bookingData?.user_id || 1;
+
+  const { data: walletResponse, isLoading: _walletLoading } =
+    useGetWalletsUserUserId(userId);
+  const walletData = walletResponse?.data;
+
   const [price, setPrice] = useState<number | null>(null);
-  const [apartment, setApartment] = useState<Apartment | null>(null);
+  const [apartment, setApartment] = useState<apartmentTypes.Apartment | null>(
+    null
+  );
   const [showPopup, setShowPopup] = useState(false);
 
   useEffect(() => {
-    setTimeout(() => {
-      setBalance(12000);
+    if (!bookingData) return;
 
-      const priceMap: Record<string, number> = {
-        Single: 3200,
-        Double: 4100,
-        Studio: 4900,
-      };
-      setPrice(priceMap[roomType] || 4900);
+    // Use actual room price from API data
+    const roomPrice = roomData?.price_start || roomData?.price_end || 0;
+    setPrice(roomPrice);
 
-      setApartment({
-        name: 'Cosmo mansion',
-        rating: 4.0,
-        address: 'Pracha Uthit road, Bangmod, Thungkru, Bangkok',
-        room: roomType,
-        size: '24 sq.m.',
-        imageMain:
-          'https://bcdn.renthub.in.th/listing_picture/201603/20160323/KFVR1t5u5w6KhpFVDWLY.jpg?class=moptimized',
-      });
-    }, 800);
-  }, [roomType]);
+    // Set apartment data from API data
+    if (apartmentData) {
+      setApartment(apartmentData);
+    }
+  }, [bookingData, apartmentData, roomData]);
+
+  // Show error state
+  if (bookingError || !bookingId || !bookingData) {
+    return (
+      <div className="relative flex min-h-screen flex-col items-center justify-center bg-[#F9FAFB] px-4">
+        <div className="text-center">
+          <h1 className="mb-4 text-2xl font-bold text-red-600">
+            Booking Error
+          </h1>
+          <p className="mb-4 text-gray-600">
+            {bookingError
+              ? 'Failed to load booking details.'
+              : 'Invalid booking ID.'}
+          </p>
+          <button
+            onClick={() => navigate('/ApartmentHomepage')}
+            className="rounded-md bg-[#01CEF8] px-6 py-2 text-white hover:bg-[#4E8FB1]"
+          >
+            Back to Apartments
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const handleBooking = () => {
-    // simplest implementation: transfer money from user 1 to a developer/service account (user 2)
-    // so the balance for user 1 is reduced by the apartment price.
-    // NOTE: This uses a placeholder recipient (user id 2). Adjust to the correct merchant ID if needed.
     (async () => {
-      if (!price || !balance) {
-        alert('Missing price or balance');
+      const balance = walletData?.data?.wallet?.balance || 0;
+
+      if (!price || !bookingData) {
+        alert('Missing required booking information');
+        return;
+      }
+
+      if (balance < price) {
+        alert('Insufficient balance');
         return;
       }
 
       try {
+        // Transfer money from user to apartment owner
+        // In a real implementation, apartment owner ID should come from apartment data
+        const apartmentOwnerId = 3; // Default service account for payments
+
         await postWalletsTransfer({
-          from_user_id: 1,
-          to_user_id: 2,
+          from_user_id: bookingData.user_id,
+          to_user_id: apartmentOwnerId,
           amount: price,
         });
 
-        setBalance((prev) => (prev ? prev - price : null));
         setShowPopup(true);
       } catch (err) {
-        console.error(err);
+        console.error('Payment failed:', err);
         alert('Payment failed — check your wallet or try again.');
       }
     })();
   };
-
   const handleViewBooking = () => {
     setShowPopup(false);
     window.location.href = '/MyRentedAPT';
@@ -84,7 +192,13 @@ export default function ApartmentPayment() {
       <div className="mb-6 w-full max-w-5xl">
         <div className="mb-6 flex w-full max-w-5xl items-center gap-3">
           <button
-            onClick={() => navigate('/ApartmentBooking')}
+            onClick={() => {
+              if (bookingData?.apartment_id) {
+                window.location.href = `/ApartmentBooking?apartmentId=${bookingData.apartment_id}`;
+              } else {
+                navigate('/ApartmentBooking');
+              }
+            }}
             className="flex h-10 w-10 items-center justify-center rounded-full transition duration-200 hover:bg-gray-100"
           >
             <img src={BackIcon} alt="Back" className="h-7 w-7" />
@@ -127,18 +241,16 @@ export default function ApartmentPayment() {
               Available balance
             </span>
             <span className="text-[20px] font-semibold text-gray-900">
-              {balance ? balance.toLocaleString() : 'Loading...'}
+              {walletData?.data?.wallet?.balance
+                ? walletData.data.wallet.balance.toLocaleString()
+                : 'Loading...'}
             </span>
           </div>
         </div>
 
         {apartment ? (
           <div className="mb-8 flex flex-col gap-6 rounded-xl border border-gray-200 p-8 md:flex-row">
-            <img
-              src={apartment.imageMain}
-              alt="apartment"
-              className="w-full object-cover md:w-64"
-            />
+            <ApartmentImage apartment_id={apartment.id} name={apartment.name} />
             <div className="flex flex-1 flex-col justify-between p-6">
               <div>
                 <h3 className="text-[28px] font-semibold text-gray-900">
@@ -146,7 +258,9 @@ export default function ApartmentPayment() {
                 </h3>
                 <div className="flex items-center gap-2">
                   <p className="text-[16px] font-medium text-gray-700">
-                    {apartment.rating ? apartment.rating.toFixed(1) : 'N/A'}
+                    {averageRatingData?.average
+                      ? averageRatingData.average.toFixed(1)
+                      : 'N/A'}
                   </p>
 
                   <div className="flex">
@@ -156,7 +270,7 @@ export default function ApartmentPayment() {
                         xmlns="http://www.w3.org/2000/svg"
                         viewBox="0 0 20 20"
                         fill={
-                          i < Math.floor(apartment.rating)
+                          i < Math.floor(averageRatingData?.average || 0)
                             ? '#facc15'
                             : '#d1d5db'
                         }
@@ -173,15 +287,21 @@ export default function ApartmentPayment() {
                     alt="Location"
                     className="mr-1 h-6 w-6"
                   />
-                  <p>{apartment.address}</p>
+                  <p>
+                    {apartment.addresses
+                      ? `${apartment.addresses.address_line || ''}, ${apartment.addresses.subdistrict || ''}, ${apartment.addresses.district || ''}, ${apartment.addresses.province || ''} ${apartment.addresses.postal_code || ''}`
+                          .replace(/,\s*,/g, ',')
+                          .replace(/^,\s*|,\s*$/g, '')
+                      : 'Address not available'}
+                  </p>
                 </div>
                 <div className="mt-2 flex items-center gap-3">
                   <div className="text-[16px] text-gray-500">
                     <p className="text-[16px] font-medium text-gray-900">
                       {' '}
-                      Room Type : {apartment.room}
+                      Room Type : {roomData.type}
                     </p>
-                    <p>Size : {apartment.size}</p>
+                    <p>Size : {roomData.size}</p>
                   </div>
                 </div>
               </div>
@@ -201,7 +321,7 @@ export default function ApartmentPayment() {
           </div>
 
           <button
-            disabled={!price || !balance}
+            disabled={!price || !walletData?.data?.wallet?.balance}
             onClick={handleBooking}
             className="rounded-lg bg-[#01CEF8] px-24 py-4 text-[20px] font-medium text-white hover:bg-[#4E8FB1] disabled:cursor-not-allowed disabled:opacity-50"
           >

@@ -24,6 +24,7 @@ export interface Apartment {
   apartment_location: ApartmentLocation;
   internet: InternetType;
   address_id: number;
+  addresses?: Address;
 }
 
 // Array of apartments
