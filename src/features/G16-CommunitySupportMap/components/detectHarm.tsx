@@ -1,5 +1,7 @@
 // src/App.tsx
 import { useEffect, useState } from 'react';
+import { ShimmerButton } from "@/components/ui/shimmer-button"
+import { AuroraText } from "@/components/ui/aurora-text"
 
 // type
 type LocalImg = { file: File; url: string };
@@ -108,7 +110,9 @@ export default function DetectHarm() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 p-6">
       <div className="w-full max-w-md space-y-5 rounded-2xl border bg-white p-6 shadow-sm">
-        <h1 className="text-xl font-semibold tracking-tight">Detect Harm</h1>
+        <h1 className="px-34 text-xl font-semibold tracking-tight">
+          <AuroraText>Detect Harm</AuroraText>
+        </h1>
 
         {/* from */}
         <form onSubmit={onSubmit} className="space-y-4">
@@ -119,7 +123,10 @@ export default function DetectHarm() {
               type="file"
               accept="image/*"
               onChange={pickFile}
-              className="mt-2 w-full cursor-pointer rounded-lg border px-3 py-2 file:mr-3 file:rounded-md file:border-0 file:bg-black file:px-3 file:py-2 file:text-white hover:file:bg-gray-800"
+              className="mt-2 w-full cursor-pointer rounded-lg border px-3 py-2
+                          file:mr-3 file:rounded-md file:border-0
+                        file:bg-black file:px-3 file:py-2 file:text-white
+                        "
             />
           </label>
 
@@ -136,7 +143,7 @@ export default function DetectHarm() {
                 </div>
               </div>
               <p className="text-center text-xs text-gray-500">
-                {img.file.name} · {(img.file.size / 500 / 500).toFixed(2)} MB
+                {img.file.name} Â· {(img.file.size / 500 / 500).toFixed(2)} MB
               </p>
             </div>
           )}
@@ -175,13 +182,16 @@ export default function DetectHarm() {
 
           {/* button */}
           <div className="flex justify-center gap-3">
-            <button
+            {/* <button
               type="submit"
               className="rounded-lg bg-black px-4 py-2 text-sm text-white disabled:opacity-60"
               disabled={loading || !img}
             >
               {loading ? 'Detecting...' : 'Detect Harm'}
-            </button>
+            </button> */}
+            
+            <ShimmerButton> {loading ? 'Detecting...' : 'Detect Harm'} </ShimmerButton> 
+            
             <button
               type="button"
               onClick={clearAll}

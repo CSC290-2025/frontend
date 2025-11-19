@@ -7,12 +7,14 @@ type MapInit = {
   mapEl: HTMLElement;
   mapOptions: google.maps.MapOptions;
   markerOptions?: google.maps.marker.AdvancedMarkerElementOptions[];
+  onMarkerClick?: (marker: google.maps.marker.AdvancedMarkerElement, index: number) => void
 };
 
 const initMapAndMarkers = async ({
   mapEl,
   mapOptions,
   markerOptions = [],
+  onMarkerClick,
 }: MapInit) => {
   try {
     const [{ Map }, { AdvancedMarkerElement }] = await Promise.all([
@@ -22,14 +24,23 @@ const initMapAndMarkers = async ({
 
     const map = new Map(mapEl, mapOptions);
 
-    markerOptions.forEach((options) => {
-      new AdvancedMarkerElement({
+    const markers = markerOptions.map((options, index) => {
+      const marker = new AdvancedMarkerElement({
         ...options,
         map: map,
       });
+
+      // เพิ่ม click event ถ้ามี
+      if (onMarkerClick) {
+        marker.addListener('click', () => {
+          onMarkerClick(marker, index);
+        });
+      }
+
+      return marker;
     });
 
-    return map;
+    return { map, markers };
   } catch (error) {
     console.error('Failed to initialize Google Map:', error);
     throw error;
