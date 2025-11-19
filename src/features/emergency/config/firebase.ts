@@ -1,5 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getMessaging, getToken } from 'firebase/messaging';
+// import { getFirestore } from "firebase/firestore";
 import TokenApi from '@/features/emergency/api/token.api.ts';
 import config from '@/features/emergency/config/env';
 
@@ -14,6 +15,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const messaging = getMessaging(app);
+// const db = getFirestore(app);
 
 const getFCMToken = async (cb: (token: string) => void) => {
   try {
