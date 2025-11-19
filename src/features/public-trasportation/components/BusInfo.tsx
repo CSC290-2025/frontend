@@ -5,6 +5,8 @@ interface BusInfoProps {
   route: string;
   from: string;
   to: string;
+  duration: string;
+  fare: string;
   gpsAvailable?: boolean;
   stops: string[];
 }
@@ -13,6 +15,8 @@ export default function BusInfo({
   route,
   from,
   to,
+  duration,
+  fare,
   gpsAvailable = true,
   stops,
 }: BusInfoProps) {
@@ -24,8 +28,8 @@ export default function BusInfo({
       <div
         className="flex cursor-pointer items-center justify-between p-3 select-none"
         onClick={() => setOpen(!open)}
-        onMouseDown={(e) => e.preventDefault()} // ป้องกัน focus
-        tabIndex={-1} // ไม่ให้ focusable
+        onMouseDown={(e) => e.preventDefault()}
+        tabIndex={-1}
       >
         <div>
           <p className="text-sm font-semibold">{route}</p>
@@ -35,16 +39,15 @@ export default function BusInfo({
         </div>
 
         <div className="flex flex-col items-end space-y-1">
+          {/* แสดง Duration ที่ส่งมา */}
           <div className="rounded-md bg-blue-600 px-2 py-1 text-xs">
-            16 Mins
+            {duration}
           </div>
+          {/* แสดงค่าโดยสาร/Tap In/Out */}
           <div
-            className={`flex items-center gap-1 rounded-md px-2 py-[2px] text-[10px] font-medium ${
-              gpsAvailable ? 'bg-green-500' : 'bg-red-500'
-            }`}
+            className={`flex items-center gap-1 rounded-md px-2 py-[2px] text-[10px] font-medium ${fare === 'Tap In/Out' ? 'bg-gray-500' : 'bg-green-500'}`}
           >
-            <span>GPS</span>
-            <span className="text-[8px]">📡</span>
+            <span>{fare}</span>
           </div>
         </div>
       </div>
