@@ -1,1 +1,1 @@
-export { default } from '@/features/weather/pages/weatherMockData.tsx';
+export { default } from '@/features/weather/pages/weatherMockData';

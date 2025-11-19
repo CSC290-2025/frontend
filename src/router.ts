@@ -3,7 +3,12 @@
 
 import { components, hooks, utils } from '@generouted/react-router/client';
 
-export type Path = `/` | `/example` | `/example/:id` | `/weather`;
+export type Path =
+  | `/`
+  | `/example`
+  | `/example/:id`
+  | `/weather`
+  | `/weatherMain`;
 
 export type Params = {
   '/example/:id': { id: string };
