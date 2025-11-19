@@ -11,20 +11,20 @@ import {
   Card,
   CardContent,
   CardDescription,
-} from '@/features/emergency/components/ui/card.tsx';
-import { Checkbox } from '@/features/emergency/components/ui/checkbox.tsx';
+} from '@/features/emergency/components/ui/card';
+import { Checkbox } from '@/features/emergency/components/ui/checkbox';
 import { Label } from '@/features/emergency/components/ui/label';
-import { Button } from '@/features/emergency/components/ui/button.tsx';
-import { Textarea } from '@/features/emergency/components/ui/textarea.tsx';
-import { Spinner } from '@/features/emergency/components/ui/spinner.tsx';
-import MapInit from '@/features/emergency/components/modules/google-map/init-map.tsx';
+import { Button } from '@/features/emergency/components/ui/button';
+import { Textarea } from '@/features/emergency/components/ui/textarea';
+import { Spinner } from '@/features/emergency/components/ui/spinner';
+import MapInit from '@/features/emergency/components/modules/google-map/init-map';
 import { AlertTriangle, Camera, Car, CircleAlert, Waves } from 'lucide-react';
-import { useGeoLocation } from '@/features/emergency/hooks/geo-location.tsx';
-import { useReportFrom } from '@/features/emergency/hooks/report-from.tsx';
+import { useGeoLocation } from '@/features/emergency/hooks/geo-location';
+import { useReportFrom } from '@/features/emergency/hooks/report-from';
 import {
   ReportOmit,
   type ReportRequestFrom,
-} from '@/features/emergency/interfaces/report.ts';
+} from '@/features/emergency/interfaces/report';
 import { DialogClose } from '@radix-ui/react-dialog';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
@@ -35,13 +35,14 @@ function ReportPage() {
   const [showDetail, setShowDetail] = useState(false);
   const [open, setOpen] = useState(false);
   const [file, setFile] = useState<string | null>(null);
+
   const { findLocation, address } = useGeoLocation();
   const { createReport, isLoading } = useReportFrom();
 
   const categories = [
-    { name: 'Traffic', icon: <Car size={32} />, label: 'traffic' },
-    { name: 'Accident', icon: <AlertTriangle size={32} />, label: 'accident' },
-    { name: 'Disaster', icon: <Waves size={32} />, label: 'disaster' },
+    { name: 'Traffic', label: 'traffic', icon: <Car size={32} /> },
+    { name: 'Accident', label: 'accident', icon: <AlertTriangle size={32} /> },
+    { name: 'Disaster', label: 'disaster', icon: <Waves size={32} /> },
   ];
 
   const {
@@ -55,22 +56,27 @@ function ReportPage() {
     defaultValues: {
       title: 'test',
       user_id: null,
+      ambulance_service: false,
     },
   });
 
+  const handleFileUpload = (file: File) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onloadend = () => setFile(reader.result?.toString() || null);
+  };
+
   const onSubmit = handleSubmit(async (data) => {
     try {
-      console.log(data);
       data.image_url = file;
       await createReport(data);
 
+      reset();
       setOpen(false);
       setFile(null);
       setShowDetail(false);
 
-      toast('Report successfully sent', {
-        position: 'top-right',
-      });
+      toast('Report successfully sent', { position: 'top-right' });
     } catch (err) {
       console.error('Failed to submit report:', err);
     }
@@ -99,7 +105,7 @@ function ReportPage() {
                   <Card className="mt-3">
                     <CardContent>
                       <CardDescription>
-                        {address ? address : 'Fetching address...'}
+                        {address || 'Fetching address...'}
                       </CardDescription>
                     </CardContent>
                   </Card>
@@ -113,6 +119,7 @@ function ReportPage() {
                     <DialogTitle className="my-6">
                       What&apos;s happening?
                     </DialogTitle>
+
                     <Textarea
                       placeholder="Type something..."
                       {...register('description')}
@@ -129,32 +136,37 @@ function ReportPage() {
                     <h2 className="mb-6 text-lg font-semibold">
                       Select the category
                     </h2>
+
                     <Controller
                       name="report_category"
                       control={control}
                       render={({ field }) => (
                         <div className="flex justify-center gap-4">
-                          {categories.map((cat) => (
-                            <button
-                              key={cat.label}
-                              type="button"
-                              onClick={() => field.onChange(cat.label)}
-                              className={`flex h-24 w-24 flex-col items-center justify-center gap-2 rounded-xl border transition ${
-                                field.value === cat.label
-                                  ? 'border-black bg-black text-white'
-                                  : 'border-transparent bg-gray-100 text-gray-500'
-                              }`}
-                              {...register('report_category')}
-                            >
-                              {cat.icon}
-                              <span className="text-sm font-medium">
-                                {cat.name}
-                              </span>
-                            </button>
-                          ))}
+                          {categories.map((cat) => {
+                            const isActive = field.value === cat.label;
+
+                            return (
+                              <button
+                                key={cat.label}
+                                type="button"
+                                onClick={() => field.onChange(cat.label)}
+                                className={`flex h-24 w-24 flex-col items-center justify-center gap-2 rounded-xl border transition ${
+                                  isActive
+                                    ? 'border-black bg-black text-white'
+                                    : 'border-transparent bg-gray-100 text-gray-500'
+                                }`}
+                              >
+                                {cat.icon}
+                                <span className="text-sm font-medium">
+                                  {cat.name}
+                                </span>
+                              </button>
+                            );
+                          })}
                         </div>
                       )}
                     />
+
                     {errors.report_category && (
                       <p className="mt-1 text-sm text-red-600">
                         {errors.report_category.message}
@@ -174,6 +186,7 @@ function ReportPage() {
                         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-500 text-white">
                           <Camera size={20} />
                         </div>
+
                         <span className="text-sm text-gray-600">
                           {file ? (
                             <img
@@ -185,33 +198,31 @@ function ReportPage() {
                             'Upload a picture file'
                           )}
                         </span>
+
                         <input
                           id="file-upload"
                           type="file"
                           accept="image/*"
                           className="hidden"
                           onChange={(e) => {
-                            const f = e.target.files?.[0];
-                            if (f) {
-                              const reader = new FileReader();
-                              reader.readAsDataURL(f);
-                              reader.onloadend = () => {
-                                setFile(reader.result?.toString() || null);
-                              };
-                              field.onChange(f);
+                            const selected = e.target.files?.[0];
+                            if (selected) {
+                              handleFileUpload(selected);
+                              field.onChange(selected);
                             }
                           }}
                         />
                       </label>
                     )}
                   />
+
                   {errors.image_url && (
                     <p className="mt-1 text-sm text-red-600">
                       {errors.image_url.message}
                     </p>
                   )}
 
-                  {/* Ambulance Checkbox */}
+                  {/* Ambulance */}
                   <div className="col-start-1 flex items-center gap-3">
                     <Controller
                       name="ambulance_service"
@@ -219,15 +230,14 @@ function ReportPage() {
                       render={({ field }) => (
                         <Checkbox
                           id="ambulance"
-                          checked={field.value as boolean | undefined}
-                          onCheckedChange={(checked) =>
-                            field.onChange(!!checked)
-                          }
-                          {...register('ambulance_service')}
+                          checked={field.value as boolean}
+                          onCheckedChange={field.onChange}
                         />
                       )}
                     />
+
                     <Label htmlFor="ambulance">Ambulance needed?</Label>
+
                     {errors.ambulance_service && (
                       <p className="mt-1 text-sm text-red-600">
                         {errors.ambulance_service.message}
@@ -258,14 +268,16 @@ function ReportPage() {
                       Close
                     </Button>
                   </DialogClose>
-                  {isLoading ? (
-                    <Button type="submit">
-                      <Spinner />
-                      Sending...
-                    </Button>
-                  ) : (
-                    <Button type="submit">Confirm</Button>
-                  )}
+
+                  <Button type="submit" disabled={isLoading}>
+                    {isLoading ? (
+                      <>
+                        <Spinner /> Sending...
+                      </>
+                    ) : (
+                      'Confirm'
+                    )}
+                  </Button>
                 </div>
               </DialogFooter>
             </form>

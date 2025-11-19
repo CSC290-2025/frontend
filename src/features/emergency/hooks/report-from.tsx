@@ -1,7 +1,6 @@
 import type {
   ReportRequestFrom,
   ReportResponseFrom,
-  ReportResponseManny,
 } from '@/features/emergency/interfaces/report.ts';
 import ReportApi from '@/features/emergency/api/report.api.ts';
 import {
@@ -11,6 +10,7 @@ import {
   useEffect,
   useState,
 } from 'react';
+import { useLocation } from 'react-router';
 
 type ReportFromProviderProps = {
   children: ReactNode;
@@ -38,10 +38,46 @@ export function ReportFromProvider({
   initialLimit,
 }: ReportFromProviderProps) {
   const [report, setReport] = useState<ReportResponseFrom[]>([]);
-  const [totalPage, setTotalPage] = useState<number>(1);
+  const [totalPage, setTotalPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
 
+  const { pathname } = useLocation();
+
+  const findReportByStatusPag = async (
+    status: string,
+    page: string,
+    limit: string
+  ): Promise<ReportResponseFrom[]> => {
+    setIsLoading(true);
+
+    try {
+      const res = await ReportApi.getReportByStatusPag(status, page, limit);
+      const total = Number(res.headers['x-total-count']) || 1;
+
+      setTotalPage(total);
+      return res.data.report;
+    } catch (error) {
+      console.error(error);
+      return [];
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const createReport = async (data: ReportRequestFrom) => {
+    setIsLoading(true);
+    try {
+      await ReportApi.postReport(data);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
+    if (pathname !== '/activity') return;
+
     const fetchReport = async () => {
       const res = await findReportByStatusPag(
         'pending',
@@ -50,44 +86,10 @@ export function ReportFromProvider({
       );
       setReport(res);
     };
+
     fetchReport();
-  }, [initialPage, initialLimit]);
+  }, [pathname, initialPage, initialLimit]);
 
-  const createReport = async (data: ReportRequestFrom) => {
-    setIsLoading(true);
-    try {
-      await ReportApi.postReport(data);
-    } catch (error: unknown) {
-      console.log(error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const findReportByStatusPag = async (
-    status: string,
-    page: string,
-    limit: string
-  ): Promise<ReportResponseFrom[]> => {
-    setIsLoading(true);
-    try {
-      const res = await ReportApi.getReportByStatusPag(status, page, limit);
-      const totalPage = res.headers['x-total-count'] || 1;
-
-      if (!totalPage || totalPage === 0) {
-        throw new Error('Total page must be a number');
-      }
-      console.log(totalPage);
-
-      setTotalPage(totalPage);
-      return res.data.report;
-    } catch (error: unknown) {
-      console.log(error);
-      return [];
-    } finally {
-      setIsLoading(false);
-    }
-  };
   return (
     <ReportFromContext.Provider
       value={{
