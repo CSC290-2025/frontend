@@ -10,8 +10,6 @@ export const useAuthenticated = () => {
     queryKey: ['user', 'me'],
     queryFn: () => apiClient.get('/user/me').then((res) => res.data.data),
     retry: false,
-    staleTime: Infinity,
-    gcTime: Infinity,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
     refetchOnMount: false,
@@ -19,7 +17,7 @@ export const useAuthenticated = () => {
 
   useEffect(() => {
     if (isSuccess && data) {
-      setUser(data);
+      setUser(data.user);
       setError(null);
     }
   }, [isSuccess, data, setUser, setError]);
