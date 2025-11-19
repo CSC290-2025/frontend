@@ -1,4 +1,4 @@
-import type { MetroCardItem } from './AmountBox';
+import type { GetMetroCardsUserUserId200DataMetroCardsItem as MetroCardItem } from '@/api/generated/model';
 import { CreditCard } from 'lucide-react';
 import { useNavigate, useParams } from '@/router';
 
