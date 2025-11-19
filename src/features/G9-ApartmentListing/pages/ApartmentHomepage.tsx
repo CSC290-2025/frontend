@@ -21,8 +21,11 @@ const ApartmentImage: React.FC<{
   apartment_id: number;
   name: string;
 }> = ({ apartment_id, name }) => {
-  const { data: images, isLoading: imageLoading } =
-    Upload.usePicturesByApartment(apartment_id);
+  const {
+    data: images,
+    isLoading: imageLoading,
+    error: imageError,
+  } = Upload.usePicturesByApartment(apartment_id);
 
   const defaultImage =
     'https://i.pinimg.com/736x/e6/b6/87/e6b6879516fe0c7e046dfc83922626d6.jpg';
@@ -33,11 +36,23 @@ const ApartmentImage: React.FC<{
     );
   }
 
-  // Handle the backend response structure: { success: true, data: [...], timestamp: "..." }
-  const imageArray = images?.data?.data || images?.data || [];
+  if (imageError) {
+    console.error('Image loading error:', imageError);
+  }
+
+  // Handle multiple possible response structures
+  let imageArray = [];
+  if (images?.data?.data && Array.isArray(images.data.data)) {
+    imageArray = images.data.data;
+  } else if (images?.data && Array.isArray(images.data)) {
+    imageArray = images.data;
+  } else if (Array.isArray(images)) {
+    imageArray = images;
+  }
+
   const imageUrl =
     imageArray && imageArray.length > 0
-      ? imageArray[0].file_path // Use file_path from apartment_picture table
+      ? imageArray[0].file_path || imageArray[0].url || imageArray[0].preview // Try multiple possible field names
       : defaultImage;
 
   return (

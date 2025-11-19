@@ -23,7 +23,9 @@ export interface Apartment {
   apartment_type: ApartmentType;
   apartment_location: ApartmentLocation;
   internet: InternetType;
+  internet_price?: number | null;
   address_id: number;
+  addresses?: Address;
 }
 
 // Array of apartments
@@ -39,6 +41,7 @@ export interface CreateApartmentPayload {
   electric_price: number;
   water_price: number;
   internet: InternetType;
+  internet_price?: number | null;
   userId: number;
   address: {
     address_line: string | null;
@@ -51,14 +54,15 @@ export interface CreateApartmentPayload {
 
 // Update apartment payload interface
 export interface UpdateApartmentPayload {
-  name: string;
-  phone: string;
-  description: string | null;
-  apartment_type: ApartmentType;
-  apartment_location: ApartmentLocation;
-  electric_price: number;
-  water_price: number;
-  internet: InternetType;
+  name?: string;
+  phone?: string;
+  description?: string | null;
+  apartment_type?: ApartmentType;
+  apartment_location?: ApartmentLocation;
+  electric_price?: number;
+  water_price?: number;
+  internet?: InternetType;
+  internet_price?: number | null;
   address?: {
     address_line: string | null;
     province: string | null;

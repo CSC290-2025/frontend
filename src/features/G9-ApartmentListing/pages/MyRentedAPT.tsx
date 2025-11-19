@@ -106,7 +106,7 @@ function BookingCard({ booking }: { booking: bookingTypes.Booking }) {
         {booking.booking_status === 'pending' && (
           <div className="flex flex-col items-end">
             <a
-              href="/ApartmentPayment"
+              href={`/ApartmentPayment?bookingId=${booking.id}`}
               className="rounded-md bg-[#01CEF8] px-7 py-2 text-[16px] font-medium text-white transition hover:bg-[#4E8FB1]"
             >
               Pay Now

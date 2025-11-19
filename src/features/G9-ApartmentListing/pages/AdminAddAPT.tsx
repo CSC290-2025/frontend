@@ -1,51 +1,14 @@
 import React, { useState } from 'react';
 import { Upload, X } from 'lucide-react';
-import { useNavigate } from '@/router';
 import BackIcon from '@/features/G9-ApartmentListing/assets/BackIcon.svg';
 import TrashIcon from '@/features/G9-ApartmentListing/assets/TrashIcon.svg';
 import UppageIcon from '@/features/G9-ApartmentListing/assets/UppageIcon.svg';
 import AddedSuccess from '@/features/G9-ApartmentListing/components/AddedSuccess';
+import type { apartmentTypes } from '@/features/G9-ApartmentListing/types/index';
 import {
   APT,
-  Room,
-  Upload as UploadHook,
-} from '@/features/G9-ApartmentListing/hooks';
-
-interface RoomType {
-  id: number;
-  name: string;
-  size: string;
-  monthly: string;
-  availableRooms: string;
-}
-
-interface ImageFile {
-  id: number;
-  file: File;
-  preview: string;
-}
-
-interface FormData {
-  apartmentName: string;
-  contactNumber: string;
-  description: string;
-  location: string;
-  addressNumber: string;
-  soi: string;
-  street: string;
-  province: string;
-  district: string;
-  subdistrict: string;
-  postalCode: string;
-  electricityUnit: string;
-  waterUnit: string;
-  waterMinimum: string;
-  internetPrice: string;
-  internetFree: boolean;
-  images: ImageFile[];
-  roomTypes: RoomType[];
-  confirmed: boolean;
-}
+  Upload as UploadHooks,
+} from '@/features/G9-ApartmentListing/hooks/index';
 
 interface LocationData {
   [key: string]: {
@@ -57,31 +20,29 @@ interface LocationData {
 }
 
 export default function AddApartment(): React.ReactElement {
-  const navigate = useNavigate();
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const [showErrorPopup, setShowErrorPopup] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // API hooks
+  // Hooks for API calls
   const createApartmentMutation = APT.useCreateApartment();
-  const createRoomMutation = Room.useCreateRoom();
-  const uploadFileMutation = UploadHook.useUploadFile();
+  const uploadMultipleFilesMutation = UploadHooks.useUploadMultipleFiles();
 
   const locationData: LocationData = {
-    Asoke: {
+    asoke: {
       districts: ['Watthana'],
       subdistricts: {
         Watthana: ['Khlong Toei Nuea', 'Khlong Tan Nuea', 'Phra Khanong'],
       },
     },
-    Prachautit: {
+    prachauthit: {
       districts: ['Rat Burana'],
       subdistricts: {
         'Rat Burana': ['Rat Burana', 'Bang Pakok', 'Bang Mot'],
       },
     },
-    Phathumwan: {
+    phathumwan: {
       districts: ['Pathum Wan'],
       subdistricts: {
         'Pathum Wan': ['Rong Muang', 'Wang Mai', 'Pathum Wan', 'Lumphini'],
@@ -89,33 +50,43 @@ export default function AddApartment(): React.ReactElement {
     },
   };
 
+  // Create a custom form data interface since the actual Apartment type doesn't have all the form fields
+  interface FormData {
+    name: string;
+    phone: string;
+    description: string;
+    apartment_location: apartmentTypes.ApartmentLocation;
+    address_line: string;
+    province: string;
+    district: string;
+    subdistrict: string;
+    postal_code: string;
+    electric_price: number;
+    water_price: number;
+    internet_price: number;
+    internetFree: boolean;
+    roomTypes: string[];
+    confirmed: boolean;
+  }
+  // Separate state for images that will be uploaded
+  const [selectedImages, setSelectedImages] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+
   const [formData, setFormData] = useState<FormData>({
-    apartmentName: '',
-    contactNumber: '',
+    name: '',
+    phone: '',
     description: '',
-    location: '',
-    addressNumber: '',
-    soi: '',
-    street: '',
+    apartment_location: 'asoke',
+    address_line: '',
     province: '',
     district: '',
     subdistrict: '',
-    postalCode: '',
-    electricityUnit: '',
-    waterUnit: '',
-    waterMinimum: '',
-    internetPrice: '',
+    postal_code: '',
+    electric_price: 0,
+    water_price: 0,
+    internet_price: 0,
     internetFree: false,
-    images: [],
-    roomTypes: [
-      {
-        id: 1,
-        name: '',
-        size: '',
-        monthly: '',
-        availableRooms: '',
-      },
-    ],
+    roomTypes: [],
     confirmed: false,
   });
 
@@ -126,7 +97,7 @@ export default function AddApartment(): React.ReactElement {
     setFormData((prev) => {
       const updated = { ...prev, [field]: value } as FormData;
 
-      if (field === 'location') {
+      if (field === 'apartment_location') {
         updated.district = '';
         updated.subdistrict = '';
       }
@@ -143,7 +114,7 @@ export default function AddApartment(): React.ReactElement {
     const files = e.target.files;
     if (!files) return;
 
-    const currentImageCount = formData.images.length;
+    const currentImageCount = selectedImages.length;
     const remainingSlots = 5 - currentImageCount;
 
     if (remainingSlots <= 0) {
@@ -152,60 +123,41 @@ export default function AddApartment(): React.ReactElement {
       return;
     }
 
-    const newImages: ImageFile[] = [];
+    const newFiles: File[] = [];
+    const newPreviews: string[] = [];
     const filesToAdd = Math.min(files.length, remainingSlots);
 
     for (let i = 0; i < filesToAdd; i++) {
       const file = files[i];
       if (file.type.startsWith('image/')) {
         const preview = URL.createObjectURL(file);
-        newImages.push({
-          id: Date.now() + i,
-          file,
-          preview,
-        });
+        newFiles.push(file);
+        newPreviews.push(preview);
       }
     }
 
-    setFormData((prev) => ({
-      ...prev,
-      images: [...prev.images, ...newImages],
-    }));
+    setSelectedImages((prev) => [...prev, ...newFiles]);
+    setImagePreviews((prev) => [...prev, ...newPreviews]);
   };
 
-  const removeImage = (id: number): void => {
-    setFormData((prev) => ({
-      ...prev,
-      images: prev.images.filter((img) => img.id !== id),
-    }));
+  const removeImage = (index: number): void => {
+    // Clean up the blob URL to prevent memory leaks
+    URL.revokeObjectURL(imagePreviews[index]);
+
+    setSelectedImages((prev) => prev.filter((_, i) => i !== index));
+    setImagePreviews((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const handleRoomTypeChange = (
-    index: number,
-    field: Exclude<keyof RoomType, 'id'>,
-    value: string
-  ): void => {
+  const handleRoomTypeChange = (index: number, value: string): void => {
     const newRoomTypes = [...formData.roomTypes];
-    newRoomTypes[index] = {
-      ...newRoomTypes[index],
-      [field]: value,
-    } as RoomType;
+    newRoomTypes[index] = value;
     setFormData((prev) => ({ ...prev, roomTypes: newRoomTypes }));
   };
 
   const addRoomType = (): void => {
     setFormData((prev) => ({
       ...prev,
-      roomTypes: [
-        ...prev.roomTypes,
-        {
-          id: prev.roomTypes.length + 1,
-          name: '',
-          size: '',
-          monthly: '',
-          availableRooms: '',
-        },
-      ],
+      roomTypes: [...prev.roomTypes, ''],
     }));
   };
 
@@ -214,32 +166,30 @@ export default function AddApartment(): React.ReactElement {
 
     setFormData((prev) => ({
       ...prev,
-      roomTypes: prev.roomTypes
-        .filter((_, i) => i !== index)
-        .map((room, i) => ({ ...room, id: i + 1 })),
+      roomTypes: prev.roomTypes.filter((_, i) => i !== index),
     }));
   };
 
   const validateForm = (): boolean => {
     const requiredStringFields = [
-      formData.apartmentName,
-      formData.contactNumber,
+      formData.name,
+      formData.phone,
       formData.description,
-      formData.location,
-      formData.addressNumber,
+      formData.apartment_location,
+      formData.address_line,
       formData.province,
       formData.district,
       formData.subdistrict,
-      formData.postalCode,
-      formData.electricityUnit,
-      formData.internetFree ? 'free' : formData.internetPrice,
+      formData.postal_code,
+      formData.electric_price.toString(),
+      formData.internetFree ? 'free' : formData.internet_price.toString(),
     ];
 
-    const hasWaterPrice = !!(formData.waterUnit || formData.waterMinimum);
+    const hasWaterPrice = !!formData.water_price;
 
-    const roomTypesValid = formData.roomTypes.every(
-      (room) => room.name && room.size && room.monthly && room.availableRooms
-    );
+    const roomTypesValid =
+      formData.roomTypes.length > 0 &&
+      formData.roomTypes.every((roomType) => roomType.trim() !== '');
 
     return (
       requiredStringFields.every(
@@ -261,97 +211,80 @@ export default function AddApartment(): React.ReactElement {
     setIsSubmitting(true);
 
     try {
-      // Map location values to backend enum values
-      const locationMap: Record<
-        string,
-        'asoke' | 'prachauthit' | 'phathumwan'
-      > = {
-        Asoke: 'asoke',
-        Prachautit: 'prachauthit',
-        Phathumwan: 'phathumwan',
-      };
-
-      // Determine internet type
-      let internetType: 'free' | 'not_free' | 'none' = 'none';
-      if (formData.internetFree) {
-        internetType = 'free';
-      } else if (formData.internetPrice) {
-        internetType = 'not_free';
-      }
-
-      // Create apartment payload
-      const apartmentPayload = {
-        name: formData.apartmentName,
-        phone: formData.contactNumber,
+      // Prepare apartment data
+      const apartmentData: apartmentTypes.CreateApartmentPayload = {
+        name: formData.name,
+        phone: formData.phone,
         description: formData.description,
-        apartment_type: 'apartment' as const,
-        apartment_location: locationMap[formData.location] as
-          | 'asoke'
-          | 'prachauthit'
-          | 'phathumwan',
-        electric_price: parseFloat(formData.electricityUnit),
-        water_price: parseFloat(formData.waterUnit || formData.waterMinimum),
-        internet: internetType,
-        userId: 1, // Replace with actual user ID from auth context
+        apartment_type: 'apartment', // Default to apartment
+        apartment_location: formData.apartment_location,
+        electric_price: formData.electric_price,
+        water_price: formData.water_price,
+        internet: formData.internetFree ? 'free' : 'not_free',
+        internet_price: formData.internetFree ? null : formData.internet_price,
+        userId: 1, // TODO: Get from user context/auth
         address: {
-          address_line: [formData.addressNumber, formData.soi, formData.street]
-            .filter(Boolean)
-            .join(' '),
+          address_line: formData.address_line,
           province: formData.province,
           district: formData.district,
           subdistrict: formData.subdistrict,
-          postal_code: formData.postalCode,
+          postal_code: formData.postal_code,
         },
       };
+      console.log(apartmentData);
+      // Create the apartment first
+      const apartmentResult =
+        await createApartmentMutation.mutateAsync(apartmentData);
 
-      // Create apartment
-      const apartmentResponse =
-        await createApartmentMutation.mutateAsync(apartmentPayload);
+      // Extract apartment ID from the response
+      const apartmentId =
+        apartmentResult.data?.id || apartmentResult.data?.data?.id;
 
-      // Extract apartment ID from response
-      const newApartmentId =
-        (apartmentResponse as any)?.data?.id || (apartmentResponse as any)?.id;
-
-      if (!newApartmentId) {
+      if (!apartmentId) {
         throw new Error('Failed to get apartment ID from response');
       }
 
-      // Create rooms for this apartment
-      const roomPromises = formData.roomTypes.map((roomType) =>
-        createRoomMutation.mutateAsync({
-          apartmentId: newApartmentId,
-          data: {
-            name: roomType.name,
-            type: roomType.name,
-            size: roomType.size,
-            price_start: parseFloat(roomType.monthly),
-            price_end: parseFloat(roomType.monthly),
-          },
-        })
-      );
+      // Upload images if any are selected
+      if (selectedImages.length > 0) {
+        await uploadMultipleFilesMutation.mutateAsync({
+          apartmentId,
+          files: selectedImages,
+        });
+      }
 
-      await Promise.all(roomPromises);
-
-      // Upload images
-      const uploadPromises = formData.images.map((image) =>
-        uploadFileMutation.mutateAsync({
-          apartmentId: newApartmentId,
-          file: image.file,
-        })
-      );
-
-      await Promise.all(uploadPromises);
-
+      // Success - show popup and reset form
       setShowSuccessPopup(true);
-      // Reset form and navigate after success
-      setTimeout(() => {
-        navigate('/ApartmentHomepage');
-      }, 2000);
+
+      // Clean up image previews
+      imagePreviews.forEach((preview) => URL.revokeObjectURL(preview));
+
+      // Reset form
+      setFormData({
+        name: '',
+        phone: '',
+        description: '',
+        apartment_location: 'asoke',
+        address_line: '',
+        province: '',
+        district: '',
+        subdistrict: '',
+        postal_code: '',
+        electric_price: 0,
+        water_price: 0,
+        internet_price: 0,
+        internetFree: false,
+        roomTypes: [],
+        confirmed: false,
+      });
+      setSelectedImages([]);
+      setImagePreviews([]);
     } catch (error) {
-      console.error('Error submitting apartment:', error);
-      const errorMsg =
-        error instanceof Error ? error.message : 'Failed to create apartment';
-      setErrorMessage(errorMsg);
+      console.error('Error creating apartment:', error);
+      setErrorMessage(
+        error instanceof Error
+          ? `Failed to create apartment: ${error.message}`
+          : 'Failed to create apartment. Please try again.'
+      );
       setShowErrorPopup(true);
     } finally {
       setIsSubmitting(false);
@@ -359,19 +292,25 @@ export default function AddApartment(): React.ReactElement {
   };
 
   const getAvailableDistricts = (): string[] => {
-    if (!formData.location || !locationData[formData.location]) return [];
-    return locationData[formData.location].districts;
+    if (
+      !formData.apartment_location ||
+      !locationData[formData.apartment_location]
+    )
+      return [];
+    return locationData[formData.apartment_location].districts;
   };
 
   const getAvailableSubdistricts = (): string[] => {
     if (
-      !formData.location ||
+      !formData.apartment_location ||
       !formData.district ||
-      !locationData[formData.location]
+      !locationData[formData.apartment_location]
     )
       return [];
     return (
-      locationData[formData.location].subdistricts[formData.district] || []
+      locationData[formData.apartment_location].subdistricts[
+        formData.district
+      ] || []
     );
   };
 
@@ -381,7 +320,7 @@ export default function AddApartment(): React.ReactElement {
         <div className="mb-6 flex items-center gap-4">
           {/* Back Icon */}
           <button
-            onClick={() => navigate('/ApartmentHomepage')}
+            onClick={() => (window.location.href = '/ApartmentHomepage')}
             className="flex h-10 w-10 items-center justify-center rounded-full text-2xl hover:bg-gray-100"
           >
             <img src={BackIcon} alt="Backpage" />
@@ -394,10 +333,8 @@ export default function AddApartment(): React.ReactElement {
             <label className="mb-2 block font-semibold">Apartment Name</label>
             <input
               type="text"
-              value={formData.apartmentName}
-              onChange={(e) =>
-                handleInputChange('apartmentName', e.target.value)
-              }
+              value={formData.name}
+              onChange={(e) => handleInputChange('name', e.target.value)}
               className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none"
             />
           </div>
@@ -406,10 +343,8 @@ export default function AddApartment(): React.ReactElement {
             <label className="mb-2 block font-semibold">Contact Number</label>
             <input
               type="text"
-              value={formData.contactNumber}
-              onChange={(e) =>
-                handleInputChange('contactNumber', e.target.value)
-              }
+              value={formData.phone}
+              onChange={(e) => handleInputChange('phone', e.target.value)}
               className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none"
             />
           </div>
@@ -434,11 +369,11 @@ export default function AddApartment(): React.ReactElement {
               <label className="flex items-center gap-2">
                 <input
                   type="radio"
-                  name="location"
+                  name="apartment_location"
                   value="Asoke"
-                  checked={formData.location === 'Asoke'}
-                  onChange={(e) =>
-                    handleInputChange('location', e.target.value)
+                  checked={formData.apartment_location === 'asoke'}
+                  onChange={(_e) =>
+                    handleInputChange('apartment_location', 'asoke')
                   }
                   className="h-4 w-4"
                 />
@@ -447,11 +382,11 @@ export default function AddApartment(): React.ReactElement {
               <label className="flex items-center gap-2">
                 <input
                   type="radio"
-                  name="location"
+                  name="apartment_location"
                   value="Prachautit"
-                  checked={formData.location === 'Prachautit'}
-                  onChange={(e) =>
-                    handleInputChange('location', e.target.value)
+                  checked={formData.apartment_location === 'prachauthit'}
+                  onChange={(_e) =>
+                    handleInputChange('apartment_location', 'prachauthit')
                   }
                   className="h-4 w-4"
                 />
@@ -460,11 +395,11 @@ export default function AddApartment(): React.ReactElement {
               <label className="flex items-center gap-2">
                 <input
                   type="radio"
-                  name="location"
+                  name="apartment_location"
                   value="Phathumwan"
-                  checked={formData.location === 'Phathumwan'}
-                  onChange={(e) =>
-                    handleInputChange('location', e.target.value)
+                  checked={formData.apartment_location === 'phathumwan'}
+                  onChange={(_e) =>
+                    handleInputChange('apartment_location', 'phathumwan')
                   }
                   className="h-4 w-4"
                 />
@@ -477,34 +412,17 @@ export default function AddApartment(): React.ReactElement {
             <label className="mb-3 block font-semibold">
               Apartment Address
             </label>
-            <div className="mb-4 grid grid-cols-3 gap-4">
+            <div className="mb-4 grid grid-cols-1 gap-4">
               <div>
-                <label className="mb-1 block text-sm">Number</label>
+                <label className="mb-1 block text-sm">Address Line</label>
                 <input
                   type="text"
-                  value={formData.addressNumber}
+                  value={formData.address_line}
                   onChange={(e) =>
-                    handleInputChange('addressNumber', e.target.value)
+                    handleInputChange('address_line', e.target.value)
                   }
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm">Soi</label>
-                <input
-                  type="text"
-                  value={formData.soi}
-                  onChange={(e) => handleInputChange('soi', e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="mb-1 block text-sm">Street</label>
-                <input
-                  type="text"
-                  value={formData.street}
-                  onChange={(e) => handleInputChange('street', e.target.value)}
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                  placeholder="House number, street, etc."
                 />
               </div>
             </div>
@@ -530,7 +448,7 @@ export default function AddApartment(): React.ReactElement {
                     handleInputChange('district', e.target.value)
                   }
                   className="w-full rounded-lg border border-gray-300 px-3 py-2.5 focus:border-blue-500 focus:outline-none"
-                  disabled={!formData.location}
+                  disabled={!formData.apartment_location}
                 >
                   <option value="">Select</option>
                   {getAvailableDistricts().map((district) => (
@@ -562,9 +480,9 @@ export default function AddApartment(): React.ReactElement {
                 <label className="mb-1 block text-sm">Postal Code</label>
                 <input
                   type="text"
-                  value={formData.postalCode}
+                  value={formData.postal_code}
                   onChange={(e) =>
-                    handleInputChange('postalCode', e.target.value)
+                    handleInputChange('postal_code', e.target.value)
                   }
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
                 />
@@ -574,50 +492,60 @@ export default function AddApartment(): React.ReactElement {
 
           <div className="mb-6">
             <label className="mb-3 block font-semibold">
-              Electricity Price
+              Electricity Price (THB/unit)
             </label>
             <div className="flex items-center gap-2">
-              <span className="text-sm">unit used</span>
               <input
-                type="text"
-                value={formData.electricityUnit}
+                type="number"
+                value={formData.electric_price}
                 onChange={(e) =>
-                  handleInputChange('electricityUnit', e.target.value)
+                  handleInputChange(
+                    'electric_price',
+                    parseFloat(e.target.value) || 0
+                  )
                 }
                 className="w-32 rounded-lg border border-gray-300 px-3 py-2 text-center focus:border-blue-500 focus:outline-none"
+                min="0"
+                step="0.01"
               />
               <span className="text-sm">THB/unit</span>
             </div>
           </div>
 
           <div className="mb-6">
-            <label className="mb-3 block font-semibold">Water Price</label>
+            <label className="mb-3 block font-semibold">
+              Water Price (THB/unit)
+            </label>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                value={formData.water_price}
+                onChange={(e) =>
+                  handleInputChange(
+                    'water_price',
+                    parseFloat(e.target.value) || 0
+                  )
+                }
+                className="w-32 rounded-lg border border-gray-300 px-3 py-2 text-center focus:border-blue-500 focus:outline-none"
+                min="0"
+                step="0.01"
+              />
+              <span className="text-sm">THB/unit</span>
+            </div>
+            {/* Commented out complex water pricing that doesn't match the apartment type:
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
                 <span className="text-sm">unit used</span>
-                <input
-                  type="text"
-                  value={formData.waterUnit}
-                  onChange={(e) =>
-                    handleInputChange('waterUnit', e.target.value)
-                  }
-                  className="w-32 rounded-lg border border-gray-300 px-3 py-2 text-center focus:border-blue-500 focus:outline-none"
-                />
+                <input type="text" value={formData.waterUnit} />
                 <span className="text-sm">THB/unit</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-sm">Minimum</span>
-                <input
-                  type="text"
-                  value={formData.waterMinimum}
-                  onChange={(e) =>
-                    handleInputChange('waterMinimum', e.target.value)
-                  }
-                  className="w-32 rounded-lg border border-gray-300 px-3 py-2 text-center focus:border-blue-500 focus:outline-none"
-                />
+                <input type="text" value={formData.waterMinimum} />
                 <span className="text-sm">THB/unit</span>
               </div>
             </div>
+            */}
           </div>
 
           <div className="mb-6">
@@ -625,13 +553,18 @@ export default function AddApartment(): React.ReactElement {
             <div className="flex items-center gap-6">
               <div className="flex items-center gap-2">
                 <input
-                  type="text"
-                  value={formData.internetPrice}
+                  type="number"
+                  value={formData.internet_price}
                   onChange={(e) =>
-                    handleInputChange('internetPrice', e.target.value)
+                    handleInputChange(
+                      'internet_price',
+                      parseFloat(e.target.value) || 0
+                    )
                   }
                   disabled={formData.internetFree}
                   className="w-32 rounded-lg border border-gray-300 px-3 py-2 text-center focus:border-blue-500 focus:outline-none disabled:bg-gray-100"
+                  min="0"
+                  step="0.01"
                 />
                 <span className="text-sm">THB/Month</span>
               </div>
@@ -655,15 +588,15 @@ export default function AddApartment(): React.ReactElement {
             </label>
             <div className="space-y-4">
               <div className="flex flex-wrap gap-4">
-                {formData.images.map((image) => (
-                  <div key={image.id} className="relative h-32 w-32">
+                {imagePreviews.map((preview, index) => (
+                  <div key={index} className="relative h-32 w-32">
                     <img
-                      src={image.preview}
+                      src={preview}
                       alt="Preview"
                       className="h-full w-full rounded-lg object-cover"
                     />
                     <button
-                      onClick={() => removeImage(image.id)}
+                      onClick={() => removeImage(index)}
                       className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600"
                       type="button"
                     >
@@ -671,7 +604,7 @@ export default function AddApartment(): React.ReactElement {
                     </button>
                   </div>
                 ))}
-                {formData.images.length < 5 && (
+                {selectedImages.length < 5 && (
                   <label className="flex h-32 w-32 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-300 hover:border-gray-400">
                     <Upload className="h-8 w-8 text-gray-400" />
                     <span className="mt-2 text-sm text-gray-500">Upload</span>
@@ -686,7 +619,7 @@ export default function AddApartment(): React.ReactElement {
                 )}
               </div>
               <p className="text-sm text-gray-500">
-                {formData.images.length}/5 images uploaded
+                {selectedImages.length}/5 images uploaded
               </p>
             </div>
           </div>
@@ -695,11 +628,11 @@ export default function AddApartment(): React.ReactElement {
             <label className="mb-3 block font-semibold">Room Type</label>
             {formData.roomTypes.map((roomType, index) => (
               <div
-                key={roomType.id}
-                className="relative mb-6 rounded-lg border border-gray-200 p-4"
+                key={index}
+                className="relative mb-4 rounded-lg border border-gray-200 p-4"
               >
                 <div className="mb-3 flex items-center justify-between">
-                  <h3 className="font-semibold">Type {roomType.id}:</h3>
+                  <h3 className="font-semibold">Type {index + 1}:</h3>
                   {index > 0 && (
                     <button
                       onClick={() => removeRoomType(index)}
@@ -710,61 +643,17 @@ export default function AddApartment(): React.ReactElement {
                     </button>
                   )}
                 </div>
-                <div className="grid grid-cols-4 gap-4">
-                  <div>
-                    <label className="mb-1 block text-sm">Room type name</label>
-                    <input
-                      type="text"
-                      value={roomType.name}
-                      onChange={(e) =>
-                        handleRoomTypeChange(index, 'name', e.target.value)
-                      }
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-sm">Room size</label>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        value={roomType.size}
-                        onChange={(e) =>
-                          handleRoomTypeChange(index, 'size', e.target.value)
-                        }
-                        className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
-                      />
-                      <span className="text-sm">sq.m.</span>
-                    </div>
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-sm">Monthly</label>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        value={roomType.monthly}
-                        onChange={(e) =>
-                          handleRoomTypeChange(index, 'monthly', e.target.value)
-                        }
-                        className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
-                      />
-                      <span className="text-sm">THB/Month</span>
-                    </div>
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-sm">Available Room</label>
-                    <input
-                      type="number"
-                      value={roomType.availableRooms}
-                      onChange={(e) =>
-                        handleRoomTypeChange(
-                          index,
-                          'availableRooms',
-                          e.target.value
-                        )
-                      }
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
-                    />
-                  </div>
+                <div>
+                  <label className="mb-1 block text-sm">Room type name</label>
+                  <input
+                    type="text"
+                    value={roomType}
+                    onChange={(e) =>
+                      handleRoomTypeChange(index, e.target.value)
+                    }
+                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                    placeholder="e.g., Studio, 1 Bedroom, 2 Bedroom"
+                  />
                 </div>
               </div>
             ))}
@@ -797,8 +686,8 @@ export default function AddApartment(): React.ReactElement {
           <div className="flex justify-end">
             <button
               onClick={handleSubmit}
-              disabled={isSubmitting}
               type="button"
+              disabled={isSubmitting}
               className="rounded-lg bg-cyan-400 px-9 py-3 text-lg font-semibold text-white hover:bg-cyan-500 disabled:cursor-not-allowed disabled:bg-gray-400"
             >
               {isSubmitting ? 'Creating...' : 'Done'}

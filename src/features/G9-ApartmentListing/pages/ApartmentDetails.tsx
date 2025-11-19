@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useParams } from '@/router';
+import { useParams } from '@/router';
 import {
   APT,
   Room,
@@ -92,7 +92,9 @@ export default function ApartmentDetailPage() {
     reviews: ratingArray.map((rating) => ({
       id: rating.id,
       author: `User ${rating.userId}`, // TODO: Join with user table for actual names
-      date: new Date(rating.createdAt).toLocaleDateString(),
+      date: rating.createdAt
+        ? new Date(rating.createdAt).toLocaleDateString()
+        : new Date().toLocaleDateString(),
       rating: rating.rating,
       comment: rating.comment,
       avatar: '👤',
@@ -452,24 +454,26 @@ export default function ApartmentDetailPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {apartment.roomTypes.map((room, index) => (
-                      <tr key={index} className="border-b last:border-b-0">
-                        <td className="py-3">{room.type}</td>
-                        <td className="py-3">{room.size}</td>
-                        <td className="py-3">{room.price}</td>
-                        <td className="py-3">
-                          <span
-                            className={`rounded-md px-3 py-1 text-xs font-semibold ${
-                              room.status === 'Available'
-                                ? 'bg-green-500 text-white'
-                                : 'bg-red-500 text-white'
-                            }`}
-                          >
-                            {room.status}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
+                    {apartment.roomTypes.map((room, index) => {
+                      return (
+                        <tr key={index} className="border-b last:border-b-0">
+                          <td className="py-3">{room.type}</td>
+                          <td className="py-3">{room.size}</td>
+                          <td className="py-3">{room.price}</td>
+                          <td className="py-3">
+                            <span
+                              className={`rounded-md px-3 py-1 text-xs font-semibold ${
+                                room.status === 'Available'
+                                  ? 'bg-green-500 text-white'
+                                  : 'bg-red-500 text-white'
+                              }`}
+                            >
+                              {room.status}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -484,12 +488,14 @@ export default function ApartmentDetailPage() {
             </div>
 
             {/* Book now */}
-            <Link
-              to="/ApartmentBooking"
+            <button
+              onClick={() => {
+                window.location.href = `/ApartmentBooking?apartmentId=${apartment.id}`;
+              }}
               className="flex w-full items-center justify-center rounded-lg bg-cyan-400 py-4 text-xl font-bold text-white hover:bg-cyan-500"
             >
               Book now !
-            </Link>
+            </button>
           </div>
         </div>
       </div>
