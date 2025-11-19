@@ -10,25 +10,23 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { QrCode } from 'lucide-react';
+import { QrCode, Wallet } from 'lucide-react';
 
 interface TopUpModalProps {
-  isOpen: boolean;
-  onClose: () => void;
   wallet: any; // Using any for now to match existing loose typing, ideally should be typed
   userId: string;
   onSuccess: () => void;
 }
 
 export default function TopUpModal({
-  isOpen,
-  onClose,
   wallet,
   userId,
   onSuccess,
 }: TopUpModalProps) {
+  const [open, setOpen] = useState(false);
   const [qrRawData, setQrRawData] = useState('');
   const [topUpAmount, setTopUpAmount] = useState('');
 
@@ -51,10 +49,9 @@ export default function TopUpModal({
         walletId: wallet.id,
         data: { amount: Number(topUpAmount) },
       });
-      setQrRawData('');
-      setTopUpAmount('');
+      resetState();
       toast.success('Top-up successful!');
-      onClose();
+      setOpen(false);
     } catch (_error) {
       toast.error('Top-up failed');
     }
@@ -90,12 +87,21 @@ export default function TopUpModal({
 
   return (
     <Dialog
-      open={isOpen}
-      onOpenChange={(open) => {
-        if (!open) resetState();
-        onClose();
+      open={open}
+      onOpenChange={(isOpen) => {
+        setOpen(isOpen);
+        if (!isOpen) resetState();
       }}
     >
+      <DialogTrigger asChild>
+        <Button
+          className="flex-1 gap-2 bg-cyan-400 hover:bg-cyan-500"
+          size="lg"
+        >
+          <Wallet className="h-5 w-5" />
+          Top-up & Pay
+        </Button>
+      </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -123,14 +129,9 @@ export default function TopUpModal({
               This is a real QR code for payment. However, payment confirmation
               is not implemented yet, so you can only simulate the payment.
             </p>
-            <div className="flex gap-2">
-              <Button onClick={handleTopUp} className="flex-1">
-                Simulate Payment
-              </Button>
-              <Button onClick={resetState} variant="outline">
-                Cancel
-              </Button>
-            </div>
+            <Button onClick={handleTopUp} className="w-full">
+              Simulate Payment
+            </Button>
           </div>
         ) : (
           <div className="space-y-4">

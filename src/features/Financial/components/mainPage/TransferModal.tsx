@@ -11,25 +11,23 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { ArrowLeftRight } from 'lucide-react';
 
 interface TransferModalProps {
-  isOpen: boolean;
-  onClose: () => void;
   wallet: any;
   userId: string;
   onSuccess: () => void;
 }
 
 export default function TransferModal({
-  isOpen,
-  onClose,
   wallet,
   userId,
   onSuccess,
 }: TransferModalProps) {
+  const [open, setOpen] = useState(false);
   const [transferToUserId, setTransferToUserId] = useState('');
   const [transferAmount, setTransferAmount] = useState('');
 
@@ -74,26 +72,36 @@ export default function TransferModal({
           amount: Number(transferAmount),
         },
       });
-      setTransferToUserId('');
-      setTransferAmount('');
+      resetState();
       toast.success('Transfer successful!');
-      onClose();
+      setOpen(false);
     } catch (_error) {
       toast.error('Transfer failed');
     }
   };
 
+  const resetState = () => {
+    setTransferToUserId('');
+    setTransferAmount('');
+  };
+
   return (
     <Dialog
-      open={isOpen}
-      onOpenChange={(open) => {
-        if (!open) {
-          setTransferToUserId('');
-          setTransferAmount('');
-        }
-        onClose();
+      open={open}
+      onOpenChange={(isOpen) => {
+        setOpen(isOpen);
+        if (!isOpen) resetState();
       }}
     >
+      <DialogTrigger asChild>
+        <Button
+          className="flex-1 gap-2 bg-green-500 hover:bg-green-600"
+          size="lg"
+        >
+          <ArrowLeftRight className="h-5 w-5" />
+          Transfer
+        </Button>
+      </DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">

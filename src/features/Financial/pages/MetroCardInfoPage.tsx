@@ -47,7 +47,7 @@ export default function MetroCardInfoPage() {
                 user_id,
               },
             }),
-          3000
+          1000
         );
       },
       onError: (error: AxiosError<DeleteMetroCardsMetroCardId404Error>) => {
