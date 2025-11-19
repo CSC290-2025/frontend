@@ -1,4 +1,5 @@
 // Generouted, changes to this file will be overridden
+ 
 
 import { components, hooks, utils } from '@generouted/react-router/client';
 
@@ -7,21 +8,26 @@ export type Path =
   | `/Know-AI/:course`
   | `/Know-AI/:course/:id`
   | `/Know-AI/createCourse`
+  | `/Know-AI/exercises`
+  | `/Know-AI/exercises/:level/:question`
   | `/dashboard`
   | `/district-detail/:district`
   | `/district-selection`
   | `/example`
   | `/example/:id`
   | `/healthcare`
+  | `/login`
   | `/power-bi`
   | `/power-bi/:type/:category`
   | `/power-bi/:type/:category/:id`
   | `/power-bi/create`
-  | `/power-bi/edit/:id`;
+  | `/power-bi/edit/:id`
+  | `/register`;
 
 export type Params = {
   '/Know-AI/:course': { course: string };
   '/Know-AI/:course/:id': { course: string; id: string };
+  '/Know-AI/exercises/:level/:question': { level: string; question: string };
   '/district-detail/:district': { district: string };
   '/example/:id': { id: string };
   '/power-bi/:type/:category': { type: string; category: string };
