@@ -7,7 +7,14 @@ export function useApartment(id: number) {
   return useQuery({
     queryKey: ['apartment', id],
     queryFn: () => APTapi.fetchApartmentById(id),
-    select: (data) => data.data, // Extract just the data from AxiosResponse
+    select: (response) => {
+      // Handle the API response structure: { success: true, data: {...}, timestamp: "..." }
+      if (response.data && response.data.data) {
+        return response.data.data;
+      }
+      // Fallback to response.data if it's the direct data
+      return response.data;
+    },
     enabled: !!id,
   });
 }
