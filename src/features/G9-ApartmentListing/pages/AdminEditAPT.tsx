@@ -178,7 +178,7 @@ export default function EditApartment(): React.ReactElement {
   // Load existing rooms into form
   useEffect(() => {
     if (existingRoomsData) {
-      const rooms = existingRoomsData || [];
+      const rooms = existingRoomsData;
       console.log('Processing rooms:', rooms);
 
       if (rooms.length === 0) {
