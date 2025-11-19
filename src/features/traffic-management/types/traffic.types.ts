@@ -43,6 +43,7 @@ export interface trafficLight {
   ip_address: string;
   location: Coordinates;
   status: number;
+  statusLabel?: string;
   current_color: number;
   density_level: number;
   auto_mode: boolean;

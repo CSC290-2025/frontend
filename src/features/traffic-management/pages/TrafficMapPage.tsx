@@ -12,6 +12,8 @@ import ControlPanel from '../components/ControlPanel';
 import LocationInput from '../components/LocationInput';
 import MapSettingsDialog from '../components/MapSettingsDialog';
 import TrafficLightsList from '../components/TrafficLightsList';
+import { getTrafficLightsByStatus } from '../api/traffic-feature.api';
+import type { trafficLight } from '../types/traffic.types';
 
 interface TrafficLight {
   color: 'red' | 'yellow' | 'green';
@@ -244,6 +246,53 @@ function TrafficSignalMarker({
   );
 }
 
+interface BrokenLightMarkerProps {
+  light: trafficLight;
+}
+
+function BrokenLightMarker({ light }: BrokenLightMarkerProps) {
+  if (!light.location?.coordinates || light.location.coordinates.length !== 2) {
+    return null;
+  }
+
+  const [lng, lat] = light.location.coordinates;
+
+  return (
+    <AdvancedMarker
+      position={{ lat, lng }}
+      title={`Broken Light | ID: ${light.id} | Intersection: ${light.intersection_id}`}
+    >
+      <div className="flex cursor-pointer flex-col items-center">
+        <div
+          className="flex items-center justify-center rounded-full border-4 border-white shadow-lg"
+          style={{
+            backgroundColor: '#6b7280', // gray-500
+            width: '48px',
+            height: '48px',
+          }}
+        >
+          <span className="text-5xl text-amber-300">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              className="icon icon-tabler icons-tabler-filled icon-tabler-alert-triangle"
+            >
+              <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+              <path d="M12 1.67c.955 0 1.845 .467 2.39 1.247l.105 .16l8.114 13.548a2.914 2.914 0 0 1 -2.307 4.363l-.195 .008h-16.225a2.914 2.914 0 0 1 -2.582 -4.2l.099 -.185l8.11 -13.538a2.914 2.914 0 0 1 2.491 -1.403zm.01 13.33l-.127 .007a1 1 0 0 0 0 1.986l.117 .007l.127 -.007a1 1 0 0 0 0 -1.986l-.117 -.007zm-.01 -7a1 1 0 0 0 -.993 .883l-.007 .117v4l.007 .117a1 1 0 0 0 1.986 0l.007 -.117v-4l-.007 -.117a1 1 0 0 0 -.993 -.883z" />
+            </svg>
+          </span>
+        </div>
+        <div className="mt-1 rounded bg-gray-600 px-2 py-1 text-xs font-semibold text-white shadow-md">
+          BROKEN
+        </div>
+      </div>
+    </AdvancedMarker>
+  );
+}
+
 interface MapContentProps {
   settings: MapSettings;
   userLocation: { lat: number; lng: number } | null;
@@ -261,6 +310,7 @@ function MapContent({
   const { signals, loading, error } = useTeam10TrafficSignals(
     settings.refreshRate
   );
+  const [brokenLights, setBrokenLights] = useState<trafficLight[]>([]);
   const [trafficLayer, setTrafficLayer] =
     useState<google.maps.TrafficLayer | null>(null);
   const [transitLayer, setTransitLayer] =
@@ -271,6 +321,20 @@ function MapContent({
   const markersMapRef = useRef<{
     [key: string]: google.maps.marker.AdvancedMarkerElement;
   }>({});
+
+  // Fetch broken traffic lights on mount
+  useEffect(() => {
+    const fetchBrokenLights = async () => {
+      try {
+        const broken = await getTrafficLightsByStatus('broken');
+        setBrokenLights(broken);
+      } catch (err) {
+        console.error('Failed to fetch broken traffic lights:', err);
+      }
+    };
+
+    fetchBrokenLights();
+  }, []);
 
   const visibleSignals = useMemo(() => {
     if (!userLocation || settings.visibilityRange === 0) {
@@ -441,6 +505,10 @@ function MapContent({
         />
       ))}
 
+      {brokenLights.map((light) => (
+        <BrokenLightMarker key={`broken-${light.id}`} light={light} />
+      ))}
+
       <div className="absolute bottom-4 left-4 rounded-lg bg-white px-4 py-2 shadow-lg">
         <p className="text-sm font-semibold text-gray-800">
           {visibleSignals.filter((s) => s.online).length} Active Signals
@@ -448,6 +516,12 @@ function MapContent({
         <p className="text-xs text-gray-600">
           {new Set(visibleSignals.map((s) => s.junctionId)).size} Junctions
         </p>
+        {brokenLights.length > 0 && (
+          <p className="mt-1 text-xs text-red-600">
+            {brokenLights.length} Broken Light
+            {brokenLights.length !== 1 ? 's' : ''}
+          </p>
+        )}
         {settings.visibilityRange > 0 && userLocation && (
           <p className="mt-1 text-xs text-gray-500">
             Within {settings.visibilityRange}m

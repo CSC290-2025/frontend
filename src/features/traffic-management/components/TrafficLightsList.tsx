@@ -7,6 +7,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { SearchIcon, Navigation2Icon, CircleIcon } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { getTrafficLights } from '../api/traffic-feature.api';
+import type { trafficLight } from '../types/traffic.types';
 
 interface TrafficLight {
   color: 'red' | 'yellow' | 'green';
@@ -20,6 +22,7 @@ interface TrafficLight {
 
 interface SignalWithMeta extends TrafficLight {
   junctionId: string;
+  source?: 'firebase' | 'api';
 }
 
 function parseCoordinate(value: any): number | null {
@@ -52,11 +55,67 @@ export default function TrafficLightsList({
 }: TrafficLightsListProps) {
   const [signals, setSignals] = useState<SignalWithMeta[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  // Helper function to convert API traffic light to SignalWithMeta format
+  const convertApiTrafficLight = (
+    light: trafficLight
+  ): SignalWithMeta | null => {
+    if (
+      !light.location?.coordinates ||
+      light.location.coordinates.length !== 2
+    ) {
+      return null;
+    }
+
+    const [lng, lat] = light.location.coordinates;
+
+    // Map current_color (0=red, 1=yellow, 2=green) to color string
+    const colorMap: { [key: number]: 'red' | 'yellow' | 'green' } = {
+      0: 'red',
+      1: 'yellow',
+      2: 'green',
+    };
+
+    return {
+      color: colorMap[light.current_color] || 'red',
+      direction: `Light ${light.id}`,
+      lat,
+      lng,
+      online: light.status === 1, // Assuming status 1 means online
+      remainingTime: light.green_duration || 0,
+      timestamp: new Date(light.last_updated).getTime(),
+      junctionId: `Intersection-${light.intersection_id}`,
+      source: 'api',
+    };
+  };
 
   useEffect(() => {
-    const team10Ref = ref(database, 'teams/10/junctions');
+    setLoading(true);
+    let firebaseSignals: SignalWithMeta[] = [];
+    let apiSignals: SignalWithMeta[] = [];
 
+    // Fetch from REST API
+    const fetchApiData = async () => {
+      try {
+        const response = await getTrafficLights();
+        if (response.success && response.data?.trafficLights) {
+          apiSignals = response.data.trafficLights
+            .map(convertApiTrafficLight)
+            .filter((signal): signal is SignalWithMeta => signal !== null);
+
+          // Merge with Firebase signals
+          setSignals([...firebaseSignals, ...apiSignals]);
+        }
+      } catch (err) {
+        console.error('Failed to fetch traffic lights from API:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    // Subscribe to Firebase
+    const team10Ref = ref(database, 'teams/10/junctions');
     const unsubscribe = onValue(
       team10Ref,
       (snapshot) => {
@@ -64,56 +123,59 @@ export default function TrafficLightsList({
           const data = snapshot.val();
 
           if (!data) {
-            setSignals([]);
-            setLoading(false);
-            return;
-          }
+            firebaseSignals = [];
+          } else {
+            const allSignals: SignalWithMeta[] = [];
 
-          const allSignals: SignalWithMeta[] = [];
+            Object.entries(data).forEach(
+              ([junctionId, junctionData]: [string, any]) => {
+                if (junctionData?.lights) {
+                  Object.entries(junctionData.lights).forEach(
+                    ([lightKey, light]: [string, any]) => {
+                      if (
+                        light &&
+                        typeof light === 'object' &&
+                        isValidSignal(light)
+                      ) {
+                        const lat = parseCoordinate(light.lat);
+                        const lng = parseCoordinate(light.lng);
 
-          Object.entries(data).forEach(
-            ([junctionId, junctionData]: [string, any]) => {
-              if (junctionData?.lights) {
-                Object.entries(junctionData.lights).forEach(
-                  ([lightKey, light]: [string, any]) => {
-                    if (
-                      light &&
-                      typeof light === 'object' &&
-                      isValidSignal(light)
-                    ) {
-                      const lat = parseCoordinate(light.lat);
-                      const lng = parseCoordinate(light.lng);
-
-                      if (lat !== null && lng !== null) {
-                        allSignals.push({
-                          color: light.color || 'red',
-                          direction: light.direction || lightKey,
-                          lat,
-                          lng,
-                          online: light.online ?? true,
-                          remainingTime: parseInt(light.remainingTime) || 0,
-                          timestamp: light.timestamp || Date.now(),
-                          junctionId,
-                        });
+                        if (lat !== null && lng !== null) {
+                          allSignals.push({
+                            color: light.color || 'red',
+                            direction: light.direction || lightKey,
+                            lat,
+                            lng,
+                            online: light.online ?? true,
+                            remainingTime: parseInt(light.remainingTime) || 0,
+                            timestamp: light.timestamp || Date.now(),
+                            junctionId,
+                            source: 'firebase',
+                          });
+                        }
                       }
                     }
-                  }
-                );
+                  );
+                }
               }
-            }
-          );
+            );
 
-          setSignals(allSignals);
+            firebaseSignals = allSignals;
+          }
+
+          // Merge with API signals
+          setSignals([...firebaseSignals, ...apiSignals]);
         } catch (err) {
-          // Handle error silently
-        } finally {
-          setLoading(false);
+          console.error('Firebase error:', err);
         }
       },
       (err) => {
-        setLoading(false);
+        console.error('Firebase subscription error:', err);
       }
     );
+
+    // Fetch API data
+    fetchApiData();
 
     return () => {
       off(team10Ref);
