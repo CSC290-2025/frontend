@@ -23,7 +23,7 @@ import { ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import ServiceSelector, {
   type ServiceType as TopUpType,
-} from '../components/mainPage/ServiceSelector';
+} from '../components/topup/ServiceSelector';
 
 export default function TopupPage() {
   const navigate = useNavigate();

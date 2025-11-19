@@ -1,38 +1,31 @@
 import { useState } from 'react';
-import { QRCodeSVG } from 'qrcode.react';
 import {
   useGetWalletsUserUserId,
   usePostWallets,
   usePutWalletsWalletId,
-  usePostWalletsWalletIdTopUp,
-  usePostWalletsTransfer,
 } from '@/api/generated/wallets';
-import { usePostScbQrCreate } from '@/api/generated/scb';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Wallet, ArrowLeftRight, QrCode } from 'lucide-react';
+import { Wallet, ArrowLeftRight } from 'lucide-react';
 import AmountBox from '../components/metro-cards/AmountBox';
 import ServiceNavigator from '../components/mainPage/ServiceNavigator';
 import TransactionHistory from '../components/mainPage/TransactionHistory';
-import { toast } from 'sonner';
+import TopUpModal from '../components/mainPage/TopUpModal';
+import TransferModal from '../components/mainPage/TransferModal';
 
 export default function FinancialPage() {
   const [userId, setUserId] = useState('1');
   const [loadedUserId, setLoadedUserId] = useState<number | null>(null);
   const [editingOrgType, setEditingOrgType] = useState(false);
   const [newOrgType, setNewOrgType] = useState('');
-  const [qrRawData, setQrRawData] = useState('');
-  const [topUpAmount, setTopUpAmount] = useState('');
-  const [transferToUserId, setTransferToUserId] = useState('');
-  const [transferAmount, setTransferAmount] = useState('');
+
+  // Modal states
+  const [isTopUpOpen, setIsTopUpOpen] = useState(false);
+  const [isTransferOpen, setIsTransferOpen] = useState(false);
 
   const { data: wallets, refetch } = useGetWalletsUserUserId(Number(userId));
-  const { data: recipientWalletResponse } = useGetWalletsUserUserId(
-    transferToUserId ? Number(transferToUserId) : undefined
-  );
-  const recipientWallet = recipientWalletResponse?.data?.data?.wallet;
   const { mutateAsync: createWallet } = usePostWallets({
     mutation: {
       onSuccess: () => refetch(),
@@ -43,76 +36,9 @@ export default function FinancialPage() {
       onSuccess: () => refetch(),
     },
   });
-  const { mutateAsync: topUpWallet } = usePostWalletsWalletIdTopUp({
-    mutation: {
-      onSuccess: () => refetch(),
-    },
-  });
-  const { mutateAsync: generateQR } = usePostScbQrCreate();
-  const { mutateAsync: transferFunds } = usePostWalletsTransfer({
-    mutation: {
-      onSuccess: () => refetch(),
-    },
-  });
 
   const wallet = wallets?.data?.data?.wallet;
   const isOrg = wallet?.wallet_type === 'organization';
-
-  const handleTopUp = async () => {
-    if (!topUpAmount || Number(topUpAmount) <= 0) {
-      toast.error('Please enter a valid amount');
-      return;
-    }
-    try {
-      await topUpWallet({
-        walletId: wallet!.id,
-        data: { amount: Number(topUpAmount) },
-      });
-      setQrRawData('');
-      setTopUpAmount('');
-      toast.success('Top-up successful!');
-      refetch();
-    } catch (_error) {
-      toast.error('Top-up failed');
-    }
-  };
-
-  const handleTransfer = async () => {
-    const validations: [boolean, string][] = [
-      [
-        Number(userId) === Number(transferToUserId),
-        'Cannot transfer to yourself',
-      ],
-      [(wallet?.balance ?? 0) < Number(transferAmount), 'Insufficient funds'],
-      [wallet?.status !== 'active', 'Your wallet must be active'],
-      [!transferToUserId, 'Please enter a recipient user ID'],
-      [!recipientWallet, 'Recipient wallet not found'],
-      [recipientWallet?.status !== 'active', 'Recipient wallet must be active'],
-    ];
-
-    for (const [condition, errorMessage] of validations) {
-      if (condition) {
-        toast.error(errorMessage);
-        return;
-      }
-    }
-
-    try {
-      await transferFunds({
-        data: {
-          from_user_id: Number(loadedUserId || userId),
-          to_user_id: Number(transferToUserId),
-          amount: Number(transferAmount),
-        },
-      });
-      setTransferToUserId('');
-      setTransferAmount('');
-      toast.success('Transfer successful!');
-      refetch();
-    } catch (_error) {
-      toast.error('Transfer failed');
-    }
-  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -198,6 +124,27 @@ export default function FinancialPage() {
                   onRefetch={refetch}
                   isLoading={false}
                 />
+
+                {/* Action Buttons */}
+                <div className="mt-6 flex gap-4">
+                  <Button
+                    onClick={() => setIsTransferOpen(true)}
+                    className="flex-1 gap-2"
+                    size="lg"
+                  >
+                    <ArrowLeftRight className="h-5 w-5" />
+                    Transfer
+                  </Button>
+
+                  <Button
+                    onClick={() => setIsTopUpOpen(true)}
+                    className="flex-1 gap-2"
+                    size="lg"
+                  >
+                    <Wallet className="h-5 w-5" />
+                    Top-up & Pay
+                  </Button>
+                </div>
               </div>
 
               {/* Right Column: Services and History */}
@@ -206,51 +153,6 @@ export default function FinancialPage() {
                 <TransactionHistory />
               </div>
             </div>
-
-            {/* Transfer Card */}
-            <Card>
-              <CardContent className="p-6">
-                <div className="mb-4 flex items-center gap-2">
-                  <ArrowLeftRight className="h-5 w-5 text-purple-600" />
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    Transfer Funds
-                  </h3>
-                </div>
-                <p className="mb-4 text-sm text-gray-600">
-                  Send money to another user&apos;s wallet
-                </p>
-
-                <div className="space-y-4">
-                  <div>
-                    <Label>Recipient User ID</Label>
-                    <Input
-                      type="number"
-                      placeholder="Enter user ID"
-                      value={transferToUserId}
-                      onChange={(e) => setTransferToUserId(e.target.value)}
-                    />
-                  </div>
-
-                  <div>
-                    <Label>Amount</Label>
-                    <Input
-                      type="number"
-                      placeholder="Enter amount to transfer"
-                      value={transferAmount}
-                      onChange={(e) => setTransferAmount(e.target.value)}
-                    />
-                  </div>
-
-                  <Button
-                    onClick={handleTransfer}
-                    disabled={!transferToUserId || !transferAmount}
-                    className="w-full"
-                  >
-                    Transfer
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
 
             {/* Wallet Management */}
             <Card className="mb-6">
@@ -372,90 +274,21 @@ export default function FinancialPage() {
               </CardContent>
             </Card>
 
-            {/* Top Up Card */}
-            <Card className="mb-6">
-              <CardContent className="p-6">
-                <div className="mb-4 flex items-center gap-2">
-                  <QrCode className="h-5 w-5 text-blue-600" />
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    Top Up Wallet
-                  </h3>
-                </div>
-                <p className="mb-4 text-sm text-gray-600">
-                  Add funds to your wallet using QR code payment
-                </p>
-
-                {qrRawData ? (
-                  <div className="space-y-4">
-                    <div className="flex justify-center rounded-lg border-2 border-dashed border-gray-300 p-4">
-                      <QRCodeSVG value={qrRawData} size={200} />
-                    </div>
-                    <div className="rounded-lg bg-blue-50 p-4">
-                      <div className="text-sm text-gray-600">Amount</div>
-                      <div className="text-2xl font-bold text-gray-900">
-                        ${topUpAmount}
-                      </div>
-                    </div>
-                    <p className="text-sm text-gray-600">
-                      This is a real QR code for payment. However, payment
-                      confirmation is not implemented yet, so you can only
-                      simulate the payment.
-                    </p>
-                    <div className="flex gap-2">
-                      <Button onClick={handleTopUp} className="flex-1">
-                        Simulate Payment
-                      </Button>
-                      <Button
-                        onClick={() => {
-                          setQrRawData('');
-                          setTopUpAmount('');
-                        }}
-                        variant="outline"
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    <div>
-                      <Label>Amount</Label>
-                      <Input
-                        type="number"
-                        placeholder="Enter amount"
-                        value={topUpAmount}
-                        onChange={(e) => setTopUpAmount(e.target.value)}
-                      />
-                    </div>
-                    <Button
-                      onClick={async () => {
-                        if (!topUpAmount || Number(topUpAmount) <= 0) {
-                          toast.error('Please enter a valid amount');
-                          return;
-                        }
-                        // HEAD Logic: parsing the OpenAPI response structure
-                        const response = await generateQR({
-                          data: {
-                            amount: topUpAmount,
-                            user_id: Number(userId),
-                          },
-                        });
-                        const qrData = (
-                          response.data.data as unknown as {
-                            qrResponse: { qrRawData: string };
-                          }
-                        ).qrResponse.qrRawData;
-                        setQrRawData(qrData);
-                      }}
-                      disabled={!topUpAmount}
-                      className="w-full"
-                    >
-                      Generate QR Code
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+            {/* Modals */}
+            <TopUpModal
+              isOpen={isTopUpOpen}
+              onClose={() => setIsTopUpOpen(false)}
+              wallet={wallet}
+              userId={userId}
+              onSuccess={refetch}
+            />
+            <TransferModal
+              isOpen={isTransferOpen}
+              onClose={() => setIsTransferOpen(false)}
+              wallet={wallet}
+              userId={userId}
+              onSuccess={refetch}
+            />
           </>
         )}
       </div>

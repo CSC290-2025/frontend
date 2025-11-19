@@ -4,7 +4,7 @@ import {
 } from '@/api/generated/metro-cards';
 import { useParams } from '@/router';
 import AmountBox from '../components/metro-cards/AmountBox';
-import { Plus } from 'lucide-react';
+import { ArrowLeft, Plus } from 'lucide-react';
 import Loading from '../components/metro-cards/Loading';
 import ReuseableButton from '../components/metro-cards/ReuseableButton';
 import EmptyCard from '../components/metro-cards/EmptyCard';
@@ -15,8 +15,12 @@ import type {
   PostMetroCards409Error,
 } from '@/api/generated/model';
 import type { AxiosError } from 'axios';
+import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router';
 
 export default function MetroCardPage() {
+  const navigate = useNavigate();
+
   const { user_id } = useParams('/financial/metro/:user_id');
 
   const {
@@ -51,13 +55,23 @@ export default function MetroCardPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">
-            Metro Card Wallet
-          </h1>
-          <p className="mt-1 text-gray-600">
-            Manage your metro cards and check balances
-          </p>
+        <div className="flex justify-between">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900">
+              Metro Card Wallet
+            </h1>
+            <p className="mt-1 text-gray-600">
+              Manage your metro cards and check balances
+            </p>
+          </div>
+          <Button
+            variant="ghost"
+            onClick={() => navigate('/financial')}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Dashboard
+          </Button>
         </div>
         <AmountBox
           balance={

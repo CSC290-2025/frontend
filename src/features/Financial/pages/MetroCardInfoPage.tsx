@@ -99,7 +99,7 @@ export default function MetroCardInfoPage() {
           className="mb-6"
         >
           <ArrowLeft className="h-4 w-4" />
-          Back to Home
+          Back to Your Cards
         </Button>
         <Card>
           <CardHeader>
