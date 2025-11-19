@@ -1,4 +1,5 @@
 import { setOptions, importLibrary } from '@googlemaps/js-api-loader';
+
 import config from './env';
 
 setOptions({ key: config.GOOGLE_MAPS_API_KEY });
@@ -6,7 +7,10 @@ setOptions({ key: config.GOOGLE_MAPS_API_KEY });
 type MapInit = {
   mapEl: HTMLElement;
   mapOptions: google.maps.MapOptions;
-  markerOptions?: google.maps.marker.AdvancedMarkerElementOptions[];
+  markerOptions?: {
+    position: google.maps.LatLngLiteral;
+    title: string;
+  }[];
 };
 
 const initMapAndMarkers = async ({
@@ -22,10 +26,27 @@ const initMapAndMarkers = async ({
 
     const map = new Map(mapEl, mapOptions);
 
-    markerOptions.forEach((options) => {
-      new AdvancedMarkerElement({
-        ...options,
+    // create info window
+    const infoWindow = new google.maps.InfoWindow();
+
+    markerOptions.forEach((opt) => {
+      const marker = new AdvancedMarkerElement({
+        position: opt.position,
+        title: opt.title,
         map: map,
+      });
+
+      // when click marker show popup
+      marker.addListener('click', () => {
+        infoWindow.close();
+        infoWindow.setContent(`
+          <div style="min-width:180px">
+            <strong>${opt.title}</strong><br />
+            Lat: ${opt.position.lat}<br />
+            Lng: ${opt.position.lng}
+          </div>
+        `);
+        infoWindow.open(map, marker);
       });
     });
 
@@ -35,4 +56,5 @@ const initMapAndMarkers = async ({
     throw error;
   }
 };
+
 export default initMapAndMarkers;
