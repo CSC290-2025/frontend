@@ -85,7 +85,10 @@ export default function ApartmentDetailPage() {
     roomTypes: roomArray.map((room) => ({
       type: room.type,
       size: room.size,
-      price: `${room.price_start}-${room.price_end} THB`,
+      price:
+        room.price_start === room.price_end
+          ? `${room.price_start} THB`
+          : `${room.price_start}-${room.price_end} THB`,
       status: room.room_status === 'available' ? 'Available' : 'Unavailable',
     })),
     nearbyPlaces: [], // TODO: Add nearby places API
