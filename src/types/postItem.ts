@@ -30,6 +30,7 @@ export interface ApiPost {
   created_at: string;
   updated_at: string;
   categories?: Category[];
+  donater_id: number | null;
 }
 
 // Helper: map ApiPost -> PostItem (same mapping used in DiscoverPage)

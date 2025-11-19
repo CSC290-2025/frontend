@@ -23,15 +23,31 @@ export default function FreecycleHomepage() {
   const [currentPage, setCurrentPage] = useState<Page>('home');
   const [searchQuery] = useState('');
 
+  const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
+
   const handleViewItem = (item: PostItem) => {
     navigate(`/freecycle/items/${item.id}` as any);
+  };
+
+  const handleToggleCategory = (categoryId: number) => {
+    setSelectedCategories((prev) => {
+      if (prev.includes(categoryId)) {
+        return prev.filter((id) => id !== categoryId);
+      }
+      return [...prev, categoryId];
+    });
   };
 
   const renderContent = () => {
     switch (currentPage) {
       case 'discover':
         return (
-          <DiscoverPage searchQuery={searchQuery} onViewItem={handleViewItem} />
+          <DiscoverPage
+            searchQuery={searchQuery}
+            onViewItem={handleViewItem}
+            selectedCategories={selectedCategories}
+            onToggleCategory={handleToggleCategory}
+          />
         );
       case 'my-requests':
         return <MyRequestsPage />;
@@ -71,6 +87,8 @@ export default function FreecycleHomepage() {
                 searchQuery={searchQuery}
                 onViewItem={handleViewItem}
                 onPostItem={() => setCurrentPage('post-item')}
+                selectedCategories={selectedCategories}
+                onToggleCategory={handleToggleCategory}
               />
             </div>
           </div>

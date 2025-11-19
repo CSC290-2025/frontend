@@ -161,7 +161,6 @@ export default function ItemDetailPage() {
               </div>
             </div>
 
-            {/* ปุ่ม Request Item - ซ่อนเมื่อ item ถูกยกให้ไปแล้ว */}
             {!item.is_given && (
               <button
                 onClick={handleRequest}

@@ -1,7 +1,6 @@
 import { Filter, Plus } from 'lucide-react';
 import ItemCard from '@/features/freecycle/components/ItemCard';
 import CategoryFilter from '@/features/freecycle/components/CategoryFilter';
-// import SearchBar from '@/features/freecycle/components/SearchBar';
 import type { PostItem } from '@/types/postItem';
 import { mapApiPostToItem } from '@/types/postItem';
 import { useDiscoverPage } from '@/features/freecycle/hooks/useFreecycle';
@@ -11,25 +10,28 @@ interface DiscoverPageProps {
   searchQuery: string;
   onViewItem: (item: PostItem) => void;
   onPostItem?: () => void;
+  // รับ Props เพิ่ม
+  selectedCategories: number[];
+  onToggleCategory: (categoryId: number) => void;
 }
 
 export default function DiscoverPage({
   searchQuery,
   onViewItem,
   onPostItem,
+  selectedCategories,
+  onToggleCategory,
 }: DiscoverPageProps) {
   const {
     filteredItems,
     categories: categoriesData,
-    selectedCategories,
-    localSearch: _localSearch,
+    localSearch,
     showFilters,
     loading,
     hasError,
-    setLocalSearch: _setLocalSearch,
+    setLocalSearch,
     setShowFilters,
-    toggleCategory,
-  } = useDiscoverPage(searchQuery);
+  } = useDiscoverPage(searchQuery, selectedCategories, onToggleCategory);
 
   return (
     <div className="space-y-6">
@@ -52,8 +54,8 @@ export default function DiscoverPage({
       </div>
 
       <SearchBar
-        value={_localSearch}
-        onChange={_setLocalSearch}
+        value={localSearch}
+        onChange={setLocalSearch}
         placeholder="Search items..."
       />
 
@@ -63,7 +65,7 @@ export default function DiscoverPage({
           <CategoryFilter
             categories={categoriesData}
             selectedCategories={selectedCategories}
-            onToggleCategory={toggleCategory}
+            onToggleCategory={onToggleCategory}
           />
         </div>
       )}

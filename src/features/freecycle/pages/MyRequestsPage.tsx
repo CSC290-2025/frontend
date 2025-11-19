@@ -73,8 +73,6 @@ export default function MyRequestsPage() {
     return localRequests.filter((r) => r.status === status);
   };
 
-  // ลบ Logic การแสดงผล ItemDetailPage ออกแล้ว
-
   return (
     <div className="space-y-8">
       <div>

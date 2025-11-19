@@ -17,7 +17,7 @@ import {
   fetchPostById,
   type ReceiverRequest,
 } from '@/features/freecycle/api/freecycle.api';
-import type { ApiPost } from '@/types/postItem';
+import type { ApiPost, Category } from '@/types/postItem';
 
 export function useNotGivenPosts() {
   return useQuery({
@@ -30,7 +30,6 @@ export function useNotGivenPosts() {
   });
 }
 
-// User Posts Hook
 export function useUserPosts() {
   return useQuery({
     queryKey: ['posts', 'user'],
@@ -38,17 +37,6 @@ export function useUserPosts() {
     retry: 2,
   });
 }
-
-// Delete Post Mutation
-// export function useDeletePost() {
-//   const queryClient = useQueryClient();
-//   return useMutation({
-//     mutationFn: deletePost,
-//     onSuccess: () => {
-//       queryClient.invalidateQueries({ queryKey: ['posts', 'user'] });
-//     },
-//   });
-// }
 
 export function useDeletePost() {
   const queryClient = useQueryClient();
@@ -60,17 +48,6 @@ export function useDeletePost() {
   });
 }
 
-// Mark Post as Given Mutation
-// export function useMarkPostAsGiven() {
-//   const queryClient = useQueryClient();
-//   return useMutation({
-//     mutationFn: markPostAsGiven,
-//     onSuccess: () => {
-//       queryClient.invalidateQueries({ queryKey: ['posts', 'user'] });
-//     },
-//   });
-// }
-
 export function useMarkPostAsGiven() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -80,17 +57,6 @@ export function useMarkPostAsGiven() {
     },
   });
 }
-
-// Mark Post as Not Given Mutation
-// export function useMarkPostAsNotGiven() {
-//   const queryClient = useQueryClient();
-//   return useMutation({
-//     mutationFn: markPostAsNotGiven,
-//     onSuccess: () => {
-//       queryClient.invalidateQueries({ queryKey: ['posts', 'user'] });
-//     },
-//   });
-// }
 
 export function useMarkPostAsNotGiven() {
   const queryClient = useQueryClient();
@@ -102,9 +68,10 @@ export function useMarkPostAsNotGiven() {
   });
 }
 
-// Categories Hooks
+// --- Categories Hooks ---
+
 export function useCategories() {
-  return useQuery({
+  return useQuery<Category[]>({
     queryKey: ['categories'],
     queryFn: fetchAllCategories,
   });
@@ -118,8 +85,11 @@ export function useCategory(categoryId: number) {
   });
 }
 
-// Discover Page Hook - Combines posts and categories for the discover page
-export function useDiscoverPage(searchQuery: string) {
+export function useDiscoverPage(
+  searchQuery: string,
+  selectedCategories: number[],
+  onToggleCategory: (categoryId: number) => void
+) {
   const {
     data: posts,
     isLoading: postsLoading,
@@ -132,16 +102,14 @@ export function useDiscoverPage(searchQuery: string) {
     isError: categoriesError,
   } = useCategories();
 
-  const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
   const [localSearch, setLocalSearch] = useState(searchQuery);
   const [showFilters, setShowFilters] = useState(false);
   const [postCategories, setPostCategories] = useState<Map<number, number[]>>(
     new Map()
   );
 
-  // Fetch categories for posts when they load
   useEffect(() => {
-    if (!posts || selectedCategories.length === 0) return;
+    if (!posts) return;
 
     const fetchCategoriesForPosts = async () => {
       const categoriesMap = new Map<number, number[]>();
@@ -163,7 +131,7 @@ export function useDiscoverPage(searchQuery: string) {
     };
 
     fetchCategoriesForPosts();
-  }, [posts, selectedCategories]);
+  }, [posts]);
 
   // Filter and map posts
   const filteredItems = useMemo(() => {
@@ -181,7 +149,7 @@ export function useDiscoverPage(searchQuery: string) {
       );
     }
 
-    // Apply category filter (OR logic - show items in ANY selected category)
+    // Apply category filter
     if (selectedCategories.length > 0) {
       filtered = filtered.filter((item) => {
         const itemCategories = postCategories.get(item.id) || [];
@@ -191,14 +159,6 @@ export function useDiscoverPage(searchQuery: string) {
 
     return filtered;
   }, [posts, localSearch, selectedCategories, postCategories]);
-
-  const toggleCategory = (categoryId: number) => {
-    setSelectedCategories((prev) =>
-      prev.includes(categoryId)
-        ? prev.filter((id) => id !== categoryId)
-        : [...prev, categoryId]
-    );
-  };
 
   const loading = postsLoading || categoriesLoading;
   const hasError = postsError || categoriesError;
@@ -222,20 +182,18 @@ export function useDiscoverPage(searchQuery: string) {
     hasError,
     setLocalSearch,
     setShowFilters,
-    toggleCategory,
+    toggleCategory: onToggleCategory,
   };
 }
 
-// User Requests Hook
 export function useUserRequests() {
-  return useQuery({
+  return useQuery<ReceiverRequest[]>({
     queryKey: ['requests', 'user'],
     queryFn: fetchUserRequests,
     retry: 5,
   });
 }
 
-// Create Request Mutation
 export function useCreateRequest() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -246,7 +204,6 @@ export function useCreateRequest() {
   });
 }
 
-// Cancel Request Mutation
 export function useCancelRequest() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -257,7 +214,6 @@ export function useCancelRequest() {
   });
 }
 
-// Update Request Status Mutation
 export function useUpdateRequestStatus() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -274,27 +230,6 @@ export function useUpdateRequestStatus() {
   });
 }
 
-// export function usePostsByUserId(userId?: number) {
-//   return useQuery({
-//     queryKey: ['posts', 'user', userId],
-//     queryFn: () => fetchPostsByUserId(userId!),
-//     enabled: Number.isFinite(userId),
-//     retry: 2,
-//   });
-// }
-
-// export function usePostsByUserId(userId: number | null) {
-//   return useQuery({
-//     queryKey: ['posts', 'user', userId],
-//     queryFn: () => fetchPostsByUserId(userId!),
-//     enabled: !!userId,
-//     retry: 2,
-//     meta: {
-//       errorMessage: 'Failed to load user posts',
-//     },
-//   });
-// };
-
 export function usePostsByUserId(userId?: number) {
   return useQuery({
     queryKey: ['posts', 'user', userId],
@@ -307,11 +242,19 @@ export function usePostsByUserId(userId?: number) {
   });
 }
 
+export function useCurrentUser() {
+  const MOCK_CURRENT_USER_ID = 2; // mock User ID
+  return {
+    data: { id: MOCK_CURRENT_USER_ID, name: 'CurrentUser' },
+    isLoading: false,
+  };
+}
+
 export function usePostById(postId: number) {
   return useQuery({
     queryKey: ['posts', postId],
     queryFn: () => fetchPostById(postId),
-    enabled: !!postId,
+    enabled: !!postId && Number.isFinite(postId),
     retry: 2,
     meta: {
       errorMessage: 'Failed to load item details',
