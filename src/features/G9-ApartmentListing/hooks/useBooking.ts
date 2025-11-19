@@ -7,6 +7,7 @@ export function useBooking(id: number) {
   return useQuery({
     queryKey: ['booking', id],
     queryFn: () => BOOKapi.fetchBookingById(id),
+    select: (response) => response.data,
     enabled: !!id,
   });
 }

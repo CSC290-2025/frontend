@@ -1,9 +1,15 @@
 import React, { useState } from 'react';
 import { Upload, X } from 'lucide-react';
+import { useNavigate } from '@/router';
 import BackIcon from '@/features/G9-ApartmentListing/assets/BackIcon.svg';
 import TrashIcon from '@/features/G9-ApartmentListing/assets/TrashIcon.svg';
 import UppageIcon from '@/features/G9-ApartmentListing/assets/UppageIcon.svg';
 import AddedSuccess from '@/features/G9-ApartmentListing/components/AddedSuccess';
+import {
+  APT,
+  Room,
+  Upload as UploadHook,
+} from '@/features/G9-ApartmentListing/hooks';
 
 interface RoomType {
   id: number;
@@ -51,9 +57,16 @@ interface LocationData {
 }
 
 export default function AddApartment(): React.ReactElement {
+  const navigate = useNavigate();
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
   const [showErrorPopup, setShowErrorPopup] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // API hooks
+  const createApartmentMutation = APT.useCreateApartment();
+  const createRoomMutation = Room.useCreateRoom();
+  const uploadFileMutation = UploadHook.useUploadFile();
 
   const locationData: LocationData = {
     Asoke: {
@@ -238,12 +251,110 @@ export default function AddApartment(): React.ReactElement {
     );
   };
 
-  const handleSubmit = (): void => {
-    if (validateForm()) {
-      setShowSuccessPopup(true);
-    } else {
+  const handleSubmit = async (): Promise<void> => {
+    if (!validateForm()) {
       setErrorMessage('Please fill in all fields');
       setShowErrorPopup(true);
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      // Map location values to backend enum values
+      const locationMap: Record<
+        string,
+        'asoke' | 'prachauthit' | 'phathumwan'
+      > = {
+        Asoke: 'asoke',
+        Prachautit: 'prachauthit',
+        Phathumwan: 'phathumwan',
+      };
+
+      // Determine internet type
+      let internetType: 'free' | 'not_free' | 'none' = 'none';
+      if (formData.internetFree) {
+        internetType = 'free';
+      } else if (formData.internetPrice) {
+        internetType = 'not_free';
+      }
+
+      // Create apartment payload
+      const apartmentPayload = {
+        name: formData.apartmentName,
+        phone: formData.contactNumber,
+        description: formData.description,
+        apartment_type: 'apartment' as const,
+        apartment_location: locationMap[formData.location] as
+          | 'asoke'
+          | 'prachauthit'
+          | 'phathumwan',
+        electric_price: parseFloat(formData.electricityUnit),
+        water_price: parseFloat(formData.waterUnit || formData.waterMinimum),
+        internet: internetType,
+        userId: 1, // Replace with actual user ID from auth context
+        address: {
+          address_line: [formData.addressNumber, formData.soi, formData.street]
+            .filter(Boolean)
+            .join(' '),
+          province: formData.province,
+          district: formData.district,
+          subdistrict: formData.subdistrict,
+          postal_code: formData.postalCode,
+        },
+      };
+
+      // Create apartment
+      const apartmentResponse =
+        await createApartmentMutation.mutateAsync(apartmentPayload);
+
+      // Extract apartment ID from response
+      const newApartmentId =
+        (apartmentResponse as any)?.data?.id || (apartmentResponse as any)?.id;
+
+      if (!newApartmentId) {
+        throw new Error('Failed to get apartment ID from response');
+      }
+
+      // Create rooms for this apartment
+      const roomPromises = formData.roomTypes.map((roomType) =>
+        createRoomMutation.mutateAsync({
+          apartmentId: newApartmentId,
+          data: {
+            name: roomType.name,
+            type: roomType.name,
+            size: roomType.size,
+            price_start: parseFloat(roomType.monthly),
+            price_end: parseFloat(roomType.monthly),
+          },
+        })
+      );
+
+      await Promise.all(roomPromises);
+
+      // Upload images
+      const uploadPromises = formData.images.map((image) =>
+        uploadFileMutation.mutateAsync({
+          apartmentId: newApartmentId,
+          file: image.file,
+        })
+      );
+
+      await Promise.all(uploadPromises);
+
+      setShowSuccessPopup(true);
+      // Reset form and navigate after success
+      setTimeout(() => {
+        navigate('/ApartmentHomepage');
+      }, 2000);
+    } catch (error) {
+      console.error('Error submitting apartment:', error);
+      const errorMsg =
+        error instanceof Error ? error.message : 'Failed to create apartment';
+      setErrorMessage(errorMsg);
+      setShowErrorPopup(true);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -270,7 +381,7 @@ export default function AddApartment(): React.ReactElement {
         <div className="mb-6 flex items-center gap-4">
           {/* Back Icon */}
           <button
-            onClick={() => (window.location.href = '/ApartmentHomepage')}
+            onClick={() => navigate('/ApartmentHomepage')}
             className="flex h-10 w-10 items-center justify-center rounded-full text-2xl hover:bg-gray-100"
           >
             <img src={BackIcon} alt="Backpage" />
@@ -686,10 +797,11 @@ export default function AddApartment(): React.ReactElement {
           <div className="flex justify-end">
             <button
               onClick={handleSubmit}
+              disabled={isSubmitting}
               type="button"
-              className="rounded-lg bg-cyan-400 px-9 py-3 text-lg font-semibold text-white hover:bg-cyan-500"
+              className="rounded-lg bg-cyan-400 px-9 py-3 text-lg font-semibold text-white hover:bg-cyan-500 disabled:cursor-not-allowed disabled:bg-gray-400"
             >
-              Done
+              {isSubmitting ? 'Creating...' : 'Done'}
             </button>
           </div>
         </div>

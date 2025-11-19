@@ -270,7 +270,7 @@ export default function AddApartment(): React.ReactElement {
         <div className="mb-6 flex items-center gap-4">
           {/* Back Icon */}
           <button
-            onClick={() => (window.location.href = '/ApartmentHomepage')}
+            onClick={() => (window.location.href = '/ApartmentListedAPT')}
             className="flex h-10 w-10 items-center justify-center rounded-full text-2xl hover:bg-gray-100"
           >
             <img src={BackIcon} alt="Backpage" />

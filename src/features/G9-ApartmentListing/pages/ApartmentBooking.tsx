@@ -1,38 +1,125 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from '@/router';
 import BackIcon from '@/features/G9-ApartmentListing/assets/BackIcon.svg';
 import UserIcon from '@/features/G9-ApartmentListing/assets/UserIcon.svg';
 import RoomDetailIcon from '@/features/G9-ApartmentListing/assets/RoomDetailIcon.svg';
+import { Booking, APT, Room } from '@/features/G9-ApartmentListing/hooks/index';
+import type { roomTypes } from '@/features/G9-ApartmentListing/types';
+import { useCreateBooking } from '@/features/G9-ApartmentListing/hooks/useBooking';
+
+const UserData = {
+  userId: 14,
+  firstName: 'John',
+  lastName: 'Doe',
+  phone: '123-456-7890',
+  email: 'john.doe@example.com',
+};
 
 export default function ApartmentBooking() {
   const navigate = useNavigate();
 
+  // Get URL parameters
+  const urlParams = new URLSearchParams(window.location.search);
+  const apartmentId = urlParams.get('apartmentId');
+
+  // Fetch apartment data
+  const { data: apartmentData, isLoading: apartmentLoading } = APT.useApartment(
+    apartmentId ? parseInt(apartmentId) : 0
+  );
+
+  // Fetch available rooms for the apartment
+  const { data: availableRoomsData, isLoading: roomsLoading } =
+    Room.useRoomsByStatus(apartmentId ? parseInt(apartmentId) : 0, 'available');
+
+  const createBooking = useCreateBooking();
+
+  // Extract apartment and room info
+  const apartment = apartmentData?.data || apartmentData || null;
+  const availableRooms = useMemo(() => {
+    return availableRoomsData?.data?.data || availableRoomsData?.data || [];
+  }, [availableRoomsData]);
+
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
-    phone: '',
-    email: '',
+    firstName: UserData.firstName,
+    lastName: UserData.lastName,
+    phone: UserData.phone,
+    email: UserData.email,
     checkin: '',
-    roomType: 'Single',
+    roomType: '',
     confirmed: false,
   });
 
   useEffect(() => {
-    const saved = localStorage.getItem('bookingData');
-    if (saved) {
-      setFormData(JSON.parse(saved));
+    // Update roomType when availableRooms data loads and no room type is selected yet
+    if (availableRooms.length > 0 && !formData.roomType) {
+      setFormData((prev) => ({ ...prev, roomType: availableRooms[0].type }));
     }
-  }, []);
+  }, [availableRooms, formData.roomType]);
 
   const handleChange = (field: string, value: string | boolean) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleNext = () => {
-    localStorage.setItem('bookingData', JSON.stringify(formData));
-    navigate('/ApartmentPayment', {
-      state: { roomType: formData.roomType },
-    });
+  const handleNext = async () => {
+    // Validate that we have apartment data
+    if (!apartment || !apartmentId) {
+      console.error('Missing apartment data');
+      alert('Error: Missing apartment information.');
+      return;
+    }
+
+    // Check if there are any available rooms at all
+    if (availableRooms.length === 0) {
+      alert(
+        'No available rooms in this apartment. Please browse other apartments or check back later.'
+      );
+      return;
+    }
+
+    // Since we're only fetching available rooms, any room in the list should be bookable
+    const selectedRoom = availableRooms.find(
+      (room: roomTypes.Room) => room.type === formData.roomType
+    );
+
+    if (!selectedRoom) {
+      alert(
+        'Selected room type not found. Please refresh the page and try again.'
+      );
+      return;
+    }
+
+    try {
+      // TODO: Replace with actual user ID from authentication context
+      const currentUserId = 14;
+
+      const bookingPayload = {
+        user_id: currentUserId,
+        room_id: selectedRoom.id,
+        apartment_id: parseInt(apartmentId),
+        guest_name: `${formData.firstName} ${formData.lastName}`,
+        guest_phone: formData.phone.replace(/\D/g, '').slice(0, 10), // Remove non-digits and limit to 10 characters
+        guest_email: formData.email,
+        room_type: formData.roomType,
+        check_in: new Date(formData.checkin + 'T00:00:00Z').toISOString(), // Convert date to ISO datetime format
+      };
+
+      const result = await createBooking.mutateAsync(bookingPayload);
+      const bookingId = result?.data?.data?.id || result?.data?.id;
+
+      if (!bookingId) {
+        console.error('Booking created but no ID returned:', result);
+        alert(
+          'Booking created but unable to proceed to payment. Please check your bookings.'
+        );
+        return;
+      }
+
+      // Navigate to payment page with booking ID in URL
+      window.location.href = `/ApartmentPayment?bookingId=${bookingId}`;
+    } catch (error) {
+      console.error('Failed to create booking:', error);
+      alert('Failed to create booking. Please try again.');
+    }
   };
 
   const isFormValid =
@@ -41,14 +128,48 @@ export default function ApartmentBooking() {
     formData.phone &&
     formData.email &&
     formData.checkin &&
-    formData.confirmed;
+    formData.confirmed &&
+    apartment &&
+    availableRooms.length > 0;
+
+  // Show loading state
+  if (apartmentLoading || roomsLoading) {
+    return (
+      <div className="relative flex min-h-screen flex-col items-center justify-center bg-[#F9FAFB]">
+        <div className="text-xl">Loading booking information...</div>
+      </div>
+    );
+  }
+
+  // Show error state if no apartment data
+  if (!apartmentId || !apartment) {
+    return (
+      <div className="relative flex min-h-screen flex-col items-center justify-center bg-[#F9FAFB] px-4">
+        <div className="text-center">
+          <h1 className="mb-4 text-2xl font-bold text-red-600">
+            Booking Error
+          </h1>
+          <p className="mb-4 text-gray-600">
+            Missing apartment or room information. Please select a room from the
+            apartment details page.
+          </p>
+          <button
+            onClick={() => navigate('/ApartmentHomepage')}
+            className="rounded-md bg-[#01CEF8] px-6 py-2 text-white hover:bg-[#4E8FB1]"
+          >
+            Back to Apartments
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative flex min-h-screen flex-col items-center bg-[#F9FAFB] px-4 py-10">
       <div className="mb-6 w-full max-w-5xl">
         <div className="mb-6 flex w-full max-w-5xl items-center gap-3">
           <button
-            onClick={() => navigate('/ApartmentDetails')}
+            onClick={() => window.history.back()}
             className="flex h-10 w-10 items-center justify-center rounded-full transition duration-200 hover:bg-gray-100"
           >
             <img src={BackIcon} alt="Back" className="h-6 w-6" />
@@ -174,9 +295,14 @@ export default function ApartmentBooking() {
                 onChange={(e) => handleChange('roomType', e.target.value)}
                 className="w-full rounded-md border border-gray-300 p-2 focus:ring-1 focus:ring-[#01CEF8] focus:outline-none"
               >
-                <option value="Single">Single</option>
-                <option value="Double">Double</option>
-                <option value="Studio">Studio</option>
+                {availableRooms.map((room: roomTypes.Room, index: number) => (
+                  <option key={index} value={room.type}>
+                    {room.type}
+                  </option>
+                ))}
+                {availableRooms.length === 0 && (
+                  <option value="">No available rooms</option>
+                )}
               </select>
             </div>
           </div>
