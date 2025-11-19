@@ -154,7 +154,7 @@ export const addCategoriesToPost = async (
   donaterId: number = 1
 ): Promise<void> => {
   await apiClient.post(`/posts/${postId}/categories/add`, {
-    category_ids: categoryIds,
+    category_id: categoryIds,
     donater_id: donaterId,
   });
 };
@@ -322,6 +322,20 @@ export const updateRequestStatus = async (
 // ): Promise<Category> => {
 //   const res = await apiClient.post('/categories', data);
 //   return res.data?.data?.category;
+// };
+
+// export const updateCategory = async (
+//   id: number,
+//   data: Partial<Category>
+// ): Promise<Category> => {
+//   const res = await apiClient.put(`/categories/${id}`, data);
+//   return res.data?.data?.category;
+// };
+
+// export const deleteCategory = async (id: number): Promise<void> => {
+//   await apiClient.delete(`/categories/${id}`);
+// };
+
 // };
 
 // export const updateCategory = async (

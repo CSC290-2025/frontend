@@ -10,7 +10,7 @@ import {
 } from '@/features/freecycle/hooks/useFreecycle';
 
 //  MOCK USER
-const MOCK_USER_ID = 1;
+const MOCK_USER_ID = 2;
 
 export default function MyItemsPage() {
   const userId = MOCK_USER_ID;
