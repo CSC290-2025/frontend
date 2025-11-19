@@ -4,10 +4,7 @@ import {
   usePostWallets,
   usePutWalletsWalletId,
 } from '@/api/generated/wallets';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
 import { Wallet } from 'lucide-react';
 import AmountBox from '../components/metro-cards/AmountBox';
 import ServiceNavigator from '../components/mainPage/ServiceNavigator';
@@ -15,6 +12,7 @@ import TransactionHistory from '../components/mainPage/TransactionHistory';
 import TopUpModal from '../components/mainPage/TopUpModal';
 import TransferModal from '../components/mainPage/TransferModal';
 import WalletManagement from '../components/mainPage/WalletManagement';
+import WalletLoader from '../components/mainPage/WalletLoader';
 
 export default function FinancialPage() {
   const [userId, setUserId] = useState('1');
@@ -34,6 +32,20 @@ export default function FinancialPage() {
 
   const wallet = wallets?.data?.data?.wallet;
 
+  const handleLoadWallet = () => {
+    setLoadedUserId(Number(userId));
+    refetch();
+  };
+
+  const handleCreateWallet = () => {
+    createWallet({
+      data: {
+        user_id: Number(userId),
+        wallet_type: 'individual',
+      },
+    });
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -45,52 +57,13 @@ export default function FinancialPage() {
           </p>
         </div>
         {/* User Selection */}
-        <Card className="mb-6">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-4">
-              <div>
-                <Label className="text-sm font-medium text-gray-700">
-                  User ID
-                </Label>
-                <div className="mt-1 flex gap-2">
-                  <Input
-                    type="text"
-                    value={userId}
-                    onChange={(e) => setUserId(e.target.value)}
-                    className="w-32"
-                    placeholder="Enter user ID"
-                  />
-                  <Button
-                    onClick={() => {
-                      setLoadedUserId(Number(userId));
-                      refetch();
-                    }}
-                    variant="secondary"
-                  >
-                    Load Wallet
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            {/* Create Wallet Button (Retained from HEAD logic) */}
-            {!wallet && (
-              <Button
-                onClick={() =>
-                  createWallet({
-                    data: {
-                      user_id: Number(userId),
-                      wallet_type: 'individual', // Default to individual
-                    },
-                  })
-                }
-                className="mt-4"
-              >
-                Create Wallet
-              </Button>
-            )}
-          </CardContent>
-        </Card>
+        <WalletLoader
+          userId={userId}
+          hasWallet={!!wallet}
+          onUserIdChange={setUserId}
+          onLoadWallet={handleLoadWallet}
+          onCreateWallet={handleCreateWallet}
+        />
 
         {!wallet && (
           <Card className="border-2 border-dashed border-gray-300">
@@ -140,10 +113,7 @@ export default function FinancialPage() {
                 <TransactionHistory />
               </div>
             </div>
-
-            {wallet && (
-              <WalletManagement wallet={wallet} updateWallet={updateWallet} />
-            )}
+            <WalletManagement wallet={wallet} updateWallet={updateWallet} />
           </>
         )}
       </div>
