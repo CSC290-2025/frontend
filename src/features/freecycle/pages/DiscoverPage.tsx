@@ -5,6 +5,7 @@ import type { PostItem } from '@/types/postItem';
 import { mapApiPostToItem } from '@/types/postItem';
 import { useDiscoverPage } from '@/features/freecycle/hooks/useFreecycle';
 import SearchBar from '../components/SearchBar';
+import { useNavigate } from '@/router';
 
 interface DiscoverPageProps {
   searchQuery: string;
@@ -32,7 +33,7 @@ export default function DiscoverPage({
     setShowFilters,
     toggleCategory,
   } = useDiscoverPage(searchQuery, selectedCategories, onToggleCategory);
-
+  const navigate = useNavigate();
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-start gap-4">
@@ -43,6 +44,13 @@ export default function DiscoverPage({
         >
           <Plus className="h-4 w-4" />
           Post Item
+        </button>
+        <button
+          onClick={() => navigate(`/freecycle/post-event` as any)}
+          className="flex items-center gap-1 rounded-full bg-cyan-500 px-3 py-1 text-sm font-medium text-white shadow-sm transition-colors hover:bg-cyan-600"
+        >
+          <Plus className="h-4 w-4" />
+          Post Event
         </button>
         <button
           onClick={() => setShowFilters(!showFilters)}
