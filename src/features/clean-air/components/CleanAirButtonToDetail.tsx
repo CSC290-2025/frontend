@@ -16,7 +16,7 @@ export default function CleanAirButtonToDetail() {
 
   return (
     <div
-      className="ml-6 w-full max-w-xs cursor-pointer overflow-hidden rounded-xl border border-gray-300 bg-white p-3 text-gray-900 transition-all duration-300"
+      className="ml-6 w-full max-w-xs cursor-pointer overflow-hidden rounded-xl border border-black bg-white p-3 text-gray-900 transition-all duration-300"
       onClick={handleNavigateToDetail}
     >
       <div className="text-base font-semibold text-gray-900">Clean Air</div>

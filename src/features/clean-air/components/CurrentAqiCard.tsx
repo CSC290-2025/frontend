@@ -105,18 +105,22 @@ export default function CurrentAqiCard({
 
   if (isLoading) {
     return (
-      <div className="h-full rounded-xl border border-gray-300 bg-white p-6 text-gray-900 shadow-md">
-        <div className="text-center">Loading air quality data...</div>
+      <div className="h-full rounded-xl border border-black bg-white p-6 text-gray-900 shadow-md">
+                <div className="text-center">Loading air quality data...</div> 
+           {' '}
       </div>
     );
   }
 
   if (error || !districtDetail?.currentData) {
     return (
-      <div className="h-full rounded-xl border border-gray-300 bg-white p-6 text-gray-900 shadow-md">
+      <div className="h-full rounded-xl border border-black bg-white p-6 text-gray-900 shadow-md">
+               {' '}
         <div className="text-center text-red-600">
-          {error?.message || 'No air quality data available'}
+                    {error?.message || 'No air quality data available'}     
+           {' '}
         </div>
+             {' '}
       </div>
     );
   }
@@ -138,42 +142,67 @@ export default function CurrentAqiCard({
   const pm25Display = pm25.toFixed(1);
 
   return (
-    <div className="h-full rounded-xl border border-gray-300 bg-white p-6 text-gray-900 shadow-md">
+    <div className="h-full rounded-xl border border-black bg-white p-6 text-gray-900 shadow-md">
+           {' '}
       <div className="mb-4 flex items-start justify-between">
+               {' '}
         <h1 className="text-base font-semibold text-gray-800">
-          Current Air Quality
+                    Current Air Quality        {' '}
         </h1>
+        <button
+          onClick={onDocumentationClick}
+          className="rounded-full bg-gray-200 px-3 py-1 text-xs font-medium text-gray-800 transition-colors hover:bg-gray-300"
+        >
+          {' '}
+          Information
+        </button>
+             {' '}
       </div>
-
+           {' '}
       <div className="mb-4 flex items-start justify-between">
+               {' '}
         <div className="flex flex-col">
+                   {' '}
           <p className="text-6xl leading-none font-bold">
-            {aqi} <span className="align-top text-3xl font-normal">AQI</span>
+                        {aqi}{' '}
+            <span className="align-top text-3xl font-normal">AQI</span>       
+             {' '}
           </p>
+                   {' '}
           <p className="mt-2 text-sm text-gray-700">
-            PM 2.5: {pm25Display} µg/m³
+                        PM 2.5: {pm25Display} µg/m³          {' '}
           </p>
+                 {' '}
         </div>
-
+               {' '}
         <div className="mt-1 text-right">
-          <FontAwesomeIcon icon={icon} className={`text-6xl ${iconStyle}`} />
+                   {' '}
+          <FontAwesomeIcon icon={icon} className={`text-6xl ${iconStyle}`} />   
+             {' '}
         </div>
+             {' '}
       </div>
-
+           {' '}
       <div className="mt-4 flex items-center justify-between">
+               {' '}
         <span
           className={`inline-block rounded-full px-4 py-1 text-sm font-semibold ${statusStyle}`}
         >
-          {status}
+                    {status}       {' '}
         </span>
-
+               {' '}
         <div className="flex flex-col text-right">
+                   {' '}
           <p className="text-sm font-semibold text-black">
-            {displayDistrict}, Bangkok
+                        {displayDistrict}, Bangkok          {' '}
           </p>
-          <p className="text-xs text-gray-500">Last updated: {lastUpdated}</p>
+                   {' '}
+          <p className="text-xs text-gray-500">Last updated: {lastUpdated}</p> 
+               {' '}
         </div>
+             {' '}
       </div>
+         {' '}
     </div>
   );
 }
