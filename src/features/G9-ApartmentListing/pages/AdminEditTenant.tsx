@@ -10,7 +10,7 @@ export default function AdminEditTenant() {
   const navigate = useNavigate();
 
   const [isPopupOpen, setIsPopupOpen] = useState(false);
-  const [showSuccess, setShowSuccess] = useState(false); // ← state สำหรับ success modal
+  const [showSuccess, setShowSuccess] = useState(false);
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -40,12 +40,12 @@ export default function AdminEditTenant() {
     localStorage.setItem('bookingData', JSON.stringify(formData));
 
     setIsPopupOpen(false);
-    setShowSuccess(true); // ← แสดง SuccessToast
+    setShowSuccess(true);
 
     setTimeout(() => {
       setShowSuccess(false);
       navigate('/AdminTenantInfo');
-    }, 2000); // ← หายเองหลัง 2 วินาทีและ navigate
+    }, 2000);
   };
 
   const isFormValid =

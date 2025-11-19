@@ -7,12 +7,14 @@ import type {
   addressTypes,
 } from '@/features/G9-ApartmentListing/types/index';
 import type RatingType from '@/features/G9-ApartmentListing/types/rating.types';
-import UserIcon from '@/assets/userIcon.svg';
-import ApartmentIcon from '@/assets/apartmentIcon.svg';
-import SearchIcon from '@/assets/searchIcon.svg';
-import UppageIcon from '@/assets/UppageIcon.svg';
-import LocationIcon from '@/assets/locationIcon.svg';
-import PhoneIcon from '@/assets/phoneIcon.svg';
+import UserIcon from '@/features/G9-ApartmentListing/assets/UserIcon.svg';
+import ApartmentIcon from '@/features/G9-ApartmentListing/assets/ApartmentIcon.svg';
+import SearchIcon from '@/features/G9-ApartmentListing/assets/SearchIcon.svg';
+import UppageIcon from '@/features/G9-ApartmentListing/assets/UppageIcon.svg';
+import LocationIcon from '@/features/G9-ApartmentListing/assets/LocationIcon.svg';
+import PhoneIcon from '@/features/G9-ApartmentListing/assets/PhoneIcon.svg';
+import StarIcon from '@/features/G9-ApartmentListing/assets/StarIcon.svg';
+import GrayStarIcon from '@/features/G9-ApartmentListing/assets/GrayStarIcon.svg';
 
 // Component to display apartment image with fallback
 const ApartmentImage: React.FC<{
