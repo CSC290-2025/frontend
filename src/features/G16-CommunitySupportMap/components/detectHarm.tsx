@@ -2,8 +2,6 @@
 import { useEffect, useState } from 'react';
 import { ShimmerButton } from '@/components/ui/shimmer-button'; //pnpm dlx shadcn@latest add @magicui/shimmer-button
 import { AuroraText } from '@/components/ui/aurora-text'; //pnpm dlx shadcn@latest add @magicui/aurora-text
-import { ShimmerButton } from "@/components/ui/shimmer-button"
-import { AuroraText } from "@/components/ui/aurora-text"
 
 // type
 type LocalImg = { file: File; url: string };
@@ -130,10 +128,6 @@ export default function DetectHarm() {
               accept="image/*"
               onChange={pickFile}
               className="mt-2 w-full cursor-pointer rounded-lg border px-3 py-2 file:mr-3 file:rounded-md file:border-0 file:bg-black file:px-3 file:py-2 file:text-white"
-              className="mt-2 w-full cursor-pointer rounded-lg border px-3 py-2
-                          file:mr-3 file:rounded-md file:border-0
-                        file:bg-black file:px-3 file:py-2 file:text-white
-                        "
             />
           </label>
 
@@ -202,8 +196,6 @@ export default function DetectHarm() {
               {' '}
               {loading ? 'Detecting...' : 'Detect issue'}{' '}
             </ShimmerButton>
-
-            </button> */}
             
             <ShimmerButton> {loading ? 'Detecting...' : 'Detect Harm'} </ShimmerButton> 
             
@@ -218,7 +210,6 @@ export default function DetectHarm() {
           </div>
         </form>
 
-        {/* show error */}
         {error && <div className="text-sm text-red-600">{error}</div>}
 
         {res && (
@@ -251,7 +242,7 @@ export default function DetectHarm() {
                 </ul>
               </div>
             )}
-            {res.marker && (
+            {res?.marker && (
               <div>
                 <b>Marker:</b> lat {res.marker.lat}, lng {res.marker.lng}
               </div>

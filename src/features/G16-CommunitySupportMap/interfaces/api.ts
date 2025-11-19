@@ -1,4 +1,4 @@
-// api.ts
+
 export interface SuccessMarker {
     id: number;
     marker_type_id: number | null;
@@ -16,7 +16,7 @@ export interface SuccessMarker {
     } | null;
 }
 
-export interface CreateMarkerInput {
+export interface MarkerType {
     marker_type_id?: number | null;
     description?: string | null;
     location?: {
@@ -33,3 +33,20 @@ export interface UpdateMarkerInput {
       coordinates: [number, number];
     };
 }
+
+// type ApiMarker = {
+//   id: number;
+//   description: string | null;
+//   location: {
+//     type: string;
+//     coordinates: [number, number]; // [lng, lat]
+//   } | null;
+// };
+
+export interface MapMarker {
+  id: number;
+  lat: number;
+  lng: number;
+  description: string | null;
+  marker_type_id?: number | null;
+};
