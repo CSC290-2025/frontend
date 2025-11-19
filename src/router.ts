@@ -15,11 +15,13 @@ export type Path =
   | `/healthcare`
   | `/map`
   | `/map/:id`
+  | `/login`
   | `/power-bi`
   | `/power-bi/:type/:category`
   | `/power-bi/:type/:category/:id`
   | `/power-bi/create`
-  | `/power-bi/edit/:id`;
+  | `/power-bi/edit/:id`
+  | `/register`;
 
 export type Params = {
   '/district-detail/:district': { district: string };
