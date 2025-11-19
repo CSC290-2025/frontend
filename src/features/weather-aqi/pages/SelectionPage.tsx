@@ -1,4 +1,3 @@
-import React from 'react';
 import DistrictList from '../components/DistrictList';
 
 const SelectionPage = () => {
