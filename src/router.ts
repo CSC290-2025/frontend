@@ -16,7 +16,11 @@ export type Path =
   | `/power-bi/:type/:category/:id`
   | `/power-bi/create`
   | `/power-bi/edit/:id`
-  | `/register`;
+  | `/register`
+  | `/event_hub`
+  | `/example`
+  | `/example/:id`
+  | `/event_hub/CreatePage`;
 
 export type Params = {
   '/district-detail/:district': { district: string };

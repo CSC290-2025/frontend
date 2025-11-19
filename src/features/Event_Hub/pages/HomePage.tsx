@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Calendar,
   MapPin,
@@ -16,7 +16,6 @@ import {
   Tv,
   Handshake,
   Trash2,
-  Home,
 } from 'lucide-react';
 import EventDetailModal from '@/features/Event_Hub/component/EventDetailModel';
 import Sidebar from '@/features/Event_Hub/component/Sidebar';
@@ -24,16 +23,29 @@ import TopBar from '@/features/Event_Hub/component/Topbar';
 import HistoryPage from '@/features/Event_Hub/component/HistoryPage';
 import ContactPage from '@/features/Event_Hub/component/ContactPage';
 import MonthlyPage from '@/features/Event_Hub/component/MonthlyPage';
+import { fetchEvents } from '@/features/Event_Hub/api/Event.api';
+import {
+  fetchBookmarks,
+  createBookmark,
+  deleteBookmark,
+} from '@/features/Event_Hub/api/Bookmark.api';
 
 interface Event {
   id: number;
   title: string;
-  date: string;
-  time: string;
-  location: string;
-  status: string;
-  category: string;
   description?: string;
+  image_url?: string;
+  total_seats?: number;
+  start_at: string;
+  end_at: string;
+  address_id?: number;
+  organization_id?: number;
+  // Computed fields for display
+  date?: string;
+  time?: string;
+  location?: string;
+  status?: string;
+  category?: string;
   organizerName?: string;
   organizerEmail?: string;
   organizerPhone?: string;
@@ -47,83 +59,86 @@ const HomePage = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [bookmarkedEvents, setBookmarkedEvents] = useState(new Set<number>());
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
 
-  const events: Event[] = [
-    {
-      id: 1,
-      title: 'Big cleaning',
-      date: '24 Sep 2025',
-      time: '11:50 - 17:00',
-      location: 'KMUTT',
-      status: 'Available',
-      category: 'volunteer',
-      description:
-        'Join us for a big cleaning event at KMUTT campus. Help make our university cleaner and more beautiful!',
-      organizerName: 'KMUTT Environmental Club',
-      organizerEmail: 'env.club@kmutt.ac.th',
-      organizerPhone: '+66 2-470-8000',
-    },
-    {
-      id: 2,
-      title: 'Big cleaning',
-      date: '24 Sep 2025',
-      time: '11:50 - 17:00',
-      location: 'KMUTT',
-      status: 'Available',
-      category: 'volunteer',
-    },
-    {
-      id: 3,
-      title: 'Beach cleanup',
-      date: '28 Sep 2025',
-      time: '08:00 - 12:00',
-      location: 'Pattaya Beach',
-      status: 'Available',
-      category: 'volunteer',
-      description:
-        'Help us clean up Pattaya Beach and protect our marine life. All materials will be provided.',
-      organizerName: 'Ocean Conservation Thailand',
-      organizerEmail: 'info@oceanconservation.th',
-      organizerPhone: '+66 38-123-456',
-    },
-    {
-      id: 4,
-      title: 'Tree planting',
-      date: '30 Sep 2025',
-      time: '09:00 - 15:00',
-      location: 'City Park',
-      status: 'Available',
-      category: 'volunteer',
-      description:
-        'Plant trees and contribute to a greener city. Free lunch and refreshments provided.',
-      organizerName: 'Green City Initiative',
-      organizerEmail: 'contact@greencity.org',
-      organizerPhone: '+66 2-555-1234',
-    },
-    {
-      id: 5,
-      title: 'Food donation drive',
-      date: '05 Oct 2025',
-      time: '10:00 - 16:00',
-      location: 'Community Center',
-      status: 'Available',
-      category: 'volunteer',
-    },
-    {
-      id: 6,
-      title: 'Street art festival',
-      date: '12 Oct 2025',
-      time: '14:00 - 20:00',
-      location: 'Downtown',
-      status: 'Available',
-      category: 'events',
-      description:
-        'Experience amazing street art performances and exhibitions. Fun for the whole family!',
-      organizerName: 'Bangkok Arts Council',
-      organizerEmail: 'info@bangkokartscouncil.com',
-      organizerPhone: '+66 2-789-4567',
-    },
-  ];
+  // API state
+  const [events, setEvents] = useState<Event[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch events from API
+  useEffect(() => {
+    const loadEvents = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const response = await fetchEvents({
+          page: currentPage,
+          limit: 12,
+          q: searchQuery || undefined,
+        });
+
+        console.log('fetchEvents raw response:', response);
+
+        // 1) If it's an AxiosResponse -> use .data
+        const body = (response as any).data ?? response;
+
+        // 2) If you use successResponse -> data is inside .data
+        //    otherwise items might already be at top level
+        const payload = body.data ?? body;
+
+        const items: any[] = Array.isArray(payload.items) ? payload.items : [];
+
+        // 3) Transform safely
+        const transformedEvents: Event[] = items.map((event: any) => ({
+          ...event,
+          date: new Date(event.start_at).toLocaleDateString('en-GB', {
+            day: '2-digit',
+            month: 'short',
+            year: 'numeric',
+          }),
+          time: `${new Date(event.start_at).toLocaleTimeString('en-US', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false,
+          })} - ${new Date(event.end_at).toLocaleTimeString('en-US', {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false,
+          })}`,
+          location: event.address?.full_address || 'Location TBD',
+          status: 'Available',
+          category: 'events',
+        }));
+
+        setEvents(transformedEvents);
+      } catch (err: any) {
+        console.error('Error fetching events:', err);
+        setError(err.message || 'Failed to load events');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadEvents();
+  }, [currentPage, searchQuery]);
+
+  // Fetch bookmarks on mount
+  useEffect(() => {
+    const loadBookmarks = async () => {
+      try {
+        const response = await fetchBookmarks();
+        const bookmarkedIds = new Set(
+          response.data.data.map((bookmark: any) => bookmark.event_id)
+        );
+        setBookmarkedEvents(bookmarkedIds);
+      } catch (err) {
+        console.error('Error fetching bookmarks:', err);
+      }
+    };
+
+    loadBookmarks();
+  }, []);
 
   const categories = [
     {
@@ -197,16 +212,29 @@ const HomePage = () => {
     },
   ];
 
-  const toggleBookmark = (id: number) => {
-    setBookmarkedEvents((prev) => {
-      const updated = new Set(prev);
-      if (updated.has(id)) {
-        updated.delete(id);
+  const toggleBookmark = async (id: number) => {
+    try {
+      if (bookmarkedEvents.has(id)) {
+        // Remove bookmark
+        await deleteBookmark(id);
+        setBookmarkedEvents((prev) => {
+          const updated = new Set(prev);
+          updated.delete(id);
+          return updated;
+        });
       } else {
-        updated.add(id);
+        // Add bookmark
+        await createBookmark({ event_id: id });
+        setBookmarkedEvents((prev) => {
+          const updated = new Set(prev);
+          updated.add(id);
+          return updated;
+        });
       }
-      return updated;
-    });
+    } catch (err) {
+      console.error('Error toggling bookmark:', err);
+      // Optionally show error message to user
+    }
   };
 
   const handleOpenModal = (event: Event) => {
@@ -218,12 +246,6 @@ const HomePage = () => {
     setIsModalOpen(false);
     setSelectedEvent(null);
   };
-
-  const filteredEvents = events.filter(
-    (event) =>
-      event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      event.location.toLowerCase().includes(searchQuery.toLowerCase())
-  );
 
   return (
     <div className="flex h-screen bg-gray-50">
