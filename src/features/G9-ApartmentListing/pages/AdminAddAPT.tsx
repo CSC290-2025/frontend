@@ -35,22 +35,36 @@ export default function AddApartment(): React.ReactElement {
   const createRoomMutation = Room.useCreateRoom();
 
   const locationData: LocationData = {
-    asoke: {
-      districts: ['Watthana'],
+    chomthong: {
+      districts: ['Chom Thong'],
       subdistricts: {
-        Watthana: ['Khlong Toei Nuea', 'Khlong Tan Nuea', 'Phra Khanong'],
+        'Chom Thong': ['Bang Kho', 'Bang Khun Thian', 'Bangmod', 'Chom Thong'],
       },
     },
-    prachauthit: {
+    thonburi: {
+      districts: ['Thonburi'],
+      subdistricts: {
+        Thonburi: [
+          'Wat Kanlaya',
+          'Hiran Ruchi',
+          'Bang Yi Ruea',
+          'Talat Phlu',
+          'Bukkhalo',
+          'Samre',
+          'Dao Khanong',
+        ],
+      },
+    },
+    thungkhru: {
+      districts: ['Thung Khru'],
+      subdistricts: {
+        'Thung Khru': ['Thung Khru', 'Bangmod'],
+      },
+    },
+    ratburana: {
       districts: ['Rat Burana'],
       subdistricts: {
-        'Rat Burana': ['Rat Burana', 'Bang Pakok', 'Bang Mot'],
-      },
-    },
-    phathumwan: {
-      districts: ['Pathum Wan'],
-      subdistricts: {
-        'Pathum Wan': ['Rong Muang', 'Wang Mai', 'Pathum Wan', 'Lumphini'],
+        'Rat Burana': ['Rat Burana', 'Bang Pakok'],
       },
     },
   };
@@ -515,40 +529,53 @@ export default function AddApartment(): React.ReactElement {
                 <input
                   type="radio"
                   name="apartment_location"
-                  value="Asoke"
-                  checked={formData.apartment_location === 'asoke'}
+                  value="Chom Thong"
+                  checked={formData.apartment_location === 'chomthong'}
                   onChange={(_e) =>
-                    handleInputChange('apartment_location', 'asoke')
+                    handleInputChange('apartment_location', 'chomthong')
                   }
                   className="h-4 w-4"
                 />
-                <span>Asoke</span>
+                <span>Chom Thong</span>
               </label>
               <label className="flex items-center gap-2">
                 <input
                   type="radio"
                   name="apartment_location"
-                  value="Prachautit"
-                  checked={formData.apartment_location === 'prachauthit'}
+                  value="Thonburi"
+                  checked={formData.apartment_location === 'thonburi'}
                   onChange={(_e) =>
-                    handleInputChange('apartment_location', 'prachauthit')
+                    handleInputChange('apartment_location', 'thonburi')
                   }
                   className="h-4 w-4"
                 />
-                <span>Prachautit</span>
+                <span>Thonburi</span>
               </label>
               <label className="flex items-center gap-2">
                 <input
                   type="radio"
                   name="apartment_location"
-                  value="Phathumwan"
-                  checked={formData.apartment_location === 'phathumwan'}
+                  value="Thung Khru"
+                  checked={formData.apartment_location === 'thungkhru'}
                   onChange={(_e) =>
-                    handleInputChange('apartment_location', 'phathumwan')
+                    handleInputChange('apartment_location', 'thungkhru')
                   }
                   className="h-4 w-4"
                 />
-                <span>Phathumwan</span>
+                <span>Thung Khru</span>
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="apartment_location"
+                  value="Rat Burana"
+                  checked={formData.apartment_location === 'ratburana'}
+                  onChange={(_e) =>
+                    handleInputChange('apartment_location', 'ratrburana')
+                  }
+                  className="h-4 w-4"
+                />
+                <span>Rat Burana</span>
               </label>
             </div>
           </div>

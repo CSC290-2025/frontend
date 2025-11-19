@@ -165,7 +165,7 @@ export default function ApartmentBooking() {
   }
 
   return (
-    <div className="relative flex min-h-screen flex-col items-center bg-[#F9FAFB] px-4 py-10">
+    <div className="font-poppins relative flex min-h-screen flex-col items-center bg-[#F9FAFB] px-4 py-10">
       <div className="mb-6 w-full max-w-5xl">
         <div className="mb-6 flex w-full max-w-5xl items-center gap-3">
           <button
