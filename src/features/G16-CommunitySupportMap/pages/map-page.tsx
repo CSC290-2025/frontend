@@ -1,7 +1,9 @@
 // src/pages/MapPage.tsx
 import { useEffect, useRef, useState } from 'react';
 import initMapAndMarkers from '../config/google-map';
-import type { SuccessMarker, MarkerType, MapMarker } from '../interfaces/api';
+
+
+import type { SuccessMarker, MapMarker } from '../interfaces/api';
 
 
 // const parser = new DOMParser();
@@ -82,7 +84,7 @@ const ZONES = {
   ChomThong: { north: 13.72, south: 13.655, east: 100.5, west: 100.43 },
 } as const;
 
-// check marker is inside 4 district
+// Check if marker is inside any of the 4 districts
 function isInAnyZone(m: MapMarker): boolean {
   return Object.values(ZONES).some(
     (z) =>
@@ -95,7 +97,7 @@ const MapPage = () => {
   const [markers, setMarkers] = useState<MapMarker[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // fetch marker from backend
+  // Fetch markers from backend and normalize location
   useEffect(() => {
     async function loadMarkers() {
       try {
@@ -105,12 +107,58 @@ const MapPage = () => {
         const json = await res.json();
         const data = json.data as SuccessMarker[];
 
-        const mapped = data
-          .filter((m) => m.location)
+        const mapped: MapMarker[] = data
           .map((m) => {
-            const [lng, lat] = m.location!.coordinates;
-            return { id: m.id, lat, lng, description: m.description };
-          });
+            if (!m.location) return null;
+
+            let lat: number | null = null;
+            let lng: number | null = null;
+            const loc = m.location as any;
+
+            // Case 1 - GeoJSON { type: 'Point', coordinates: [lng, lat] }
+            if (loc && Array.isArray(loc.coordinates)) {
+              const [lngRaw, latRaw] = loc.coordinates;
+              lng = Number(lngRaw);
+              lat = Number(latRaw);
+            }
+            // Case 2 - WKT string e.g. "POINT(100.49 13.65)"
+            else if (typeof loc === 'string') {
+              const match = loc.match(/POINT\(([-0-9.]+)\s+([-0-9.]+)\)/i);
+              if (match) {
+                lng = parseFloat(match[1]);
+                lat = parseFloat(match[2]);
+              }
+            }
+            // Case 3 - Object with x/y properties e.g. { x: lng, y: lat }
+            else if (
+              typeof loc === 'object' &&
+              loc !== null &&
+              typeof loc.x === 'number' &&
+              typeof loc.y === 'number'
+            ) {
+              lng = loc.x;
+              lat = loc.y;
+            }
+
+            // If we still cannot get valid lat/lng, skip this marker
+            if (
+              lat === null ||
+              lng === null ||
+              Number.isNaN(lat) ||
+              Number.isNaN(lng)
+            ) {
+              return null;
+            }
+
+            return {
+              id: m.id,
+              lat,
+              lng,
+              description: m.description,
+            };
+          })
+          // Remove null entries
+          .filter((m): m is MapMarker => m !== null);
 
         setMarkers(mapped);
       } finally {
@@ -121,6 +169,7 @@ const MapPage = () => {
     loadMarkers();
   }, []);
 
+  // Render Google Map whenever markers change
   useEffect(() => {
     if (!mapRef.current) return;
 
@@ -137,8 +186,7 @@ const MapPage = () => {
       center,
       zoom: 13,
       mapId: 'map1',
-
-      // Lock map
+      // Lock map inside the bounding box
       restriction: {
         latLngBounds: MAP_BOUNDS,
         strictBounds: true,
