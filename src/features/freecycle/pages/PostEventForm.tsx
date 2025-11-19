@@ -8,20 +8,21 @@ interface PostEventFormProps {
 
 export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
   const [formData, setFormData] = useState({
-    event_name: '',
-    event_description: '',
-    event_photo: '',
-    start_date: '',
-    end_date: '',
-    province: '',
-    district: '',
-    subdistrict: '',
-    more_location_detail: '',
+    host_user_id: 1,
+    title: '',
+    description: '',
+    image_url: '',
+    total_seats: 0,
+    start_at: '',
+    end_at: '',
+    address_id: 1,
+    organization_id: 1,
+    event_tag_id: 1,
     volunteer_required: false,
     volunteer_amount: 0,
     volunteer_speciality: '',
     volunteer_description: '',
-    volunteer_register_deadline: '',
+    //volunteer_register_deadline: '',
   });
 
   const [loading, setLoading] = useState(false);
@@ -32,25 +33,74 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
     e.preventDefault();
     setLoading(true);
 
-    const payload = {
-      host_user_id: 1,
-      title: formData.event_name,
-      description: formData.event_description,
-      total_seats: formData.volunteer_required ? formData.volunteer_amount : 0,
-      start_at: formData.start_date,
-      end_at: formData.end_date,
-      organization_id: null,
-      address_id: null,
-      event_tag_id: null,
+    // Validate required fields
+    if (!formData.title.trim()) {
+      alert('Please enter an event title');
+      setLoading(false);
+      return;
+    }
+
+    if (!formData.start_at || !formData.end_at) {
+      alert('Please select both start and end dates');
+      setLoading(false);
+      return;
+    }
+
+    // Convert datetime-local to ISO format with Z suffix
+    const formatDatetime = (datetimeLocal: string): string => {
+      if (!datetimeLocal) return '';
+      // datetime-local format: "2025-11-19T02:51"
+      // Convert to ISO format: "2025-11-19T02:51:00.000Z"
+      const date = new Date(datetimeLocal + ':00');
+      return date.toISOString();
     };
 
+    const payload = {
+      host_user_id: formData.host_user_id,
+      title: formData.title,
+      description: formData.description,
+      total_seats: formData.volunteer_required ? formData.volunteer_amount : 0,
+      start_at: formatDatetime(formData.start_at),
+      end_at: formatDatetime(formData.end_at),
+      address_id: formData.address_id,
+      organization_id: formData.organization_id,
+      event_tag_id: formData.event_tag_id,
+    };
+
+    // Prepare volunteer payload if needed
+    const volunteerPayload = formData.volunteer_required
+      ? {
+          speciality: formData.volunteer_speciality,
+          amount: formData.volunteer_amount,
+          description: formData.volunteer_description,
+        }
+      : null;
+
     try {
-      await createEvent(payload);
+      // Create event and optionally create volunteer data
+      const promises = [createEvent(payload)];
+
+      // if (volunteerPayload) {
+      //   // Add volunteer creation promise - uncomment when API is ready
+      //   promises.push(createVolunteer(volunteerPayload));
+      // }(ถามกลุ่มvolunteer ว่าให้ยิ่งไปendpintไหน)
+
+      //เเก้ตรงนี้ให้ทำพร้อมกันได้2อัน
+      await Promise.all(promises);
       alert('Event created successfully!');
       _onSuccess?.();
-    } catch (err) {
-      console.error(err);
-      alert('Failed to create event');
+    } catch (err: any) {
+      console.log('Submitting event with payload:', payload);
+      console.log('Volunteer payload:', volunteerPayload);
+      console.error('Event creation error:', err);
+      console.error('Response data:', err?.response?.data);
+      console.error('Response status:', err?.response?.status);
+      const errorMessage =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        err?.message ||
+        'Failed to create event';
+      alert(`Failed to create event: ${errorMessage}`);
     } finally {
       setLoading(false);
     }
@@ -64,35 +114,34 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
         onSubmit={handleSubmit}
         className="space-y-6 rounded-2xl bg-white p-8 shadow-md"
       >
-        {/* Upload */}
+        {/* Image URL */}
         <div className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-300 bg-gray-50 p-8 transition-colors hover:bg-gray-100">
           <Upload className="mb-2 h-12 w-12 text-gray-400" />
-          <p className="text-sm text-gray-600">upload photo</p>
-
+          <p className="text-sm text-gray-600">Upload photo</p>
           <input
             type="text"
-            placeholder="Photo URL (Pexels link)"
-            value={formData.event_photo}
+            placeholder="Image URL"
+            value={formData.image_url}
             onChange={(e) =>
-              setFormData({ ...formData, event_photo: e.target.value })
+              setFormData({ ...formData, image_url: e.target.value })
             }
             className="mt-4 w-full max-w-md rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
           />
         </div>
 
-        {/* Event name */}
+        {/* Event Title */}
         <div>
           <label className="mb-2 block text-sm font-medium text-gray-900">
-            Event name
+            Event Title
           </label>
           <input
             type="text"
             required
-            value={formData.event_name}
+            value={formData.title}
             onChange={(e) =>
-              setFormData({ ...formData, event_name: e.target.value })
+              setFormData({ ...formData, title: e.target.value })
             }
-            placeholder="Event name"
+            placeholder="Event title"
             className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
           />
         </div>
@@ -101,91 +150,82 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="mb-2 block text-sm font-medium text-gray-900">
-              Start date
+              Start At
             </label>
             <input
               type="datetime-local"
-              value={formData.start_date}
+              value={formData.start_at}
               onChange={(e) =>
-                setFormData({ ...formData, start_date: e.target.value })
+                setFormData({ ...formData, start_at: e.target.value })
               }
               className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
             />
           </div>
-
           <div>
             <label className="mb-2 block text-sm font-medium text-gray-900">
-              End date
+              End At
             </label>
             <input
               type="datetime-local"
-              value={formData.end_date}
+              value={formData.end_at}
               onChange={(e) =>
-                setFormData({ ...formData, end_date: e.target.value })
+                setFormData({ ...formData, end_at: e.target.value })
               }
               className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
             />
           </div>
         </div>
 
-        {/* Province */}
-        <div>
-          <label className="mb-2 block text-sm font-medium text-gray-900">
-            Province
-          </label>
-          <input
-            type="text"
-            value={formData.province}
-            onChange={(e) =>
-              setFormData({ ...formData, province: e.target.value })
-            }
-            className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
-          />
-        </div>
-
-        {/* District */}
-        <div>
-          <label className="mb-2 block text-sm font-medium text-gray-900">
-            District
-          </label>
-          <input
-            type="text"
-            value={formData.district}
-            onChange={(e) =>
-              setFormData({ ...formData, district: e.target.value })
-            }
-            className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
-          />
-        </div>
-
-        {/* Subdistrict */}
-        <div>
-          <label className="mb-2 block text-sm font-medium text-gray-900">
-            Subdistrict
-          </label>
-          <input
-            type="text"
-            value={formData.subdistrict}
-            onChange={(e) =>
-              setFormData({ ...formData, subdistrict: e.target.value })
-            }
-            className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
-          />
-        </div>
-
-        {/* More location */}
-        <div>
-          <label className="mb-2 block text-sm font-medium text-gray-900">
-            More location details
-          </label>
-          <input
-            type="text"
-            value={formData.more_location_detail}
-            onChange={(e) =>
-              setFormData({ ...formData, more_location_detail: e.target.value })
-            }
-            className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
-          />
+        {/* Address, Organization, Event Tag IDs */}
+        <div className="grid grid-cols-3 gap-4">
+          <div>
+            <label className="mb-2 block text-sm font-medium text-gray-900">
+              Address ID
+            </label>
+            <input
+              type="number"
+              value={formData.address_id}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  address_id: parseInt(e.target.value) || 1,
+                })
+              }
+              className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+            />
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-medium text-gray-900">
+              Organization ID
+            </label>
+            <input
+              type="number"
+              value={formData.organization_id}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  organization_id: parseInt(e.target.value) || 1,
+                })
+              }
+              className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+            />
+          </div>
+          <div>
+            <label className="mb-2 block text-sm font-medium text-gray-900">
+              Event Tag ID
+            </label>
+            <input
+              type="number"
+              value={formData.event_tag_id}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  event_tag_id: parseInt(e.target.value) || 1,
+                })
+              }
+              className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+            />
+          </div>
         </div>
 
         {/* Event Description */}
@@ -194,9 +234,9 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
             Description
           </label>
           <textarea
-            value={formData.event_description}
+            value={formData.description}
             onChange={(e) =>
-              setFormData({ ...formData, event_description: e.target.value })
+              setFormData({ ...formData, description: e.target.value })
             }
             rows={4}
             className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"

@@ -56,6 +56,7 @@ export const fetchNotGivenPosts = async (): Promise<ApiPost[]> => {
 };
 
 export const fetchUserPosts = async (): Promise<ApiPost[]> => {
+  console.log('aaa');
   const response =
     await apiClient.get<ApiResponseWrapper<PostsData>>('/posts/me');
   return response.data.data.posts;
