@@ -9,7 +9,8 @@ export type Path =
   | `/example/:id`
   | `/freecycle`
   | `/freecycle/my-items`
-  | `/freecycle/post-event`;
+  | `/freecycle/post-event`
+  | `/freecycle/post-item`;
 
 export type Params = {
   '/example/:id': { id: string };
