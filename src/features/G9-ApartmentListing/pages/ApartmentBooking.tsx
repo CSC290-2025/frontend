@@ -3,7 +3,7 @@ import { useNavigate } from '@/router';
 import BackIcon from '@/features/G9-ApartmentListing/assets/BackIcon.svg';
 import UserIcon from '@/features/G9-ApartmentListing/assets/UserIcon.svg';
 import RoomDetailIcon from '@/features/G9-ApartmentListing/assets/RoomDetailIcon.svg';
-import { Booking, APT, Room } from '@/features/G9-ApartmentListing/hooks/index';
+import { APT, Room } from '@/features/G9-ApartmentListing/hooks/index';
 import type { roomTypes } from '@/features/G9-ApartmentListing/types';
 import { useCreateBooking } from '@/features/G9-ApartmentListing/hooks/useBooking';
 
