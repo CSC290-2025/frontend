@@ -9,7 +9,8 @@ export type Path =
   | `/example/:id`
   | `/traffic`
   | `/traffic/admin`
-  | `/traffic/control`;
+  | `/traffic/control`
+  | `/traffic/mock`;
 
 export type Params = {
   '/example/:id': { id: string };

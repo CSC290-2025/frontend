@@ -41,17 +41,22 @@ export default function TrafficControlSystem() {
   const currentSequenceRef = useRef<Record<string, number>>({});
   const localCountdownsRef = useRef<Record<string, LocalCountdown>>({});
   const isRunningRef = useRef(false);
+  const junctionsRef = useRef<Record<string, Junction>>({});
 
-  // Sync isRunning state with ref
+  // Sync refs with state
   useEffect(() => {
     isRunningRef.current = isRunning;
   }, [isRunning]);
+
+  useEffect(() => {
+    junctionsRef.current = junctions;
+  }, [junctions]);
 
   // Generate direction labels dynamically
   const getDirections = () => {
     const directions: string[] = [];
     for (let i = 0; i < numDirections; i++) {
-      directions.push(String.fromCharCode(65 + i)); // A, B, C, D, E, F, G, H
+      directions.push(String.fromCharCode(65 + i));
     }
     return directions;
   };
@@ -323,6 +328,9 @@ export default function TrafficControlSystem() {
 
   // Start automation
   const startAutomation = () => {
+    console.log('Start button clicked, isRunning:', isRunning);
+    console.log('Junctions:', junctions);
+
     if (isRunning) {
       addLog('System already running');
       return;
@@ -337,9 +345,14 @@ export default function TrafficControlSystem() {
     addLog('Starting traffic light automation system...');
     updateStatus('System Running', true);
 
-    Object.keys(junctions).forEach((junctionId) => {
-      runJunctionLoop(junctionId);
-    });
+    // Use setTimeout to ensure state is updated before starting loops
+    setTimeout(() => {
+      console.log('Starting junction loops...');
+      Object.keys(junctionsRef.current).forEach((junctionId) => {
+        console.log('Starting loop for junction:', junctionId);
+        runJunctionLoop(junctionId);
+      });
+    }, 100);
   };
 
   // Stop automation
