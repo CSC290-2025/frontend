@@ -11,8 +11,8 @@ export default function Courses() {
   if (isError) return <div>Error loading courses</div>;
 
   return (
-    <div className="flex flex-col gap-y-6 p-10">
-      <div className="flex justify-start gap-x-4">
+    <div className="flex flex-col gap-y-4 p-4 sm:gap-y-6 sm:p-6 md:p-8 lg:p-10">
+      <div className="flex flex-wrap justify-start gap-2 sm:gap-3 md:gap-4">
         <Button
           variant="KnowAICustom"
           size="KnowAI"
@@ -28,8 +28,7 @@ export default function Courses() {
           Online
         </Button>
       </div>
-
-      <div className="grid grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 md:gap-6">
         {courses?.map((course: any) => (
           <CourseCard key={course.id} course={course} />
         ))}
