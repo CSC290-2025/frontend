@@ -11,12 +11,26 @@ import { useWeatherData } from '../hooks/useWeatherData';
 import { useWeatherModel } from '../hooks/useWeatherModel';
 
 export default function WeatherMockData() {
-  const { data } = useWeatherData();
+  const { data, isLoading, isError, refetch, isForecastLoading } =
+    useWeatherData();
 
   const detailModel = useWeatherModel();
   const warningModel = useWeatherModel();
 
-  if (!data) return <div>Loading...</div>;
+  if (isLoading) {
+    return <div className="p-6">Loading weather data…</div>;
+  }
+
+  if (isError || !data) {
+    return (
+      <div className="p-6 text-red-600">
+        Failed to load weather data.
+        <button className="ml-2 underline" onClick={() => refetch()}>
+          Retry
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-5xl p-6 text-black select-none">
@@ -43,7 +57,10 @@ export default function WeatherMockData() {
           />
         </div>
 
-        <div className="flex-[2]">
+        <div className="grow basis-2/3">
+          {isForecastLoading && (
+            <p className="mb-2 text-sm text-gray-500">Updating forecast…</p>
+          )}
           <HourlyForecast
             list={data.forecastHourly}
             onSelect={(item) =>
@@ -63,7 +80,10 @@ export default function WeatherMockData() {
 
       {/* BOTTOM ROW */}
       <div className="mt-6 flex items-stretch gap-6">
-        <div className="flex-[3]">
+        <div className="grow basis-3/4">
+          {isForecastLoading && (
+            <p className="mb-2 text-sm text-gray-500">Updating forecast…</p>
+          )}
           <WeeklyForecast
             list={data.forecastWeekly}
             onSelect={(item) =>

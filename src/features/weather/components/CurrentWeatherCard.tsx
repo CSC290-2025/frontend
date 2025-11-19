@@ -1,12 +1,18 @@
+import type { WeatherUIData } from '../hooks/useWeatherData';
+
 interface Props {
-  data: any;
-  onClick?: () => void;
+  readonly data: WeatherUIData;
+  readonly onClick?: () => void;
 }
 
 export default function CurrentWeatherCard({ data, onClick }: Props) {
+  const Wrapper = onClick ? 'button' : 'div';
+  const containerClass = `${'mb-6 w-full rounded-2xl border bg-white p-6 text-left shadow-sm'}${onClick ? ' cursor-pointer' : ''}`;
+
   return (
-    <div
-      className="mb-6 cursor-pointer rounded-2xl border bg-white p-6 shadow-sm"
+    <Wrapper
+      {...(onClick ? { type: 'button' as const } : {})}
+      className={containerClass}
       onClick={onClick}
     >
       <div className="flex items-center justify-between">
@@ -20,8 +26,8 @@ export default function CurrentWeatherCard({ data, onClick }: Props) {
           </p>
         </div>
 
-        <div className="text-8xl">🌤</div>
+        <div className="text-8xl">{data.conditionIcon}</div>
       </div>
-    </div>
+    </Wrapper>
   );
 }
