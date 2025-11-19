@@ -9,7 +9,6 @@
 export type PostInsuranceCardsCardIdTopUp200DataCardStatus =
   (typeof PostInsuranceCardsCardIdTopUp200DataCardStatus)[keyof typeof PostInsuranceCardsCardIdTopUp200DataCardStatus];
 
- 
 export const PostInsuranceCardsCardIdTopUp200DataCardStatus = {
   active: 'active',
   suspended: 'suspended',

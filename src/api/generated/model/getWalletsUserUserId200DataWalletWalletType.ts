@@ -9,7 +9,6 @@
 export type GetWalletsUserUserId200DataWalletWalletType =
   (typeof GetWalletsUserUserId200DataWalletWalletType)[keyof typeof GetWalletsUserUserId200DataWalletWalletType];
 
- 
 export const GetWalletsUserUserId200DataWalletWalletType = {
   individual: 'individual',
   organization: 'organization',

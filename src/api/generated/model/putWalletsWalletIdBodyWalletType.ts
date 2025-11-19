@@ -9,7 +9,6 @@
 export type PutWalletsWalletIdBodyWalletType =
   (typeof PutWalletsWalletIdBodyWalletType)[keyof typeof PutWalletsWalletIdBodyWalletType];
 
- 
 export const PutWalletsWalletIdBodyWalletType = {
   individual: 'individual',
   organization: 'organization',

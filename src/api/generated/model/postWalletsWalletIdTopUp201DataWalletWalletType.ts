@@ -9,7 +9,6 @@
 export type PostWalletsWalletIdTopUp201DataWalletWalletType =
   (typeof PostWalletsWalletIdTopUp201DataWalletWalletType)[keyof typeof PostWalletsWalletIdTopUp201DataWalletWalletType];
 
- 
 export const PostWalletsWalletIdTopUp201DataWalletWalletType = {
   individual: 'individual',
   organization: 'organization',

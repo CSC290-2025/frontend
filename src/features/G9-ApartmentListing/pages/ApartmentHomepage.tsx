@@ -273,25 +273,38 @@ export default function ApartmentHomepage() {
             <h3 className="mb-4 text-xl font-semibold text-[#2B5991]">
               Location
             </h3>
-            <div className="space-y-3 text-lg">
-              {[
-                { value: 'asoke', label: 'Asoke' },
-                { value: 'prachauthit', label: 'Prachautit' },
-                { value: 'phathumwan', label: 'Phathumwan' },
-              ].map((location) => (
-                <label
-                  key={location.value}
-                  className="flex cursor-pointer items-center gap-3"
-                >
+            <div className="grid grid-cols-2 gap-x-8 gap-y-3 text-lg">
+              <div className="space-y-3">
+                {[
+                  { value: 'chomthong', label: 'Chom Thong' },
+                  { value: 'thonburi', label: 'Thonburi' },
+                  { value: 'thungkhru', label: 'Thung Khru' },
+                ].map((location) => (
+                  <label
+                    key={location.value}
+                    className="flex cursor-pointer items-center gap-3"
+                  >
+                    <input
+                      type="checkbox"
+                      className="h-5 w-5 shrink-0 accent-blue-600"
+                      checked={selectedLocations.includes(location.value)}
+                      onChange={() => handleLocationChange(location.value)}
+                    />
+                    <span>{location.label}</span>
+                  </label>
+                ))}
+              </div>
+              <div>
+                <label className="flex cursor-pointer items-center gap-3">
                   <input
                     type="checkbox"
-                    className="h-5 w-5 accent-blue-600"
-                    checked={selectedLocations.includes(location.value)}
-                    onChange={() => handleLocationChange(location.value)}
+                    className="h-5 w-5 shrink-0 accent-blue-600"
+                    checked={selectedLocations.includes('ratburana')}
+                    onChange={() => handleLocationChange('ratburana')}
                   />
-                  <span>{location.label}</span>
+                  <span>Rat Burana</span>
                 </label>
-              ))}
+              </div>
             </div>
           </div>
 
@@ -307,7 +320,7 @@ export default function ApartmentHomepage() {
                 >
                   <input
                     type="checkbox"
-                    className="h-5 w-5 accent-blue-600"
+                    className="h-5 w-5 shrink-0 accent-blue-600"
                     checked={selectedRatings.includes(rating)}
                     onChange={() => handleRatingChange(rating)}
                   />

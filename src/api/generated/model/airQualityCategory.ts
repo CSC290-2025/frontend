@@ -9,7 +9,6 @@
 export type AirQualityCategory =
   (typeof AirQualityCategory)[keyof typeof AirQualityCategory];
 
- 
 export const AirQualityCategory = {
   GOOD: 'GOOD',
   MODERATE: 'MODERATE',

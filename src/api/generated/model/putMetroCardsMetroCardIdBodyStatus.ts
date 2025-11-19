@@ -9,7 +9,6 @@
 export type PutMetroCardsMetroCardIdBodyStatus =
   (typeof PutMetroCardsMetroCardIdBodyStatus)[keyof typeof PutMetroCardsMetroCardIdBodyStatus];
 
- 
 export const PutMetroCardsMetroCardIdBodyStatus = {
   active: 'active',
   suspended: 'suspended',

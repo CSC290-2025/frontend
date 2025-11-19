@@ -123,7 +123,7 @@ export default function AdminListedAPT() {
 
             if (Array.isArray(apt.rating)) {
               // rating is an array — try to derive numeric values from common shapes
-               
+
               const values = apt.rating
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 .map((r: any) => {

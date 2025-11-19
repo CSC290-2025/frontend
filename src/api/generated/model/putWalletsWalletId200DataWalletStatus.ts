@@ -9,7 +9,6 @@
 export type PutWalletsWalletId200DataWalletStatus =
   (typeof PutWalletsWalletId200DataWalletStatus)[keyof typeof PutWalletsWalletId200DataWalletStatus];
 
- 
 export const PutWalletsWalletId200DataWalletStatus = {
   active: 'active',
   suspended: 'suspended',

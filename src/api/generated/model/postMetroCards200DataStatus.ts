@@ -9,7 +9,6 @@
 export type PostMetroCards200DataStatus =
   (typeof PostMetroCards200DataStatus)[keyof typeof PostMetroCards200DataStatus];
 
- 
 export const PostMetroCards200DataStatus = {
   active: 'active',
   suspended: 'suspended',

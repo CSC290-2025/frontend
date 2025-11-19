@@ -9,7 +9,6 @@
 export type GetWalletsWalletId200DataWalletStatus =
   (typeof GetWalletsWalletId200DataWalletStatus)[keyof typeof GetWalletsWalletId200DataWalletStatus];
 
- 
 export const GetWalletsWalletId200DataWalletStatus = {
   active: 'active',
   suspended: 'suspended',

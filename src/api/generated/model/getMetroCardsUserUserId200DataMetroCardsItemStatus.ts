@@ -9,7 +9,6 @@
 export type GetMetroCardsUserUserId200DataMetroCardsItemStatus =
   (typeof GetMetroCardsUserUserId200DataMetroCardsItemStatus)[keyof typeof GetMetroCardsUserUserId200DataMetroCardsItemStatus];
 
- 
 export const GetMetroCardsUserUserId200DataMetroCardsItemStatus = {
   active: 'active',
   suspended: 'suspended',

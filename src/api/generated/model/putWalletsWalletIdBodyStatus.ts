@@ -9,7 +9,6 @@
 export type PutWalletsWalletIdBodyStatus =
   (typeof PutWalletsWalletIdBodyStatus)[keyof typeof PutWalletsWalletIdBodyStatus];
 
- 
 export const PutWalletsWalletIdBodyStatus = {
   active: 'active',
   suspended: 'suspended',

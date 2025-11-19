@@ -31,7 +31,7 @@ export interface CreateBooking {
 
 export interface UpdateBooking {
   user_id: number;
-  room_id: number;
+  room_id?: number;
   apartment_id?: number;
   guest_name?: string | null;
   guest_phone?: string | null;

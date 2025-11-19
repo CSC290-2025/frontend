@@ -9,7 +9,6 @@
 export type PostWallets200DataWalletStatus =
   (typeof PostWallets200DataWalletStatus)[keyof typeof PostWallets200DataWalletStatus];
 
- 
 export const PostWallets200DataWalletStatus = {
   active: 'active',
   suspended: 'suspended',

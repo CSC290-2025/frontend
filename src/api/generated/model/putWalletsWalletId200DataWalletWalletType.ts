@@ -9,7 +9,6 @@
 export type PutWalletsWalletId200DataWalletWalletType =
   (typeof PutWalletsWalletId200DataWalletWalletType)[keyof typeof PutWalletsWalletId200DataWalletWalletType];
 
- 
 export const PutWalletsWalletId200DataWalletWalletType = {
   individual: 'individual',
   organization: 'organization',

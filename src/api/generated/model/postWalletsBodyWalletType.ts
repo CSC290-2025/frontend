@@ -9,7 +9,6 @@
 export type PostWalletsBodyWalletType =
   (typeof PostWalletsBodyWalletType)[keyof typeof PostWalletsBodyWalletType];
 
- 
 export const PostWalletsBodyWalletType = {
   individual: 'individual',
   organization: 'organization',
