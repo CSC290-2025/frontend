@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 
 interface BloodTypeDropdownProps {
   value: string;
@@ -16,8 +17,11 @@ function BloodTypeDropdown({ value, onChange }: BloodTypeDropdownProps) {
         onClick={() => setOpen(!open)}
       >
         {value}
-        <span className="text-gray-500">▼</span>{' '}
-        {/* change this icon to library later */}
+        {open ? (
+          <ChevronUp className="lg:h-[24px] lg:w-[24px]" />
+        ) : (
+          <ChevronDown className="lg:h-[24px] lg:w-[24px]" />
+        )}
       </div>
 
       {open && (

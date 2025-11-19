@@ -4,11 +4,14 @@ import Health from '../components/userSettingPage/Health';
 import Account from '../components/userSettingPage/Account';
 import Picture from '../components/userSettingPage/Picture';
 import { UserAPI } from '../api';
+import { ChevronLeft } from 'lucide-react';
+import { useNavigate } from '@/router';
 
 function UserSettingPage() {
   const userID = 7;
   const [user, setUser] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('personal');
+  const navigate = useNavigate();
 
   const mapUserData = (userApiData: any) => {
     const user = userApiData.user;
@@ -85,6 +88,10 @@ function UserSettingPage() {
     }));
   };
 
+  const handleBackButton = () => {
+    navigate('/'); //navigate to citizen page later
+  };
+
   if (!user) return <div>Loading...</div>;
 
   const { personal, health, account, picture } = user;
@@ -140,8 +147,13 @@ function UserSettingPage() {
   return (
     <div className="absolute flex flex-col rounded-[20px] border opacity-100 lg:top-[70px] lg:left-[258px] lg:w-[1082px] lg:gap-[37px]">
       <div className="flex lg:mt-[48px] lg:ml-[80px] lg:h-[78px] lg:w-[373px] lg:gap-[26px]">
-        {/* icon */}
-        <h1 className="text-[#2B5991] lg:text-[48px]">Edit Profile</h1>
+        <ChevronLeft
+          className="cursor-pointer font-bold text-[#2B5991] lg:h-[77px] lg:w-[77px]"
+          onClick={handleBackButton}
+        />
+        <h1 className="font-bold text-[#2B5991] lg:text-[48px]">
+          Edit Profile
+        </h1>
       </div>
       <div className="flex lg:gap-[20px]">
         <div>
