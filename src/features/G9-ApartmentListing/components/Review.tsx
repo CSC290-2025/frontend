@@ -1,4 +1,7 @@
 import React, { useState } from 'react';
+import CloseIcon from '@/features/G9-ApartmentListing/assets/CloseIcon.svg';
+import StarIcon from '@/features/G9-ApartmentListing/assets/StarIcon.svg';
+import GrayStarIcon from '@/features/G9-ApartmentListing/assets/GrayStarIcon.svg';
 
 interface ReviewModalProps {
   isOpen: boolean;
@@ -44,13 +47,17 @@ export default function ReviewModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+    <div className="font-poppins fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="relative w-full max-w-2xl rounded-2xl bg-white p-8 shadow-xl">
         <button
           onClick={onClose}
-          className="absolute top-6 right-6 flex h-8 w-8 items-center justify-center text-2xl text-gray-600 hover:text-gray-900"
+          className="absolute top-6 right-6 flex h-8 w-8 items-center justify-center rounded-full text-2xl hover:bg-gray-100"
         >
-          ✕
+          <img
+            src={CloseIcon}
+            alt="Closepage"
+            className="transition-opacity hover:opacity-80"
+          />
         </button>
 
         <h2 className="mb-6 text-2xl font-bold">Write a review</h2>
@@ -73,15 +80,13 @@ export default function ReviewModal({
                 onMouseLeave={handleStarLeave}
                 className="transition-transform hover:scale-110"
               >
-                <span
-                  className={`text-5xl ${
-                    star <= (hoverRating || rating)
-                      ? 'text-yellow-400'
-                      : 'text-gray-300'
-                  }`}
-                >
-                  ★
-                </span>
+                <img
+                  src={
+                    star <= (hoverRating || rating) ? StarIcon : GrayStarIcon
+                  }
+                  alt={`star-${star}`}
+                  className="h-12 w-12"
+                />
               </button>
             ))}
           </div>
@@ -100,7 +105,7 @@ export default function ReviewModal({
         <div className="flex justify-end">
           <button
             onClick={handleSubmit}
-            className="rounded-full bg-cyan-400 px-12 py-3 text-lg font-semibold text-white hover:bg-cyan-500"
+            className="rounded-full bg-cyan-400 px-9 py-3 text-lg font-semibold text-white hover:bg-cyan-500"
           >
             Done
           </button>

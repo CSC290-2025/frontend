@@ -2,7 +2,7 @@ import { apiClient } from '@/lib/apiClient';
 import type { ratingTypes } from '@/features/G9-ApartmentListing/types';
 
 export const fetchRatingsByApartmentId = (id: number) => {
-  return apiClient.get(`/ratings/apartment/${id}`);
+  return apiClient.get(`/apartments/${id}/ratings/comments`);
 };
 
 export const fetchAverageRatingByApartmentId = (id: number) => {
@@ -22,7 +22,7 @@ export const deleteRating = (id: number) => {
 };
 
 export const fetchCommentsByApartmentId = (id: number) => {
-  return apiClient.get(`/ratings/apartment/${id}/comments`);
+  return apiClient.get(`/apartments/${id}/ratings`);
 };
 
 export const fetchAllRatings = (id: number) => {

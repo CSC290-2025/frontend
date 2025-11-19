@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from '@/router';
 import BookingComplete from '@/features/G9-ApartmentListing/components/BookingComplete';
+import { postWalletsTransfer } from '@/api/generated/wallets';
 import LocationIcon from '@/features/G9-ApartmentListing/assets/LocationIcon.svg';
 import BackIcon from '@/features/G9-ApartmentListing/assets/BackIcon.svg';
 import EWalletIcon from '@/features/G9-ApartmentListing/assets/EWalletIcon.svg';
-import StarIcon from '@/features/G9-ApartmentListing/assets/StarIcon.svg';
-import GrayStarIcon from '@/features/G9-ApartmentListing/assets/GrayStarIcon.svg';
 
 interface Apartment {
   name: string;
@@ -50,7 +49,29 @@ export default function ApartmentPayment() {
   }, [roomType]);
 
   const handleBooking = () => {
-    setShowPopup(true);
+    // simplest implementation: transfer money from user 1 to a developer/service account (user 2)
+    // so the balance for user 1 is reduced by the apartment price.
+    // NOTE: This uses a placeholder recipient (user id 2). Adjust to the correct merchant ID if needed.
+    (async () => {
+      if (!price || !balance) {
+        alert('Missing price or balance');
+        return;
+      }
+
+      try {
+        await postWalletsTransfer({
+          from_user_id: 1,
+          to_user_id: 2,
+          amount: price,
+        });
+
+        setBalance((prev) => (prev ? prev - price : null));
+        setShowPopup(true);
+      } catch (err) {
+        console.error(err);
+        alert('Payment failed — check your wallet or try again.');
+      }
+    })();
   };
 
   const handleViewBooking = () => {
@@ -129,17 +150,21 @@ export default function ApartmentPayment() {
                   </p>
 
                   <div className="flex">
-                    {Array.from({ length: 5 }, (_, i) => {
-                      const filledStars = Math.floor(apartment.rating);
-                      return (
-                        <img
-                          key={i}
-                          src={i < filledStars ? StarIcon : GrayStarIcon}
-                          alt={i < filledStars ? 'Star' : 'Gray Star'}
-                          className="h-5 w-5"
-                        />
-                      );
-                    })}
+                    {Array.from({ length: 5 }, (_, i) => (
+                      <svg
+                        key={i}
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 20 20"
+                        fill={
+                          i < Math.floor(apartment.rating)
+                            ? '#facc15'
+                            : '#d1d5db'
+                        }
+                        className="h-5 w-5"
+                      >
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.18 3.63a1 1 0 00.95.69h3.813c.969 0 1.372 1.24.588 1.81l-3.087 2.24a1 1 0 00-.364 1.118l1.18 3.63c.3.921-.755 1.688-1.54 1.118l-3.087-2.24a1 1 0 00-1.176 0l-3.087 2.24c-.785.57-1.84-.197-1.54-1.118l1.18-3.63a1 1 0 00-.364-1.118L2.518 9.057c-.784-.57-.38-1.81.588-1.81h3.813a1 1 0 00.95-.69l1.18-3.63z" />
+                      </svg>
+                    ))}
                   </div>
                 </div>
                 <div className="mt-2 flex items-center text-[16px] text-gray-600">
