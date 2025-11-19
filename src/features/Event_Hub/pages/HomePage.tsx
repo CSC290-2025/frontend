@@ -21,6 +21,9 @@ import {
 import EventDetailModal from '@/features/Event_Hub/component/EventDetailModel';
 import Sidebar from '@/features/Event_Hub/component/Sidebar';
 import TopBar from '@/features/Event_Hub/component/Topbar';
+import HistoryPage from '@/features/Event_Hub/component/HistoryPage';
+import ContactPage from '@/features/Event_Hub/component/ContactPage';
+import MonthlyPage from '@/features/Event_Hub/component/MonthlyPage';
 
 interface Event {
   id: number;
@@ -239,115 +242,123 @@ const HomePage = () => {
         <TopBar topCategories={topCategories} />
 
         {/* Content Area */}
-        <div className="mx-auto max-w-7xl p-6">
-          {/* Tabs and Search */}
-          <div className="mb-6 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-            <div className="flex flex-wrap gap-2">
-              {['Events', 'History', 'Contact', 'Monthly', 'Book mark'].map(
-                (tab) => (
-                  <button
-                    key={tab}
-                    onClick={() => setActiveTab(tab.toLowerCase())}
-                    className={`rounded-full px-6 py-2.5 font-medium transition-colors ${
-                      activeTab === tab.toLowerCase()
-                        ? 'bg-cyan-500 text-white'
-                        : 'border border-gray-300 bg-white text-gray-600 hover:bg-gray-50'
-                    }`}
-                  >
-                    {tab}
-                  </button>
-                )
-              )}
-            </div>
+        {activeTab === 'history' ? (
+          <HistoryPage setActiveTab={setActiveTab} />
+        ) : activeTab === 'contact' ? (
+          <ContactPage setActiveTab={setActiveTab} />
+        ) : activeTab === 'monthly' ? (
+          <MonthlyPage setActiveTab={setActiveTab} />
+        ) : (
+          <div className="mx-auto max-w-7xl p-6">
+            {/* Tabs and Search */}
+            <div className="mb-6 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+              <div className="flex flex-wrap gap-2">
+                {['Events', 'History', 'Contact', 'Monthly', 'Bookmark'].map(
+                  (tab) => (
+                    <button
+                      key={tab}
+                      onClick={() => setActiveTab(tab.toLowerCase())}
+                      className={`rounded-full px-6 py-2.5 font-medium transition-colors ${
+                        activeTab === tab.toLowerCase()
+                          ? 'bg-cyan-500 text-white'
+                          : 'border border-gray-300 bg-white text-gray-600 hover:bg-gray-50'
+                      }`}
+                    >
+                      {tab}
+                    </button>
+                  )
+                )}
+              </div>
 
-            <div className="flex gap-2">
-              <div className="relative">
-                <Search className="absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search for items"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-64 rounded-lg border border-gray-300 py-2.5 pr-4 pl-10 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
-                />
+              <div className="flex gap-2">
+                <div className="relative">
+                  <Search className="absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search for items"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-64 rounded-lg border border-gray-300 py-2.5 pr-4 pl-10 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                  />
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Events Header */}
-          <div className="mb-6 flex items-center justify-between">
-            <h2 className="text-3xl font-bold text-gray-800">Events</h2>
-            <div className="flex gap-2">
-              <button className="flex items-center gap-2 rounded-lg bg-cyan-500 px-4 py-2.5 text-white transition-colors hover:bg-cyan-600">
-                <Plus className="h-5 w-5" />
-                <span className="font-medium">Create</span>
-              </button>
-              <button className="flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2.5 transition-colors hover:bg-gray-50">
-                <Filter className="h-5 w-5 text-gray-600" />
-                <span className="font-medium text-gray-700">Filter</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Events Grid */}
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {filteredEvents.map((event) => (
-              <div
-                key={event.id}
-                className="rounded-2xl border border-gray-200 bg-white p-6 transition-shadow hover:shadow-lg"
-              >
-                <div className="mb-4 flex items-start justify-between">
-                  <div>
-                    <h3 className="mb-1 text-xl font-bold text-gray-800">
-                      {event.title}
-                    </h3>
-                    <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-3 py-1 text-sm font-medium text-green-700">
-                      <div className="h-2 w-2 rounded-full bg-green-500"></div>
-                      {event.status}
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => toggleBookmark(event.id)}
-                    className="rounded-lg p-2 transition-colors hover:bg-gray-100"
-                  >
-                    <BookmarkMinus
-                      className={`h-5 w-5 ${bookmarkedEvents.has(event.id) ? 'fill-cyan-500 text-cyan-500' : 'text-gray-400'}`}
-                    />
-                  </button>
-                </div>
-
-                <div className="mb-6 space-y-3">
-                  <div className="flex items-center gap-3 text-gray-600">
-                    <Calendar className="h-5 w-5" />
-                    <span className="font-medium">{event.date}</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-gray-600">
-                    <Clock className="h-5 w-5" />
-                    <span className="font-medium">{event.time}</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-gray-600">
-                    <MapPin className="h-5 w-5" />
-                    <span className="font-medium">{event.location}</span>
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => handleOpenModal(event)}
-                  className="w-full rounded-lg bg-cyan-500 py-3 font-medium text-white transition-colors hover:bg-cyan-600"
-                >
-                  More Details
+            {/* Events Header */}
+            <div className="mb-6 flex items-center justify-between">
+              <h2 className="text-3xl font-bold text-gray-800">Events</h2>
+              <div className="flex gap-2">
+                <button className="flex items-center gap-2 rounded-lg bg-cyan-500 px-4 py-2.5 text-white transition-colors hover:bg-cyan-600">
+                  <Plus className="h-5 w-5" />
+                  <span className="font-medium">Create</span>
+                </button>
+                <button className="flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2.5 transition-colors hover:bg-gray-50">
+                  <Filter className="h-5 w-5 text-gray-600" />
+                  <span className="font-medium text-gray-700">Filter</span>
                 </button>
               </div>
-            ))}
-          </div>
-
-          {filteredEvents.length === 0 && (
-            <div className="py-12 text-center">
-              <Calendar className="mx-auto mb-4 h-16 w-16 text-gray-300" />
-              <p className="text-lg text-gray-500">No events found</p>
             </div>
-          )}
-        </div>
+
+            {/* Events Grid */}
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {filteredEvents.map((event) => (
+                <div
+                  key={event.id}
+                  className="rounded-2xl border border-gray-200 bg-white p-6 transition-shadow hover:shadow-lg"
+                >
+                  <div className="mb-4 flex items-start justify-between">
+                    <div>
+                      <h3 className="mb-1 text-xl font-bold text-gray-800">
+                        {event.title}
+                      </h3>
+                      <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-3 py-1 text-sm font-medium text-green-700">
+                        <div className="h-2 w-2 rounded-full bg-green-500"></div>
+                        {event.status}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => toggleBookmark(event.id)}
+                      className="rounded-lg p-2 transition-colors hover:bg-gray-100"
+                    >
+                      <BookmarkMinus
+                        className={`h-5 w-5 ${bookmarkedEvents.has(event.id) ? 'fill-cyan-500 text-cyan-500' : 'text-gray-400'}`}
+                      />
+                    </button>
+                  </div>
+
+                  <div className="mb-6 space-y-3">
+                    <div className="flex items-center gap-3 text-gray-600">
+                      <Calendar className="h-5 w-5" />
+                      <span className="font-medium">{event.date}</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-gray-600">
+                      <Clock className="h-5 w-5" />
+                      <span className="font-medium">{event.time}</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-gray-600">
+                      <MapPin className="h-5 w-5" />
+                      <span className="font-medium">{event.location}</span>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => handleOpenModal(event)}
+                    className="w-full rounded-lg bg-cyan-500 py-3 font-medium text-white transition-colors hover:bg-cyan-600"
+                  >
+                    More Details
+                  </button>
+                </div>
+              ))}
+            </div>
+
+            {filteredEvents.length === 0 && (
+              <div className="py-12 text-center">
+                <Calendar className="mx-auto mb-4 h-16 w-16 text-gray-300" />
+                <p className="text-lg text-gray-500">No events found</p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Event Detail Modal */}
