@@ -141,7 +141,7 @@ export default function DetectHarm() {
                 </div>
               </div>
               <p className="text-center text-xs text-gray-500">
-                {img.file.name} · {(img.file.size / 500 / 500).toFixed(2)} MB
+                {img.file.name} Â· {(img.file.size / 500 / 500).toFixed(2)} MB
               </p>
             </div>
           )}
@@ -181,6 +181,7 @@ export default function DetectHarm() {
           {/* button */}
           <div className="flex justify-center gap-3">
             {/* <button
+            {/* <button
               type="submit"
               className="rounded-lg bg-black px-4 py-2 text-sm text-white disabled:opacity-60"
               disabled={loading || !img}
@@ -204,7 +205,6 @@ export default function DetectHarm() {
           </div>
         </form>
 
-        {/* show error */}
         {error && <div className="text-sm text-red-600">{error}</div>}
 
         {res && (
@@ -237,7 +237,7 @@ export default function DetectHarm() {
                 </ul>
               </div>
             )}
-            {res.marker && (
+            {res?.marker && (
               <div>
                 <b>Marker:</b> lat {res.marker.lat}, lng {res.marker.lng}
               </div>

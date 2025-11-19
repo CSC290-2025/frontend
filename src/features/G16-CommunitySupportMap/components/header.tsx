@@ -8,6 +8,8 @@ import { Wind } from 'lucide-react';
 import { Trophy } from 'lucide-react';
 import { Siren } from 'lucide-react';
 import { TriangleAlert } from 'lucide-react';
+import { HeartPlus } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -119,7 +121,7 @@ function Header() {
           <DropdownMenuContent
             align="end"
             sideOffset={10}
-            className="w-48 rounded-2xl bg-[#2749C9] p-3 text-white shadow-xl"
+            className="w-54 rounded-2xl bg-[#2749C9] p-3 text-white shadow-xl"
           >
             <DropdownMenuItem className="group flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 transition hover:bg-white hover:text-black">
               <BusFront
@@ -174,6 +176,26 @@ function Header() {
               />
               <span className="text-base group-hover:text-black">
                 Danger Area
+              </span>
+            </DropdownMenuItem>
+
+            <DropdownMenuItem className="group flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 transition hover:bg-white hover:text-black">
+              <HeartPlus
+                className="h-6 w-6 text-white group-hover:text-black"
+                strokeWidth={2}
+              />
+              <span className="text-base group-hover:text-black">
+                Injured Area
+              </span>
+            </DropdownMenuItem>
+
+            <DropdownMenuItem className="group flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 transition hover:bg-white hover:text-black">
+              <Trash2
+                className="h-6 w-6 text-white group-hover:text-black"
+                strokeWidth={2}
+              />
+              <span className="text-base group-hover:text-black">
+                Trash Area
               </span>
             </DropdownMenuItem>
           </DropdownMenuContent>
