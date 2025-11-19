@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import initMapAndMarkers from '../config/google-map';
 import type { SuccessMarker, MapMarker } from '../interfaces/api';
+import { Trash2 } from 'lucide-react';
 
 // const parser = new DOMParser();
 
@@ -24,6 +25,26 @@ import type { SuccessMarker, MapMarker } from '../interfaces/api';
 // mapElement.append(pinSvgMarker);
 
 export const MarkerIcon = {
+  Trash: (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width="24"
+      height="24"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="lucide lucide-trash2-icon lucide-trash-2"
+    >
+      <path d="M10 11v6" />
+      <path d="M14 11v6" />
+      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+      <path d="M3 6h18" />
+      <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+    </svg>
+  ),
   Busfront: (
     <svg
       xmlns="http://www.w3.org/2000/svg"
@@ -255,6 +276,9 @@ const MapPage = () => {
   const mapRef = useRef<HTMLDivElement>(null);
   const [markers, setMarkers] = useState<MapMarker[]>([]);
   const [loading, setLoading] = useState(false);
+  function handleDeleteMarker(id: number) {
+    setMarkers((prev) => prev.filter((m) => m.id !== id));
+  }
 
   // Fetch markers from backend and normalize location
   useEffect(() => {
@@ -364,16 +388,62 @@ const MapPage = () => {
     });
   }, [markers]);
 
+  const panelMarkers = markers.filter(isInAnyZone);
+
   return (
     <div className="w-full space-y-4">
       {loading && <p className="text-sm text-gray-500">Loading markers...</p>}
 
-      <div
-        ref={mapRef}
-        id="google_map"
-        className="overflow-hidden rounded-xl border border-neutral-300 shadow-sm"
-        style={{ height: 'calc(95vh - 180px)' }}
-      />
+      <div className="flex gap-4">
+        <div className="flex-1">
+          <div
+            ref={mapRef}
+            id="google_map"
+            className="overflow-hidden rounded-xl border border-neutral-300 shadow-sm"
+            style={{ height: 'calc(95vh - 180px)' }}
+          />
+        </div>
+        <div
+          className="hidden w-[260px] shrink-0 rounded-xl border border-neutral-300 bg-white/95 p-3 shadow-sm md:block"
+          style={{ maxHeight: 'calc(95vh - 180px)' }}
+        >
+          <div className="mb-2 text-sm font-semibold">
+            Selected markers
+            <span className="ml-1 text-xs text-neutral-500">
+              ({panelMarkers.length})
+            </span>
+          </div>
+
+          <div className="space-y-2 overflow-y-auto pr-1">
+            {panelMarkers.map((m) => (
+              <div
+                key={m.id}
+                className="flex items-start gap-2 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm"
+              >
+                <div className="flex-1">
+                  <div className="text-xs font-semibold">Name : {m.id}</div>
+                  <div className="line-clamp-2 text-[11px] text-neutral-600">
+                    {m.description || 'No description'}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleDeleteMarker(m.id)}
+                  className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-red-100"
+                >
+                  <Trash2 className="h-4 w-4 text-red-500" />
+                </button>
+              </div>
+            ))}
+
+            {panelMarkers.length === 0 && (
+              <p className="text-xs text-neutral-500">
+                No markers in this area.
+              </p>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   );
 };
