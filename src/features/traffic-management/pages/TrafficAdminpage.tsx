@@ -1,283 +1,474 @@
-import { useRef, useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import {
+  APIProvider,
+  Map,
+  AdvancedMarker,
+  useMap,
+} from '@vis.gl/react-google-maps';
+import { ref, onValue, off } from 'firebase/database';
 import TrafficSettingPopup from '../components/TrafficSettingPopup';
+import { database } from '@/lib/firebase';
+import { MarkerClusterer } from '@googlemaps/markerclusterer';
 import ConfirmPopup from '../components/Comfirmpopup';
+import ControlPanel from '../components/ControlPanel';
+import LocationInput from '../components/LocationInput';
+import MapSettingsDialog from '../components/MapSettingsDialog';
+import TrafficLightsList from '../components/TrafficLightsList';
 import type { trafficLight, lightRequest } from '../types/traffic.types';
-import { Wrapper } from '@/features/traffic-management/components/react-google-maps/wrapper.tsx';
-import { useTrafficLights } from '../hooks/useTrafficLights';
-import { limitTiltRange } from '@vis.gl/react-google-maps';
-import { getLightrequest } from '../api/traffic-feature.api';
-import { set } from 'firebase/database';
 
-// Convert TrafficLight to TrafficSignal for UI display
-{
-  /*function convertTrafficLightToSignal(light: TrafficLight): TrafficLight {
-  const colorMap: { [key: number]: 'red' | 'yellow' | 'green' } = {
-    0: 'red',
-    1: 'green',
-    2: 'yellow',
+interface TrafficLight {
+  color: 'red' | 'yellow' | 'green';
+  direction: string;
+  lat: number;
+  lng: number;
+  online: boolean;
+  remainingTime: number;
+  timestamp: number;
+}
+
+interface Junction {
+  currentActive: string;
+  lights: {
+    [key: string]: TrafficLight;
+  };
+}
+
+interface SignalWithMeta extends TrafficLight {
+  junctionId: string;
+}
+
+interface MapSettings {
+  refreshRate: number;
+  visibilityRange: number;
+  mapType: 'roadmap' | 'satellite' | 'hybrid' | 'terrain';
+  showTraffic: boolean;
+  showTransit: boolean;
+  showBicycling: boolean;
+  gestureHandling: 'cooperative' | 'greedy' | 'none' | 'auto';
+  zoomControl: boolean;
+  mapTypeControl: boolean;
+  streetViewControl: boolean;
+  fullscreenControl: boolean;
+  scaleControl: boolean;
+  rotateControl: boolean;
+  minZoom: number;
+  maxZoom: number;
+  enableClustering: boolean;
+}
+
+function parseCoordinate(value: any): number | null {
+  if (typeof value === 'number' && !isNaN(value) && isFinite(value)) {
+    return value;
+  }
+  if (typeof value === 'string') {
+    const parsed = parseFloat(value);
+    if (!isNaN(parsed) && isFinite(parsed)) {
+      return parsed;
+    }
+  }
+  return null;
+}
+
+function isValidSignal(signal: any): boolean {
+  const lat = parseCoordinate(signal?.lat);
+  const lng = parseCoordinate(signal?.lng);
+  return lat !== null && lng !== null;
+}
+
+function calculateDistance(
+  lat1: number,
+  lng1: number,
+  lat2: number,
+  lng2: number
+): number {
+  const R = 6371e3;
+  const φ1 = (lat1 * Math.PI) / 180;
+  const φ2 = (lat2 * Math.PI) / 180;
+  const Δφ = ((lat2 - lat1) * Math.PI) / 180;
+  const Δλ = ((lng2 - lng1) * Math.PI) / 180;
+
+  const a =
+    Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+    Math.cos(φ1) * Math.cos(φ2) * Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+  return R * c;
+}
+
+function useTeam10TrafficSignals(refreshRate: number) {
+  const [signals, setSignals] = useState<SignalWithMeta[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [lastUpdate, setLastUpdate] = useState<number>(Date.now());
+
+  useEffect(() => {
+    const team10Ref = ref(database, 'teams/10/junctions');
+
+    const fetchData = () => {
+      const unsubscribe = onValue(
+        team10Ref,
+        (snapshot) => {
+          try {
+            const data = snapshot.val();
+
+            if (!data) {
+              setSignals([]);
+              setError('No traffic data available for team 10');
+              setLoading(false);
+              return;
+            }
+
+            const allSignals: SignalWithMeta[] = [];
+
+            Object.entries(data).forEach(
+              ([junctionId, junctionData]: [string, any]) => {
+                if (junctionData?.lights) {
+                  Object.entries(junctionData.lights).forEach(
+                    ([lightKey, light]: [string, any]) => {
+                      if (
+                        light &&
+                        typeof light === 'object' &&
+                        isValidSignal(light)
+                      ) {
+                        const lat = parseCoordinate(light.lat);
+                        const lng = parseCoordinate(light.lng);
+
+                        if (lat !== null && lng !== null) {
+                          allSignals.push({
+                            color: light.color || 'red',
+                            direction: light.direction || lightKey,
+                            lat,
+                            lng,
+                            online: light.online ?? true,
+                            remainingTime: parseInt(light.remainingTime) || 0,
+                            timestamp: light.timestamp || Date.now(),
+                            junctionId,
+                          });
+                        }
+                      }
+                    }
+                  );
+                }
+              }
+            );
+
+            setSignals(allSignals);
+            setError(null);
+            setLastUpdate(Date.now());
+          } catch (err) {
+            setError('Error processing traffic light data');
+          } finally {
+            setLoading(false);
+          }
+        },
+        (err) => {
+          setError(err.message);
+          setLoading(false);
+        }
+      );
+
+      return unsubscribe;
+    };
+
+    const unsubscribe = fetchData();
+
+    const interval = setInterval(() => {
+      setLastUpdate(Date.now());
+    }, refreshRate * 1000);
+
+    return () => {
+      off(team10Ref);
+      clearInterval(interval);
+    };
+  }, [refreshRate]);
+
+  return { signals, loading, error, lastUpdate };
+}
+
+interface TrafficSignalMarkerProps {
+  signal: SignalWithMeta;
+  isSelected: boolean;
+  onClick: () => void;
+  setMarkerRef?: (
+    marker: google.maps.marker.AdvancedMarkerElement | null,
+    key: string
+  ) => void;
+}
+
+function TrafficSignalMarker({
+  signal,
+  isSelected,
+  onClick,
+  setMarkerRef,
+}: TrafficSignalMarkerProps) {
+  const colorMap = {
+    red: '#ef4444',
+    yellow: '#fbbf24',
+    green: '#22c55e',
   };
 
-  return {
-    status: light.current_color === 1 ? light.green_duration : light.red_duration,
-    current_color: light.current_color,
-    intersection_id: light.intersection_id,
-    auto_mode: light.auto_mode,
-  };
-}*/
+  const markerKey = `${signal.junctionId}-${signal.direction}`;
+
+  if (!signal.online) {
+    return null;
+  }
+
+  return (
+    <AdvancedMarker
+      position={{ lat: signal.lat, lng: signal.lng }}
+      title={`Junction: ${signal.junctionId} | Direction: ${signal.direction}`}
+      onClick={onClick}
+      ref={(marker) => setMarkerRef && setMarkerRef(marker, markerKey)}
+    >
+      <div className="flex cursor-pointer flex-col items-center">
+        <div
+          className={`flex items-center justify-center rounded-full border-4 shadow-lg ${
+            isSelected ? 'border-blue-500 ring-4 ring-blue-300' : 'border-white'
+          }`}
+          style={{
+            backgroundColor: colorMap[signal.color],
+            width: '48px',
+            height: '48px',
+          }}
+        >
+          <span className="text-base font-bold text-white">
+            {signal.remainingTime}
+          </span>
+        </div>
+        <div
+          className={`mt-1 rounded px-2 py-1 text-xs font-semibold shadow-md ${
+            isSelected ? 'bg-blue-500 text-white' : 'bg-white text-gray-800'
+          }`}
+        >
+          {signal.junctionId}
+        </div>
+      </div>
+    </AdvancedMarker>
+  );
 }
 
 interface MapContentProps {
-  refreshRateMs: number;
+  settings: MapSettings;
+  userLocation: { lat: number; lng: number } | null;
+  selectedSignal: SignalWithMeta | null;
+  onSignalClick: (signal: SignalWithMeta) => void;
 }
 
-function MapContent({ refreshRateMs }: MapContentProps) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [map, setMap] = useState<google.maps.Map | null>(null);
-  const markersRef = useRef<Map<number, google.maps.Marker>>(new Map());
-  // popup control
-  const [popupOpen, setPopupOpen] = useState(false);
-  const [selectedSignal, setSelectedSignal] = useState<trafficLight | null>(
-    null
+function MapContent({
+  settings,
+  userLocation,
+  selectedSignal,
+  onSignalClick,
+}: MapContentProps) {
+  const map = useMap();
+  const { signals, loading, error } = useTeam10TrafficSignals(
+    settings.refreshRate
   );
-  const [showDebug, setShowDebug] = useState(false);
+  const [selectedlight, setSelectedlight] = useState<trafficLight | null>(null);
+  const [popupOpen, setPopupOpen] = useState(false);
+  const [trafficLayer, setTrafficLayer] =
+    useState<google.maps.TrafficLayer | null>(null);
+  const [transitLayer, setTransitLayer] =
+    useState<google.maps.TransitLayer | null>(null);
+  const [bicyclingLayer, setBicyclingLayer] =
+    useState<google.maps.BicyclingLayer | null>(null);
+  const clustererRef = useRef<MarkerClusterer | null>(null);
+  const markersMapRef = useRef<{
+    [key: string]: google.maps.marker.AdvancedMarkerElement;
+  }>({});
 
-  // Fetch traffic lights with configurable refresh rate
-  const { trafficLights, loading, error, refetch, retryCount } =
-    useTrafficLights(refreshRateMs);
-
-  // Initialize Map with first traffic light as center
-  useEffect(() => {
-    if (ref.current && !map && trafficLights.length > 0) {
-      const firstLight = trafficLights[0];
-      const [lng, lat] = firstLight.location.coordinates;
-
-      const initialMap = new window.google.maps.Map(ref.current, {
-        center: { lat, lng },
-        zoom: 15,
-        zoomControl: true,
-        mapTypeControl: false,
-        streetViewControl: false,
-        fullscreenControl: true,
-      });
-      setMap(initialMap);
+  const visibleSignals = useMemo(() => {
+    if (!userLocation || settings.visibilityRange === 0) {
+      return signals;
     }
-  }, [map, trafficLights]);
 
-  // Create and update markers for all traffic lights
+    return signals.filter((signal) => {
+      const distance = calculateDistance(
+        userLocation.lat,
+        userLocation.lng,
+        signal.lat,
+        signal.lng
+      );
+      return distance <= settings.visibilityRange;
+    });
+  }, [signals, userLocation, settings.visibilityRange]);
+
+  // Handle traffic layer
   useEffect(() => {
     if (!map) return;
 
-    const currentMarkerIds = new Set(markersRef.current.keys());
-    const newMarkerIds = new Set(trafficLights.map((light) => light.id));
-
-    // Remove markers that are no longer in the data
-    currentMarkerIds.forEach((id) => {
-      if (!newMarkerIds.has(id)) {
-        const marker = markersRef.current.get(id);
-        if (marker) {
-          marker.setMap(null);
-          markersRef.current.delete(id);
-        }
+    if (settings.showTraffic) {
+      if (!trafficLayer) {
+        const layer = new google.maps.TrafficLayer();
+        layer.setMap(map);
+        setTrafficLayer(layer);
       }
-    });
+    } else if (trafficLayer) {
+      trafficLayer.setMap(null);
+      setTrafficLayer(null);
+    }
+  }, [map, settings.showTraffic, trafficLayer]);
 
-    // Create or update markers for all traffic lights
-    trafficLights.forEach((light) => {
-      const [lng, lat] = light.location.coordinates;
+  // Handle transit layer
+  useEffect(() => {
+    if (!map) return;
 
-      const colorMap = {
-        red: '#ef4444',
-        yellow: '#fbbf24',
-        green: '#22c55e',
-      };
+    if (settings.showTransit) {
+      if (!transitLayer) {
+        const layer = new google.maps.TransitLayer();
+        layer.setMap(map);
+        setTransitLayer(layer);
+      }
+    } else if (transitLayer) {
+      transitLayer.setMap(null);
+      setTransitLayer(null);
+    }
+  }, [map, settings.showTransit, transitLayer]);
 
-      const svgMarker = {
-        path: google.maps.SymbolPath.CIRCLE,
-        fillColor:
-          colorMap[
-            light.current_color === 1
-              ? 'red'
-              : light.current_color === 2
-                ? 'yellow'
-                : 'green'
-          ],
-        fillOpacity: 1,
-        strokeColor: '#ffffff',
-        strokeWeight: 3,
-        scale: 20,
-      };
+  // Handle bicycling layer
+  useEffect(() => {
+    if (!map) return;
 
-      const existingMarker = markersRef.current.get(light.id);
+    if (settings.showBicycling) {
+      if (!bicyclingLayer) {
+        const layer = new google.maps.BicyclingLayer();
+        layer.setMap(map);
+        setBicyclingLayer(layer);
+      }
+    } else if (bicyclingLayer) {
+      bicyclingLayer.setMap(null);
+      setBicyclingLayer(null);
+    }
+  }, [map, settings.showBicycling, bicyclingLayer]);
 
-      if (!existingMarker) {
-        // Create new marker
-        const marker = new google.maps.Marker({
-          map,
-          position: { lat, lng },
-          icon: svgMarker,
-          title: `INT-${light.intersection_id} (Road ${light.road_id})`,
-          label: {
-            text: String(light.status),
-            color: '#ffffff',
-            fontSize: '14px',
-            fontWeight: 'bold',
-          },
-        });
+  // Handle marker clustering
+  useEffect(() => {
+    if (!map) return;
 
-        marker.addListener('click', () => {
-          setSelectedSignal(light);
-          setPopupOpen(true);
-        });
+    const markerArray = Object.values(markersMapRef.current);
 
-        markersRef.current.set(light.id, marker);
+    if (settings.enableClustering && markerArray.length > 0) {
+      if (clustererRef.current) {
+        clustererRef.current.clearMarkers();
+        clustererRef.current.addMarkers(markerArray);
       } else {
-        // Update existing marker
-        existingMarker.setIcon(svgMarker);
-        existingMarker.setLabel({
-          text: String(light.status),
-          color: '#ffffff',
-          fontSize: '14px',
-          fontWeight: 'bold',
+        clustererRef.current = new MarkerClusterer({
+          map,
+          markers: markerArray,
         });
-        existingMarker.setPosition({ lat, lng });
       }
-    });
-  }, [map, trafficLights]);
+    } else if (clustererRef.current) {
+      clustererRef.current.clearMarkers();
+      clustererRef.current = null;
+    }
+
+    return () => {
+      if (clustererRef.current) {
+        clustererRef.current.clearMarkers();
+        clustererRef.current = null;
+      }
+    };
+  }, [map, settings.enableClustering, visibleSignals.length]);
+
+  // Jump to selected signal
+  useEffect(() => {
+    if (map && selectedSignal) {
+      map.panTo({ lat: selectedSignal.lat, lng: selectedSignal.lng });
+      map.setZoom(18);
+    }
+  }, [map, selectedSignal]);
+
+  const setMarkerRef = useCallback(
+    (marker: google.maps.marker.AdvancedMarkerElement | null, key: string) => {
+      if (marker) {
+        markersMapRef.current[key] = marker;
+      } else {
+        delete markersMapRef.current[key];
+      }
+
+      // Update clusterer when markers change
+      if (map && settings.enableClustering && clustererRef.current) {
+        const markerArray = Object.values(markersMapRef.current);
+        clustererRef.current.clearMarkers();
+        clustererRef.current.addMarkers(markerArray);
+      }
+    },
+    [map, settings.enableClustering]
+  );
+
+  if (loading) {
+    return (
+      <div className="flex h-full w-full items-center justify-center bg-gray-100">
+        <div className="text-center">
+          <div className="mb-4 h-12 w-12 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
+          <p className="text-gray-600">Loading traffic signals...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (error) {
-    const apiBaseUrl =
-      import.meta.env.VITE_API_BASE_URL || 'http://localhost:3333';
-
     return (
-      <>
-        <div ref={ref} className="h-screen w-full bg-gray-100" />
-        <div className="absolute top-20 left-1/2 z-10 max-w-lg -translate-x-1/2 rounded-lg border border-red-400 bg-red-50 p-4 shadow-lg">
-          <div className="space-y-3">
-            <div className="flex items-start gap-3">
-              <div className="mt-0.5 flex-shrink-0">
-                <svg
-                  className="h-5 w-5 text-red-600"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              </div>
-              <div className="flex-1">
-                <p className="font-semibold text-red-800">Connection Error</p>
-                <p className="mt-1 text-sm text-red-700">{error.message}</p>
-                {error.type && (
-                  <p className="mt-1 text-xs text-red-600">
-                    Type: <span className="font-mono">{error.type}</span>
-                    {error.statusCode && ` (HTTP ${error.statusCode})`}
-                  </p>
-                )}
-                {retryCount > 0 && (
-                  <p className="mt-1 text-xs text-red-600">
-                    Retry attempts: {retryCount}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Troubleshooting tips */}
-            <div className="mt-3 border-t border-red-200 pt-3">
-              <button
-                onClick={() => setShowDebug(!showDebug)}
-                className="flex items-center gap-1 text-xs font-medium text-red-600 hover:text-red-700"
-              >
-                <span>{showDebug ? '▼' : '▶'}</span>
-                Troubleshooting Tips
-              </button>
-
-              {showDebug && (
-                <div className="mt-2 space-y-2 rounded bg-red-100 p-2 text-xs text-red-700">
-                  <p>
-                    <strong>API URL:</strong>{' '}
-                    <span className="font-mono break-all">{apiBaseUrl}</span>
-                  </p>
-                  <p>
-                    <strong>Endpoint:</strong>{' '}
-                    <span className="font-mono">
-                      {apiBaseUrl}/traffic-lights
-                    </span>
-                  </p>
-                  <div className="mt-2 space-y-1">
-                    <p className="font-semibold">Possible Issues:</p>
-                    <ul className="list-inside list-disc space-y-1">
-                      {error.type === 'network' && (
-                        <>
-                          <li>Backend server is not running</li>
-                          <li>Wrong API URL: check .env file</li>
-                          <li>Network/firewall blocking the connection</li>
-                        </>
-                      )}
-                      {error.type === 'timeout' && (
-                        <>
-                          <li>Backend server is slow or unresponsive</li>
-                          <li>Network connection is slow</li>
-                        </>
-                      )}
-                      {error.type === 'server' && error.statusCode === 404 && (
-                        <>
-                          <li>API endpoint /traffic-lights not found</li>
-                          <li>Backend routing may be incorrect</li>
-                        </>
-                      )}
-                      {(error.type === 'unknown' || !error.type) && (
-                        <>
-                          <li>Check browser console for more details</li>
-                          <li>
-                            Verify backend is running:{' '}
-                            <span className="font-mono">pnpm run dev</span>
-                          </li>
-                          <li>
-                            Check .env configuration in frontend/.env or
-                            .env.local
-                          </li>
-                        </>
-                      )}
-                    </ul>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Retry button */}
-            {error.retryable && (
-              <button
-                onClick={() => refetch()}
-                className="w-full rounded-md bg-red-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-red-700 active:bg-red-800"
-              >
-                {retryCount > 0
-                  ? `Retry (Attempt ${retryCount + 1})`
-                  : 'Retry Connection'}
-              </button>
-            )}
-          </div>
+      <div className="flex h-full w-full items-center justify-center bg-gray-100">
+        <div className="text-center">
+          <p className="mb-2 text-red-600">Error: {error}</p>
+          <p className="text-sm text-gray-500">Check console for details</p>
         </div>
-      </>
+      </div>
+    );
+  }
+
+  if (signals.length === 0) {
+    return (
+      <div className="flex h-full w-full items-center justify-center bg-gray-100">
+        <div className="text-center">
+          <p className="text-gray-600">No traffic signals found in team 10</p>
+          <p className="mt-2 text-xs text-gray-500">
+            Check Firebase connection
+          </p>
+        </div>
+      </div>
     );
   }
 
   return (
     <>
-      <div ref={ref} className="h-screen w-full" />
-      {loading && trafficLights.length === 0 && (
-        <div className="absolute top-20 left-1/2 z-10 -translate-x-1/2 rounded-lg bg-blue-100 px-4 py-2 text-sm">
-          <p className="text-blue-800">Loading traffic lights...</p>
-        </div>
-      )}
+      {visibleSignals.map((signal, index) => (
+        <TrafficSignalMarker
+          key={`${signal.junctionId}-${signal.direction}-${index}`}
+          signal={signal}
+          isSelected={
+            selectedSignal?.junctionId === signal.junctionId &&
+            selectedSignal?.direction === signal.direction
+          }
+          onClick={() => onSignalClick(signal)}
+          setMarkerRef={setMarkerRef}
+        />
+      ))}
+
+      <div className="absolute bottom-4 left-4 rounded-lg bg-white px-4 py-2 shadow-lg">
+        <p className="text-sm font-semibold text-gray-800">
+          {visibleSignals.filter((s) => s.online).length} Active Signals
+        </p>
+        <p className="text-xs text-gray-600">
+          {new Set(visibleSignals.map((s) => s.junctionId)).size} Junctions
+        </p>
+        {settings.visibilityRange > 0 && userLocation && (
+          <p className="mt-1 text-xs text-gray-500">
+            Within {settings.visibilityRange}m
+          </p>
+        )}
+        {settings.enableClustering && (
+          <p className="mt-1 text-xs text-blue-600">Clustering enabled</p>
+        )}
+      </div>
+
       <TrafficSettingPopup
         open={popupOpen}
         onOpenChange={(v) => setPopupOpen(v)}
-        trafficLight={selectedSignal}
+        trafficLight={selectedlight}
         onSave={(updated) => {
-          setSelectedSignal((prev) => (prev ? { ...prev, ...updated } : null));
+          setSelectedlight((prev) => (prev ? { ...prev, ...updated } : null));
           setPopupOpen(false);
         }}
       />
@@ -289,6 +480,7 @@ export default function TrafficAdminpage() {
   const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
   const [currentLocation, setCurrentLocation] = useState('');
   const [destination, setDestination] = useState('');
+  const [showSettings, setShowSettings] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [requestOpen, setrequestOpen] = useState(false);
   const [signalOpen, setsignalOpen] = useState(false);
@@ -297,26 +489,6 @@ export default function TrafficAdminpage() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [LightRequest, setLightRequest] = useState<lightRequest[]>([]);
 
-  useEffect(() => {
-    (async () => {
-      try {
-        //const base = import.meta.env.VITE_API_BASE_URL ?? '';
-        const url = `http://localhost:3333/api/light-requests`;
-        const res = await fetch(url);
-        if (!res.ok) throw new Error('Failed to get request details');
-        const response: any = await res.json();
-
-        console.log('This traffic light data:', response);
-        console.log('Current traffic data:', response.data.data);
-        console.log('Light request data:', response.data.data[0].reason);
-        setLightRequest(response.data.data);
-      } catch (err) {
-        console.error('Error loading request details', err);
-      }
-    })();
-  }, []);
-
-  // Sample emergency requests
   const emergencyRequests = [
     {
       id: 1,
@@ -341,46 +513,90 @@ export default function TrafficAdminpage() {
     },
   ];
 
-  const emptyemergencyRequests = [];
+  const [userLocation, setUserLocation] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
+  const [selectedSignal, setSelectedSignal] = useState<SignalWithMeta | null>(
+    null
+  );
+  const [settings, setSettings] = useState<MapSettings>({
+    refreshRate: 5,
+    visibilityRange: 0,
+    mapType: 'roadmap',
+    showTraffic: false,
+    showTransit: false,
+    showBicycling: false,
+    gestureHandling: 'greedy',
+    zoomControl: true,
+    mapTypeControl: false,
+    streetViewControl: false,
+    fullscreenControl: true,
+    scaleControl: false,
+    rotateControl: false,
+    minZoom: 3,
+    maxZoom: 21,
+    enableClustering: true,
+  });
 
-  const handleStart = () => {
-    console.log('Start navigation:', { currentLocation, destination });
-  };
+  useEffect(() => {
+    (async () => {
+      try {
+        //const base = import.meta.env.VITE_API_BASE_URL ?? '';
+        const url = `http://localhost:3333/api/light-requests`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('Failed to get request details');
+        const response: any = await res.json();
 
-  const refreshrange = (e: number) => {
-    let sum = 0;
-    const MIN_REFRESH_MS = 500; // Minimum 0.5 seconds
-    const MAX_REFRESH_MS = 20000; // Maximum 20 seconds
-
-    if (rrunit === 'sec') {
-      sum = e * 1000;
-    } else if (rrunit === 'milisec') {
-      sum = e;
-    }
-
-    if (sum > MAX_REFRESH_MS) {
-      if (rrunit === 'sec') setrefreshrate(20);
-      else if (rrunit === 'milisec') setrefreshrate(MAX_REFRESH_MS);
-    } else if (sum < MIN_REFRESH_MS) {
-      if (rrunit === 'sec') {
-        setrefreshrate(0.5);
-      } else if (rrunit === 'milisec') {
-        setrefreshrate(MIN_REFRESH_MS);
+        console.log('This traffic light data:', response);
+        console.log('Current traffic data:', response.data.data);
+        console.log('Light request data:', response.data.data[0].reason);
+        setLightRequest(response.data.data);
+      } catch (err) {
+        console.error('Error loading request details', err);
       }
-    } else if (sum >= MIN_REFRESH_MS && sum <= MAX_REFRESH_MS) {
-      setrefreshrate(e);
-    }
+    })();
+  }, []);
+
+  const handleStart = async () => {
+    alert('Navigation feature is currently disabled (Geocoding API not free)');
   };
 
-  const handleMapsetting = () => {
-    setSettingsOpen(!settingsOpen);
-    refreshrange(refreshrate);
+  const handleMapSettingsClick = () => {
+    setShowSettings(true);
   };
+
+  const handleEmergencyClick = () => {
+    alert('Emergency request sent to traffic control center');
+  };
+
+  const handleCloseSettings = () => {
+    setShowSettings(false);
+  };
+
+  const handleSaveSettings = (newSettings: MapSettings) => {
+    setSettings(newSettings);
+    setShowSettings(false);
+  };
+
+  const handleSignalSelect = useCallback((signal: SignalWithMeta) => {
+    setSelectedSignal((prev) => {
+      if (
+        prev?.junctionId === signal.junctionId &&
+        prev?.direction === signal.direction
+      ) {
+        return null;
+      }
+      return signal;
+    });
+  }, []);
+
+  const initialCenter = { lat: 13.647372072504554, lng: 100.49553588244684 };
 
   return (
-    <div className="relative h-screen w-full">
+    <div className="relative mt-5 flex h-screen w-full gap-4">
       {/* Location Input */}
-      <div className="absolute top-4 left-1/2 z-10 flex -translate-x-1/2 items-center gap-3 rounded-full bg-white px-4 py-2 shadow-lg">
+      <div className="absolute top-10 left-2/3 z-10 flex -translate-x-1/2 items-center gap-3 rounded-full bg-white px-4 py-2 shadow-lg">
         <svg
           className="h-6 w-6 text-gray-400"
           fill="none"
@@ -411,305 +627,254 @@ export default function TrafficAdminpage() {
         </button>
       </div>
 
-      {/* Control Panel */}
+      <TrafficLightsList
+        onSignalSelect={handleSignalSelect}
+        selectedSignal={selectedSignal}
+      />
 
-      <div className="absolute top-10 right-6 z-10 mt-12 flex flex-col gap-2">
-        {!requestOpen && !signalOpen && (
-          <button
-            onClick={() => handleMapsetting()}
-            className="flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-white shadow-lg hover:bg-blue-700"
-          >
-            <svg
-              className="h-5 w-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
-              />
-            </svg>
-            Map Settings
-          </button>
-        )}
-
-        {/*Emer*/}
-        {!settingsOpen && !signalOpen && (
-          <button
-            onClick={() => setrequestOpen(!requestOpen)}
-            className="relative flex items-center gap-2 rounded-lg bg-red-600 px-6 py-3 text-white shadow-lg hover:bg-red-700"
-          >
-            {emergencyRequests.length > 0 && (
-              <>
-                <span className="absolute -top-2 -right-2 h-5 w-5 rounded-full border-2 border-white bg-red-500" />
-                {/*<span className="absolute -top-2.75 -right-2 h-5 w-5 text-red-500 text-center" >{emergencyRequests.length}</span>*/}
-                <span className="absolute -top-2 -right-2 h-5 w-5 animate-ping rounded-full bg-red-500" />
-              </>
-            )}
-            <svg
-              className="h-5 w-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-              />
-            </svg>
-            Emergency Request
-          </button>
-        )}
-
-        {/*Signal*/}
-        {!settingsOpen && !requestOpen && (
-          <button
-            onClick={() => setsignalOpen(!signalOpen)}
-            className="relative flex items-center gap-2 rounded-lg bg-yellow-500 px-6 py-3 text-white shadow-lg hover:bg-yellow-600"
-          >
-            {LightRequest.length > 0 && (
-              <>
-                <span className="absolute -top-2 -right-2 h-5 w-5 rounded-full border-2 border-white bg-red-500" />
-                {/*<span className="absolute -top-2.75 -right-2 h-5 w-5 text-red-500 text-center" >{emergencyRequests.length}</span>*/}
-                <span className="absolute -top-2 -right-2 h-5 w-5 animate-ping rounded-full bg-red-500" />
-              </>
-            )}
-            <svg
-              className="h-5 w-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-              />
-            </svg>
-            Signal offline
-          </button>
-        )}
-
-        {/*Map Setting*/}
-        {settingsOpen && (
-          <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-lg">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="pr-20 text-lg font-bold text-gray-800">
-                  Admin setting{' '}
-                </h3>
-                <button
-                  onClick={() => setSettingsOpen(false)}
-                  className="text-xl text-gray-500 hover:text-gray-700"
-                >
-                  ×
-                </button>
-              </div>
-
-              {/* refresh rate */}
-              <div>
-                <label className="text-sm font-medium text-gray-700">
-                  Map Refresh Rate
-                </label>
-                <div className="mt-2 flex items-center gap-2">
-                  <input
-                    type="number"
-                    placeholder="refresh rate"
-                    value={refreshrate}
-                    onChange={(e) => setrefreshrate(Number(e.target.value))}
-                    min={rrunit === 'sec' ? 0.5 : 500}
-                    max={rrunit === 'sec' ? 20 : 20000}
-                    step={rrunit === 'sec' ? 1 : 1000}
-                    className="w-32 rounded-md border border-gray-300 px-3 py-2 outline-none focus:border-blue-500"
-                  />
-
-                  <select
-                    value={rrunit}
-                    onChange={(e) => setrrunit(e.target.value)}
-                    className="rounded-md border border-gray-300 px-3 py-2 outline-none focus:border-blue-500"
-                  >
-                    <option value="sec">seconds</option>
-                    <option value="milisec">milliseconds</option>
-                  </select>
-                </div>
-                <p className="mt-2 text-xs text-gray-600">
-                  {rrunit === 'sec'
-                    ? 'Valid range: 0.5 - 20 seconds'
-                    : 'Valid range: 500 - 20000 milliseconds'}
-                </p>
-              </div>
-
-              {/*sample setting */}
-              <div>
-                <label className="mb-2 block text-sm font-medium text-gray-700">
-                  Zoom Level
-                </label>
-                <input
-                  type="range"
-                  min="10"
-                  max="20"
-                  defaultValue="18"
-                  className="w-full"
+      <div className="flex flex-1 flex-row">
+        <div className="mx-auto flex w-full max-w-[1100px] flex-col items-center rounded-xl border-2 border-gray-200 bg-white p-6 shadow-md">
+          <div className="relative h-[600px] w-full overflow-hidden rounded-lg">
+            <APIProvider apiKey={apiKey}>
+              <Map
+                mapId="traffic-signals-map"
+                defaultCenter={initialCenter}
+                defaultZoom={15}
+                mapTypeId={settings.mapType}
+                gestureHandling={settings.gestureHandling}
+                disableDefaultUI={false}
+                zoomControl={settings.zoomControl}
+                mapTypeControl={settings.mapTypeControl}
+                streetViewControl={settings.streetViewControl}
+                fullscreenControl={settings.fullscreenControl}
+                scaleControl={settings.scaleControl}
+                rotateControl={settings.rotateControl}
+                minZoom={settings.minZoom}
+                maxZoom={settings.maxZoom}
+                className="h-full w-full"
+              >
+                <MapContent
+                  settings={settings}
+                  userLocation={userLocation}
+                  selectedSignal={selectedSignal}
+                  onSignalClick={handleSignalSelect}
                 />
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-medium text-gray-700">
-                  Map Type
-                </label>
-                <select className="w-full rounded-md border border-gray-300 px-3 py-2">
-                  <option>Roadmap</option>
-                  <option>Satellite</option>
-                  <option>Terrain</option>
-                  <option>Hybrid</option>
-                </select>
-              </div>
-            </div>
+              </Map>
+            </APIProvider>
           </div>
-        )}
+        </div>
 
-        {/*Emer re*/}
-        {requestOpen && (
-          <div className="max-w-md rounded-lg border border-gray-200 bg-white p-6 shadow-lg">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-800">
-                  Emergency Requests
-                </h3>
-                <button
-                  onClick={() => setrequestOpen(false)}
-                  className="text-xl text-gray-500 hover:text-gray-700"
-                >
-                  ×
-                </button>
-              </div>
+        {/* Control Panel */}
 
-              <div className="max-h-96 space-y-3 overflow-y-auto">
-                {emergencyRequests.map((request) => (
-                  <div
-                    key={request.id}
-                    className="rounded-md border border-gray-200 p-3 hover:bg-gray-50"
+        <div className="absolute top-15 right-8 z-10 mt-12 flex flex-col gap-2">
+          {!requestOpen && !signalOpen && (
+            <button
+              onClick={() => handleMapSettingsClick()}
+              className="flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-white shadow-lg hover:bg-blue-700"
+            >
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
+                />
+              </svg>
+              Map Settings
+            </button>
+          )}
+
+          {/*Emer*/}
+          {!settingsOpen && !signalOpen && (
+            <button
+              onClick={() => setrequestOpen(!requestOpen)}
+              className="relative flex items-center gap-2 rounded-lg bg-red-600 px-6 py-3 text-white shadow-lg hover:bg-red-700"
+            >
+              {emergencyRequests.length > 0 && (
+                <>
+                  <span className="absolute -top-2 -right-2 h-5 w-5 rounded-full border-2 border-white bg-red-500" />
+                  {/*<span className="absolute -top-2.75 -right-2 h-5 w-5 text-red-500 text-center" >{emergencyRequests.length}</span>*/}
+                  <span className="absolute -top-2 -right-2 h-5 w-5 animate-ping rounded-full bg-red-500" />
+                </>
+              )}
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
+              </svg>
+              Emergency Request
+            </button>
+          )}
+
+          {/*Signal*/}
+          {!settingsOpen && !requestOpen && (
+            <button
+              onClick={() => setsignalOpen(!signalOpen)}
+              className="relative flex items-center gap-2 rounded-lg bg-yellow-500 px-6 py-3 text-white shadow-lg hover:bg-yellow-600"
+            >
+              {LightRequest.length > 0 && (
+                <>
+                  <span className="absolute -top-2 -right-2 h-5 w-5 rounded-full border-2 border-white bg-red-500" />
+                  {/*<span className="absolute -top-2.75 -right-2 h-5 w-5 text-red-500 text-center" >{emergencyRequests.length}</span>*/}
+                  <span className="absolute -top-2 -right-2 h-5 w-5 animate-ping rounded-full bg-red-500" />
+                </>
+              )}
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
+              </svg>
+              Signal offline
+            </button>
+          )}
+
+          {/*Emer re*/}
+          {requestOpen && (
+            <div className="max-h-80 max-w-md overflow-y-auto rounded-lg border border-gray-200 bg-white p-6 shadow-lg">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-gray-800">
+                    Emergency Requests
+                  </h3>
+                  <button
+                    onClick={() => setrequestOpen(false)}
+                    className="text-xl text-gray-500 hover:text-gray-700"
                   >
-                    <div className="mb-2 flex items-start justify-between">
-                      <div className="font-semibold text-gray-800">
-                        {request.location}
-                      </div>
-                      <span
-                        className={`rounded-full px-2 py-1 text-xs font-bold ${
-                          request.status === 'Active'
-                            ? 'bg-red-100 text-red-700'
-                            : 'bg-green-100 text-green-700'
-                        }`}
-                      >
-                        {request.status}
-                      </span>
-                    </div>
-                    <div className="text-sm text-gray-600">
-                      <p>
-                        <strong>Reason:</strong> {request.reason}
-                      </p>
-                      <p>
-                        <strong>Time:</strong> {request.time}
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
+                    ×
+                  </button>
+                </div>
 
-        {/*Signal off*/}
-        {signalOpen && (
-          <div className="max-w-md rounded-lg border border-gray-200 bg-white p-6 shadow-lg">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-800">
-                  Offline Signals
-                </h3>
-                <button
-                  onClick={() => setsignalOpen(false)}
-                  className="text-xl text-gray-500 hover:text-gray-700"
-                >
-                  ×
-                </button>
-              </div>
-
-              <div className="max-h-96 space-y-3 overflow-y-auto">
-                {LightRequest.length > 0 ? (
-                  LightRequest.map((LR) => (
+                <div className="max-h-96 space-y-3 overflow-y-auto">
+                  {emergencyRequests.map((request) => (
                     <div
-                      key={LR.traffic_light_id}
-                      className="rounded-md border border-yellow-200 bg-yellow-50 p-3 hover:bg-yellow-100"
+                      key={request.id}
+                      className="rounded-md border border-gray-200 p-3 hover:bg-gray-50"
                     >
                       <div className="mb-2 flex items-start justify-between">
                         <div className="font-semibold text-gray-800">
-                          Traffic Light NO. {LR.traffic_light_id}
+                          {request.location}
                         </div>
-                        <span className="rounded-full bg-yellow-100 px-2 py-1 text-xs font-bold text-yellow-700">
-                          Offline
+                        <span
+                          className={`rounded-full px-2 py-1 text-xs font-bold ${
+                            request.status === 'Active'
+                              ? 'bg-red-100 text-red-700'
+                              : 'bg-green-100 text-green-700'
+                          }`}
+                        >
+                          {request.status}
                         </span>
                       </div>
                       <div className="text-sm text-gray-600">
                         <p>
-                          <strong>Reason:</strong> {LR.reason}
+                          <strong>Reason:</strong> {request.reason}
                         </p>
                         <p>
-                          <strong>Request by</strong> {LR.requested_by}
-                        </p>
-                        <p>
-                          <strong>Last Seen:</strong> {LR.requested_at}
+                          <strong>Time:</strong> {request.time}
                         </p>
                       </div>
                     </div>
-                  ))
-                ) : (
-                  <p className="py-4 text-center text-gray-500">
-                    No offline signals
-                  </p>
-                )}
+                  ))}
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
+
+          {/*Signal off*/}
+          {signalOpen && (
+            <div className="max-h-80 max-w-md overflow-y-auto rounded-lg border border-gray-200 bg-white p-6 shadow-lg">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-semibold text-gray-800">
+                    Offline Signals
+                  </h3>
+                  <button
+                    onClick={() => setsignalOpen(false)}
+                    className="text-xl text-gray-500 hover:text-gray-700"
+                  >
+                    ×
+                  </button>
+                </div>
+
+                <div className="max-h-96 space-y-3 overflow-y-auto">
+                  {LightRequest.length > 0 ? (
+                    LightRequest.map((LR) => (
+                      <div
+                        key={LR.traffic_light_id}
+                        className="rounded-md border border-yellow-200 bg-yellow-50 p-3 hover:bg-yellow-100"
+                      >
+                        <div className="mb-2 flex items-start justify-between">
+                          <div className="font-semibold text-gray-800">
+                            Traffic Light NO. {LR.traffic_light_id}
+                          </div>
+                          <span className="rounded-full bg-yellow-100 px-2 py-1 text-xs font-bold text-yellow-700">
+                            Offline
+                          </span>
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          <p>
+                            <strong>Reason:</strong> {LR.reason}
+                          </p>
+                          <p>
+                            <strong>Request by</strong> {LR.requested_by}
+                          </p>
+                          <p>
+                            <strong>Last Seen:</strong> {LR.requested_at}
+                          </p>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="py-4 text-center text-gray-500">
+                      No offline signals
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/*Note*/}
+        <div className="absolute bottom-10 left-2/3 z-10 -translate-x-1/2 rounded-lg border border-yellow-400 bg-yellow-100 px-4 py-2 text-sm">
+          <p className="text-yellow-800">
+            <strong>Note : </strong>
+            Now you are on Traffic Admin page
+          </p>
+        </div>
+
+        <MapSettingsDialog
+          open={showSettings}
+          onClose={handleCloseSettings}
+          onSave={handleSaveSettings}
+          currentSettings={settings}
+        />
       </div>
-
-      {/*Note*/}
-      <div className="absolute bottom-4 left-1/2 z-10 -translate-x-1/2 rounded-lg border border-yellow-400 bg-yellow-100 px-4 py-2 text-sm">
-        <p className="text-yellow-800">
-          <strong>Note : </strong>
-          Now you are on Traffic Admin page
-        </p>
-      </div>
-
-      <ConfirmPopup
-        open={confirmOpen}
-        onOpenChange={setConfirmOpen}
-        title="Confirm Settings"
-        description={`Are you sure you want to save these settings? Refresh rate will be set to ${refreshrate} ${rrunit}.`}
-        confirmText="Save"
-        cancelText="Cancel"
-        onConfirm={() => {
-          console.log('Settings saved:', { refreshrate, rrunit });
-          setSettingsOpen(false);
-        }}
-      />
-
-      <Wrapper apiKey={apiKey}>
-        {(() => {
-          let refreshRateMs = 0;
-          if (refreshrate && refreshrate > 0) {
-            refreshRateMs = rrunit === 'sec' ? refreshrate * 1000 : refreshrate;
-          }
-          return <MapContent refreshRateMs={refreshRateMs} />;
-        })()}
-      </Wrapper>
     </div>
   );
 }
+
+/*<ControlPanel
+          onMapSettingsClick={handleMapSettingsClick}
+          onEmergencyClick={handleEmergencyClick}
+        /> */
