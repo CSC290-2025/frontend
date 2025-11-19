@@ -9,6 +9,7 @@ import {
   markPostAsGiven,
   markPostAsNotGiven,
   fetchCategoriesByPostId,
+  fetchPostsByUserId,
 } from '@/features/freecycle/api/freecycle.api';
 import type { ApiPost } from '@/types/postItem';
 
@@ -33,34 +34,64 @@ export function useUserPosts() {
 }
 
 // Delete Post Mutation
+// export function useDeletePost() {
+//   const queryClient = useQueryClient();
+//   return useMutation({
+//     mutationFn: deletePost,
+//     onSuccess: () => {
+//       queryClient.invalidateQueries({ queryKey: ['posts', 'user'] });
+//     },
+//   });
+// }
+
 export function useDeletePost() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: deletePost,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['posts', 'user'] });
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
     },
   });
 }
 
 // Mark Post as Given Mutation
+// export function useMarkPostAsGiven() {
+//   const queryClient = useQueryClient();
+//   return useMutation({
+//     mutationFn: markPostAsGiven,
+//     onSuccess: () => {
+//       queryClient.invalidateQueries({ queryKey: ['posts', 'user'] });
+//     },
+//   });
+// }
+
 export function useMarkPostAsGiven() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: markPostAsGiven,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['posts', 'user'] });
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
     },
   });
 }
 
 // Mark Post as Not Given Mutation
+// export function useMarkPostAsNotGiven() {
+//   const queryClient = useQueryClient();
+//   return useMutation({
+//     mutationFn: markPostAsNotGiven,
+//     onSuccess: () => {
+//       queryClient.invalidateQueries({ queryKey: ['posts', 'user'] });
+//     },
+//   });
+// }
+
 export function useMarkPostAsNotGiven() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: markPostAsNotGiven,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['posts', 'user'] });
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
     },
   });
 }
@@ -187,4 +218,37 @@ export function useDiscoverPage(searchQuery: string) {
     setShowFilters,
     toggleCategory,
   };
+}
+
+// export function usePostsByUserId(userId?: number) {
+//   return useQuery({
+//     queryKey: ['posts', 'user', userId],
+//     queryFn: () => fetchPostsByUserId(userId!),
+//     enabled: Number.isFinite(userId),
+//     retry: 2,
+//   });
+// }
+
+// export function usePostsByUserId(userId: number | null) {
+//   return useQuery({
+//     queryKey: ['posts', 'user', userId],
+//     queryFn: () => fetchPostsByUserId(userId!),
+//     enabled: !!userId,
+//     retry: 2,
+//     meta: {
+//       errorMessage: 'Failed to load user posts',
+//     },
+//   });
+// };
+
+export function usePostsByUserId(userId?: number) {
+  return useQuery({
+    queryKey: ['posts', 'user', userId],
+    queryFn: () => fetchPostsByUserId(userId!),
+    enabled: Number.isFinite(userId),
+    retry: 2,
+    meta: {
+      errorMessage: 'Failed to load user posts',
+    },
+  });
 }

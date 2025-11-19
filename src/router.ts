@@ -8,6 +8,7 @@ export type Path =
   | `/example`
   | `/example/:id`
   | `/freecycle`
+  | `/freecycle/my-items`
   | `/freecycle/post-event`;
 
 export type Params = {

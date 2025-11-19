@@ -9,6 +9,7 @@ import MyItemsPage from './MyItemsPage';
 import MyRequestsPage from './MyRequestsPage';
 import SearchBar from '@/features/freecycle/components/SearchBar';
 import { ArrowLeft } from 'lucide-react';
+import { useNavigate } from '@/router';
 
 type Page =
   | 'home'
@@ -20,6 +21,8 @@ type Page =
   | 'item-detail';
 
 export default function FreecycleHomepage() {
+  const navigate = useNavigate();
+
   // State to manage current page
   const [currentPage, setCurrentPage] = useState<Page>('home');
   // State to manage search query
@@ -42,8 +45,8 @@ export default function FreecycleHomepage() {
         return (
           <DiscoverPage searchQuery={searchQuery} onViewItem={handleViewItem} />
         );
-      case 'my-items':
-        return <MyItemsPage _onViewItem={handleViewItem} />;
+      // case 'my-items':
+      //   return <MyItemsPage _onViewItem={handleViewItem} />;
       case 'my-requests':
         return <MyRequestsPage />;
       case 'post-item':
@@ -75,7 +78,7 @@ export default function FreecycleHomepage() {
 
               <div className="flex w-full justify-stretch gap-3 md:w-auto md:justify-start">
                 <button
-                  onClick={() => setCurrentPage('my-items')}
+                  onClick={() => navigate('/freecycle/my-items')}
                   className="flex-1 rounded-full bg-cyan-500 px-6 py-3 text-sm font-medium text-white shadow-md transition-colors hover:bg-cyan-600 md:flex-none"
                 >
                   My Items
