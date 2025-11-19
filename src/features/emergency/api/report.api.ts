@@ -8,7 +8,7 @@ import { get, post } from '.';
 export default class ReportApi {
   static async postReport(data: ReportRequestFrom) {
     const response: SuccessResponseInterface<ReportResponseFrom> = await post(
-      '/reports',
+      'emergency/reports',
       data
     );
     console.log(response);
@@ -20,7 +20,7 @@ export default class ReportApi {
     page: string,
     limit: string
   ) {
-    const response = await get(`/reports/${status}`, {
+    const response = await get(`emergency/reports/${status}`, {
       params: {
         _page: page,
         _limit: limit,

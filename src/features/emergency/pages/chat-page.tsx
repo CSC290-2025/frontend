@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react';
-// 1. เอา useNavigate ออก เพราะไม่ได้ใช้ Router Context
 import { Send, User, CornerUpLeft, Siren } from 'lucide-react';
 import { Input } from '@/features/emergency/components/ui/input';
 import { Button } from '@/features/emergency/components/ui/button';
@@ -13,8 +12,6 @@ interface Message {
 }
 
 export default function AdminChatPage() {
-  // 2. เอาบรรทัด const navigate = useNavigate(); ออก
-
   const CHANNEL_NAME = 'emergency_chat_channel';
 
   const channelRef = useRef<BroadcastChannel | null>(null);

@@ -8,7 +8,12 @@ import {
 } from '@/features/emergency/components/ui/tabs';
 import { Input } from '@/features/emergency/components/ui/input';
 import { Button } from '@/features/emergency/components/ui/button';
-import { Card, CardContent } from '@/features/emergency/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardTitle,
+} from '@/features/emergency/components/ui/card';
+import { useContactForm } from '@/features/emergency/hooks/contact-from.tsx';
 
 interface Contact {
   id: number;
@@ -25,6 +30,9 @@ interface E_num {
 
 export default function HotlinePage() {
   const [searchTerm, setSearchTerm] = useState('');
+  const { contact } = useContactForm();
+
+  console.log(contact);
 
   const familyContacts: Contact[] = [
     {
@@ -98,33 +106,31 @@ export default function HotlinePage() {
         {/* Ongoing Tab */}
         <TabsContent value="Family" className="mb-6">
           <div className="h-auto">
-            {familyContacts.map((r) => (
-              <div key={r.id} className="mb-6">
+            {contact.map((c) => (
+              <div key={c.id} className="mb-6">
                 <Card className="w-full">
                   <CardContent>
-                    <div className="grid grid-cols-6">
-                      <div className="col-span-4 gap-2 pl-5">
-                        <div className="">{r.name}</div>
-                        <div className="flex items-center gap-3">
-                          <Button
-                            size="icon"
-                            className="rounded-full bg-gray-300 text-white hover:bg-gray-400"
-                          >
-                            <Phone className="h-5 w-5" />
-                          </Button>
-                          <Button
-                            size="icon"
-                            className="rounded-full bg-gray-300 text-white hover:bg-gray-400"
-                          >
-                            <Edit className="h-5 w-5" />
-                          </Button>
-                          <Button
-                            size="icon"
-                            className="rounded-full bg-gray-300 text-white hover:bg-gray-400"
-                          >
-                            <Copy className="h-5 w-5" />
-                          </Button>
-                        </div>
+                    <div className="flex items-center justify-between">
+                      <CardTitle>{c.contact_name}</CardTitle>
+                      <div className="flex items-center gap-3">
+                        <Button
+                          size="icon"
+                          className="rounded-full bg-gray-300 text-white hover:bg-gray-400"
+                        >
+                          <Phone className="h-5 w-5" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          className="rounded-full bg-gray-300 text-white hover:bg-gray-400"
+                        >
+                          <Edit className="h-5 w-5" />
+                        </Button>
+                        <Button
+                          size="icon"
+                          className="rounded-full bg-gray-300 text-white hover:bg-gray-400"
+                        >
+                          <Copy className="h-5 w-5" />
+                        </Button>
                       </div>
                     </div>
                   </CardContent>

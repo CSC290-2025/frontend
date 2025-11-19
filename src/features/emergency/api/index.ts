@@ -52,9 +52,20 @@ class Api {
     const response = await axiosInstance.post(url, data, config);
     return response.data;
   };
+
+  _patch = async (
+    url: string,
+    data: any,
+    config?: AxiosRequestConfig<any>
+  ): Promise<SuccessResponseInterface> => {
+    const axiosInstance = this._getAxiosInstance(this.baseURL);
+    const response = await axiosInstance.patch(url, data, config);
+    return response.data;
+  };
 }
 
 const api = new Api();
 const get = api._get;
 const post = api._post;
-export { get, post };
+const patch = api._patch;
+export { get, post, patch };

@@ -76,18 +76,22 @@ export function ReportFromProvider({
   };
 
   useEffect(() => {
-    if (pathname !== '/activity') return;
+    try {
+      if (pathname !== '/activity') return;
 
-    const fetchReport = async () => {
-      const res = await findReportByStatusPag(
-        'pending',
-        initialPage,
-        initialLimit
-      );
-      setReport(res);
-    };
+      const fetchReport = async () => {
+        const res = await findReportByStatusPag(
+          'pending',
+          initialPage,
+          initialLimit
+        );
+        setReport(res);
+      };
 
-    fetchReport();
+      fetchReport();
+    } catch (error) {
+      console.error(error);
+    }
   }, [pathname, initialPage, initialLimit]);
 
   return (
