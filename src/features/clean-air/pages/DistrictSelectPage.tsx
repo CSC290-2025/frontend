@@ -13,7 +13,7 @@ export default function DistrictSelectPage() {
         </h1>
       </header>
 
-      <div className="mx-auto max-w-xl space-y-4 p-4 pt-8">
+      <div className="mx-auto max-w-2xl space-y-4 p-4 pt-8">
         <DistrictSearch onSearch={(t) => setSearchTerm(t)} />
         <DistrictList searchTerm={searchTerm} />
       </div>

@@ -51,18 +51,18 @@ const getStatusAndStyle = (category: string): StatusDetails => {
     case 'BAD':
       return {
         status: 'Unhealthy',
-        style: 'bg-orange-500 text-white',
+        style: 'bg-red-600 text-white',
         icon: faFaceFrown,
-        iconStyle: 'text-orange-500',
+        iconStyle: 'text-red-500',
       };
     case 'VERY_UNHEALTHY':
     case 'DANGEROUS':
     case 'HAZARDOUS':
       return {
         status: 'Very Unhealthy',
-        style: 'bg-red-600 text-white',
+        style: 'bg-red-800 text-white',
         icon: faFaceDizzy,
-        iconStyle: 'text-red-600',
+        iconStyle: 'text-red-800',
       };
     default:
       return {
@@ -105,7 +105,7 @@ export default function CurrentAqiCard({
 
   if (isLoading) {
     return (
-      <div className="rounded-xl border border-gray-900 bg-white p-6 text-gray-900 shadow-2xl shadow-gray-400">
+      <div className="h-full rounded-xl border border-gray-300 bg-white p-6 text-gray-900 shadow-md">
         <div className="text-center">Loading air quality data...</div>
       </div>
     );
@@ -113,7 +113,7 @@ export default function CurrentAqiCard({
 
   if (error || !districtDetail?.currentData) {
     return (
-      <div className="rounded-xl border border-gray-900 bg-white p-6 text-gray-900 shadow-2xl shadow-gray-400">
+      <div className="h-full rounded-xl border border-gray-300 bg-white p-6 text-gray-900 shadow-md">
         <div className="text-center text-red-600">
           {error?.message || 'No air quality data available'}
         </div>
@@ -138,39 +138,40 @@ export default function CurrentAqiCard({
   const pm25Display = pm25.toFixed(1);
 
   return (
-    <div className="rounded-xl border border-gray-900 bg-white p-6 text-gray-900 shadow-2xl shadow-gray-400">
-      <div className="relative mb-4 flex items-start justify-between">
-        <h1 className="text-xl font-semibold">Current Air Quality</h1>
-
-        <span
-          className="cursor-pointer rounded-full border border-gray-300 bg-gray-100 px-3 py-1 text-sm text-gray-700 transition-colors hover:bg-gray-200"
-          onClick={onDocumentationClick}
-        >
-          Information
-        </span>
+    <div className="h-full rounded-xl border border-gray-300 bg-white p-6 text-gray-900 shadow-md">
+      <div className="mb-4 flex items-start justify-between">
+        <h1 className="text-base font-semibold text-gray-800">
+          Current Air Quality
+        </h1>
       </div>
 
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <p className="text-6xl font-bold">
-            {aqi} <span className="text-2xl font-light">AQI</span>
+      <div className="mb-4 flex items-start justify-between">
+        <div className="flex flex-col">
+          <p className="text-6xl leading-none font-bold">
+            {aqi} <span className="align-top text-3xl font-normal">AQI</span>
           </p>
-          <p className="mt-1 text-xl">PM2.5: {pm25Display} µg/m³</p>
-
-          <span
-            className={`mt-3 inline-block rounded-full px-4 py-1 font-medium ${statusStyle}`}
-          >
-            {status}
-          </span>
+          <p className="mt-2 text-sm text-gray-700">
+            PM 2.5: {pm25Display} µg/m³
+          </p>
         </div>
 
-        <div className="flex flex-col items-end text-right">
+        <div className="mt-1 text-right">
           <FontAwesomeIcon icon={icon} className={`text-6xl ${iconStyle}`} />
+        </div>
+      </div>
 
-          <h2 className="mt-6 text-xl text-black">
+      <div className="mt-4 flex items-center justify-between">
+        <span
+          className={`inline-block rounded-full px-4 py-1 text-sm font-semibold ${statusStyle}`}
+        >
+          {status}
+        </span>
+
+        <div className="flex flex-col text-right">
+          <p className="text-sm font-semibold text-black">
             {displayDistrict}, Bangkok
-          </h2>
-          <p className="text-sm text-gray-600">Last updated: {lastUpdated}</p>
+          </p>
+          <p className="text-xs text-gray-500">Last updated: {lastUpdated}</p>
         </div>
       </div>
     </div>

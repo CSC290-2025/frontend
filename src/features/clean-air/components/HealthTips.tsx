@@ -6,8 +6,8 @@ export default function HealthTips() {
   const { data: healthTips, isLoading, error } = useHealthTipsQuery(district);
   if (isLoading) {
     return (
-      <div className="h-full rounded-xl border border-gray-900 bg-white p-6 text-gray-900 shadow-2xl shadow-gray-400">
-        <h2 className="mb-4 text-lg font-semibold">Health Tips</h2>
+      <div className="h-full rounded-xl border border-black bg-white p-6 text-gray-900 shadow-md">
+        <h2 className="mb-4 text-base font-semibold">Health Tips</h2>
         <div className="text-center">Loading health tips...</div>
       </div>
     );
@@ -15,27 +15,27 @@ export default function HealthTips() {
 
   if (error || !healthTips) {
     return (
-      <div className="h-full rounded-xl border border-gray-900 bg-white p-6 text-gray-900 shadow-2xl shadow-gray-400">
-        <h2 className="mb-4 text-lg font-semibold">Health Tips</h2>
+      <div className="h-full rounded-xl border border-black bg-white p-6 text-gray-900 shadow-md">
+        <h2 className="mb-4 text-base font-semibold">Health Tips</h2>
         <div className="text-center text-red-600">
           {error?.message || 'No health tips available'}
         </div>
       </div>
     );
   }
+
   return (
-    <div className="h-full rounded-xl border border-gray-900 bg-white p-6 text-gray-900 shadow-2xl shadow-gray-400">
-      <h2 className="mb-4 text-lg font-semibold">Health Tips</h2>
-      <div className="space-y-3">
+    <div className="h-full rounded-xl border border-black bg-white p-6 text-gray-900 shadow-md">
+      <h2 className="mb-4 text-base font-semibold text-gray-800">
+        Health Tips
+      </h2>
+      <ul className="list-disc space-y-3 pl-4 text-gray-700">
         {healthTips.map((tip, index) => (
-          <div
-            key={index}
-            className="rounded-lg border border-gray-300 bg-gray-100 p-3 text-sm transition-colors hover:bg-gray-200"
-          >
+          <li key={index} className="text-sm">
             {tip}
-          </div>
+          </li>
         ))}
-      </div>
+      </ul>
     </div>
   );
 }

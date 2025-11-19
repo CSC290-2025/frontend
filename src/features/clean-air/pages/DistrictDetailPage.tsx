@@ -21,7 +21,7 @@ export function DistrictDetailPage() {
   const closeModal = () => setIsModalOpen(false);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-white text-gray-900">
       <header className="w-full border-b border-gray-700 bg-gray-600 py-4 shadow-md">
         <div className="mx-auto max-w-4xl px-4">
           <div className="flex items-center justify-between">
@@ -41,12 +41,20 @@ export function DistrictDetailPage() {
           </div>
         </div>
       </header>
-
-      <div className="mx-auto max-w-4xl space-y-6 p-4 sm:p-8">
+      <div className="mx-auto max-w-4xl space-y-8 p-4 sm:p-8">
+        <div className="pt-4 text-3xl font-bold">Air Quality</div>
         <CurrentAqiCard onDocumentationClick={openModal} />
         <CurrentDataCard />
-        <HealthTips />
-        <Summary />
+        <div className="flex space-x-6">
+          <div className="w-2/3">
+            <Summary />
+          </div>
+
+          <div className="w-1/3">
+            <HealthTips />
+          </div>
+        </div>
+
         <HistoricalTable />
       </div>
 

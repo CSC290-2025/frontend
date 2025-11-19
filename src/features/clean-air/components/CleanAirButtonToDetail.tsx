@@ -16,14 +16,12 @@ export default function CleanAirButtonToDetail() {
 
   return (
     <div
-      className="relative w-full cursor-pointer overflow-hidden rounded-2xl border border-gray-900 bg-white p-6 text-gray-900 shadow-md transition-all duration-300 hover:border-blue-500 hover:shadow-lg"
+      className="ml-6 w-full max-w-xs cursor-pointer overflow-hidden rounded-xl border border-gray-300 bg-white p-3 text-gray-900 transition-all duration-300"
       onClick={handleNavigateToDetail}
     >
-      {/* Title: Clean Air */}
-      <div className="text-3xl font-light">Clean Air</div>
+      <div className="text-base font-semibold text-gray-900">Clean Air</div>
 
-      {/* Subtitle: Air quality */}
-      <p className="mt-8 text-lg text-gray-700">Air quality</p>
+      <p className="mt-6 text-sm text-gray-700">Air quality</p>
     </div>
   );
 }
