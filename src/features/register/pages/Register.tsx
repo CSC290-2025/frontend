@@ -1,30 +1,35 @@
 import RegisterFormUI from '../components/RegisterForm';
-import bgImg from '../../../../public/smartcitybackground_login.png';
-import { useAuthenticated } from '@/hooks/useAuthenticated';
-import { useEffect, useState } from 'react';
+import bgImg from '/smartcitybackground_login.png';
+import logo from '/smartcityhub.png';
+import { useAuth } from '@/features/auth';
+import { useEffect } from 'react';
 import { useNavigate } from '@/router';
+
 export default function RegisterForm() {
-  const { data, isLoading, isError } = useAuthenticated();
+  const { user } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Only redirect after loading is finished and user is authenticated
-    // Guard on isLoading to avoid redirecting while the query is still in flight
-    if (!isLoading && !isError && data) {
-      // If your `data` shape is an object, prefer checking a specific field
-      // e.g. `data.id` or `data.user` to avoid truthy-empty-object redirects
+    if (user) {
       navigate('/');
     }
-    console.log('useAuthenticated data:', { data, isLoading, isError });
-  }, [data, isLoading, isError, navigate]);
+  }, [user, navigate]);
+
+  if (user) return null;
+
   return (
     <div
       className="relative flex min-h-screen flex-col items-center bg-cover bg-center p-14 px-4"
       style={{ backgroundImage: `url(${bgImg})`, backgroundPosition: 'top' }}
     >
-      <div className="mx-auto rounded-2xl bg-white p-8 shadow-md">
-        <RegisterFormUI></RegisterFormUI>
+      <div className="inset absolute" />
+      <div className="mb-8 flex items-center space-x-2">
+        <img src={logo} alt="Smart City Hub" className="h-14 w-14" />
+        <h3 className="text-2xl font-bold text-[#1E3A8A] sm:text-2xl">
+          SMART CITY HUB
+        </h3>
       </div>
+      <RegisterFormUI />
     </div>
   );
 }
