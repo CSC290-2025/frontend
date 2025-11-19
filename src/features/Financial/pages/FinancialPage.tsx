@@ -12,14 +12,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Link } from '@/router';
-import {
-  Wallet,
-  CreditCard,
-  Train,
-  ArrowLeftRight,
-  QrCode,
-} from 'lucide-react';
+import { Wallet, ArrowLeftRight, QrCode } from 'lucide-react';
+import AmountBox from '../components/metro-cards/AmountBox';
+import ServiceNavigator from '../components/mainPage/ServiceNavigator';
+import TransactionHistory from '../components/mainPage/TransactionHistory';
 import { toast } from 'sonner';
 
 export default function FinancialPage() {
@@ -128,55 +124,6 @@ export default function FinancialPage() {
             Manage your wallet and financial transactions
           </p>
         </div>
-
-        <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2">
-          <Link
-            to="/financial/insurance/:user_id"
-            params={{ user_id: loadedUserId?.toString() ?? '1' }}
-          >
-            <Card className="group cursor-pointer overflow-hidden border-2 border-transparent transition-all duration-300 hover:border-green-500 hover:shadow-xl">
-              <CardContent className="p-6">
-                <div className="flex items-center gap-4">
-                  <div className="rounded-xl bg-green-100 p-3 shadow-md transition-all group-hover:bg-green-200">
-                    <CreditCard className="h-8 w-8 text-green-600" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">
-                      Insurance Cards
-                    </h3>
-                    <p className="text-sm text-gray-600">
-                      Manage your insurance cards
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
-
-          <Link
-            to="/financial/metro/:user_id"
-            params={{ user_id: loadedUserId?.toString() ?? '1' }}
-          >
-            <Card className="group cursor-pointer overflow-hidden border-2 border-transparent transition-all duration-300 hover:border-blue-500 hover:shadow-xl">
-              <CardContent className="p-6">
-                <div className="flex items-center gap-4">
-                  <div className="rounded-xl bg-blue-100 p-3 shadow-md transition-all group-hover:bg-blue-200">
-                    <Train className="h-8 w-8 text-blue-600" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">
-                      Metro Cards
-                    </h3>
-                    <p className="text-sm text-gray-600">
-                      Manage your metro cards
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
-        </div>
-
         {/* User Selection */}
         <Card className="mb-6">
           <CardContent className="p-6">
@@ -241,54 +188,66 @@ export default function FinancialPage() {
             </CardContent>
           </Card>
         )}
-
         {/* Wallet Info */}
         {wallet && (
           <>
-            {/* Balance Card */}
-            <Card className="mb-6 bg-gradient-to-br from-purple-50 to-blue-50">
+            <div className="mb-6 grid grid-cols-1 gap-10 md:gap-6 lg:grid-cols-2">
+              <div className="h-100">
+                <AmountBox
+                  balance={wallet.balance ?? 0}
+                  onRefetch={refetch}
+                  isLoading={false}
+                />
+              </div>
+
+              {/* Right Column: Services and History */}
+              <div className="space-y-6">
+                <ServiceNavigator userId={loadedUserId?.toString() ?? '1'} />
+                <TransactionHistory />
+              </div>
+            </div>
+
+            {/* Transfer Card */}
+            <Card>
               <CardContent className="p-6">
-                <div className="mb-2 flex items-center gap-2">
-                  <Wallet className="h-5 w-5 text-purple-600" />
-                  <span className="text-sm font-medium text-gray-600">
-                    Total Balance
-                  </span>
+                <div className="mb-4 flex items-center gap-2">
+                  <ArrowLeftRight className="h-5 w-5 text-purple-600" />
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Transfer Funds
+                  </h3>
                 </div>
-                <div className="mb-4 flex items-baseline gap-2">
-                  <span className="text-4xl font-bold text-gray-900">
-                    ${wallet.balance!.toFixed(2)}
-                  </span>
+                <p className="mb-4 text-sm text-gray-600">
+                  Send money to another user&apos;s wallet
+                </p>
+
+                <div className="space-y-4">
+                  <div>
+                    <Label>Recipient User ID</Label>
+                    <Input
+                      type="number"
+                      placeholder="Enter user ID"
+                      value={transferToUserId}
+                      onChange={(e) => setTransferToUserId(e.target.value)}
+                    />
+                  </div>
+
+                  <div>
+                    <Label>Amount</Label>
+                    <Input
+                      type="number"
+                      placeholder="Enter amount to transfer"
+                      value={transferAmount}
+                      onChange={(e) => setTransferAmount(e.target.value)}
+                    />
+                  </div>
+
                   <Button
-                    onClick={() => refetch()}
-                    variant="ghost"
-                    size="sm"
-                    className="text-gray-600"
+                    onClick={handleTransfer}
+                    disabled={!transferToUserId || !transferAmount}
+                    className="w-full"
                   >
-                    Refresh
+                    Transfer
                   </Button>
-                </div>
-                <div className="grid grid-cols-2 gap-4 border-t border-purple-200 pt-4">
-                  <div>
-                    <div className="text-xs text-gray-600">Type</div>
-                    <div className="font-semibold text-gray-900">
-                      {wallet.wallet_type}
-                      {isOrg &&
-                        wallet.organization_type &&
-                        ` (${wallet.organization_type})`}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-gray-600">Status</div>
-                    <div
-                      className={`inline-block rounded-full px-2 py-1 text-xs font-semibold ${
-                        wallet.status === 'active'
-                          ? 'bg-green-100 text-green-700'
-                          : 'bg-gray-100 text-gray-700'
-                      }`}
-                    >
-                      {wallet.status}
-                    </div>
-                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -495,51 +454,6 @@ export default function FinancialPage() {
                     </Button>
                   </div>
                 )}
-              </CardContent>
-            </Card>
-
-            {/* Transfer Card */}
-            <Card>
-              <CardContent className="p-6">
-                <div className="mb-4 flex items-center gap-2">
-                  <ArrowLeftRight className="h-5 w-5 text-purple-600" />
-                  <h3 className="text-lg font-semibold text-gray-900">
-                    Transfer Funds
-                  </h3>
-                </div>
-                <p className="mb-4 text-sm text-gray-600">
-                  Send money to another user&apos;s wallet
-                </p>
-
-                <div className="space-y-4">
-                  <div>
-                    <Label>Recipient User ID</Label>
-                    <Input
-                      type="number"
-                      placeholder="Enter user ID"
-                      value={transferToUserId}
-                      onChange={(e) => setTransferToUserId(e.target.value)}
-                    />
-                  </div>
-
-                  <div>
-                    <Label>Amount</Label>
-                    <Input
-                      type="number"
-                      placeholder="Enter amount to transfer"
-                      value={transferAmount}
-                      onChange={(e) => setTransferAmount(e.target.value)}
-                    />
-                  </div>
-
-                  <Button
-                    onClick={handleTransfer}
-                    disabled={!transferToUserId || !transferAmount}
-                    className="w-full"
-                  >
-                    Transfer
-                  </Button>
-                </div>
               </CardContent>
             </Card>
           </>

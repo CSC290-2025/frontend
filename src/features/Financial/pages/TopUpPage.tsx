@@ -20,12 +20,10 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { ArrowLeft } from 'lucide-react';
-import WalletIcon from '@/features/Financial/assets/wallet.svg';
-import MetroIcon from '@/features/Financial/assets/metro.svg';
-import InsuranceIcon from '@/features/Financial/assets/insurance.svg';
 import { toast } from 'sonner';
-
-type TopUpType = 'wallet' | 'metro' | 'insurance';
+import ServiceSelector, {
+  type ServiceType as TopUpType,
+} from '../components/mainPage/ServiceSelector';
 
 export default function TopupPage() {
   const navigate = useNavigate();
@@ -203,73 +201,11 @@ export default function TopupPage() {
             </div>
 
             {/* Select what to top up */}
-            <div className="mb-6">
-              <Label className="text-base font-medium">
-                Top up destination
-              </Label>
-              <div className="mt-3 grid grid-cols-3 gap-3">
-                <Button
-                  variant="outline"
-                  onClick={() => handleTopUpTypeChange('wallet')}
-                  aria-pressed={topUpType === 'wallet'}
-                  className={`flex h-28 flex-col items-center gap-2 border p-4 transition-transform duration-150 ease-in-out ${
-                    topUpType === 'wallet'
-                      ? 'ring-2 ring-cyan-300'
-                      : 'hover:-translate-y-1 hover:scale-105'
-                  }`}
-                >
-                  <div
-                    className="rounded-lg p-2"
-                    style={{ background: 'rgba(171,245,167,1)' }}
-                  >
-                    <img src={WalletIcon} alt="Wallet" className="h-6 w-6" />
-                  </div>
-                  <div className="text-sm">Wallet Top-up</div>
-                </Button>
-
-                <Button
-                  variant="outline"
-                  onClick={() => handleTopUpTypeChange('insurance')}
-                  aria-pressed={topUpType === 'insurance'}
-                  className={`flex h-28 flex-col items-center gap-2 border p-4 transition-transform duration-150 ease-in-out ${
-                    topUpType === 'insurance'
-                      ? 'ring-2 ring-pink-200'
-                      : 'hover:-translate-y-1 hover:scale-105'
-                  }`}
-                >
-                  <div
-                    className="rounded-lg p-2"
-                    style={{ background: 'rgba(255,185,194,1)' }}
-                  >
-                    <img
-                      src={InsuranceIcon}
-                      alt="Insurance"
-                      className="h-6 w-6"
-                    />
-                  </div>
-                  <div className="text-sm">Insurance Card</div>
-                </Button>
-
-                <Button
-                  variant="outline"
-                  onClick={() => handleTopUpTypeChange('metro')}
-                  aria-pressed={topUpType === 'metro'}
-                  className={`flex h-28 flex-col items-center gap-2 border p-4 transition-transform duration-150 ease-in-out ${
-                    topUpType === 'metro'
-                      ? 'ring-2 ring-sky-200'
-                      : 'hover:-translate-y-1 hover:scale-105'
-                  }`}
-                >
-                  <div
-                    className="rounded-lg p-2"
-                    style={{ background: 'rgba(156,235,255,1)' }}
-                  >
-                    <img src={MetroIcon} alt="Metro" className="h-5 w-5" />
-                  </div>
-                  <div className="text-sm">Metro Card</div>
-                </Button>
-              </div>
-            </div>
+            <ServiceSelector
+              selected={topUpType}
+              onSelect={handleTopUpTypeChange}
+              label="Top up destination"
+            />
 
             {/* Card ID input for metro/insurance */}
             {(topUpType === 'metro' || topUpType === 'insurance') && (

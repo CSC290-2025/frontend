@@ -59,7 +59,15 @@ export default function MetroCardPage() {
             Manage your metro cards and check balances
           </p>
         </div>
-        <AmountBox metroCards={metroCards ?? []} onRefetch={refetch} />
+        <AmountBox
+          balance={
+            metroCards
+              ?.filter((card) => card.status === 'active')
+              .reduce((acc, card) => acc + card.balance!, 0) ?? 0
+          }
+          onRefetch={refetch}
+          isLoading={isLoading}
+        />
         <div className="mb-6 flex items-center justify-between">
           <h2 className="text-xl font-semibold text-gray-900">
             Your Metro Cards
