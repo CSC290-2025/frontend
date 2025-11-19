@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from '@/router';
+// import { useNavigate } from '@/router';
 import {
   useBookingsByApartment,
   useUpdateBookingStatus,
@@ -21,7 +21,7 @@ interface Tenant {
 }
 
 export default function AdminTenantInfo() {
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
   const apartmentName = 'Current Tenants';
   // Read apartment id from query param (AdminListedAPT links here as ?id=...)
   const params = new URLSearchParams(window.location.search);
@@ -153,7 +153,9 @@ export default function AdminTenantInfo() {
                 onClick={(e) => e.stopPropagation()}
               >
                 <button
-                  onClick={() => navigate('/AdminEditTenant')}
+                  onClick={() =>
+                    (window.location.href = `/AdminEditTenant?id=${tenant.id}`)
+                  }
                   className="flex cursor-pointer items-center justify-center gap-2 px-3 py-2 font-medium text-gray-700"
                 >
                   <img src={EditIcon} alt="Edit" className="h-4 w-4" />
