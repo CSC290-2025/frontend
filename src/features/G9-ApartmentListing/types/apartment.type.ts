@@ -9,9 +9,12 @@ export interface Address {
 
 // Apartment type enums
 export type ApartmentType = 'dormitory' | 'apartment';
-export type ApartmentLocation = 'asoke' | 'prachauthit' | 'phathumwan';
+export type ApartmentLocation =
+  | 'chomthong'
+  | 'thonburi'
+  | 'thungkhru'
+  | 'ratburana';
 export type InternetType = 'free' | 'not_free' | 'none';
-
 // Main Apartment interface
 export interface Apartment {
   id: number;
