@@ -3,3 +3,4 @@ export { default as WasteCharts } from './WasteCharts';
 export { default as TrendCard } from './TrendCrad';
 export { default as ViewSelector } from './ViewSelector';
 export { default as AddBinModal } from './AddBinModal';
+export { default as WasteLoggingForm } from './WasteLoggingForm.tsx';

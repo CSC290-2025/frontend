@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import type { BinType } from '@/features/waste-management/types';
-import { ApiService } from '@/features/waste-management/api/api';
+import { BinApiService } from '@/features/waste-management/api/bin.api';
 
 interface AddBinModalProps {
   onClose: () => void;
@@ -21,7 +21,7 @@ export default function AddBinModal({ onClose, onSuccess }: AddBinModalProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await ApiService.createBin(formData);
+      await BinApiService.createBin(formData);
       onSuccess();
     } catch (error) {
       console.error('Error creating bin:', error);

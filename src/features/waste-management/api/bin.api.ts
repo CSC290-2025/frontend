@@ -1,17 +1,15 @@
 import type {
   Bin,
+  BinWithDistance,
   BinType,
   BinStatus,
-  WasteType,
-  WasteStats,
   BinStats,
 } from '@/features/waste-management/types';
 
 const API_BASE_URL =
   import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
-export class ApiService {
-  // Bins
+export class BinApiService {
   static async getAllBins(filters?: {
     bin_type?: BinType;
     status?: BinStatus;
@@ -66,7 +64,7 @@ export class ApiService {
     lng: number,
     binType?: BinType,
     limit = 5
-  ): Promise<Bin[]> {
+  ): Promise<BinWithDistance[]> {
     const params = new URLSearchParams({
       lat: lat.toString(),
       lng: lng.toString(),
@@ -81,35 +79,6 @@ export class ApiService {
 
   static async getBinStats(): Promise<BinStats> {
     const response = await fetch(`${API_BASE_URL}/bins/stats`);
-    const data = await response.json();
-    return data.data.stats;
-  }
-
-  // Waste
-  static async getWasteTypes(): Promise<WasteType[]> {
-    const response = await fetch(`${API_BASE_URL}/waste-types`);
-    const data = await response.json();
-    return data.data.wasteTypes;
-  }
-
-  static async logWaste(wasteTypeName: string, weight: number) {
-    const response = await fetch(`${API_BASE_URL}/waste/log`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ waste_type_name: wasteTypeName, weight }),
-    });
-    return response.json();
-  }
-
-  static async getWasteStats(
-    month?: number,
-    year?: number
-  ): Promise<WasteStats> {
-    const params = new URLSearchParams();
-    if (month) params.append('month', month.toString());
-    if (year) params.append('year', year.toString());
-
-    const response = await fetch(`${API_BASE_URL}/waste/stats?${params}`);
     const data = await response.json();
     return data.data.stats;
   }

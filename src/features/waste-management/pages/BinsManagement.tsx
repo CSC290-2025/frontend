@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Plus, MapPin, Trash2, Check, X } from 'lucide-react';
-import { ApiService } from '@/features/waste-management/api/api';
+import { BinApiService } from '@/features/waste-management/api/bin.api';
 import type {
   Bin,
   BinType,
@@ -27,7 +27,7 @@ export default function BinsManagement() {
       const filters: any = {};
       if (filterType) filters.bin_type = filterType;
       if (filterStatus) filters.status = filterStatus;
-      const data = await ApiService.getAllBins(filters);
+      const data = await BinApiService.getAllBins(filters);
       setBins(data);
     } catch (error) {
       console.error('Error loading bins:', error);
@@ -42,7 +42,7 @@ export default function BinsManagement() {
 
   const handleStatusUpdate = async (binId: number, newStatus: BinStatus) => {
     try {
-      await ApiService.updateBinStatus(binId, newStatus);
+      await BinApiService.updateBinStatus(binId, newStatus);
       loadBins();
     } catch (error) {
       console.error('Error updating status:', error);
@@ -51,7 +51,7 @@ export default function BinsManagement() {
 
   const handleRecordCollection = async (binId: number, weight?: number) => {
     try {
-      await ApiService.recordCollection(binId, weight);
+      await BinApiService.recordCollection(binId, weight);
       loadBins();
     } catch (error) {
       console.error('Error recording collection:', error);

@@ -1,19 +1,18 @@
 import { useState, useEffect, useRef } from 'react';
-import { Navigation, Trash2 } from 'lucide-react';
-import { ApiService } from '@/features/waste-management/api/api';
-import type { Bin, BinType } from '@/features/waste-management/types';
-import {
-  BIN_TYPE_COLORS,
-  BIN_STATUS_COLORS,
-  BIN_TYPE_LABELS,
-} from '@/constant';
+import { Navigation } from 'lucide-react';
+import { BinApiService } from '@/features/waste-management/api/bin.api';
+import type {
+  BinWithDistance,
+  BinType,
+} from '@/features/waste-management/types';
+import { BIN_TYPE_COLORS, BIN_TYPE_LABELS } from '@/constant';
 
 export default function NearestBins() {
-  const [nearestBins, setNearestBins] = useState<Bin[]>([]);
+  const [nearestBins, setNearestBins] = useState<BinWithDistance[]>([]);
   const [loading, setLoading] = useState(false);
   const [location, setLocation] = useState({ lat: 13.7563, lng: 100.5018 });
   const [binType, setBinType] = useState<BinType | ''>('');
-  const [selectedBin, setSelectedBin] = useState<Bin | null>(null);
+  const [selectedBin, setSelectedBin] = useState<BinWithDistance | null>(null);
 
   const mapRef = useRef<HTMLDivElement>(null);
   const googleMapRef = useRef<any>(null);
@@ -101,7 +100,7 @@ export default function NearestBins() {
   const findNearestBins = async () => {
     try {
       setLoading(true);
-      const bins = await ApiService.getNearestBins(
+      const bins = await BinApiService.getNearestBins(
         location.lat,
         location.lng,
         binType || undefined,
