@@ -17,13 +17,13 @@ import {
 
 function Header() {
   return (
-    <div className="font-poppins mx-auto ml-60 w-full max-w-[1200px] px-4 pt-6 pb-4">
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-4">
+    <div className="font-poppins mx-auto w-full max-w-[1200px] px-4 pt-6 pb-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4">
         <button className="flex items-center gap-3 rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-left hover:shadow-sm">
           <BusFront className="h-6 w-6" />
           <div className="leading-tight">
-            <div className="text-sm font-semibold">Transport</div>
-            <div className="text-xs text-neutral-500">
+            <div className="text-sm font-semibold md:text-base">Transport</div>
+            <div className="text-xs text-neutral-500 md:text-sm">
               Bus timing and routes
             </div>
           </div>
@@ -32,9 +32,9 @@ function Header() {
         <button className="flex items-center gap-3 rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-left hover:shadow-sm">
           <TrafficCone className="h-6 w-8" />
           <div className="leading-tight">
-            <div className="text-sm font-semibold">Traffics</div>
-            <div className="text-xs text-neutral-500">
-              Hospital & emergency services
+            <div className="text-sm font-semibold md:text-base">Traffics</div>
+            <div className="text-xs text-neutral-500 md:text-sm">
+              Hospital &amp; emergency services
             </div>
           </div>
         </button>
@@ -42,8 +42,8 @@ function Header() {
         <button className="flex items-center gap-3 rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-left hover:shadow-sm">
           <MapPin className="h-6 w-6" />
           <div className="leading-tight">
-            <div className="text-sm font-semibold">Nearby</div>
-            <div className="text-xs text-neutral-500">
+            <div className="text-sm font-semibold md:text-base">Nearby</div>
+            <div className="text-xs text-neutral-500 md:text-sm">
               Activities and volunteer
             </div>
           </div>
@@ -52,16 +52,20 @@ function Header() {
         <button className="flex items-center gap-3 rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-left hover:shadow-sm">
           <MessageCircle className="h-6 w-6" />
           <div className="leading-tight">
-            <div className="text-sm font-semibold">Support Map</div>
-            <div className="text-xs text-neutral-500">Reservation</div>
+            <div className="text-sm font-semibold md:text-base">
+              Support Map
+            </div>
+            <div className="text-xs text-neutral-500 md:text-sm">
+              Reservation
+            </div>
           </div>
         </button>
       </div>
-      <div className="mt-5 ml-87 flex w-full justify-end">
-        <div className="mb-2 flex w-full justify-end"></div>
+
+      <div className="mt-5 flex w-full justify-center md:hidden">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button className="mr-80 h-9 items-center gap-2 rounded-full border border-[#6FA8FF] bg-[#2749C9] px-4 text-white transition hover:bg-[#1f3db1]">
+            <Button className="h-9 items-center gap-2 rounded-full border border-[#6FA8FF] bg-[#2749C9] px-4 text-white transition hover:bg-[#1f3db1]">
               Filter
               <ChevronDown className="h-4 w-4" strokeWidth={4} />
             </Button>
@@ -99,6 +103,78 @@ function Header() {
             <DropdownMenuItem className="flex cursor-pointer items-center gap-2 px-3 py-2 hover:bg-[#1f3db1]">
               <TriangleAlert className="h-6 w-6 text-white" strokeWidth={2} />
               <span className="text-base">Danger Area</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      <div className="mt-5 hidden w-full justify-end md:flex lg:mr-20">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button className="h-9 items-center gap-2 rounded-full border border-[#6FA8FF] bg-[#2749C9] px-4 text-white transition hover:bg-[#1f3db1]">
+              Filter
+              <ChevronDown className="h-4 w-4" strokeWidth={4} />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="end"
+            sideOffset={10}
+            className="w-48 rounded-2xl bg-[#2749C9] p-3 text-white shadow-xl"
+          >
+            <DropdownMenuItem className="group flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 transition hover:bg-white hover:text-black">
+              <BusFront
+                className="h-6 w-6 text-white group-hover:text-black"
+                strokeWidth={2}
+              />
+              <span className="text-base group-hover:text-black">
+                Transportation
+              </span>
+            </DropdownMenuItem>
+
+            <DropdownMenuItem className="group flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 transition hover:bg-white hover:text-black">
+              <Wind
+                className="h-6 w-6 text-white group-hover:text-black"
+                strokeWidth={2}
+              />
+              <span className="text-base group-hover:text-black">
+                Impure Air
+              </span>
+            </DropdownMenuItem>
+
+            <DropdownMenuItem className="group flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 transition hover:bg-white hover:text-black">
+              <TrafficCone
+                className="h-6 w-6 text-white group-hover:text-black"
+                strokeWidth={2}
+              />
+              <span className="text-base group-hover:text-black">Traffics</span>
+            </DropdownMenuItem>
+
+            <DropdownMenuItem className="group flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 transition hover:bg-white hover:text-black">
+              <Trophy
+                className="h-6 w-6 text-white group-hover:text-black"
+                strokeWidth={2}
+              />
+              <span className="text-base group-hover:text-black">Events</span>
+            </DropdownMenuItem>
+
+            <DropdownMenuItem className="group flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 transition hover:bg-white hover:text-black">
+              <Siren
+                className="h-6 w-6 text-white group-hover:text-black"
+                strokeWidth={2}
+              />
+              <span className="text-base group-hover:text-black">
+                Emergency Request
+              </span>
+            </DropdownMenuItem>
+
+            <DropdownMenuItem className="group flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 transition hover:bg-white hover:text-black">
+              <TriangleAlert
+                className="h-6 w-6 text-white group-hover:text-black"
+                strokeWidth={2}
+              />
+              <span className="text-base group-hover:text-black">
+                Danger Area
+              </span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
