@@ -1,9 +1,11 @@
 // Generouted, changes to this file will be overridden
+ 
 
 import { components, hooks, utils } from '@generouted/react-router/client';
 
 export type Path =
   | `/`
+  | `/Know-AI/courses`
   | `/dashboard`
   | `/district-detail/:district`
   | `/district-selection`
@@ -14,8 +16,7 @@ export type Path =
   | `/power-bi/:type/:category`
   | `/power-bi/:type/:category/:id`
   | `/power-bi/create`
-  | `/power-bi/edit/:id`
-  | `/Know-AI/courses`;
+  | `/power-bi/edit/:id`;
 
 export type Params = {
   '/district-detail/:district': { district: string };
