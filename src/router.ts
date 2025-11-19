@@ -3,9 +3,16 @@
 
 import { components, hooks, utils } from '@generouted/react-router/client';
 
-export type Path = `/` | `/Know-AI/courses` | `/example` | `/example/:id`;
+export type Path =
+  | `/`
+  | `/Know-AI/courses`
+  | `/Know-AI/exercises`
+  | `/Know-AI/exercises/:level/:question`
+  | `/example`
+  | `/example/:id`;
 
 export type Params = {
+  '/Know-AI/exercises/:level/:question': { level: string; question: string };
   '/example/:id': { id: string };
 };
 
