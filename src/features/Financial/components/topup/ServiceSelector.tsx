@@ -1,4 +1,4 @@
-import ServiceGrid, { type ServiceType } from './ServiceGrid';
+import ServiceGrid, { type ServiceType } from '../mainPage/ServiceGrid';
 
 export type { ServiceType };
 
