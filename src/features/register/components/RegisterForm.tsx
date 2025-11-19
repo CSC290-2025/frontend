@@ -1,87 +1,176 @@
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { useMutation } from '@tanstack/react-query';
-import { apiClient } from '@/lib/apiClient';
+import { Label } from '@/components/ui/label';
+import { AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { useRegister } from '../hooks/useRegister';
+import { useAuth } from '@/features/auth/context/AuthContext';
+import { RegisterSchema, type RegisterFormData } from '@/features/auth/schemas';
 import { useState } from 'react';
+import { Link } from '@/router';
 
 export default function RegisterFormUI() {
-  const { mutate } = useRegister();
-  const [email, setEmail] = useState('');
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmedPassword, setConfirmedPassword] = useState('');
+  const { mutate, isPending } = useRegister();
+  const { error: contextError, clearError } = useAuth();
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<RegisterFormData>({
+    resolver: zodResolver(RegisterSchema),
+    mode: 'onChange',
+  });
+
+  const onSubmit = (data: RegisterFormData) => {
+    clearError();
+    const { confirmPassword, ...submitData } = data;
+    mutate(submitData as RegisterFormData);
+  };
 
   return (
-    <Card className="w-full max-w-md">
-      <CardHeader className="space-y-1 pb-8 text-center">
-        <CardTitle className="text-2xl font-bold tracking-normal text-slate-900">
-          Get Started! Now
+    <Card className="relative z-10 w-full max-w-sm rounded-2xl bg-white/95 shadow-2xl backdrop-blur-md sm:max-w-md">
+      <CardHeader className="flex flex-col items-center space-y-1 px-6 py-2 text-center">
+        <CardTitle className="text-xl font-extrabold text-[#1E3A8A] sm:text-2xl">
+          Get Started!
         </CardTitle>
+        <p className="text-sm text-gray-500">Create your account to begin</p>
       </CardHeader>
 
-      <CardContent>
-        <form
-          className="space-y-4"
-          onSubmit={(e) => {
-            e.preventDefault();
+      <CardContent className="space-y-3 p-6 sm:p-6">
+        {contextError && (
+          <div className="mb-4 flex items-center gap-3 rounded-lg bg-red-50 p-3 text-sm text-red-700">
+            <AlertCircle className="h-5 w-5 flex-shrink-0" />
+            <p>{contextError}</p>
+          </div>
+        )}
 
-            mutate({ email, username, password });
-          }}
-        >
+        <form className="space-y-3" onSubmit={handleSubmit(onSubmit)}>
           {/* Username */}
-          <div className="space-y-2">
+          <div className="space-y-0.5">
+            <Label htmlFor="username" className="text-sm">
+              Username
+            </Label>
             <Input
-              placeholder="Username"
-              className="h-12 text-base"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              id="username"
+              placeholder="Choose a username"
+              className={`h-10 text-sm ${errors.username ? 'border-red-500' : ''}`}
+              {...register('username')}
+              disabled={isPending}
             />
+            {errors.username && (
+              <p className="text-sm text-red-500">{errors.username.message}</p>
+            )}
           </div>
 
           {/* Email */}
-          <div className="space-y-2">
+          <div className="space-y-0.5">
+            <Label htmlFor="email" className="text-sm">
+              Email
+            </Label>
             <Input
+              id="email"
               type="email"
-              placeholder="Email"
-              className="h-12 text-base"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter your email"
+              className={`h-10 text-sm ${errors.email ? 'border-red-500' : ''}`}
+              {...register('email')}
+              disabled={isPending}
             />
+            {errors.email && (
+              <p className="text-sm text-red-500">{errors.email.message}</p>
+            )}
           </div>
 
           {/* Password Row */}
-          <div className="flex flex-col gap-4 sm:flex-row">
-            <div className="flex-1 space-y-2">
-              <Input
-                type="password"
-                placeholder="Password"
-                className="h-12 text-base"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
+          <div className="flex flex-col gap-3">
+            <div className="space-y-0.5">
+              <Label htmlFor="password" className="text-sm">
+                Password
+              </Label>
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Enter password"
+                  className={`h-10 text-sm ${errors.password ? 'border-red-500' : ''}`}
+                  {...register('password')}
+                  disabled={isPending}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute top-2.5 right-3 text-gray-400 hover:text-gray-600"
+                >
+                  {showPassword ? (
+                    <Eye className="h-4 w-4" />
+                  ) : (
+                    <EyeOff className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
+              {errors.password && (
+                <p className="text-sm text-red-500">
+                  {errors.password.message}
+                </p>
+              )}
             </div>
 
-            <div className="flex-1 space-y-2">
-              <Input
-                type="password"
-                placeholder="Confirm"
-                className="h-12 text-base"
-                value={confirmedPassword}
-                onChange={(e) => setConfirmedPassword(e.target.value)}
-              />
+            <div className="space-y-0.5">
+              <Label htmlFor="confirmPassword" className="text-sm">
+                Confirm Password
+              </Label>
+              <div className="relative">
+                <Input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  placeholder="Confirm password"
+                  className={`h-10 text-sm ${errors.confirmPassword ? 'border-red-500' : ''}`}
+                  {...register('confirmPassword')}
+                  disabled={isPending}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute top-2.5 right-3 text-gray-400 hover:text-gray-600"
+                >
+                  {showConfirmPassword ? (
+                    <Eye className="h-4 w-4" />
+                  ) : (
+                    <EyeOff className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
+              {errors.confirmPassword && (
+                <p className="text-sm text-red-500">
+                  {errors.confirmPassword.message}
+                </p>
+              )}
             </div>
           </div>
 
           {/* Register Button */}
           <Button
             type="submit"
-            className="mt-4 h-11 w-fit rounded-lg bg-slate-950 px-8 text-base font-medium text-white hover:bg-slate-800"
+            disabled={isPending}
+            className="w-full rounded-md bg-sky-400 py-2 text-sm font-semibold text-white transition hover:bg-sky-500 disabled:opacity-50"
           >
-            Register
+            {isPending ? 'Registering...' : 'Register'}
           </Button>
         </form>
+
+        <p className="mt-4 text-center text-sm text-gray-500">
+          Already have an account?{' '}
+          <Link
+            to="/login"
+            className="font-semibold text-blue-600 hover:underline"
+          >
+            Sign in
+          </Link>
+        </p>
       </CardContent>
     </Card>
   );
