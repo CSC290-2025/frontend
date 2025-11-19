@@ -1,14 +1,20 @@
 import { useState } from 'react';
 import { Upload } from 'lucide-react';
 import { useCreateEvent } from '@/features/freecycle/hooks/useEvent';
+import { useCurrentUser } from '@/features/freecycle/hooks/useFreecycle'; // Import Mock Hook
 
 interface PostEventFormProps {
   _onSuccess?: () => void;
 }
 
 export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
+  //  Mock User ID
+  const { data: currentUser } = useCurrentUser();
+  // const currentUserId = currentUser?.id || 1;
+  const currentUserId = 2;
+
   const [formData, setFormData] = useState({
-    host_user_id: 1,
+    host_user_id: currentUserId,
     title: '',
     description: '',
     image_url: '',
@@ -22,12 +28,30 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
     volunteer_amount: 0,
     volunteer_speciality: '',
     volunteer_description: '',
-    //volunteer_register_deadline: '',
   });
 
   const [loading, setLoading] = useState(false);
 
-  const { mutateAsync: createEvent, isPending } = useCreateEvent();
+  const useCreateEventMock = () => {
+    const mockMutateAsync = async (payload: any) => {
+      console.log('MOCK: Attempting to create event with payload:', payload);
+      return new Promise((resolve, reject) => {
+        setTimeout(() => {
+          if (payload.title.toLowerCase() === 'fail') {
+            reject({
+              message: 'MOCK API Error: Failed to create event',
+              response: { data: { error: 'Validation failed' } },
+            });
+          } else {
+            resolve({ success: true, eventId: 999 });
+          }
+        }, 1500);
+      });
+    };
+    return { mutateAsync: mockMutateAsync, isPending: loading };
+  };
+
+  const { mutateAsync: createEvent, isPending } = useCreateEventMock();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,17 +70,15 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
       return;
     }
 
-    // Convert datetime-local to ISO format with Z suffix
+    // Convert datetime-local to ISO format
     const formatDatetime = (datetimeLocal: string): string => {
       if (!datetimeLocal) return '';
-      // datetime-local format: "2025-11-19T02:51"
-      // Convert to ISO format: "2025-11-19T02:51:00.000Z"
-      const date = new Date(datetimeLocal + ':00');
+      const date = new Date(datetimeLocal);
       return date.toISOString();
     };
 
     const payload = {
-      host_user_id: formData.host_user_id,
+      host_user_id: currentUserId,
       title: formData.title,
       description: formData.description,
       total_seats: formData.volunteer_required ? formData.volunteer_amount : 0,
@@ -77,15 +99,12 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
       : null;
 
     try {
-      // Create event and optionally create volunteer data
       const promises = [createEvent(payload)];
 
       // if (volunteerPayload) {
-      //   // Add volunteer creation promise - uncomment when API is ready
-      //   promises.push(createVolunteer(volunteerPayload));
-      // }(ถามกลุ่มvolunteer ว่าให้ยิ่งไปendpintไหน)
+      //   // promises.push(createVolunteer(volunteerPayload));
+      // }
 
-      //เเก้ตรงนี้ให้ทำพร้อมกันได้2อัน
       await Promise.all(promises);
       alert('Event created successfully!');
       _onSuccess?.();
@@ -93,8 +112,6 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
       console.log('Submitting event with payload:', payload);
       console.log('Volunteer payload:', volunteerPayload);
       console.error('Event creation error:', err);
-      console.error('Response data:', err?.response?.data);
-      console.error('Response status:', err?.response?.status);
       const errorMessage =
         err?.response?.data?.message ||
         err?.response?.data?.error ||
@@ -105,6 +122,8 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
       setLoading(false);
     }
   };
+
+  const isSubmitting = loading || isPending;
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -141,7 +160,7 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
             onChange={(e) =>
               setFormData({ ...formData, title: e.target.value })
             }
-            placeholder="Event title"
+            placeholder="Event title (Type 'fail' to test error)"
             className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
           />
         </div>
@@ -341,10 +360,10 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
 
         <button
           type="submit"
-          disabled={loading}
-          className="w-full rounded-lg bg-gray-300 py-3 font-medium text-gray-700 transition-colors hover:bg-gray-400 disabled:opacity-50"
+          disabled={isSubmitting}
+          className="w-full rounded-lg bg-cyan-500 py-3 font-medium text-white transition-colors hover:bg-cyan-600 disabled:opacity-50"
         >
-          {loading ? 'Posting...' : 'Post'}
+          {isSubmitting ? 'Posting...' : 'Post'}
         </button>
       </form>
     </div>

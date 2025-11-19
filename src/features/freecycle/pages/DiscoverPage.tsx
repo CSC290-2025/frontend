@@ -10,7 +10,6 @@ interface DiscoverPageProps {
   searchQuery: string;
   onViewItem: (item: PostItem) => void;
   onPostItem?: () => void;
-  // รับ Props เพิ่ม
   selectedCategories: number[];
   onToggleCategory: (categoryId: number) => void;
 }
@@ -31,6 +30,7 @@ export default function DiscoverPage({
     hasError,
     setLocalSearch,
     setShowFilters,
+    toggleCategory,
   } = useDiscoverPage(searchQuery, selectedCategories, onToggleCategory);
 
   return (
@@ -65,7 +65,7 @@ export default function DiscoverPage({
           <CategoryFilter
             categories={categoriesData}
             selectedCategories={selectedCategories}
-            onToggleCategory={onToggleCategory}
+            onToggleCategory={toggleCategory}
           />
         </div>
       )}

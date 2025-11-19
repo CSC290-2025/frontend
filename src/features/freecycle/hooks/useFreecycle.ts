@@ -15,9 +15,12 @@ import {
   cancelRequest,
   updateRequestStatus,
   fetchPostById,
-  type ReceiverRequest,
+  fetchPostRequests, // <-- 1. นำเข้าฟังก์ชัน API ใหม่
+  type ReceiverRequest, // <-- Type นี้เป็น Export Type
 } from '@/features/freecycle/api/freecycle.api';
 import type { ApiPost, Category } from '@/types/postItem';
+
+// --- Posts and Basic Actions Hooks ---
 
 export function useNotGivenPosts() {
   return useQuery({
@@ -84,6 +87,8 @@ export function useCategory(categoryId: number) {
     enabled: !!categoryId,
   });
 }
+
+// --- Discover Page Hook ---
 
 export function useDiscoverPage(
   searchQuery: string,
@@ -186,6 +191,26 @@ export function useDiscoverPage(
   };
 }
 
+// --- Receiver Requests Hooks ---
+
+/**
+ * NEW: Hook to fetch all receiver requests for a specific post.
+ * @param postId ID ของโพสต์
+ * @param enabled True หากต้องการให้ Hook ทำงาน (i.e., user เป็นเจ้าของโพสต์)
+ */
+export function usePostRequests(postId: number, enabled: boolean) {
+  // <-- 2. Hook นี้ต้อง Export
+  return useQuery<ReceiverRequest[]>({
+    queryKey: ['posts', postId, 'requests'],
+    queryFn: () => fetchPostRequests(postId),
+    enabled: enabled && Number.isFinite(postId) && postId > 0,
+    retry: 2,
+    meta: {
+      errorMessage: 'Failed to load requests for this post',
+    },
+  });
+}
+
 export function useUserRequests() {
   return useQuery<ReceiverRequest[]>({
     queryKey: ['requests', 'user'],
@@ -225,10 +250,15 @@ export function useUpdateRequestStatus() {
       status: 'pending' | 'accepted' | 'rejected';
     }) => updateRequestStatus(id, status),
     onSuccess: () => {
+      // Invalidate both user requests and post requests to refresh UI globally
       queryClient.invalidateQueries({ queryKey: ['requests', 'user'] });
+      // Note: We should ideally also invalidate the specific ['posts', postId, 'requests'] query
+      // but that requires passing postId to the mutation hook call, which is handled in ItemDetailPage.tsx's onSuccess callback.
     },
   });
 }
+
+// --- Other Hooks ---
 
 export function usePostsByUserId(userId?: number) {
   return useQuery({
@@ -242,8 +272,11 @@ export function usePostsByUserId(userId?: number) {
   });
 }
 
+/**
+ * Hook สำหรับ Mock User ID = 1
+ */
 export function useCurrentUser() {
-  const MOCK_CURRENT_USER_ID = 2; // mock User ID
+  const MOCK_CURRENT_USER_ID = 1; // mock User ID
   return {
     data: { id: MOCK_CURRENT_USER_ID, name: 'CurrentUser' },
     isLoading: false,

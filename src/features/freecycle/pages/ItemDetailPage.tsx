@@ -2,13 +2,120 @@ import { useState, useEffect } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from '@/router';
 import { useParams } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 
 import type { PostItem, Category, CategoryWithName } from '@/types/postItem';
+
+import type { ReceiverRequest } from '@/features/freecycle/api/freecycle.api';
+
 import { fetchCategoriesByPostId } from '@/features/freecycle/api/freecycle.api';
+
 import {
   useCreateRequest,
   usePostById,
+  useCurrentUser,
+  usePostRequests,
+  useUpdateRequestStatus,
 } from '@/features/freecycle/hooks/useFreecycle';
+
+interface RequestsListProps {
+  postId: number;
+  requests: (ReceiverRequest & { id: number })[] | undefined;
+  isLoading: boolean;
+  isError: boolean;
+}
+
+function RequestsList({
+  postId,
+  requests,
+  isLoading,
+  isError,
+}: RequestsListProps) {
+  const queryClient = useQueryClient();
+  const { mutate: updateStatus } = useUpdateRequestStatus();
+
+  const handleUpdateStatus = (
+    requestId: number,
+    status: 'accepted' | 'rejected'
+  ) => {
+    updateStatus(
+      { id: requestId, status },
+      {
+        onSuccess: () => {
+          alert(`Request ${requestId} ${status} successfully.`);
+          queryClient.invalidateQueries({
+            queryKey: ['posts', postId, 'requests'],
+          });
+        },
+        onError: (err) => {
+          console.error(`Failed to update status for ${requestId}:`, err);
+          alert(`Failed to ${status} request.`);
+        },
+      }
+    );
+  };
+
+  if (isLoading) return <p className="text-gray-500">Loading requests...</p>;
+  if (isError)
+    return <p className="text-red-500">Failed to load request list.</p>;
+
+  if (!requests || requests.length === 0) {
+    return (
+      <p className="text-gray-500">
+        No requests have been made for this item yet.
+      </p>
+    );
+  }
+
+  return (
+    <ul className="space-y-3">
+      {requests.map((req) => (
+        <li
+          key={req.id}
+          className="flex flex-col items-start justify-between rounded-xl border bg-white p-4 shadow-sm md:flex-row md:items-center"
+        >
+          <div className="mb-2 md:mb-0">
+            <span className="font-semibold text-gray-800">
+              Receiver ID: {req.receiver_id}
+            </span>
+            <span
+              className={`ml-3 rounded-full px-3 py-1 text-sm font-semibold ${
+                req.status === 'accepted'
+                  ? 'bg-green-100 text-cyan-500'
+                  : req.status === 'rejected'
+                    ? 'bg-red-100 text-red-700'
+                    : 'bg-yellow-100 text-yellow-700'
+              }`}
+            >
+              {req.status}
+            </span>
+          </div>
+
+          {req.status === 'pending' && (
+            <div className="flex gap-2">
+              <button
+                onClick={() => handleUpdateStatus(req.id, 'accepted')}
+                className="rounded-lg bg-cyan-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-cyan-600"
+              >
+                Accept
+              </button>
+              <button
+                onClick={() => handleUpdateStatus(req.id, 'rejected')}
+                className="rounded-lg bg-red-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-600"
+              >
+                Deny
+              </button>
+            </div>
+          )}
+
+          {req.status !== 'pending' && (
+            <span className="text-sm text-gray-500">Action Taken</span>
+          )}
+        </li>
+      ))}
+    </ul>
+  );
+}
 
 export default function ItemDetailPage() {
   const navigate = useNavigate();
@@ -19,6 +126,9 @@ export default function ItemDetailPage() {
   const postId = Number(itemId);
 
   const { data: post, isLoading, isError } = usePostById(postId);
+
+  const { data: currentUser } = useCurrentUser();
+  const currentUserId = currentUser?.id;
 
   const item: PostItem | null = post
     ? {
@@ -31,8 +141,17 @@ export default function ItemDetailPage() {
             ? parseFloat(post.item_weight)
             : post.item_weight,
         is_given: post.is_given || false,
+        owner_id: post.donater_id ?? 0,
       }
     : null;
+
+  const isOwner = currentUserId === item?.owner_id;
+
+  const {
+    data: requests,
+    isLoading: requestsLoading,
+    isError: requestsError,
+  } = usePostRequests(postId, isOwner);
 
   useEffect(() => {
     if (item?.id) {
@@ -140,7 +259,6 @@ export default function ItemDetailPage() {
                   </div>
                 )}
 
-                {/* Display Categories if available */}
                 {categories.length > 0 && (
                   <div>
                     <h3 className="mb-2 text-sm font-semibold text-gray-700">
@@ -161,17 +279,41 @@ export default function ItemDetailPage() {
               </div>
             </div>
 
-            {!item.is_given && (
-              <button
-                onClick={handleRequest}
-                disabled={createRequestMutation.isPending}
-                className="mt-6 w-full rounded-lg bg-cyan-500 py-3 font-medium text-white transition-colors hover:bg-cyan-600 disabled:opacity-50"
-              >
-                {createRequestMutation.isPending
-                  ? 'Sending Request...'
-                  : 'Request Item'}
-              </button>
+            {/* Requests List (Only shown to owner) */}
+            {isOwner && (
+              <div className="mt-6 border-t pt-6">
+                <h3 className="mb-4 text-xl font-bold text-gray-900">
+                  Item Requests ({requests?.length || 0})
+                </h3>
+                <RequestsList
+                  postId={postId}
+                  requests={requests}
+                  isLoading={requestsLoading}
+                  isError={requestsError}
+                />
+              </div>
             )}
+
+            {/* Request Button */}
+            {!item.is_given &&
+              (isOwner ? (
+                <button
+                  disabled
+                  className="mt-6 w-full cursor-not-allowed rounded-lg bg-gray-400 py-3 font-medium text-white opacity-80"
+                >
+                  You own this item
+                </button>
+              ) : (
+                <button
+                  onClick={handleRequest}
+                  disabled={createRequestMutation.isPending}
+                  className="mt-6 w-full rounded-lg bg-cyan-500 py-3 font-medium text-white transition-colors hover:bg-cyan-600 disabled:opacity-50"
+                >
+                  {createRequestMutation.isPending
+                    ? 'Sending Request...'
+                    : 'Request Item'}
+                </button>
+              ))}
           </div>
         </div>
       </div>

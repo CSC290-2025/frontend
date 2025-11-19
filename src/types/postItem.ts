@@ -18,6 +18,7 @@ export interface PostItem {
   description?: string;
   is_given: boolean;
   categories?: Category[];
+  owner_id: number;
 }
 
 export interface ApiPost {
@@ -33,9 +34,14 @@ export interface ApiPost {
   donater_id: number | null;
 }
 
-// Helper: map ApiPost -> PostItem (same mapping used in DiscoverPage)
-// Api = parameter name similar to data from API/backend
+// Helper: map ApiPost -> PostItem
 export function mapApiPostToItem(api: ApiPost): PostItem {
+  const ownerId = api.donater_id ?? 1;
+
+  // if (ownerId === 0) {
+  //     console.warn(`Post ID ${api.id} is missing donater_id. Using Mock ID 0.`);
+  // }
+
   return {
     id: api.id,
     item_name: api.item_name,
@@ -46,6 +52,7 @@ export function mapApiPostToItem(api: ApiPost): PostItem {
     photo_url: api.photo_url ?? undefined,
     description: api.description ?? undefined,
     is_given: api.is_given,
+    owner_id: ownerId,
   };
 }
 
