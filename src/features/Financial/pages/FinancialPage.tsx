@@ -256,7 +256,7 @@ export default function FinancialPage() {
                 </div>
                 <div className="mb-4 flex items-baseline gap-2">
                   <span className="text-4xl font-bold text-gray-900">
-                    ${wallet.balance.toFixed(2)}
+                    ${wallet.balance!.toFixed(2)}
                   </span>
                   <Button
                     onClick={() => refetch()}
