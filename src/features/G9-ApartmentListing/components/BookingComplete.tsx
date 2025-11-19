@@ -21,7 +21,7 @@ export default function BookingComplete({
           onClick={onViewBooking}
           className="mt-4 w-full rounded-lg bg-[#01CEF8] px-5 py-2 text-[20px] font-semibold text-white hover:bg-[#4E8FB1]"
         >
-          view my booking
+          View my booking
         </button>
       </div>
     </div>

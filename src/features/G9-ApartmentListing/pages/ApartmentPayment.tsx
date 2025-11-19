@@ -5,7 +5,11 @@ import {
   postWalletsTransfer,
   useGetWalletsUserUserId,
 } from '@/api/generated/wallets';
-import { useBooking } from '@/features/G9-ApartmentListing/hooks/useBooking';
+import {
+  useBooking,
+  useUpdateBookingStatus,
+} from '@/features/G9-ApartmentListing/hooks/useBooking';
+import { BOOKapi } from '@/features/G9-ApartmentListing/api/index';
 import {
   APT,
   Room,
@@ -15,16 +19,10 @@ import {
 import {
   apartmentTypes,
   roomTypes,
-  addressTypes,
 } from '@/features/G9-ApartmentListing/types';
 import LocationIcon from '@/features/G9-ApartmentListing/assets/LocationIcon.svg';
 import BackIcon from '@/features/G9-ApartmentListing/assets/BackIcon.svg';
 import EWalletIcon from '@/features/G9-ApartmentListing/assets/EWalletIcon.svg';
-
-interface ExtendedApartment extends apartmentTypes.Apartment {
-  room?: roomTypes.Room[];
-  addresses?: addressTypes.Address;
-}
 
 // Component to display apartment image with fallback
 const ApartmentImage: React.FC<{
@@ -43,11 +41,11 @@ const ApartmentImage: React.FC<{
     );
   }
 
-  // Handle the backend response structure: { success: true, data: [...], timestamp: "..." }
+  // Handle the backend response structure:
   const imageArray = images?.data?.data || images?.data || [];
   const imageUrl =
     imageArray && imageArray.length > 0
-      ? imageArray[0].file_path // Use file_path from apartment_picture table
+      ? imageArray[0].file_path
       : defaultImage;
 
   return (
@@ -72,7 +70,6 @@ export default function ApartmentPayment() {
   const urlParams = new URLSearchParams(window.location.search);
   const bookingIdParam = urlParams.get('bookingId');
   const bookingId = bookingIdParam ? parseInt(bookingIdParam) : 0;
-  console.log('Booking ID from URL:', bookingId);
   // Fetch booking details using the booking ID
   const {
     data: bookingData,
@@ -106,6 +103,9 @@ export default function ApartmentPayment() {
   const { data: walletResponse, isLoading: _walletLoading } =
     useGetWalletsUserUserId(userId);
   const walletData = walletResponse?.data;
+
+  // Hook for updating booking status
+  const updateBookingStatusMutation = useUpdateBookingStatus();
 
   const [price, setPrice] = useState<number | null>(null);
   const [apartment, setApartment] = useState<apartmentTypes.Apartment | null>(
@@ -159,6 +159,17 @@ export default function ApartmentPayment() {
         return;
       }
 
+      if (!bookingData?.user_id) {
+        alert('Missing user ID in booking data');
+        return;
+      }
+
+      // Check if booking is already confirmed
+      if (bookingData.booking_status === 'confirmed') {
+        alert('This booking is already confirmed');
+        return;
+      }
+
       if (balance < price) {
         alert('Insufficient balance');
         return;
@@ -166,18 +177,43 @@ export default function ApartmentPayment() {
 
       try {
         // Transfer money from user to apartment owner
-        // In a real implementation, apartment owner ID should come from apartment data
-        const apartmentOwnerId = 3; // Default service account for payments
+        const apartmentOwnerId = 4; //  placeholder
 
-        await postWalletsTransfer({
+        const response = await postWalletsTransfer({
           from_user_id: bookingData.user_id,
           to_user_id: apartmentOwnerId,
           amount: price,
         });
 
-        setShowPopup(true);
-      } catch (err) {
-        console.error('Payment failed:', err);
+        if (response.status === 200) {
+          try {
+            await updateBookingStatusMutation.mutateAsync({
+              id: bookingData.id,
+              status: 'confirmed',
+            });
+            setShowPopup(true);
+          } catch (_statusErr) {
+            // Try direct API call as fallback
+            try {
+              await BOOKapi.updateBookingStatus(bookingData.id, 'confirmed');
+              setShowPopup(true);
+            } catch (_directErr) {
+              alert(
+                'Payment successful, but booking status update failed. Please contact support.'
+              );
+              // Refund the payment
+              await postWalletsTransfer({
+                from_user_id: apartmentOwnerId,
+                to_user_id: bookingData.user_id,
+                amount: price,
+              });
+            }
+          }
+          setShowPopup(true);
+        } else {
+          throw new Error('Payment failed with status: ' + response.status);
+        }
+      } catch (_err) {
         alert('Payment failed — check your wallet or try again.');
       }
     })();
@@ -299,9 +335,9 @@ export default function ApartmentPayment() {
                   <div className="text-[16px] text-gray-500">
                     <p className="text-[16px] font-medium text-gray-900">
                       {' '}
-                      Room Type : {roomData.type}
+                      Room Type : {roomData?.type}
                     </p>
-                    <p>Size : {roomData.size}</p>
+                    <p>Size : {roomData?.size}</p>
                   </div>
                 </div>
               </div>
