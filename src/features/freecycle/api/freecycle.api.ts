@@ -168,6 +168,20 @@ export const fetchCategoriesByPostId = async (
   return response.data.data.categories;
 };
 
+export const fetchPostsByUserId = async (
+  userId: number
+): Promise<ApiPost[]> => {
+  const response = await apiClient.get<ApiResponseWrapper<PostsData>>(
+    `/posts/user/${userId}`
+  );
+  return response.data.data.posts;
+};
+
+// export const fetchPostsByUserId = async (userId: number): Promise<ApiPost[]> => {
+//   const res = await apiClient.get(`/posts/user/${userId}`);
+//   return res.data.data.posts;
+// };
+
 // // Make for fetching Freecycle data from the Freecycle API
 
 // // import { apiClient } from '@/lib/apiClient';
