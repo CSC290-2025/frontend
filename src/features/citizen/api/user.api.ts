@@ -59,3 +59,13 @@ export const getUserSpecialists = async (id: number) => {
     throw error;
   }
 };
+
+export const getUserRoles = async (id: number) => {
+  try {
+    const response = await apiClient.get(`/user/roles/${id}`);
+    return response.data.data;
+  } catch (error) {
+    console.error('Failed to fetch user roles:', error);
+    throw error;
+  }
+};
