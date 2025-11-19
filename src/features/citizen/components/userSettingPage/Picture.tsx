@@ -22,7 +22,8 @@ function Picture({ username, picture }: PhotoProps) {
   };
 
   return (
-    <div className="flex w-full flex-col items-center gap-4 md:w-[250px] md:items-start lg:w-[295px] lg:gap-[22px]">
+    // CHANGED: Removed 'md:items-start' so it stays centered (items-center) on desktop
+    <div className="flex w-full flex-col items-center gap-4 md:w-[250px] lg:w-[295px] lg:gap-[22px]">
       {/* Image Container */}
       <div className="flex h-32 w-32 items-center justify-center overflow-hidden rounded-[10px] border bg-gray-50 md:h-32 md:w-32 lg:h-[146px] lg:w-[146px]">
         {previewUrl ? (
@@ -36,7 +37,8 @@ function Picture({ username, picture }: PhotoProps) {
         )}
       </div>
 
-      <h1 className="w-full text-center text-xl font-semibold break-words text-[#2B5991] md:text-left md:text-2xl lg:text-[32px]">
+      {/* CHANGED: Removed 'md:text-left' so the text stays centered */}
+      <h1 className="w-full text-center text-xl font-semibold break-words text-[#2B5991] md:text-2xl lg:text-[32px]">
         {username}
       </h1>
 

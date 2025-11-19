@@ -1,10 +1,15 @@
 import { CitizenSetting } from '../../types';
 
 interface PersonalPropsWithSetter extends CitizenSetting.PersonalProps {
+  specialists?: any[];
   onDataChange: (newData: any) => void;
 }
 
-function Personal({ data, onDataChange }: PersonalPropsWithSetter) {
+function Personal({
+  data,
+  specialists = [],
+  onDataChange,
+}: PersonalPropsWithSetter) {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     onDataChange({
@@ -13,26 +18,43 @@ function Personal({ data, onDataChange }: PersonalPropsWithSetter) {
     });
   };
 
-  // Shared class for inputs to ensure consistent styling and full width within their grid cells
   const inputClass =
     'w-full rounded-[10px] border border-[#00000040] bg-[#FAFAFA] text-[#2B5991] px-4 py-3 text-sm md:text-base lg:text-[16px] lg:px-[16px] lg:py-[13px] focus:outline-none focus:ring-2 focus:ring-blue-400';
   const labelClass = 'font-medium text-base md:text-lg lg:text-[20px]';
 
+  // Get specialist names from the array
+  const specialistNames =
+    specialists
+      .map((s) => s?.specialty_name || '')
+      .filter(Boolean)
+      .join(', ') || 'No specialist assigned';
+
   return (
     <div className="flex w-full flex-col gap-5 md:gap-6 lg:gap-[27px]">
-      {/* ID card number */}
-      <div className="flex flex-col gap-2 md:gap-3 lg:gap-[13px]">
-        <h2 className={labelClass}>ID card Number</h2>
-        <input
-          type="text"
-          name="IdCardNumber"
-          className={`${inputClass} max-w-md`} // Limited max width only for ID card as it's short
-          value={data.IdCardNumber}
-          onChange={handleChange}
-        />
+      {/* ID card number and Specialist */}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5 lg:gap-[27px]">
+        <div className="flex flex-col gap-2 md:gap-3 lg:gap-[13px]">
+          <h2 className={labelClass}>ID card Number</h2>
+          <input
+            type="text"
+            name="IdCardNumber"
+            className={inputClass}
+            value={data.IdCardNumber}
+            onChange={handleChange}
+          />
+        </div>
+
+        <div className="flex flex-col gap-2 md:gap-3 lg:gap-[13px]">
+          <h2 className={labelClass}>Specialist</h2>
+          <div
+            className={`${inputClass} cursor-not-allowed bg-gray-100 text-gray-600`}
+          >
+            {specialistNames}
+          </div>
+        </div>
       </div>
 
-      {/* Full Name - 3 Columns on iPad/Desktop */}
+      {/* Full Name */}
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-5 lg:gap-[27px]">
         <div className="flex flex-col gap-2 md:gap-3 lg:gap-[13px]">
           <h2 className={labelClass}>First name</h2>
@@ -129,11 +151,13 @@ function Personal({ data, onDataChange }: PersonalPropsWithSetter) {
 
           <div className="flex flex-col gap-2 md:gap-3 lg:gap-[13px]">
             <h2 className={labelClass}>Emergency contact</h2>
-            <div
+            {/* CHANGED: From div to input, added disabled, added value prop */}
+            <input
+              type="text"
+              disabled
               className={`${inputClass} cursor-not-allowed bg-gray-100 text-gray-600`}
-            >
-              {data.EmergencyContact}
-            </div>
+              value={data.EmergencyContact || ''}
+            />
           </div>
         </div>
       </div>

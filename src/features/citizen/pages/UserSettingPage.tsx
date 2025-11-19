@@ -10,8 +10,10 @@ import { useNavigate } from '@/router';
 function UserSettingPage() {
   const userID = 7;
   const [user, setUser] = useState<any>(null);
+  const [specialists, setSpecialists] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState('personal');
   const navigate = useNavigate();
+
   const mapUserData = (userApiData: any) => {
     const user = userApiData.user;
     return {
@@ -57,14 +59,37 @@ function UserSettingPage() {
     const getUser = async () => {
       try {
         const apiData = await UserAPI.getUserProflie(userID);
-        console.log(apiData);
+        console.log('User data:', apiData);
         const mappedData = mapUserData(apiData);
         setUser(mappedData);
       } catch (err) {
-        console.error(err);
+        console.error('Error fetching user:', err);
       }
     };
+
+    const getSpecialists = async () => {
+      try {
+        const response = await UserAPI.getUserSpecialists(userID);
+        console.log('Specialists response:', response);
+
+        // Handle the nested response structure
+        if (response?.data?.specialists) {
+          setSpecialists(response.data.specialists);
+        } else if (response?.specialists) {
+          setSpecialists(response.specialists);
+        } else if (Array.isArray(response)) {
+          setSpecialists(response);
+        } else {
+          setSpecialists([]);
+        }
+      } catch (err) {
+        console.error('Error fetching specialists:', err);
+        setSpecialists([]);
+      }
+    };
+
     getUser();
+    getSpecialists();
   }, [userID]);
 
   const handlePersonalChange = (newData: any) => {
@@ -164,15 +189,12 @@ function UserSettingPage() {
         {/* Content Body */}
         <div className="flex flex-col gap-8 md:flex-row lg:gap-[20px]">
           {/* Left Sidebar - Picture */}
-          {/* shrink-0 prevents the picture column from getting squashed */}
           <div className="flex w-full shrink-0 justify-center md:w-auto md:justify-start">
             <Picture username={account.Username} picture={picture} />
           </div>
 
           {/* Right Content - Forms */}
           <div className="w-full min-w-0 flex-1">
-            {/* min-w-0 is crucial for flex children to shrink properly */}
-
             {/* Tabs */}
             <div className="mb-6 flex overflow-x-auto border-b pb-2 md:mb-8 md:border-none md:pb-0 lg:mb-[39px]">
               {['personal', 'health', 'account'].map((tab) => (
@@ -191,7 +213,11 @@ function UserSettingPage() {
             {/* Form Components */}
             <div className="w-full">
               {user && activeTab === 'personal' && (
-                <Personal data={personal} onDataChange={handlePersonalChange} />
+                <Personal
+                  data={personal}
+                  specialists={specialists}
+                  onDataChange={handlePersonalChange}
+                />
               )}
 
               {user && activeTab === 'health' && (
@@ -203,8 +229,7 @@ function UserSettingPage() {
               )}
             </div>
 
-            {/* Save Button */}
-            <div className="mt-8 flex justify-center md:mt-10 md:justify-start">
+            <div className="mt-8 flex justify-center md:mt-10">
               <button
                 className="w-full min-w-[120px] cursor-pointer rounded bg-blue-500 px-8 py-3 text-white transition-colors hover:bg-blue-600 md:w-auto"
                 onClick={handleSave}

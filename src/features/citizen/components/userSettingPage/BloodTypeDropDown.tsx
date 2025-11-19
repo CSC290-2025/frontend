@@ -11,9 +11,9 @@ function BloodTypeDropdown({ value, onChange }: BloodTypeDropdownProps) {
   const options = ['A', 'B', 'AB', 'O'];
 
   return (
-    <div className="relative w-full md:w-[187px] lg:w-[187px]">
+    <div className="relative w-full">
       <div
-        className="flex h-12 cursor-pointer items-center justify-between rounded-[10px] border border-[#00000040] bg-[#FAFAFA] px-4 py-3 text-sm text-[#2B5991] md:h-[50px] md:px-[16px] md:py-[13px] md:text-base lg:h-[50px] lg:px-[16px] lg:py-[13px] lg:text-[16px]"
+        className="flex h-12 cursor-pointer items-center justify-between rounded-[10px] border border-[#00000040] bg-[#FAFAFA] px-4 py-3 text-sm text-[#2B5991] md:h-[50px] md:text-base lg:h-[50px] lg:px-[16px] lg:py-[13px] lg:text-[16px]"
         onClick={() => setOpen(!open)}
       >
         {value}
