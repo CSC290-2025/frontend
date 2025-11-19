@@ -8,9 +8,12 @@ import {
 import { usePostMetroCardsTopUp } from '@/api/generated/metro-cards';
 import { usePostInsuranceCardsCardIdTopUp } from '@/api/generated/insurance-cards';
 import { usePostScbQrCreate } from '@/api/generated/scb';
+import type { PostScbQrCreate200Data } from '@/api/generated/model/postScbQrCreate200Data';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import logoUrl from '@/features/Financial/assets/promptwc.png';
+import promptPay from '@/features/Financial/assets/pplogoTop.png';
 import {
   Select,
   SelectContent,
@@ -40,6 +43,8 @@ export default function TopupPage() {
   const [amount, setAmount] = useState('');
   const [cardId, setCardId] = useState(cardNumberFromState ?? '');
   const [qrRawData, setQrRawData] = useState('');
+  // ref1 is used to track and verify whether the payment completed successfully
+  const [scbRef1, setScbRef1] = useState<string | undefined>(undefined);
 
   // when initial state changes, make sure to keep the reference
   useEffect(() => {
@@ -65,6 +70,8 @@ export default function TopupPage() {
       mutation: { onSuccess: () => refetchWallet() },
     });
   const { mutateAsync: generateQR } = usePostScbQrCreate();
+  // We'll use SSEs to be notified of SCB webhook confirmations.
+  const [isWaiting, setIsWaiting] = useState(false);
 
   const quickAmounts = [100, 500, 1000, 2000, 5000, 10000];
 
@@ -100,10 +107,14 @@ export default function TopupPage() {
         const response = await generateQR({
           data: { amount, user_id: userId },
         });
-        const qrData = (
-          response.data.data as unknown as { qrResponse: { qrRawData: string } }
-        ).qrResponse.qrRawData;
-        setQrRawData(qrData);
+        // uhh this is mostly to shut TS up; blub doesnt believe qrResponse is real
+        const qrResponseContainer = response.data?.data as unknown as
+          | { qrResponse: PostScbQrCreate200Data }
+          | undefined;
+        const qrData = qrResponseContainer?.qrResponse?.qrRawData;
+        const ref1 = qrResponseContainer?.qrResponse?.ref1;
+        setQrRawData(qrData ?? '');
+        setScbRef1(ref1);
       } else if (topUpType === 'metro') {
         if (!cardId) {
           toast.error('Please enter metro card ID');
@@ -160,6 +171,53 @@ export default function TopupPage() {
       toast.error('Payment simulation failed');
     }
   };
+  // Subscribe to the SSE stream when we have a ref1.
+  // when the scb webhook confirms payment, we'll get notified here.
+  useEffect(() => {
+    if (!scbRef1) return;
+    const base = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+
+    // this is where i have my backend set up for sending sse
+    const url = `${base}/scb/stream?ref1=${encodeURIComponent(scbRef1)}`;
+
+    // make a new event source and wait
+    const es = new EventSource(url);
+    es.onopen = () => setIsWaiting(true);
+
+    // if we get a call from backend that payment is confirmed so we will process it
+    es.onmessage = (e) => {
+      try {
+        const data = JSON.parse(e.data);
+        // we just checking for ref1 to confirm
+        // it is really not necessary since backend calling this already mean that payment has been confirmed
+        const confirmed = data?.ref1;
+        if (confirmed) {
+          toast.success('Payment confirmed');
+          // don't clear the ref here — we want to keep showing the ref1
+          // permanently in the UI as requested; only clear QR and refresh.
+          setQrRawData('');
+          setAmount('');
+          refetchWallet();
+        }
+      } catch (err) {
+        console.error('Failed to parse SSE message', err);
+      } finally {
+        setIsWaiting(false);
+        es.close();
+      }
+    };
+
+    es.onerror = (err) => {
+      console.error('SSE connection error', err);
+      setIsWaiting(false);
+      es.close();
+    };
+
+    return () => {
+      es.close();
+      setIsWaiting(false);
+    };
+  }, [scbRef1, refetchWallet]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -273,8 +331,41 @@ export default function TopupPage() {
             {topUpType === 'wallet' && qrRawData ? (
               <div className="space-y-4">
                 <div className="inline-block border p-4">
-                  <QRCodeSVG value={qrRawData} size={200} />
+                  {/* This is just old qr without the logo and stuff. useable*/}
+                  {/* <QRCodeSVG value={qrRawData} size={200} /> */}
+
+                  {/* top part of the prompt pay */}
+                  <div className="flex w-full justify-center pb-4">
+                    <img
+                      src={promptPay}
+                      alt="PromptPay Logo"
+                      style={{ height: 40, width: 'auto' }}
+                    />
+                  </div>
+                  {/* QR code with logo in middle */}
+                  <QRCodeSVG
+                    value={qrRawData}
+                    size={200}
+                    level={'M'}
+                    imageSettings={{
+                      src: logoUrl,
+                      excavate: false,
+                      height: 50,
+                      width: 50,
+                    }}
+                  />
                 </div>
+                {isWaiting && (
+                  <div className="text-sm text-gray-500">
+                    Waiting for payment...
+                  </div>
+                )}
+                {scbRef1 && (
+                  <div className="text-sm text-gray-400">
+                    Reference ID: {scbRef1}
+                  </div>
+                )}
+                {/* QR will be hidden when payment is confirmed*/}
                 <div>Amount: ${amount}</div>
                 <p className="text-sm text-gray-600">
                   This is a real QR code for payment. You can use you SCB
