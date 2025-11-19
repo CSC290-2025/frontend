@@ -49,3 +49,13 @@ export const updateUserAccount = async (
     throw error;
   }
 };
+
+export const getUserSpecialists = async (id: number) => {
+  try {
+    const response = await apiClient.get(`/specialists/user/${id}`);
+    return response.data.data;
+  } catch (error) {
+    console.error('Failed to fetch user specialists:', error);
+    throw error;
+  }
+};

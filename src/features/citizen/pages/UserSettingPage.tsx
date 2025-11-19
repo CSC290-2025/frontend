@@ -12,7 +12,6 @@ function UserSettingPage() {
   const [user, setUser] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('personal');
   const navigate = useNavigate();
-
   const mapUserData = (userApiData: any) => {
     const user = userApiData.user;
     return {
@@ -32,6 +31,7 @@ function UserSettingPage() {
         Province: user.user_profiles?.addresses?.province,
         PostalCode: user.user_profiles?.addresses?.postal_code,
       },
+
       health: {
         BirthDate: user.user_profiles?.birth_date
           ? new Date(user.user_profiles.birth_date).toISOString().split('T')[0]
@@ -44,6 +44,7 @@ function UserSettingPage() {
         Weight: user.user_profiles?.weight || 0,
         Gender: user.user_profiles?.gender || 'none',
       },
+
       account: {
         Username: user.username || '',
         Email: user.email || '',
@@ -57,7 +58,6 @@ function UserSettingPage() {
       try {
         const apiData = await UserAPI.getUserProflie(userID);
         console.log(apiData);
-
         const mappedData = mapUserData(apiData);
         setUser(mappedData);
       } catch (err) {
@@ -89,7 +89,7 @@ function UserSettingPage() {
   };
 
   const handleBackButton = () => {
-    navigate('/'); //navigate to citizen page later
+    navigate('/');
   };
 
   if (!user) return <div>Loading...</div>;
@@ -100,20 +100,23 @@ function UserSettingPage() {
     try {
       const personalPayload = {
         user: {
-          id_card_number: personal.IdCardNumber,
-          first_name: personal.Firstname,
-          middle_name: personal.Middlename,
-          last_name: personal.Lastname,
-          ethnicity: personal.Enthnicity,
-          nationality: personal.Nationality,
-          religion: personal.Religion,
-        },
-        address: {
-          address_line: personal.AddressLine,
-          province: personal.Province,
-          district: personal.District,
-          subdistrict: personal.SubDistrict,
-          postal_code: personal.PostalCode,
+          phone: personal.PhoneNumber,
+          user_profile: {
+            id_card_number: personal.IdCardNumber,
+            first_name: personal.Firstname,
+            middle_name: personal.Middlename,
+            last_name: personal.Lastname,
+            ethnicity: personal.Enthnicity,
+            nationality: personal.Nationality,
+            religion: personal.Religion,
+          },
+          address: {
+            address_line: personal.AddressLine,
+            province: personal.Province,
+            district: personal.District,
+            subdistrict: personal.SubDistrict,
+            postal_code: personal.PostalCode,
+          },
         },
       };
 
@@ -136,72 +139,79 @@ function UserSettingPage() {
       await UserAPI.updateUserPersonal(userID, personalPayload);
       await UserAPI.updateUserHealth(userID, healthPayload);
       await UserAPI.updateUserAccount(userID, accountPayload);
-
       alert('Saved successfully!');
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
-      alert('Failed to save.');
+      alert(`Failed to save: ${err.response?.data?.message || err.message}`);
     }
   };
 
   return (
-    <div className="absolute flex flex-col rounded-[20px] border opacity-100 lg:top-[70px] lg:left-[258px] lg:w-[1082px] lg:gap-[37px]">
-      <div className="flex lg:mt-[48px] lg:ml-[80px] lg:h-[78px] lg:w-[373px] lg:gap-[26px]">
-        <ChevronLeft
-          className="cursor-pointer font-bold text-[#2B5991] lg:h-[77px] lg:w-[77px]"
-          onClick={handleBackButton}
-        />
-        <h1 className="font-bold text-[#2B5991] lg:text-[48px]">
-          Edit Profile
-        </h1>
-      </div>
-      <div className="flex lg:gap-[20px]">
-        <div>
-          <Picture username={account.Username} picture={picture} />
+    <div className="flex min-h-screen w-full justify-center bg-white pb-10">
+      {/* Main Container */}
+      <div className="flex w-full max-w-[1200px] flex-col px-4 md:px-10 lg:px-[80px]">
+        {/* Header */}
+        <div className="mt-6 mb-6 flex items-center gap-4 md:mt-8 md:mb-8 lg:mt-[48px] lg:mb-[37px]">
+          <ChevronLeft
+            className="h-8 w-8 cursor-pointer font-bold text-[#2B5991] md:h-10 md:w-10 lg:h-[77px] lg:w-[77px]"
+            onClick={handleBackButton}
+          />
+          <h1 className="text-2xl font-bold text-[#2B5991] md:text-3xl lg:text-[48px]">
+            Edit Profile
+          </h1>
         </div>
-        <div>
-          <div className="flex lg:mb-[39px]">
-            <div
-              className={`flex cursor-pointer items-center justify-center transition-colors lg:h-[47px] lg:w-[209px] ${
-                activeTab === 'personal' ? 'bg-[#96E0E1]' : 'bg-white'
-              }`}
-              onClick={() => setActiveTab('personal')}
-            >
-              <h2 className="text-[#2B5991] lg:text-[20px]">Personal</h2>
-            </div>
-            <div
-              className={`flex cursor-pointer items-center justify-center transition-colors lg:h-[47px] lg:w-[209px] ${
-                activeTab === 'health' ? 'bg-[#96E0E1]' : 'bg-white'
-              }`}
-              onClick={() => setActiveTab('health')}
-            >
-              <h2 className="text-[#2B5991] lg:text-[20px]">Health</h2>
-            </div>
-            <div
-              className={`flex cursor-pointer items-center justify-center transition-colors lg:h-[47px] lg:w-[209px] ${
-                activeTab === 'account' ? 'bg-[#96E0E1]' : 'bg-white'
-              }`}
-              onClick={() => setActiveTab('account')}
-            >
-              <h2 className="text-[#2B5991] lg:text-[20px]">Account</h2>
-            </div>
+
+        {/* Content Body */}
+        <div className="flex flex-col gap-8 md:flex-row lg:gap-[20px]">
+          {/* Left Sidebar - Picture */}
+          {/* shrink-0 prevents the picture column from getting squashed */}
+          <div className="flex w-full shrink-0 justify-center md:w-auto md:justify-start">
+            <Picture username={account.Username} picture={picture} />
           </div>
-          {user && activeTab === 'personal' && (
-            <Personal data={personal} onDataChange={handlePersonalChange} />
-          )}
-          {user && activeTab === 'health' && (
-            <Health data={health} onDataChange={handleHealthChange} />
-          )}
-          {user && activeTab === 'account' && (
-            <Account data={account} onDataChange={handleAccountChange} />
-          )}
-          <div className="flex justify-center lg:mt-4 lg:mb-[27px]">
-            <button
-              className="cursor-pointer rounded bg-blue-500 px-6 py-2 text-white hover:bg-blue-600"
-              onClick={handleSave}
-            >
-              Save
-            </button>
+
+          {/* Right Content - Forms */}
+          <div className="w-full min-w-0 flex-1">
+            {/* min-w-0 is crucial for flex children to shrink properly */}
+
+            {/* Tabs */}
+            <div className="mb-6 flex overflow-x-auto border-b pb-2 md:mb-8 md:border-none md:pb-0 lg:mb-[39px]">
+              {['personal', 'health', 'account'].map((tab) => (
+                <div
+                  key={tab}
+                  className={`flex h-10 min-w-[100px] flex-1 cursor-pointer items-center justify-center transition-colors md:h-[47px] md:max-w-[209px] ${activeTab === tab ? 'bg-[#96E0E1]' : 'bg-white'}`}
+                  onClick={() => setActiveTab(tab)}
+                >
+                  <h2 className="text-sm text-[#2B5991] capitalize md:text-base lg:text-[20px]">
+                    {tab}
+                  </h2>
+                </div>
+              ))}
+            </div>
+
+            {/* Form Components */}
+            <div className="w-full">
+              {user && activeTab === 'personal' && (
+                <Personal data={personal} onDataChange={handlePersonalChange} />
+              )}
+
+              {user && activeTab === 'health' && (
+                <Health data={health} onDataChange={handleHealthChange} />
+              )}
+
+              {user && activeTab === 'account' && (
+                <Account data={account} onDataChange={handleAccountChange} />
+              )}
+            </div>
+
+            {/* Save Button */}
+            <div className="mt-8 flex justify-center md:mt-10 md:justify-start">
+              <button
+                className="w-full min-w-[120px] cursor-pointer rounded bg-blue-500 px-8 py-3 text-white transition-colors hover:bg-blue-600 md:w-auto"
+                onClick={handleSave}
+              >
+                Save
+              </button>
+            </div>
           </div>
         </div>
       </div>

@@ -13,173 +13,191 @@ function Personal({ data, onDataChange }: PersonalPropsWithSetter) {
     });
   };
 
+  // Shared class for inputs to ensure consistent styling and full width within their grid cells
+  const inputClass =
+    'w-full rounded-[10px] border border-[#00000040] bg-[#FAFAFA] text-[#2B5991] px-4 py-3 text-sm md:text-base lg:text-[16px] lg:px-[16px] lg:py-[13px] focus:outline-none focus:ring-2 focus:ring-blue-400';
+  const labelClass = 'font-medium text-base md:text-lg lg:text-[20px]';
+
   return (
-    <div className="flex flex-col lg:gap-[27px]">
+    <div className="flex w-full flex-col gap-5 md:gap-6 lg:gap-[27px]">
       {/* ID card number */}
-      <div className="flex flex-col lg:gap-[13px]">
-        <h2 className="font-medium lg:text-[20px]">ID card Number</h2>
+      <div className="flex flex-col gap-2 md:gap-3 lg:gap-[13px]">
+        <h2 className={labelClass}>ID card Number</h2>
         <input
           type="text"
           name="IdCardNumber"
-          className="flex items-center gap-[10px] rounded-[10px] border border-[#00000040] bg-[#FAFAFA] text-[#2B5991] lg:h-[50px] lg:w-[332px] lg:px-[16px] lg:py-[13px] lg:text-[16px]"
+          className={`${inputClass} max-w-md`} // Limited max width only for ID card as it's short
           value={data.IdCardNumber}
           onChange={handleChange}
         />
       </div>
-      {/* Full Name */}
-      <div className="flex lg:gap-[27px]">
-        {/* First Name */}
-        <div className="flex flex-col lg:gap-[13px]">
-          <h2 className="font-medium lg:text-[20px]">First name</h2>
+
+      {/* Full Name - 3 Columns on iPad/Desktop */}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-5 lg:gap-[27px]">
+        <div className="flex flex-col gap-2 md:gap-3 lg:gap-[13px]">
+          <h2 className={labelClass}>First name</h2>
           <input
             type="text"
             name="Firstname"
-            className="rounded-[10px] border border-[#00000040] bg-[#FAFAFA] text-[#2B5991] lg:h-[50px] lg:w-[194px] lg:gap-[10px] lg:px-[16px] lg:py-[13px] lg:text-[16px]"
+            className={inputClass}
             value={data.Firstname}
             onChange={handleChange}
           />
         </div>
-        {/* Middle Name */}
-        <div className="flex flex-col lg:gap-[13px]">
-          <h2 className="font-medium lg:text-[20px]">Middle name</h2>
+
+        <div className="flex flex-col gap-2 md:gap-3 lg:gap-[13px]">
+          <h2 className={labelClass}>Middle name</h2>
           <input
             type="text"
             name="Middlename"
-            className="rounded-[10px] border border-[#00000040] bg-[#FAFAFA] text-[#2B5991] lg:h-[50px] lg:w-[194px] lg:gap-[10px] lg:px-[16px] lg:py-[13px] lg:text-[16px]"
+            className={inputClass}
             value={data.Middlename}
             onChange={handleChange}
           />
         </div>
-        {/* Last Name */}
-        <div className="flex flex-col lg:gap-[13px]">
-          <h2 className="font-medium lg:text-[20px]">Last name</h2>
+
+        <div className="flex flex-col gap-2 md:gap-3 lg:gap-[13px]">
+          <h2 className={labelClass}>Last name</h2>
           <input
             type="text"
             name="Lastname"
-            className="rounded-[10px] border border-[#00000040] bg-[#FAFAFA] text-[#2B5991] lg:h-[50px] lg:w-[194px] lg:gap-[10px] lg:px-[16px] lg:py-[13px] lg:text-[16px]"
+            className={inputClass}
             value={data.Lastname}
             onChange={handleChange}
           />
         </div>
       </div>
-      {/* Demographic */}
-      <div className="flex flex-col lg:gap-[27px]">
-        <h1 className="font-semibold text-[#2B5991] lg:text-[24px]">
+
+      {/* Demographic Section */}
+      <div className="flex flex-col gap-4 md:gap-5 lg:gap-[27px]">
+        <h1 className="text-lg font-semibold text-[#2B5991] md:text-xl lg:text-[24px]">
           Demographic
         </h1>
-        <div className="flex lg:ml-[49px] lg:gap-[27px]">
-          {/* Enthnicity */}
-          <div className="flex flex-col gap-[13px]">
-            <h2 className="font-medium lg:text-[20px]">Enthnicity</h2>
+        {/* Indented container using Grid */}
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-5 md:pl-[49px] lg:gap-[27px]">
+          <div className="flex flex-col gap-2 md:gap-3 lg:gap-[13px]">
+            <h2 className={labelClass}>Ethnicity</h2>
             <input
               type="text"
               name="Enthnicity"
-              className="flex items-center gap-[10px] rounded-[10px] border border-[#00000040] bg-[#FAFAFA] text-[#2B5991] lg:h-[50px] lg:w-[167px] lg:px-[16px] lg:py-[13px] lg:text-[16px]"
+              className={inputClass}
               value={data.Enthnicity}
               onChange={handleChange}
             />
           </div>
-          {/* Nationality */}
-          <div className="flex flex-col lg:gap-[13px]">
-            <h2 className="font-medium lg:text-[20px]">Nationality</h2>
+
+          <div className="flex flex-col gap-2 md:gap-3 lg:gap-[13px]">
+            <h2 className={labelClass}>Nationality</h2>
             <input
               type="text"
               name="Nationality"
-              className="rounded-[10px] border border-[#00000040] bg-[#FAFAFA] text-[#2B5991] lg:h-[50px] lg:w-[167px] lg:gap-[10px] lg:px-[16px] lg:py-[13px] lg:text-[16px]"
+              className={inputClass}
               value={data.Nationality}
               onChange={handleChange}
             />
           </div>
-          {/* Religion */}
-          <div className="flex flex-col lg:gap-[13px]">
-            <h2 className="font-medium lg:text-[20px]">Religion</h2>
+
+          <div className="flex flex-col gap-2 md:gap-3 lg:gap-[13px]">
+            <h2 className={labelClass}>Religion</h2>
             <input
               type="text"
               name="Religion"
-              className="rounded-[10px] border border-[#00000040] bg-[#FAFAFA] text-[#2B5991] lg:h-[50px] lg:w-[167px] lg:gap-[10px] lg:px-[16px] lg:py-[13px] lg:text-[16px]"
+              className={inputClass}
               value={data.Religion}
               onChange={handleChange}
             />
           </div>
         </div>
       </div>
-      {/*Contact*/}
-      <div className="flex flex-col lg:gap-[27px]">
-        <h1 className="font-semibold text-[#2B5991] lg:text-[24px]">Contact</h1>
-        <div className="flex lg:ml-[49px] lg:gap-[27px]">
-          {/* Phone Number */}
-          <div className="flex flex-col lg:gap-[13px]">
-            <h2 className="font-medium lg:text-[20px]">Phone number</h2>
+
+      {/* Contact Section */}
+      <div className="flex flex-col gap-4 md:gap-5 lg:gap-[27px]">
+        <h1 className="text-lg font-semibold text-[#2B5991] md:text-xl lg:text-[24px]">
+          Contact
+        </h1>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5 md:pl-[49px] lg:gap-[27px]">
+          <div className="flex flex-col gap-2 md:gap-3 lg:gap-[13px]">
+            <h2 className={labelClass}>Phone number</h2>
             <input
               type="text"
               name="PhoneNumber"
-              className="rounded-[10px] border border-[#00000040] bg-[#FAFAFA] text-[#2B5991] lg:h-[50px] lg:w-[246px] lg:gap-[10px] lg:px-[16px] lg:py-[13px] lg:text-[16px]"
+              className={inputClass}
               value={data.PhoneNumber}
               onChange={handleChange}
             />
           </div>
-          {/* Emergency Contact - READ-ONLY */}
-          <div className="flex flex-col lg:gap-[13px]">
-            <h2 className="font-medium lg:text-[20px]">Emergency contact</h2>
-            <div className="flex items-center rounded-[10px] border border-[#00000040] bg-[#FAFAFA] text-[#2B5991] lg:h-[50px] lg:w-[246px] lg:gap-[10px] lg:px-[16px] lg:py-[13px] lg:text-[16px]">
+
+          <div className="flex flex-col gap-2 md:gap-3 lg:gap-[13px]">
+            <h2 className={labelClass}>Emergency contact</h2>
+            <div
+              className={`${inputClass} cursor-not-allowed bg-gray-100 text-gray-600`}
+            >
               {data.EmergencyContact}
             </div>
           </div>
         </div>
       </div>
-      {/* Address */}
-      <div className="flex flex-col lg:gap-[27px]">
-        <h1 className="font-semibold text-[#2B5991] lg:text-[24px]">Address</h1>
-        <div className="flex flex-col lg:ml-[49px] lg:gap-[27px]">
-          <div className="flex flex-col lg:gap-[13px]">
-            <h2 className="font-medium lg:text-[20px]">Address line</h2>
+
+      {/* Address Section */}
+      <div className="flex flex-col gap-4 md:gap-5 lg:gap-[27px]">
+        <h1 className="text-lg font-semibold text-[#2B5991] md:text-xl lg:text-[24px]">
+          Address
+        </h1>
+        <div className="flex flex-col gap-4 md:gap-5 md:pl-[49px] lg:gap-[27px]">
+          {/* Full width Address Line */}
+          <div className="flex w-full flex-col gap-2 md:gap-3 lg:gap-[13px]">
+            <h2 className={labelClass}>Address line</h2>
             <input
               type="text"
               name="AddressLine"
-              className="rounded-[10px] border border-[#00000040] bg-[#FAFAFA] text-[#2B5991] lg:h-[50px] lg:w-[557px] lg:gap-[10px] lg:px-[16px] lg:py-[13px] lg:text-[16px]"
+              className={inputClass}
               value={data.AddressLine}
               onChange={handleChange}
             />
           </div>
-          <div className="flex lg:gap-[27px]">
-            <div className="flex flex-col lg:gap-[13px]">
-              <h2 className="font-medium lg:text-[20px]">Sub-district</h2>
+
+          {/* Sub-district & District (2 cols) */}
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5 lg:gap-[27px]">
+            <div className="flex flex-col gap-2 md:gap-3 lg:gap-[13px]">
+              <h2 className={labelClass}>Sub-district</h2>
               <input
                 type="text"
                 name="SubDistrict"
-                className="rounded-[10px] border border-[#00000040] bg-[#FAFAFA] text-[#2B5991] lg:h-[50px] lg:w-[226px] lg:gap-[10px] lg:px-[16px] lg:py-[13px] lg:text-[16px]"
+                className={inputClass}
                 value={data.SubDistrict}
                 onChange={handleChange}
               />
             </div>
-            <div className="flex flex-col lg:gap-[13px]">
-              <h2 className="font-medium lg:text-[20px]">District</h2>
+            <div className="flex flex-col gap-2 md:gap-3 lg:gap-[13px]">
+              <h2 className={labelClass}>District</h2>
               <input
                 type="text"
                 name="District"
-                className="rounded-[10px] border border-[#00000040] bg-[#FAFAFA] text-[#2B5991] lg:h-[50px] lg:w-[226px] lg:gap-[10px] lg:px-[16px] lg:py-[13px] lg:text-[16px]"
+                className={inputClass}
                 value={data.District}
                 onChange={handleChange}
               />
             </div>
           </div>
-          <div className="flex lg:gap-[27px]">
-            <div className="flex flex-col lg:gap-[13px]">
-              <h2 className="font-medium lg:text-[20px]">Province</h2>
+
+          {/* Province & Postal Code (2 cols) */}
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5 lg:gap-[27px]">
+            <div className="flex flex-col gap-2 md:gap-3 lg:gap-[13px]">
+              <h2 className={labelClass}>Province</h2>
               <input
                 type="text"
                 name="Province"
-                className="rounded-[10px] border border-[#00000040] bg-[#FAFAFA] text-[#2B5991] lg:h-[50px] lg:w-[226px] lg:gap-[10px] lg:px-[16px] lg:py-[13px] lg:text-[16px]"
+                className={inputClass}
                 value={data.Province}
                 onChange={handleChange}
               />
             </div>
-            <div className="flex flex-col lg:gap-[13px]">
-              <h2 className="font-medium lg:text-[20px]">Postal Code</h2>
+            <div className="flex flex-col gap-2 md:gap-3 lg:gap-[13px]">
+              <h2 className={labelClass}>Postal Code</h2>
               <input
                 type="text"
                 name="PostalCode"
-                className="rounded-[10px] border border-[#00000040] bg-[#FAFAFA] text-[#2B5991] lg:h-[50px] lg:w-[226px] lg:gap-[10px] lg:px-[16px] lg:py-[13px] lg:text-[16px]"
+                className={inputClass}
                 value={data.PostalCode}
                 onChange={handleChange}
               />
