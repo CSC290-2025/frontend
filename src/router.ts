@@ -7,11 +7,13 @@ export type Path =
   | `/`
   | `/clean-air/district-detail/:district`
   | `/clean-air/district-selection`
+  | `/clean-air/overview/:district`
   | `/example`
   | `/example/:id`;
 
 export type Params = {
   '/clean-air/district-detail/:district': { district: string };
+  '/clean-air/overview/:district': { district: string };
   '/example/:id': { id: string };
 };
 
