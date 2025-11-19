@@ -1,7 +1,7 @@
-import { useSummaryQuery } from '../hooks/useSummary';
+import useSummaryQuery from '@/features/clean-air/hooks/useSummary';
 import { useParams } from '@/router';
 
-export function Summary() {
+export default function Summary() {
   const { district } = useParams('/clean-air/district-detail/:district');
   const { data: summary, isLoading, error } = useSummaryQuery(district);
 

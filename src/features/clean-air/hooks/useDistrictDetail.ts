@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import type { DistrictDetail } from '@/types/districtDetail';
 import { getDistrictDetail } from '../api/clean-air.api';
 
-export function useDistrictDetailQuery(district?: string) {
+export default function useDistrictDetailQuery(district?: string) {
   return useQuery<DistrictDetail, Error>({
     queryKey: ['clean-air', 'district', district],
     queryFn: () => {

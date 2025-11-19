@@ -1,7 +1,7 @@
 import { useParams } from '@/router';
-import { useDistrictDetailQuery } from '../hooks/useDistrictDetail';
+import useDistrictDetailQuery from '@/features/clean-air/hooks/useDistrictDetail';
 
-export function CurrentDataCard() {
+export default function CurrentDataCard() {
   const { district } = useParams('/clean-air/district-detail/:district');
   const { data, isLoading, error } = useDistrictDetailQuery(district);
 

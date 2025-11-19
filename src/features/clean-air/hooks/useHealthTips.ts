@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { getHealthTips } from '../api/clean-air.api';
 
-export function useHealthTipsQuery(district?: string) {
+export default function useHealthTipsQuery(district?: string) {
   return useQuery<string[], Error>({
     queryKey: ['clean-air', 'health-tips', district],
     queryFn: () => {

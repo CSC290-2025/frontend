@@ -1,4 +1,3 @@
-import React from 'react';
 import { useParams } from '@/router';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
@@ -9,7 +8,7 @@ import {
   faFaceFrown,
   faFaceDizzy,
 } from '@fortawesome/free-regular-svg-icons';
-import { useDistrictDetailQuery } from '../hooks/useDistrictDetail';
+import useDistrictDetailQuery from '@/features/clean-air/hooks/useDistrictDetail';
 
 interface CurrentAqiCardProps {
   onDocumentationClick: () => void;
@@ -92,7 +91,9 @@ const getFormattedTime = (iso?: string) => {
   }
 };
 
-export function CurrentAqiCard({ onDocumentationClick }: CurrentAqiCardProps) {
+export default function CurrentAqiCard({
+  onDocumentationClick,
+}: CurrentAqiCardProps) {
   const { district } = useParams('/clean-air/district-detail/:district');
   const displayDistrict = decodeURIComponent(district || '');
   const {

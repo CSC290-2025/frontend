@@ -1,12 +1,12 @@
 import { useParams, useNavigate } from '@/router';
 import { ArrowLeft } from 'lucide-react';
 import { useState } from 'react';
-import { CurrentDataCard } from '@/features/clean-air/components/CurrentDataCard';
-import { CurrentAqiCard } from '@/features/clean-air/components/CurrentAqiCard';
-import { Pm25GuideModal } from '@/features/clean-air/components/Pm25GuideModal';
-import { HealthTips } from '../components/HealthTips';
-import { Summary } from '../components/Summary';
-import { HistoricalTable } from '../components/HistoricalTable';
+import CurrentDataCard from '@/features/clean-air/components/CurrentDataCard';
+import CurrentAqiCard from '@/features/clean-air/components/CurrentAqiCard';
+import Pm25GuideModal from '@/features/clean-air/components/Pm25GuideModal';
+import HealthTips from '@/features/clean-air/components/HealthTips';
+import Summary from '@/features/clean-air/components/Summary';
+import HistoricalTable from '@/features/clean-air/components/HistoricalTable';
 
 export function DistrictDetailPage() {
   const { district } = useParams('/clean-air/district-detail/:district');

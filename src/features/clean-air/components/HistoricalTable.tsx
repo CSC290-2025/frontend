@@ -1,4 +1,4 @@
-import { useHistoryQuery } from '../hooks/useHistory';
+import useHistoryQuery from '@/features/clean-air/hooks/useHistory';
 import { useParams } from '@/router';
 
 const getStatusBadge = (category: string) => {
@@ -38,7 +38,7 @@ const formatCategoryLabel = (category: string) => {
   return category.replace(/_/g, ' ');
 };
 
-export function HistoricalTable() {
+export default function HistoricalTable() {
   const { district } = useParams('/clean-air/district-detail/:district');
   const { data: history, isLoading, error } = useHistoryQuery(district);
 
