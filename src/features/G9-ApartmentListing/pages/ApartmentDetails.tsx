@@ -1,5 +1,18 @@
-import React, { useState } from 'react';
-import { Link } from '@/router';
+import { useState } from 'react';
+import { Link, useParams } from '@/router';
+import {
+  APT,
+  Room,
+  Upload,
+  Rating,
+  Address,
+} from '@/features/G9-ApartmentListing/hooks/index';
+import type {
+  roomTypes,
+  ratingTypes,
+  uploadTypes,
+  apartmentTypes,
+} from '@/features/G9-ApartmentListing/types/index';
 import UppageIcon from '@/features/G9-ApartmentListing/assets/UppageIcon.svg';
 import LocationIcon from '@/features/G9-ApartmentListing/assets/LocationIcon.svg';
 import PhoneIcon from '@/features/G9-ApartmentListing/assets/PhoneIcon.svg';
@@ -12,202 +25,78 @@ import RightIcon from '@/features/G9-ApartmentListing/assets/RightIcon.svg';
 import ShareModal from '@/features/G9-ApartmentListing/components/Share';
 import ReviewModal from '@/features/G9-ApartmentListing/components/Review';
 
-interface ReviewData {
-  id: number;
-  author: string;
-  date: string;
-  rating: number;
-  comment: string;
-  avatar: string;
-}
-
-interface RoomType {
-  type: string;
-  size: string;
-  price: string;
-  status: 'Available' | 'Unavailable';
-}
-
-interface NearbyPlace {
-  name: string;
-  distance: string;
-  type: 'bus' | 'hospital' | 'pharmacy' | 'atm' | 'bank';
-}
-
-interface ApartmentDetail {
-  id: number;
-  name: string;
-  rating: number;
-  totalReviews: number;
-  description: string;
-  address: string;
-  phone: string;
-  line: string;
-  facebook: string;
-  mainImage: string;
-  images: string[];
-  waterPrice: string;
-  electricityPrice: string;
-  internet: string;
-  roomTypes: RoomType[];
-  nearbyPlaces: NearbyPlace[];
-  reviews: ReviewData[];
-}
-
 export default function ApartmentDetailPage() {
+  const params = useParams('/ApartmentHomepage/:id');
+  const apartmentId = params.id;
+
   const [currentReviewPage, setCurrentReviewPage] = useState(1);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const reviewsPerPage = 3;
-  const shareUrl = 'https://share.google/jZvJI3nwd7jcVDi48';
+  const shareUrl = window.location.href;
 
-  const apartmentReviews: ReviewData[] = [
-    {
-      id: 1,
-      author: 'Yang Jungwon',
-      date: '3 month ago',
-      rating: 4,
-      comment:
-        "A solid place to live. The rooms are a decent size, and the included utilities (Wi-Fi never fail. It's an older building, so things like the elevators and laundry can be slow/clogged, but the maintenance staff is surprisingly quick and efficient when you report a problem.",
-      avatar: '👤',
-    },
-    {
-      id: 2,
-      author: 'Oguri Cap',
-      date: '6 month ago',
-      rating: 5,
-      comment:
-        'There are many food places near this dorm. You can easily walk to three different dining halls and several fast-food spots.',
-      avatar: '👤',
-    },
-    {
-      id: 3,
-      author: 'Lazumaki Sasuke',
-      date: '10 month ago',
-      rating: 3,
-      comment:
-        'The facilities themselves here are great. However, the location is the problem: the room insulation, which is terrible. The walls cannot hold back sound at all. Sometimes I can hear my neighbors having loud nights, and other times, I can clearly hear the full content of an argument or a fight next door in my room. It makes quiet time, especially late at night, very difficult. If you need silence to study or sleep, this place will be a challenge.',
-      avatar: '👤',
-    },
-    {
-      id: 4,
-      author: 'Olivia Chen',
-      date: '1 year ago',
-      rating: 5,
-      comment:
-        'Perfect location for students! Walking distance to KMUTT and plenty of food options nearby. The staff is friendly and maintenance is quick.',
-      avatar: '👤',
-    },
-    {
-      id: 5,
-      author: 'Liam Taylor',
-      date: '1 year ago',
-      rating: 4,
-      comment:
-        'Good value for money. The room is clean and well-maintained. Internet speed is excellent for online classes and streaming.',
-      avatar: '👤',
-    },
-    {
-      id: 6,
-      author: 'Sophia Rodriguez',
-      date: '1 year ago',
-      rating: 4,
-      comment:
-        'Nice apartment with all the basic amenities. The only downside is parking can be tight during peak hours.',
-      avatar: '👤',
-    },
-    {
-      id: 7,
-      author: 'Emma Kumar',
-      date: '2 years ago',
-      rating: 3,
-      comment:
-        'Decent place but could use some renovation. The AC works well which is important in Bangkok heat.',
-      avatar: '👤',
-    },
-  ];
+  const {
+    data: apartmentData,
+    isLoading: _isLoading,
+    error: _error,
+  } = APT.useApartment(parseInt(apartmentId));
+  const { data: rating } = Rating.useCommentsByApartment(parseInt(apartmentId));
+  const { data: room } = Room.useRooms(parseInt(apartmentId));
+  const averageRating = Rating.useAverageRating(parseInt(apartmentId));
+  const { data: images } = Upload.usePicturesByApartment(parseInt(apartmentId));
+  const createRating = Rating.useCreateRating();
+  const rawApartment = apartmentData?.data || apartmentData || null;
+  const ratingArray: ratingTypes.default[] =
+    rating?.data?.data || rating?.data || [];
+  const totalRatings = ratingArray.length;
+  const imageArray: uploadTypes.uploadData[] =
+    images?.data?.data || images?.data || [];
+  const roomArray: roomTypes.Room[] = room?.data?.data || room?.data || [];
 
-  const totalReviews = apartmentReviews.length;
-  const totalRatingSum = apartmentReviews.reduce(
-    (sum, review) => sum + review.rating,
-    0
+  // Calculate manual average from rating array as fallback
+  const manualAverage =
+    totalRatings > 0
+      ? ratingArray.reduce((sum, rating) => sum + rating.rating, 0) /
+        totalRatings
+      : 0;
+
+  // Fetch address data using the address_id from apartment
+  const { data: addressData } = Address.fetchAddressById(
+    rawApartment?.address_id || 0
   );
-  const averageRating = totalReviews > 0 ? totalRatingSum / totalReviews : 0;
-
-  const apartment: ApartmentDetail = {
-    id: 1,
-    name: 'Cosmo Mansion',
-    rating: averageRating,
-    totalReviews: totalReviews,
-    description: `READY TO MOVE IN!
-Apartment for rent modern style fully furnished with electronic appliances.
-Located at Soi Pracha Uthit45 near to KMUTT, Lotus, Big C, Bangpakok
-Hospital and etc.
-Annual contract price starts from 4,600 Baht/Month
-FREE : Internet, cable TV
-Furniture and appliances includes: refrigerator, water heater, air conditioner
-
-Contact us
-Line : UFA888`,
-    address:
-      '110, 112 Pracha Uthit Soi 45, Pracha Uthit Road, Bang Mod, Thung Khru District, Bangkok 10140',
-    phone: '0999999999',
-    line: 'UFA888',
-    facebook: 'https://www.facebook.com/cosmomansion/',
-    mainImage:
-      'https://bcdn.renthub.in.th/listing_picture/201603/20160323/KFVR1t5u5w6KhpFVDWLY.jpg?class=moptimized',
-    images: [
-      'https://bcdn.renthub.in.th/listing_picture/201603/20160323/KFVR1t5u5w6KhpFVDWLY.jpg?class=moptimized',
-      'https://bcdn.renthub.in.th/listing_picture/201809/20180902/F2fJpr4Vz3CKeAVwV5ZD.jpg?class=doptimized',
-      'https://bcdn.renthub.in.th/listing_picture/202012/20201223/ZMrUqc8KqZY34TwiMB52.jpg?class=doptimized',
-      'https://bcdn.renthub.in.th/listing_picture/202012/20201223/ZMrUqc8KqZY34TwiMB52.jpg?class=doptimized',
-      'https://bcdn.renthub.in.th/listing_picture/202012/20201223/ZMrUqc8KqZY34TwiMB52.jpg?class=doptimized',
-    ],
-    waterPrice: '7 THB/unit',
-    electricityPrice: '17 THB/unit',
-    internet: 'Free',
-    roomTypes: [
-      {
-        type: 'Studio',
-        size: '18 sq.m.',
-        price: '4,600 THB',
-        status: 'Available',
-      },
-      {
-        type: 'Studio2',
-        size: '24 sq.m.',
-        price: '4,900 THB',
-        status: 'Available',
-      },
-      {
-        type: 'Two bed room',
-        size: '48 sq.m.',
-        price: '8,000 THB',
-        status: 'Unavailable',
-      },
-    ],
-    nearbyPlaces: [
-      { name: 'Prachauthit 39', distance: '120 m', type: 'bus' },
-      { name: 'Prachauthit 42', distance: '360 m', type: 'bus' },
-      { name: 'Suksawat Hospital', distance: '2.9 km', type: 'hospital' },
-      {
-        name: 'Ya Nueng',
-        distance: '221 m',
-        type: 'pharmacy',
-      },
-      {
-        name: 'Bangkok ATM',
-        distance: '123 m',
-        type: 'atm',
-      },
-      {
-        name: 'Bangkok Bank',
-        distance: '123 m',
-        type: 'bank',
-      },
-    ],
-    reviews: apartmentReviews,
+  const address = addressData?.data || null;
+  const apartment = {
+    id: rawApartment?.id || parseInt(apartmentId),
+    name: rawApartment?.name || 'Loading...',
+    description: rawApartment?.description || '',
+    address: address
+      ? `${address.address_line}, ${address.subdistrict}, ${address.district}, ${address.province} ${address.postal_code}`
+      : 'Address not available',
+    phone: rawApartment?.phone || '',
+    electric_price: rawApartment?.electric_price || 0,
+    water_price: rawApartment?.water_price || 0,
+    apartment_type: rawApartment?.apartment_type || 'apartment',
+    apartment_location: rawApartment?.apartment_location || 'prachauthit',
+    internet: (rawApartment?.internet as apartmentTypes.InternetType) || 'none',
+    rating: Number(averageRating?.data?.average) || manualAverage || 0,
+    totalReviews: totalRatings,
+    images: imageArray.map((img) => img.url),
+    roomTypes: roomArray.map((room) => ({
+      type: room.type,
+      size: room.size,
+      price: `${room.price_start}-${room.price_end} THB`,
+      status: room.room_status === 'available' ? 'Available' : 'Unavailable',
+    })),
+    nearbyPlaces: [], // TODO: Add nearby places API
+    reviews: ratingArray.map((rating) => ({
+      id: rating.id,
+      author: `User ${rating.userId}`, // TODO: Join with user table for actual names
+      date: new Date(rating.createdAt).toLocaleDateString(),
+      rating: rating.rating,
+      comment: rating.comment,
+      avatar: '👤',
+    })),
   };
 
   const totalReviewPages = Math.ceil(apartment.reviews.length / reviewsPerPage);
@@ -223,7 +112,7 @@ Line : UFA888`,
         key={i}
         src={i < rating ? StarIcon : GrayStarIcon}
         alt="star"
-        className={`flex-shrink-0 ${i < rating ? 'h-6 w-6' : 'h-5.5 w-5.5'}`}
+        className={`h-5 w-5 shrink-0`}
       />
     ));
   };
@@ -250,9 +139,35 @@ Line : UFA888`,
     setCurrentImageIndex(index);
   };
 
-  const handleReviewSubmit = (rating: number, comment: string) => {
-    console.log('New Review - Rating:', rating, 'Comment:', comment);
+  const handleReviewSubmit = async (ratingValue: number, comment: string) => {
+    try {
+      // TODO: Replace with actual user ID from authentication context
+      const currentUserId = 14;
+
+      await createRating.mutateAsync({
+        apartmentId: apartment.id,
+        userId: currentUserId,
+        rating: ratingValue,
+        comment,
+      });
+      setIsReviewModalOpen(false);
+      setCurrentReviewPage(1);
+    } catch (error) {
+      console.error('Failed to submit review:', error);
+    }
   };
+
+  if (_isLoading) {
+    return (
+      <div className="font-poppins min-h-screen bg-[#F9FAFB] font-sans">
+        <div className="mx-auto max-w-7xl px-8 py-6">
+          <div className="flex h-96 items-center justify-center">
+            <div className="text-xl">Loading apartment details...</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="font-poppins min-h-screen bg-[#F9FAFB] font-sans">
@@ -285,16 +200,20 @@ Line : UFA888`,
       </div>
 
       {/* Pictures */}
-      <div className="mx-auto mt-[-20px] max-w-7xl px-8 py-8">
+      <div className="mx-auto -mt-5 max-w-7xl px-8 py-8">
         <div className="grid grid-cols-2 gap-8">
           <div>
             <div className="mb-6">
               <div className="group relative mb-4">
                 <img
-                  src={apartment.images[currentImageIndex]}
+                  src={
+                    apartment.images[currentImageIndex] ||
+                    'https://i.pinimg.com/736x/e6/b6/87/e6b6879516fe0c7e046dfc83922626d6.jpg'
+                  }
                   alt={apartment.name}
                   className="h-80 w-full rounded-lg object-cover"
                 />
+
                 <button
                   onClick={handlePrevImage}
                   className="absolute top-1/2 left-4 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-2xl opacity-0 shadow-md transition-opacity duration-300 group-hover:opacity-100 hover:bg-white"
@@ -318,21 +237,28 @@ Line : UFA888`,
               </div>
 
               <div className="overflow-x-4 my-5 flex gap-4">
-                {apartment.images.slice(0, 5).map((img, index) => (
-                  <button
-                    key={index}
-                    onClick={() => handleThumbnailClick(index)}
-                    className={`h-20 w-20 flex-shrink-0 overflow-hidden rounded-lg ${
-                      currentImageIndex === index ? 'ring-4 ring-cyan-400' : ''
-                    }`}
-                  >
-                    <img
-                      src={img}
-                      alt={`${apartment.name} ${index + 1}`}
-                      className="h-full w-full object-cover"
-                    />
-                  </button>
-                ))}
+                {apartment.images
+                  .slice(0, 5)
+                  .map((img: string, index: number) => (
+                    <button
+                      key={index}
+                      onClick={() => handleThumbnailClick(index)}
+                      className={`h-20 w-20 shrink-0 overflow-hidden rounded-lg ${
+                        currentImageIndex === index
+                          ? 'ring-4 ring-cyan-400'
+                          : ''
+                      }`}
+                    >
+                      <img
+                        src={
+                          img ||
+                          'https://i.pinimg.com/736x/e6/b6/87/e6b6879516fe0c7e046dfc83922626d6.jpg'
+                        }
+                        alt={`${apartment.name} ${index + 1}`}
+                        className="h-full w-full object-cover"
+                      />
+                    </button>
+                  ))}
               </div>
             </div>
 
@@ -367,10 +293,10 @@ Line : UFA888`,
                 <h3 className="mb-2 font-semibold">Rating</h3>
                 <div className="flex items-center gap-2">
                   <span className="text-2xl font-bold">
-                    {apartment.rating.toFixed(1)}
+                    {Number(apartment.rating).toFixed(1)}
                   </span>
                   <div className="flex text-xl">
-                    {renderStars(Math.floor(apartment.rating))}
+                    {renderStars(Math.floor(Number(apartment.rating)))}
                   </div>
                   <span className="text-gray-600">
                     ({apartment.totalReviews})
@@ -388,7 +314,7 @@ Line : UFA888`,
                     >
                       <div className="mb-3 flex items-start justify-between">
                         <div className="flex gap-3">
-                          <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-gray-200 text-xl">
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gray-200 text-xl">
                             {review.avatar}
                           </div>
                           <div>
@@ -474,24 +400,12 @@ Line : UFA888`,
                 {apartment.description}
               </p>
 
-              <div className="mb-4 text-sm">
-                <p className="text-gray-700">
-                  <span className="font-md">Facebook : </span>
-                  <a
-                    href={apartment.facebook}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="hover:text-cyan-00 text-cyan-500 hover:underline"
-                  >
-                    {apartment.facebook}
-                  </a>
-                </p>
-              </div>
-
               <div className="space-y-2 rounded-lg bg-gray-50 p-4 text-sm">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Water price :</span>
-                  <span className="font-medium">{apartment.waterPrice}</span>
+                  <span className="font-medium">
+                    {apartment.water_price} THB/unit
+                  </span>
                 </div>
                 <div className="flex justify-end text-xs text-gray-500">
                   <span>100 THB (minimum)</span>
@@ -499,12 +413,18 @@ Line : UFA888`,
                 <div className="flex justify-between">
                   <span className="text-gray-600">Electricity Price :</span>
                   <span className="font-medium">
-                    {apartment.electricityPrice}
+                    {apartment.electric_price} THB/unit
                   </span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Internet :</span>
-                  <span className="font-medium">{apartment.internet}</span>
+                  <span className="font-medium">
+                    {apartment.internet === 'not_free'
+                      ? 'not free'
+                      : apartment.internet === 'free'
+                        ? 'free'
+                        : 'none'}
+                  </span>
                 </div>
               </div>
             </div>
@@ -555,94 +475,11 @@ Line : UFA888`,
               </div>
             </div>
 
-            {/* Nearby */}
+            {/* Nearby places - TODO: Add API integration when available */}
             <div className="mb-6 rounded-lg bg-white p-6 shadow-sm">
               <h2 className="mb-4 text-xl font-bold">Nearby places</h2>
-              <div className="space-y-4">
-                <div>
-                  <div className="mb-2 flex items-center gap-2 font-semibold text-gray-800">
-                    <span>Bus station</span>
-                  </div>
-                  {apartment.nearbyPlaces
-                    .filter((p) => p.type === 'bus')
-                    .map((place, i) => (
-                      <div
-                        key={i}
-                        className="ml-5 flex justify-between py-1 text-sm"
-                      >
-                        <span className="text-gray-700">{place.name}</span>
-                        <span className="text-gray-600">{place.distance}</span>
-                      </div>
-                    ))}
-                </div>
-
-                <div>
-                  <div className="mb-2 flex items-center gap-2 font-semibold text-gray-800">
-                    <span>Hospital</span>
-                  </div>
-                  {apartment.nearbyPlaces
-                    .filter((p) => p.type === 'hospital')
-                    .map((place, i) => (
-                      <div
-                        key={i}
-                        className="ml-5 flex justify-between py-1 text-sm"
-                      >
-                        <span className="text-gray-700">{place.name}</span>
-                        <span className="text-gray-600">{place.distance}</span>
-                      </div>
-                    ))}
-                </div>
-
-                <div>
-                  <div className="mb-2 flex items-center gap-2 font-semibold text-gray-800">
-                    <span>Pharmacy</span>
-                  </div>
-                  {apartment.nearbyPlaces
-                    .filter((p) => p.type === 'pharmacy')
-                    .map((place, i) => (
-                      <div
-                        key={i}
-                        className="ml-5 flex justify-between py-1 text-sm"
-                      >
-                        <span className="text-gray-700">{place.name}</span>
-                        <span className="text-gray-600">{place.distance}</span>
-                      </div>
-                    ))}
-                </div>
-
-                <div>
-                  <div className="mb-2 flex items-center gap-2 font-semibold text-gray-800">
-                    <span>ATM</span>
-                  </div>
-                  {apartment.nearbyPlaces
-                    .filter((p) => p.type === 'atm')
-                    .map((place, i) => (
-                      <div
-                        key={i}
-                        className="ml-5 flex justify-between py-1 text-sm"
-                      >
-                        <span className="text-gray-700">{place.name}</span>
-                        <span className="text-gray-600">{place.distance}</span>
-                      </div>
-                    ))}
-                </div>
-
-                <div>
-                  <div className="mb-2 flex items-center gap-2 font-semibold text-gray-800">
-                    <span>Bank</span>
-                  </div>
-                  {apartment.nearbyPlaces
-                    .filter((p) => p.type === 'bank')
-                    .map((place, i) => (
-                      <div
-                        key={i}
-                        className="ml-5 flex justify-between py-1 text-sm"
-                      >
-                        <span className="text-gray-700">{place.name}</span>
-                        <span className="text-gray-600">{place.distance}</span>
-                      </div>
-                    ))}
-                </div>
+              <div className="text-sm text-gray-500">
+                Nearby places information will be available soon.
               </div>
             </div>
 

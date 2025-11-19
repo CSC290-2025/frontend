@@ -10,9 +10,9 @@ export default function ConfirmDelete({
   onCancel,
 }: ConfirmDeleteProps) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
-      <div className="w-[280px] rounded-xl bg-white p-6 text-center shadow-xl">
-        <p className="mb-4 text-lg font-medium text-gray-800">{message}</p>
+    <div className="font-poppins fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+      <div className="w-80 rounded-xl bg-white p-6 text-center shadow-xl">
+        <p className="mb-4 text-xl font-medium text-gray-800">{message}</p>
         <div className="flex justify-center gap-4">
           <button
             onClick={onConfirm}

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from '@/router';
 import BookingComplete from '@/features/G9-ApartmentListing/components/BookingComplete';
+import { postWalletsTransfer } from '@/api/generated/wallets';
 import LocationIcon from '@/features/G9-ApartmentListing/assets/LocationIcon.svg';
 import BackIcon from '@/features/G9-ApartmentListing/assets/BackIcon.svg';
 import EWalletIcon from '@/features/G9-ApartmentListing/assets/EWalletIcon.svg';
@@ -48,7 +49,29 @@ export default function ApartmentPayment() {
   }, [roomType]);
 
   const handleBooking = () => {
-    setShowPopup(true);
+    // simplest implementation: transfer money from user 1 to a developer/service account (user 2)
+    // so the balance for user 1 is reduced by the apartment price.
+    // NOTE: This uses a placeholder recipient (user id 2). Adjust to the correct merchant ID if needed.
+    (async () => {
+      if (!price || !balance) {
+        alert('Missing price or balance');
+        return;
+      }
+
+      try {
+        await postWalletsTransfer({
+          from_user_id: 1,
+          to_user_id: 2,
+          amount: price,
+        });
+
+        setBalance((prev) => (prev ? prev - price : null));
+        setShowPopup(true);
+      } catch (err) {
+        console.error(err);
+        alert('Payment failed — check your wallet or try again.');
+      }
+    })();
   };
 
   const handleViewBooking = () => {
