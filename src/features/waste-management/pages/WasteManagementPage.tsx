@@ -1,104 +1,91 @@
 import { useState } from 'react';
-import { Recycle } from 'lucide-react';
-import {
-  WasteLoggingForm,
-  StatisticsTable,
-  WasteCharts,
-  TrendCard,
-  ViewSelector,
-} from '../components';
-import { useMonthlyStats, useDailyStats } from '../hooks';
+import { BarChart3, MapPin, Trash2, Navigation } from 'lucide-react';
+import Dashboard from '@/features/waste-management/pages/Dashboard';
+import BinsManagement from '@/features/waste-management/pages/BinsManagement';
+import WasteLogging from '@/features/waste-management/pages/WasteLogging';
+import NearestBins from '@/features/waste-management/pages/NearestBins';
 
-export default function WasteManagementPage() {
-  const [viewType, setViewType] = useState<'monthly' | 'daily'>('monthly');
-  const [selectedMonth, setSelectedMonth] = useState(
-    String(new Date().getMonth() + 1)
-  );
-  const [selectedYear, setSelectedYear] = useState(
-    String(new Date().getFullYear())
-  );
-  const [selectedDate, setSelectedDate] = useState(
-    new Date().toISOString().split('T')[0]
-  );
+export default function WastemanagementPage() {
+  const [currentPage, setCurrentPage] = useState('dashboard');
 
-  const { data: monthlyData, isLoading: isLoadingMonthly } = useMonthlyStats(
-    parseInt(selectedMonth),
-    parseInt(selectedYear)
-  );
-
-  const { data: dailyData, isLoading: isLoadingDaily } =
-    useDailyStats(selectedDate);
-
-  const currentStats =
-    viewType === 'monthly' ? monthlyData?.stats : dailyData?.stats;
-  const isLoading = viewType === 'monthly' ? isLoadingMonthly : isLoadingDaily;
-
-  const getDescription = () => {
-    if (viewType === 'monthly') {
-      return `${new Date(2025, parseInt(selectedMonth) - 1).toLocaleString('default', { month: 'long' })} ${selectedYear}`;
+  const renderPage = () => {
+    switch (currentPage) {
+      case 'dashboard':
+        return <Dashboard onNavigate={setCurrentPage} />;
+      case 'bins':
+        return <BinsManagement />;
+      case 'waste':
+        return <WasteLogging />;
+      case 'nearest':
+        return <NearestBins />;
+      default:
+        return <Dashboard onNavigate={setCurrentPage} />;
     }
-    return selectedDate;
   };
 
   return (
-    <div className="min-h-screen bg-linear-to-br from-purple-50 via-pink-50 to-blue-50 p-6">
+    <div className="min-h-screen bg-gray-50">
       {/* Header */}
-      <div className="mx-auto mb-8 max-w-7xl">
-        <div className="mb-2 flex items-center gap-3">
-          <div className="rounded-2xl bg-linear-to-br from-purple-500 to-pink-500 p-3">
-            <Recycle className="h-8 w-8 text-white" />
-          </div>
-          <div>
-            <h1 className="bg-linear-to-r from-purple-600 to-pink-600 bg-clip-text text-4xl font-bold text-transparent">
-              Waste Management
-            </h1>
-            <p className="text-gray-600">Activities and tracking</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Left Column - Form and Quick Stats */}
-        <div className="space-y-6 lg:col-span-1">
-          <WasteLoggingForm />
-          {currentStats && (
-            <TrendCard totalWeight={currentStats.total_weight_kg} />
-          )}
-        </div>
-
-        {/* Right Column - Statistics and Charts */}
-        <div className="space-y-6 lg:col-span-2">
-          <ViewSelector
-            viewType={viewType}
-            onViewTypeChange={setViewType}
-            selectedMonth={selectedMonth}
-            selectedYear={selectedYear}
-            selectedDate={selectedDate}
-            onMonthChange={setSelectedMonth}
-            onYearChange={setSelectedYear}
-            onDateChange={setSelectedDate}
-          />
-
-          {isLoading ? (
-            <div className="py-12 text-center text-gray-600">
-              Loading statistics...
+      <header className="border-b border-gray-200 bg-white">
+        <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-500">
+                <Trash2 className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-gray-900">
+                  Waste Management System
+                </h1>
+                <p className="text-sm text-gray-500">
+                  Smart waste tracking and monitoring
+                </p>
+              </div>
             </div>
-          ) : currentStats ? (
-            <>
-              <StatisticsTable
-                stats={currentStats}
-                viewType={viewType}
-                description={getDescription()}
-              />
-              <WasteCharts stats={currentStats} />
-            </>
-          ) : (
-            <div className="py-12 text-center text-gray-600">
-              No data available
-            </div>
-          )}
+          </div>
         </div>
-      </div>
+      </header>
+
+      {/* Navigation */}
+      <nav className="border-b border-gray-200 bg-white">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex gap-1">
+            {[
+              { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
+              { id: 'bins', label: 'Bins', icon: MapPin },
+              { id: 'waste', label: 'Log Waste', icon: Trash2 },
+              { id: 'nearest', label: 'Find Nearest', icon: Navigation },
+            ].map((item) => (
+              <button
+                key={item.id}
+                onClick={() => setCurrentPage(item.id)}
+                className={`flex items-center gap-2 border-b-2 px-4 py-3 transition ${
+                  currentPage === item.id
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-600 hover:text-gray-900'
+                }`}
+              >
+                <item.icon className="h-4 w-4" />
+                {item.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      </nav>
+
+      {/* Main Content */}
+      <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        {renderPage()}
+      </main>
+
+      {/* Footer */}
+      <footer className="mt-12 border-t border-gray-200 bg-white">
+        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+          <p className="text-center text-sm text-gray-500">
+            Waste Management System © 2025 - Built with React & TypeScript
+          </p>
+        </div>
+      </footer>
     </div>
   );
 }

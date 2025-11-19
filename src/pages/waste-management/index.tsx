@@ -1,1 +1,1 @@
-export { default } from '@/features/waste-management/pages/WasteManagementPage';
+export { default } from '@/features/waste-management/pages/WastemanagementPage';

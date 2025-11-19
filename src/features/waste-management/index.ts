@@ -1,4 +1,5 @@
-export { default as WasteManagementPage } from './pages/WasteManagementPage';
-export * from './components';
-export * from './hooks';
-export * from './types';
+export { default as WasteManagementPage } from '@/features/waste-management/pages/WastemanagementPage';
+
+export * from '@/features/waste-management/components';
+export * from '@/features/waste-management/types';
+export * from '@/features/waste-management/api';

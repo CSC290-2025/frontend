@@ -1,1 +1,1 @@
-export * from './waste.api';
+export * from './api';

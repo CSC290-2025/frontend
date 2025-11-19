@@ -6,7 +6,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { BarChart3 } from 'lucide-react';
-import type { WasteStats, DailyStats } from '../types';
+import type { WasteStats, DailyStats } from '@/features/waste-management/types';
 
 interface StatisticsTableProps {
   stats: WasteStats | DailyStats;

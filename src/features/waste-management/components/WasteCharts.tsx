@@ -12,7 +12,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-import type { WasteStats, DailyStats } from '../types';
+import type { WasteStats, DailyStats } from '@/features/waste-management/types';
 
 interface WasteChartsProps {
   stats: WasteStats | DailyStats;
