@@ -17,12 +17,7 @@ export type Path =
   | `/power-bi/:type/:category/:id`
   | `/power-bi/create`
   | `/power-bi/edit/:id`
-  | `/register`
-  | `/volunteer/board`
-  | `/volunteer/createpost`
-  | `/volunteer/detail/:id`
-  | `/volunteer/edit/:id`
-  | `/volunteer/userjoin`;
+  | `/register`;
 
 export type Params = {
   '/district-detail/:district': { district: string };
@@ -34,8 +29,6 @@ export type Params = {
     id: string;
   };
   '/power-bi/edit/:id': { id: string };
-  '/volunteer/detail/:id': { id: string };
-  '/volunteer/edit/:id': { id: string };
 };
 
 export type ModalPath = never;
