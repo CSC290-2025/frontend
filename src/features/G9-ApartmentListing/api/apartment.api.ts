@@ -8,18 +8,14 @@ export const fetchApartmentById = (id: number) => {
 export const createApartment = (
   data: apartmentTypes.CreateApartmentPayload
 ) => {
-  return apiClient.post('/apartments', data, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  });
+  return apiClient.post('/apartments', data);
 };
 
 export const updateApartment = (
   id: number,
   data: apartmentTypes.UpdateApartmentPayload
 ) => {
-  return apiClient.put(`/apartments/${id}`, data, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  });
+  return apiClient.put(`/apartments/${id}`, data);
 };
 
 export const deleteApartment = (id: number) => {

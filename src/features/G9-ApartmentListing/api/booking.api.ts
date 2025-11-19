@@ -12,7 +12,7 @@ export const updateBooking = (id: number, data: bookingTypes.UpdateBooking) => {
   return apiClient.put(`/bookings/${id}`, data);
 };
 export const updateBookingStatus = (id: number, status: string) => {
-  return apiClient.put(`/bookings/${id}/status`, { status });
+  return apiClient.put(`/bookings/${id}/status`, { booking_status: status });
 };
 export const deleteBooking = (id: number) => {
   return apiClient.delete(`/bookings/${id}`);

@@ -92,7 +92,9 @@ export default function ApartmentDetailPage() {
     reviews: ratingArray.map((rating) => ({
       id: rating.id,
       author: `User ${rating.userId}`, // TODO: Join with user table for actual names
-      date: new Date(rating.createdAt).toLocaleDateString(),
+      date: rating.createdAt
+        ? new Date(rating.createdAt).toLocaleDateString()
+        : new Date().toLocaleDateString(),
       rating: rating.rating,
       comment: rating.comment,
       avatar: '👤',

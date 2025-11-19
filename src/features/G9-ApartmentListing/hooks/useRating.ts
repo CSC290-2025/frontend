@@ -38,18 +38,27 @@ export function useAverageRating(apartmentId: number) {
     },
     select: (data) => {
       // Handle the actual backend response structure
-      // If data.data is a number (like 0), convert it to the expected format
+      // Axios response: { data: { success: true, data: 3.75, timestamp: "..." }, status: 200, ... }
+      // The actual rating value is at data.data.data
+      if (data.data && typeof data.data.data === 'number') {
+        return { average: data.data.data };
+      }
+
+      // Fallback for legacy structure where data.data is the number directly
       if (typeof data.data === 'number') {
         return { average: data.data };
       }
-      // If data.data is already an object with average property, return it as is
+
+      // If data.data.data is already an object with average property, return it as is
       if (
         data.data &&
-        typeof data.data === 'object' &&
-        'average' in data.data
+        data.data.data &&
+        typeof data.data.data === 'object' &&
+        'average' in data.data.data
       ) {
-        return data.data;
+        return data.data.data;
       }
+
       // Fallback
       return { average: 0 };
     },
