@@ -1,9 +1,13 @@
 import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   usePostWalletsTransfer,
   useGetWalletsUserUserId,
+  getGetWalletsUserUserIdQueryKey,
 } from '@/api/generated/wallets';
+import { getGetTransactionsQueryKey } from '@/api/generated/transactions';
 import { Button } from '@/components/ui/button';
+import type { GetWalletsUserUserId200DataWallet } from '@/api/generated/model';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -17,7 +21,7 @@ import { toast } from 'sonner';
 import { ArrowLeftRight } from 'lucide-react';
 
 interface TransferModalProps {
-  wallet: any;
+  wallet: GetWalletsUserUserId200DataWallet | undefined;
   userId: string;
   onSuccess: () => void;
 }
@@ -36,9 +40,23 @@ export default function TransferModal({
   );
   const recipientWallet = recipientWalletResponse?.data?.data?.wallet;
 
+  const queryClient = useQueryClient();
+
   const { mutateAsync: transferFunds } = usePostWalletsTransfer({
     mutation: {
       onSuccess: () => {
+        // Invalidate transactions + both wallets' queries for immediate refresh
+        queryClient.invalidateQueries({
+          queryKey: getGetTransactionsQueryKey(),
+        });
+        queryClient.invalidateQueries({
+          queryKey: getGetWalletsUserUserIdQueryKey(Number(userId)),
+        });
+        if (transferToUserId) {
+          queryClient.invalidateQueries({
+            queryKey: getGetWalletsUserUserIdQueryKey(Number(transferToUserId)),
+          });
+        }
         onSuccess();
       },
     },

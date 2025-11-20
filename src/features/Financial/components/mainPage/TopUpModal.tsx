@@ -1,8 +1,15 @@
 import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { QRCodeSVG } from 'qrcode.react';
-import { usePostWalletsWalletIdTopUp } from '@/api/generated/wallets';
+import {
+  usePostWalletsWalletIdTopUp,
+  getGetWalletsUserUserIdQueryKey,
+} from '@/api/generated/wallets';
 import { usePostScbQrCreate } from '@/api/generated/scb';
+import { getGetTransactionsQueryKey } from '@/api/generated/transactions';
+import { getGetMetroCardsUserUserIdQueryKey } from '@/api/generated/metro-cards';
 import { Button } from '@/components/ui/button';
+import type { GetWalletsUserUserId200DataWallet } from '@/api/generated/model';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -16,7 +23,7 @@ import { toast } from 'sonner';
 import { QrCode, Wallet } from 'lucide-react';
 
 interface TopUpModalProps {
-  wallet: any; // Using any for now to match existing loose typing, ideally should be typed
+  wallet: GetWalletsUserUserId200DataWallet | undefined;
   userId: string;
   onSuccess: () => void;
 }
@@ -30,9 +37,21 @@ export default function TopUpModal({
   const [qrRawData, setQrRawData] = useState('');
   const [topUpAmount, setTopUpAmount] = useState('');
 
+  const queryClient = useQueryClient();
+
   const { mutateAsync: topUpWallet } = usePostWalletsWalletIdTopUp({
     mutation: {
       onSuccess: () => {
+        // Invalidate common related queries so the UI updates immediately
+        queryClient.invalidateQueries({
+          queryKey: getGetTransactionsQueryKey(),
+        });
+        queryClient.invalidateQueries({
+          queryKey: getGetWalletsUserUserIdQueryKey(Number(userId)),
+        });
+        queryClient.invalidateQueries({
+          queryKey: getGetMetroCardsUserUserIdQueryKey(Number(userId)),
+        });
         onSuccess();
       },
     },
@@ -42,6 +61,10 @@ export default function TopUpModal({
   const handleTopUp = async () => {
     if (!topUpAmount || Number(topUpAmount) <= 0) {
       toast.error('Please enter a valid amount');
+      return;
+    }
+    if (!wallet?.id) {
+      toast.error('Wallet not found');
       return;
     }
     try {

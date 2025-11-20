@@ -1,9 +1,12 @@
 import { useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   useGetWalletsUserUserId,
   usePostWallets,
   usePutWalletsWalletId,
+  getGetWalletsUserUserIdQueryKey,
 } from '@/api/generated/wallets';
+import { getGetTransactionsQueryKey } from '@/api/generated/transactions';
 import { Card, CardContent } from '@/components/ui/card';
 import { Wallet } from 'lucide-react';
 import AmountBox from '../components/metro-cards/AmountBox';
@@ -19,14 +22,25 @@ export default function FinancialPage() {
   const [loadedUserId, setLoadedUserId] = useState<number | null>(null);
 
   const { data: wallets, refetch } = useGetWalletsUserUserId(Number(userId));
+  const queryClient = useQueryClient();
   const { mutateAsync: createWallet } = usePostWallets({
     mutation: {
-      onSuccess: () => refetch(),
+      onSuccess: () => {
+        refetch();
+        queryClient.invalidateQueries({
+          queryKey: getGetTransactionsQueryKey(),
+        });
+      },
     },
   });
   const { mutateAsync: updateWallet } = usePutWalletsWalletId({
     mutation: {
-      onSuccess: () => refetch(),
+      onSuccess: () => {
+        refetch();
+        queryClient.invalidateQueries({
+          queryKey: getGetTransactionsQueryKey(),
+        });
+      },
     },
   });
 
@@ -110,7 +124,7 @@ export default function FinancialPage() {
               {/* Right Column: Services and History */}
               <div className="space-y-6">
                 <ServiceNavigator userId={loadedUserId?.toString() ?? '1'} />
-                <TransactionHistory />
+                <TransactionHistory userId={loadedUserId} wallet={wallet} />
               </div>
             </div>
             <WalletManagement wallet={wallet} updateWallet={updateWallet} />

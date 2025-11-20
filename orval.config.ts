@@ -11,7 +11,13 @@ export default defineConfig({
       target: '../openapi.json',
       filters: {
         mode: 'include',
-        tags: ['Wallets', 'MetroCards', 'Insurance Cards', 'SCB'],
+        tags: [
+          'Wallets',
+          'MetroCards',
+          'Insurance Cards',
+          'SCB',
+          'Transactions',
+        ],
       },
       // target: `${BACKEND_URL}/doc`,
     },
