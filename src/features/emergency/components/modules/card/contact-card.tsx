@@ -24,6 +24,9 @@ const ContactCard: FC<ContactCardProps> = ({ phoneNumber, contactName }) => {
               <Button
                 size="icon"
                 className="rounded-full bg-gray-300 text-white hover:bg-gray-400"
+                onClick={() => {
+                  window.location.href = `tel:${phoneNumber}`;
+                }}
               >
                 <Phone className="h-5 w-5" />
               </Button>
