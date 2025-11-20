@@ -1,25 +1,11 @@
 // Generouted, changes to this file will be overridden
- 
 
 import { components, hooks, utils } from '@generouted/react-router/client';
 
-export type Path =
-  | `/`
-  | `/activity`
-  | `/chat`
-  | `/demo-tracking`
-  | `/example`
-  | `/example/:id`
-  | `/hotLine`
-  | `/sos`
-  | `/sos/:id`
-  | `/sos/report`
-  | `/sos/report/:id`;
+export type Path = `/` | `/example` | `/example/:id`;
 
 export type Params = {
   '/example/:id': { id: string };
-  '/sos/:id': { id: string };
-  '/sos/report/:id': { id: string };
 };
 
 export type ModalPath = never;
