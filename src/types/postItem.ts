@@ -32,6 +32,7 @@ export interface ApiPost {
   updated_at: string;
   categories?: Category[];
   donater_id: number | null;
+  donate_to_department_id: number | null;
 }
 
 // Helper: map ApiPost -> PostItem

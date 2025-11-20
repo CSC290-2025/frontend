@@ -15,8 +15,8 @@ import {
   cancelRequest,
   updateRequestStatus,
   fetchPostById,
-  fetchPostRequests, // <-- 1. นำเข้าฟังก์ชัน API ใหม่
-  type ReceiverRequest, // <-- Type นี้เป็น Export Type
+  fetchPostRequests,
+  type ReceiverRequest,
 } from '@/features/freecycle/api/freecycle.api';
 import type { ApiPost, Category } from '@/types/postItem';
 
@@ -193,13 +193,7 @@ export function useDiscoverPage(
 
 // --- Receiver Requests Hooks ---
 
-/**
- * NEW: Hook to fetch all receiver requests for a specific post.
- * @param postId ID ของโพสต์
- * @param enabled True หากต้องการให้ Hook ทำงาน (i.e., user เป็นเจ้าของโพสต์)
- */
 export function usePostRequests(postId: number, enabled: boolean) {
-  // <-- 2. Hook นี้ต้อง Export
   return useQuery<ReceiverRequest[]>({
     queryKey: ['posts', postId, 'requests'],
     queryFn: () => fetchPostRequests(postId),
@@ -273,10 +267,10 @@ export function usePostsByUserId(userId?: number) {
 }
 
 /**
- * Hook สำหรับ Mock User ID = 1
+ * Hook Mock User ID = 23
  */
 export function useCurrentUser() {
-  const MOCK_CURRENT_USER_ID = 1; // mock User ID
+  const MOCK_CURRENT_USER_ID = 23; // mock User ID
   return {
     data: { id: MOCK_CURRENT_USER_ID, name: 'CurrentUser' },
     isLoading: false,

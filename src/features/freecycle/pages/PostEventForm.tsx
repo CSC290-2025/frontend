@@ -11,7 +11,7 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
   //  Mock User ID
   const { data: currentUser } = useCurrentUser();
   // const currentUserId = currentUser?.id || 1;
-  const currentUserId = 2;
+  const currentUserId = 23;
 
   const [formData, setFormData] = useState({
     host_user_id: currentUserId,
