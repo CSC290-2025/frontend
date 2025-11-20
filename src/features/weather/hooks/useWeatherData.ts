@@ -45,10 +45,22 @@ export type WeatherUIData = {
   warningDetail: string;
 };
 
-export function useWeatherData(locationId = 1) {
-  const current = useWeatherCurrent(locationId);
-  const hourly = useWeatherHourly(locationId);
-  const daily = useWeatherDaily(locationId);
+export function useWeatherData(locationId?: number) {
+  // prefer locationId from URL query (?locationId=...) if present (e.g. navigated from WeatherCity)
+  const getLocationIdFromQuery = (): number | undefined => {
+    if (typeof window === 'undefined') return undefined;
+    const param = new URLSearchParams(window.location.search).get('locationId');
+    if (!param) return undefined;
+    const parsed = Number.parseInt(param, 10);
+    return Number.isNaN(parsed) ? undefined : parsed;
+  };
+
+  // choose: query -> provided param -> fallback 1
+  const effectiveLocationId = getLocationIdFromQuery() ?? locationId ?? 1;
+
+  const current = useWeatherCurrent(effectiveLocationId);
+  const hourly = useWeatherHourly(effectiveLocationId);
+  const daily = useWeatherDaily(effectiveLocationId);
 
   const data = useMemo<WeatherUIData | undefined>(() => {
     if (!current.data || !current.data.current) {
