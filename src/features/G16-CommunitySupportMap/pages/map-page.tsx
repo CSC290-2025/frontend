@@ -5,7 +5,6 @@ import type { SuccessMarker, MapMarker } from '../interfaces/api';
 import { Trash2 } from 'lucide-react';
 
 // const parser = new DOMParser();
-
 // // A marker with a custom inline SVG.
 // const pinSvgString =
 //   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bus-front-icon lucide-bus-front"><path d="M4 6 2 7"/><path d="M10 6h4"/><path d="m22 7-2-1"/><rect width="16" height="16" x="4" y="3" rx="2"/><path d="M4 11h16"/><path d="M8 15h.01"/><path d="M16 15h.01"/><path d="M6 19v2"/><path d="M18 21v-2"/></svg>
@@ -276,8 +275,23 @@ const MapPage = () => {
   const mapRef = useRef<HTMLDivElement>(null);
   const [markers, setMarkers] = useState<MapMarker[]>([]);
   const [loading, setLoading] = useState(false);
-  function handleDeleteMarker(id: number) {
-    setMarkers((prev) => prev.filter((m) => m.id !== id));
+
+  const panelMarkers = markers.filter(isInAnyZone);
+
+  async function handleDeleteMarker(id: number) {
+    try {
+      const res = await fetch(`http://localhost:3000/api/markers/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!res.ok) {
+        console.error('Delete failed:', await res.text());
+        return;
+      }
+      setMarkers((prev) => prev.filter((m) => m.id !== id));
+    } catch (err) {
+      console.error('Delete failed:', err);
+    }
   }
 
   // Fetch markers from backend and normalize location
@@ -388,8 +402,6 @@ const MapPage = () => {
     });
   }, [markers]);
 
-  const panelMarkers = markers.filter(isInAnyZone);
-
   return (
     <div className="w-full space-y-4">
       {loading && <p className="text-sm text-gray-500">Loading markers...</p>}
@@ -404,8 +416,8 @@ const MapPage = () => {
           />
         </div>
         <div
-          className="hidden w-[260px] shrink-0 rounded-xl border border-neutral-300 bg-white/95 p-3 shadow-sm md:block"
-          style={{ maxHeight: 'calc(95vh - 180px)' }}
+          className="hidden w-[260px] shrink-0 flex-col rounded-xl border border-neutral-300 bg-white/95 p-3 shadow-sm md:flex"
+          style={{ height: 'calc(95vh - 180px)' }}
         >
           <div className="mb-2 text-sm font-semibold">
             Selected markers
@@ -414,14 +426,14 @@ const MapPage = () => {
             </span>
           </div>
 
-          <div className="space-y-2 overflow-y-auto pr-1">
+          <div className="flex-1 space-y-2 overflow-y-auto pr-1">
             {panelMarkers.map((m) => (
               <div
                 key={m.id}
                 className="flex items-start gap-2 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm"
               >
                 <div className="flex-1">
-                  <div className="text-xs font-semibold">Name : {m.id}</div>
+                  <div className="text-xs font-semibold">ID : {m.id}</div>
                   <div className="line-clamp-2 text-[11px] text-neutral-600">
                     {m.description || 'No description'}
                   </div>
