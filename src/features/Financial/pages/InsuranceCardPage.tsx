@@ -5,6 +5,9 @@ import {
 } from '@/features/Financial/hooks';
 import { useParams } from '@/router';
 import { Plus, CreditCard } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
+import { useNavigate } from 'react-router';
 import Loading from '@/features/Financial/components/metro-cards/Loading';
 import ReuseableButton from '@/features/Financial/components/metro-cards/ReuseableButton';
 import InsuranceCard from '@/features/Financial/components/insurance-cards/InsuranceCard';
@@ -12,6 +15,7 @@ import { toast } from 'sonner';
 
 export default function InsuranceCardPage() {
   const { user_id } = useParams('/financial/insurance/:user_id');
+  const navigate = useNavigate();
 
   const {
     data: insuranceCards,
@@ -93,13 +97,21 @@ export default function InsuranceCardPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mb-8">
+        <div className="mb-8 flex justify-between">
           <h1 className="text-3xl font-bold text-gray-900">
             Insurance Card Wallet
           </h1>
           <p className="mt-1 text-gray-600">
             Manage your insurance cards and check balance
           </p>
+          <Button
+            variant="ghost"
+            onClick={() => navigate('/financial')}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Dashboard
+          </Button>
         </div>
 
         <div className="mb-6">
