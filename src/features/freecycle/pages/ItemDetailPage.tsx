@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Edit, CheckCircle, RotateCw } from 'lucide-react';
 import { useNavigate } from '@/router';
 import { useParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
@@ -16,6 +16,8 @@ import {
   useCurrentUser,
   usePostRequests,
   useUpdateRequestStatus,
+  useMarkPostAsGiven,
+  useMarkPostAsNotGiven,
 } from '@/features/freecycle/hooks/useFreecycle';
 
 interface RequestsListProps {
@@ -55,6 +57,18 @@ function RequestsList({
     );
   };
 
+  const getStatusClasses = (status: string) => {
+    switch (status) {
+      case 'accepted':
+        return 'bg-green-100 text-green-700';
+      case 'rejected':
+        return 'bg-red-100 text-red-700';
+      case 'pending':
+      default:
+        return 'bg-yellow-100 text-yellow-700';
+    }
+  };
+
   if (isLoading) return <p className="text-gray-500">Loading requests...</p>;
   if (isError)
     return <p className="text-red-500">Failed to load request list.</p>;
@@ -79,13 +93,7 @@ function RequestsList({
               Receiver ID: {req.receiver_id}
             </span>
             <span
-              className={`ml-3 rounded-full px-3 py-1 text-sm font-semibold ${
-                req.status === 'accepted'
-                  ? 'bg-green-100 text-cyan-500'
-                  : req.status === 'rejected'
-                    ? 'bg-red-100 text-red-700'
-                    : 'bg-yellow-100 text-yellow-700'
-              }`}
+              className={`ml-3 rounded-full px-3 py-1 text-sm font-semibold ${getStatusClasses(req.status)}`}
             >
               {req.status}
             </span>
@@ -125,7 +133,14 @@ export default function ItemDetailPage() {
   const { id: itemId } = useParams<{ id: string }>();
   const postId = Number(itemId);
 
-  const { data: post, isLoading, isError } = usePostById(postId);
+  const {
+    data: post,
+    isLoading: postLoading,
+    isError: postError,
+  } = usePostById(postId);
+
+  const markAsGivenMutation = useMarkPostAsGiven(); // <-- NEW
+  const markAsNotGivenMutation = useMarkPostAsNotGiven(); // <-- NEW
 
   const { data: currentUser } = useCurrentUser();
   const currentUserId = currentUser?.id;
@@ -152,6 +167,25 @@ export default function ItemDetailPage() {
     isLoading: requestsLoading,
     isError: requestsError,
   } = usePostRequests(postId, isOwner);
+
+  // Toggle Given/Not Given
+  const handleToggleGiven = async () => {
+    if (!item) return;
+    if (!isOwner) return alert('You are not authorized to change the status.');
+
+    try {
+      if (item.is_given) {
+        await markAsNotGivenMutation.mutateAsync(item.id);
+        alert('Item marked as Available!');
+      } else {
+        await markAsGivenMutation.mutateAsync(item.id);
+        alert('Item marked as Given!');
+      }
+    } catch (err) {
+      alert('Failed to update item status');
+      console.error(err);
+    }
+  };
 
   useEffect(() => {
     if (item?.id) {
@@ -181,7 +215,7 @@ export default function ItemDetailPage() {
     }
   };
 
-  if (isLoading) {
+  if (postLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-cyan-600"></div>
@@ -189,7 +223,7 @@ export default function ItemDetailPage() {
     );
   }
 
-  if (isError || !item) {
+  if (postError || !item) {
     return (
       <div className="mx-auto max-w-4xl p-4">
         <h1 className="text-2xl font-bold text-red-600">Item Not Found</h1>
@@ -230,9 +264,49 @@ export default function ItemDetailPage() {
 
           <div className="flex flex-col p-8">
             <div className="flex-1">
-              <h1 className="mb-4 text-3xl font-bold text-gray-900">
-                {item.item_name}
-              </h1>
+              {/* Item Name + Edit Button */}
+              <div className="flex items-start justify-between">
+                <h1 className="mb-4 pr-4 text-3xl font-bold text-gray-900">
+                  {item.item_name}
+                </h1>
+
+                {isOwner && (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() =>
+                        navigate(`/freecycle/items/edit/${item.id}` as any)
+                      }
+                      className="flex-shrink-0 rounded-full bg-gray-100 p-2 text-cyan-600 transition-colors hover:bg-gray-200 hover:text-cyan-700"
+                      title="Edit Item Details"
+                    >
+                      <Edit className="h-5 w-5" />
+                    </button>
+
+                    {/* TOGGLE GIVEN / NOT GIVEN */}
+                    <button
+                      onClick={handleToggleGiven}
+                      disabled={
+                        markAsGivenMutation.isPending ||
+                        markAsNotGivenMutation.isPending
+                      }
+                      className={`flex-shrink-0 rounded-full p-2 text-white transition-colors disabled:opacity-50 ${
+                        item.is_given
+                          ? 'bg-red-500 hover:bg-red-600'
+                          : 'bg-cyan-500 hover:bg-cyan-600'
+                      }`}
+                      title={
+                        item.is_given ? 'Mark as Available' : 'Mark as Given'
+                      }
+                    >
+                      {item.is_given ? (
+                        <RotateCw className="h-5 w-5" />
+                      ) : (
+                        <CheckCircle className="h-5 w-5" />
+                      )}
+                    </button>
+                  </div>
+                )}
+              </div>
 
               {item.is_given && (
                 <span className="mb-4 inline-block rounded-full bg-gray-100 px-4 py-2 text-sm font-medium text-gray-600">
@@ -241,6 +315,7 @@ export default function ItemDetailPage() {
               )}
 
               <div className="space-y-4">
+                {/* ... (Description, Weight, Categories sections) ... */}
                 <div>
                   <h3 className="mb-1 text-sm font-semibold text-gray-700">
                     Description
@@ -301,7 +376,7 @@ export default function ItemDetailPage() {
                   disabled
                   className="mt-6 w-full cursor-not-allowed rounded-lg bg-gray-400 py-3 font-medium text-white opacity-80"
                 >
-                  You own this item
+                  You own this item 🚫
                 </button>
               ) : (
                 <button

@@ -1,5 +1,4 @@
 // Generouted, changes to this file will be overridden
- 
 
 import { components, hooks, utils } from '@generouted/react-router/client';
 
@@ -12,6 +11,7 @@ export type Path =
   | `/example/:id`
   | `/freecycle`
   | `/freecycle/items/:id`
+  | `/freecycle/items/edit/:id`
   | `/freecycle/my-items`
   | `/freecycle/post-event`
   | `/freecycle/post-item`
@@ -28,6 +28,7 @@ export type Params = {
   '/district-detail/:district': { district: string };
   '/example/:id': { id: string };
   '/freecycle/items/:id': { id: string };
+  '/freecycle/items/edit/:id': { id: string };
   '/power-bi/:type/:category': { type: string; category: string };
   '/power-bi/:type/:category/:id': {
     type: string;

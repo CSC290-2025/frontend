@@ -1,4 +1,4 @@
-import { Edit, Trash2, ArrowLeft } from 'lucide-react';
+import { Edit, Trash2, ArrowLeft, CheckCircle, RotateCw } from 'lucide-react';
 import type { PostItem } from '@/types/postItem';
 import { mapApiPostToItem } from '@/types/postItem';
 import ItemCard from '@/features/freecycle/components/ItemCard';
@@ -11,7 +11,7 @@ import {
 } from '@/features/freecycle/hooks/useFreecycle';
 
 //  MOCK USER
-const MOCK_USER_ID = 1;
+const MOCK_USER_ID = 23;
 
 export default function MyItemsPage() {
   const navigate = useNavigate();
@@ -152,7 +152,7 @@ export default function MyItemsPage() {
 
                 {/* ACTION BUTTONS */}
                 <div className="absolute top-2 right-2 flex gap-2 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
-                  <button
+                  {/* <button
                     onClick={(e) => {
                       e.stopPropagation();
                       handleToggleGiven(item);
@@ -168,6 +168,31 @@ export default function MyItemsPage() {
                     } disabled:cursor-not-allowed disabled:opacity-50`}
                   >
                     <Edit className="h-4 w-4" />
+                  </button> */}
+
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleToggleGiven(item);
+                    }}
+                    disabled={
+                      markAsGivenMutation.isPending ||
+                      markAsNotGivenMutation.isPending
+                    }
+                    className={`rounded-full p-2 text-white shadow-lg transition-all hover:shadow-xl ${
+                      item.is_given
+                        ? 'bg-red-500 hover:bg-red-600'
+                        : 'bg-cyan-500 hover:bg-cyan-600'
+                    } disabled:cursor-not-allowed disabled:opacity-50`}
+                    title={
+                      item.is_given ? 'Mark as Not Given' : 'Mark as Given'
+                    }
+                  >
+                    {item.is_given ? (
+                      <RotateCw className="h-4 w-4" />
+                    ) : (
+                      <CheckCircle className="h-4 w-4" />
+                    )}
                   </button>
 
                   <button
@@ -185,7 +210,7 @@ export default function MyItemsPage() {
                 {/* GIVEN TAG */}
                 {item.is_given && (
                   <div className="absolute top-2 left-2 rounded-full bg-cyan-500 px-3 py-1 text-xs font-semibold text-white shadow-lg">
-                    Given
+                    Given Away
                   </div>
                 )}
 
