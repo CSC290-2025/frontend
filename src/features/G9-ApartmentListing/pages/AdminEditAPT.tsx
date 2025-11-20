@@ -25,10 +25,10 @@ interface LocationData {
 }
 
 interface ImageData {
-  id: number;
-  file_path?: string;
+  id: string;
+  fileId: string;
   url?: string;
-  preview?: string;
+  apartmentId?: number;
 }
 export default function EditApartment(): React.ReactElement {
   const urlParams = new URLSearchParams(window.location.search);
@@ -215,9 +215,7 @@ export default function EditApartment(): React.ReactElement {
       const imageArray =
         existingImages?.data?.data || existingImages?.data || [];
       setExistingImageData(imageArray);
-      const imageUrls = imageArray.map(
-        (img: ImageData) => img.file_path || img.url || img.preview
-      );
+      const imageUrls = imageArray.map((img: ImageData) => img.url || '');
       setExistingImageUrls(imageUrls);
     }
   }, [existingImages]);
@@ -282,11 +280,11 @@ export default function EditApartment(): React.ReactElement {
 
   const removeExistingImage = async (index: number): Promise<void> => {
     try {
-      const imageToDelete = existingImageData[index];
-      if (imageToDelete?.id) {
-        await deleteFileMutation.mutateAsync(imageToDelete.id.toString());
+      const imageToDelete = existingImageData[index].fileId;
+      if (imageToDelete) {
+        await deleteFileMutation.mutateAsync(imageToDelete);
       }
-
+      console.log(imageToDelete, 'deleted');
       // Remove from local state after successful deletion
       setExistingImageUrls((prev) => prev.filter((_, i) => i !== index));
       setExistingImageData((prev) => prev.filter((_, i) => i !== index));
@@ -553,18 +551,6 @@ export default function EditApartment(): React.ReactElement {
       ] || []
     );
   };
-
-  if (isLoading || !apartmentData) {
-    return (
-      <div className="font-poppins min-h-screen bg-[#F9FAFB] p-4">
-        <div className="mx-auto max-w-4xl">
-          <div className="flex h-96 items-center justify-center">
-            <div className="text-xl">Loading apartment data...</div>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="font-poppins min-h-screen bg-[#F9FAFB] p-4">
@@ -881,7 +867,7 @@ export default function EditApartment(): React.ReactElement {
                       onClick={() => removeExistingImage(index)}
                       className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-white hover:bg-red-600"
                       type="button"
-                      disabled={deleteFileMutation.isPending}
+                      disabled={deleteFileMutation.isLoading}
                     >
                       <X className="h-4 w-4" />
                     </button>
@@ -1097,7 +1083,7 @@ export default function EditApartment(): React.ReactElement {
             <button
               onClick={handleSubmit}
               type="button"
-              disabled={isSubmitting}
+              disabled={isSubmitting || !formData.confirmed}
               className="rounded-lg bg-cyan-400 px-9 py-3 text-lg font-semibold text-white hover:bg-cyan-500 disabled:cursor-not-allowed disabled:bg-gray-400"
             >
               {isSubmitting ? 'Updating...' : 'Update'}

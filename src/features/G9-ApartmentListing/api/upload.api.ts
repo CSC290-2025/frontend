@@ -25,7 +25,7 @@ export const uploadFile = (apartmentId: number, file: File) => {
 
 // Delete a file by ID
 export const deleteFile = (fileId: string) => {
-  return apiClient.delete(`/upload/${fileId}`);
+  return apiClient.delete(`/upload/delete/${fileId}`);
 };
 
 // Legacy exports for backward compatibility
