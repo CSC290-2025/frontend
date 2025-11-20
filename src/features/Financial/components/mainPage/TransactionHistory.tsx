@@ -1,3 +1,4 @@
+// I WILL FIX THIS PAGE LATER
 import { useMemo, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import {
@@ -126,7 +127,6 @@ export default function TransactionHistory({
         created_at: w.created_at,
         amount: amt,
         title,
-        subtitle: w.description ?? undefined,
         service,
       };
     };
