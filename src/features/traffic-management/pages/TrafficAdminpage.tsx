@@ -10,31 +10,24 @@ import TrafficSettingPopup from '../components/TrafficSettingPopup';
 import { database } from '@/lib/firebase';
 import { MarkerClusterer } from '@googlemaps/markerclusterer';
 import ConfirmPopup from '../components/Comfirmpopup';
-import ControlPanel from '../components/ControlPanel';
-import LocationInput from '../components/LocationInput';
 import MapSettingsDialog from '../components/MapSettingsDialog';
-import TrafficLightsList from '../components/TrafficLightsList';
-import type { trafficLight, lightRequest } from '../types/traffic.types';
+import TrafficDashboard from '../components/TrafficLightListAdmin';
+import type { lightRequest } from '../types/traffic.types';
+import { da } from 'zod/v4/locales';
 
-interface TrafficLight {
-  color: 'red' | 'yellow' | 'green';
-  direction: string;
+interface TrafficData {
+  interid: number;
+  roadid: number;
   lat: number;
   lng: number;
-  online: boolean;
-  remainingTime: number;
-  timestamp: number;
+  autoON: boolean;
+  color: number;
+  remaintime: number;
+  timestamp: string;
 }
 
-interface Junction {
-  currentActive: string;
-  lights: {
-    [key: string]: TrafficLight;
-  };
-}
-
-interface SignalWithMeta extends TrafficLight {
-  junctionId: string;
+interface TrafficRecord extends TrafficData {
+  key: string;
 }
 
 interface MapSettings {
@@ -96,13 +89,13 @@ function calculateDistance(
 }
 
 function useTeam10TrafficSignals(refreshRate: number) {
-  const [signals, setSignals] = useState<SignalWithMeta[]>([]);
+  const [TrafficLight, setTrafficLight] = useState<TrafficRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState<number>(Date.now());
 
   useEffect(() => {
-    const team10Ref = ref(database, 'teams/10/junctions');
+    const team10Ref = ref(database, 'teams/10/traffic_lights');
 
     const fetchData = () => {
       const unsubscribe = onValue(
@@ -112,47 +105,43 @@ function useTeam10TrafficSignals(refreshRate: number) {
             const data = snapshot.val();
 
             if (!data) {
-              setSignals([]);
+              setTrafficLight([]);
               setError('No traffic data available for team 10');
               setLoading(false);
               return;
             }
 
-            const allSignals: SignalWithMeta[] = [];
+            const allTraffic: TrafficRecord[] = [];
 
-            Object.entries(data).forEach(
-              ([junctionId, junctionData]: [string, any]) => {
-                if (junctionData?.lights) {
-                  Object.entries(junctionData.lights).forEach(
-                    ([lightKey, light]: [string, any]) => {
-                      if (
-                        light &&
-                        typeof light === 'object' &&
-                        isValidSignal(light)
-                      ) {
-                        const lat = parseCoordinate(light.lat);
-                        const lng = parseCoordinate(light.lng);
+            Object.entries(data).forEach(([key, signalData]: [string, any]) => {
+              // 1. Check if the signalData itself is a valid signal object
+              if (
+                signalData &&
+                typeof signalData === 'object' &&
+                isValidSignal(signalData)
+              ) {
+                const lat = parseCoordinate(signalData.lat);
+                const lng = parseCoordinate(signalData.lng);
 
-                        if (lat !== null && lng !== null) {
-                          allSignals.push({
-                            color: light.color || 'red',
-                            direction: light.direction || lightKey,
-                            lat,
-                            lng,
-                            online: light.online ?? true,
-                            remainingTime: parseInt(light.remainingTime) || 0,
-                            timestamp: light.timestamp || Date.now(),
-                            junctionId,
-                          });
-                        }
-                      }
-                    }
-                  );
+                if (lat !== null && lng !== null) {
+                  allTraffic.push({
+                    interid: signalData.interid,
+                    roadid: signalData.roadid,
+                    color: signalData.color,
+                    lat: lat, // Use parsed coordinates
+                    lng: lng, // Use parsed coordinates
+                    autoON: signalData.autoON ?? false,
+                    remaintime: parseInt(signalData.remaintime) || 0,
+                    timestamp: signalData.timestamp || new Date().toISOString(),
+                    key, // Use the Firebase key for unique identification
+                  } as TrafficRecord); // Cast for type safety
                 }
               }
-            );
+            });
+            console.log('Data ->', data);
+            console.log('All traffic ->', allTraffic);
 
-            setSignals(allSignals);
+            setTrafficLight(allTraffic);
             setError(null);
             setLastUpdate(Date.now());
           } catch (err) {
@@ -182,11 +171,11 @@ function useTeam10TrafficSignals(refreshRate: number) {
     };
   }, [refreshRate]);
 
-  return { signals, loading, error, lastUpdate };
+  return { TrafficLight, loading, error, lastUpdate };
 }
 
 interface TrafficSignalMarkerProps {
-  signal: SignalWithMeta;
+  Trafficlight: TrafficRecord;
   isSelected: boolean;
   onClick: () => void;
   setMarkerRef?: (
@@ -196,7 +185,7 @@ interface TrafficSignalMarkerProps {
 }
 
 function TrafficSignalMarker({
-  signal,
+  Trafficlight,
   isSelected,
   onClick,
   setMarkerRef,
@@ -207,42 +196,56 @@ function TrafficSignalMarker({
     green: '#22c55e',
   };
 
-  const markerKey = `${signal.junctionId}-${signal.direction}`;
+  const markerKey = `Intersection : ${Trafficlight.interid} - road : ${Trafficlight.roadid}`;
 
-  if (!signal.online) {
+  if (!Trafficlight.autoON) {
     return null;
   }
 
   return (
     <AdvancedMarker
-      position={{ lat: signal.lat, lng: signal.lng }}
-      title={`Junction: ${signal.junctionId} | Direction: ${signal.direction}`}
+      position={{ lat: Trafficlight.lat, lng: Trafficlight.lng }}
+      title={`Intersection : ${Trafficlight.interid} | Road : ${Trafficlight.roadid}`}
       onClick={onClick}
       ref={(marker) => setMarkerRef && setMarkerRef(marker, markerKey)}
     >
+           {' '}
       <div className="flex cursor-pointer flex-col items-center">
+               {' '}
         <div
           className={`flex items-center justify-center rounded-full border-4 shadow-lg ${
             isSelected ? 'border-blue-500 ring-4 ring-blue-300' : 'border-white'
           }`}
           style={{
-            backgroundColor: colorMap[signal.color],
+            backgroundColor:
+              colorMap[
+                Trafficlight.color == 1
+                  ? 'red'
+                  : Trafficlight.color == 3
+                    ? 'green'
+                    : 'yellow'
+              ],
             width: '48px',
             height: '48px',
           }}
         >
+                   {' '}
           <span className="text-base font-bold text-white">
-            {signal.remainingTime}
+                        {Trafficlight.remaintime}         {' '}
           </span>
+                 {' '}
         </div>
+               {' '}
         <div
           className={`mt-1 rounded px-2 py-1 text-xs font-semibold shadow-md ${
             isSelected ? 'bg-blue-500 text-white' : 'bg-white text-gray-800'
           }`}
         >
-          {signal.junctionId}
+                    {Trafficlight.interid}       {' '}
         </div>
+             {' '}
       </div>
+         {' '}
     </AdvancedMarker>
   );
 }
@@ -250,8 +253,8 @@ function TrafficSignalMarker({
 interface MapContentProps {
   settings: MapSettings;
   userLocation: { lat: number; lng: number } | null;
-  selectedSignal: SignalWithMeta | null;
-  onSignalClick: (signal: SignalWithMeta) => void;
+  selectedSignal: TrafficRecord | null;
+  onSignalClick: (Traffic: TrafficRecord) => void;
 }
 
 function MapContent({
@@ -261,10 +264,12 @@ function MapContent({
   onSignalClick,
 }: MapContentProps) {
   const map = useMap();
-  const { signals, loading, error } = useTeam10TrafficSignals(
+  const { TrafficLight, loading, error } = useTeam10TrafficSignals(
     settings.refreshRate
   );
-  const [selectedlight, setSelectedlight] = useState<trafficLight | null>(null);
+  const [selectedlight, setSelectedlight] = useState<TrafficRecord>(
+    {} as TrafficRecord
+  );
   const [popupOpen, setPopupOpen] = useState(false);
   const [trafficLayer, setTrafficLayer] =
     useState<google.maps.TrafficLayer | null>(null);
@@ -279,21 +284,20 @@ function MapContent({
 
   const visibleSignals = useMemo(() => {
     if (!userLocation || settings.visibilityRange === 0) {
-      return signals;
+      return TrafficLight;
     }
 
-    return signals.filter((signal) => {
+    return TrafficLight.filter((Traffic) => {
       const distance = calculateDistance(
         userLocation.lat,
         userLocation.lng,
-        signal.lat,
-        signal.lng
+        Traffic.lat,
+        Traffic.lng
       );
       return distance <= settings.visibilityRange;
     });
-  }, [signals, userLocation, settings.visibilityRange]);
+  }, [TrafficLight, userLocation, settings.visibilityRange]); // Handle traffic layer
 
-  // Handle traffic layer
   useEffect(() => {
     if (!map) return;
 
@@ -307,9 +311,8 @@ function MapContent({
       trafficLayer.setMap(null);
       setTrafficLayer(null);
     }
-  }, [map, settings.showTraffic, trafficLayer]);
+  }, [map, settings.showTraffic, trafficLayer]); // Handle transit layer
 
-  // Handle transit layer
   useEffect(() => {
     if (!map) return;
 
@@ -323,9 +326,8 @@ function MapContent({
       transitLayer.setMap(null);
       setTransitLayer(null);
     }
-  }, [map, settings.showTransit, transitLayer]);
+  }, [map, settings.showTransit, transitLayer]); // Handle bicycling layer
 
-  // Handle bicycling layer
   useEffect(() => {
     if (!map) return;
 
@@ -339,9 +341,8 @@ function MapContent({
       bicyclingLayer.setMap(null);
       setBicyclingLayer(null);
     }
-  }, [map, settings.showBicycling, bicyclingLayer]);
+  }, [map, settings.showBicycling, bicyclingLayer]); // Handle marker clustering
 
-  // Handle marker clustering
   useEffect(() => {
     if (!map) return;
 
@@ -368,11 +369,12 @@ function MapContent({
         clustererRef.current = null;
       }
     };
-  }, [map, settings.enableClustering, visibleSignals.length]);
+  }, [map, settings.enableClustering, visibleSignals.length]); // Jump to selected signal
 
-  // Jump to selected signal
   useEffect(() => {
     if (map && selectedSignal) {
+      setPopupOpen(true);
+      console.log('Selected Signal:', selectedSignal.interid);
       map.panTo({ lat: selectedSignal.lat, lng: selectedSignal.lng });
       map.setZoom(18);
     }
@@ -384,9 +386,8 @@ function MapContent({
         markersMapRef.current[key] = marker;
       } else {
         delete markersMapRef.current[key];
-      }
+      } // Update clusterer when markers change
 
-      // Update clusterer when markers change
       if (map && settings.enableClustering && clustererRef.current) {
         const markerArray = Object.values(markersMapRef.current);
         clustererRef.current.clearMarkers();
@@ -399,10 +400,14 @@ function MapContent({
   if (loading) {
     return (
       <div className="flex h-full w-full items-center justify-center bg-gray-100">
+               {' '}
         <div className="text-center">
+                   {' '}
           <div className="mb-4 h-12 w-12 animate-spin rounded-full border-4 border-blue-500 border-t-transparent"></div>
-          <p className="text-gray-600">Loading traffic signals...</p>
+                    <p className="text-gray-600">Loading traffic signals...</p> 
+               {' '}
         </div>
+             {' '}
       </div>
     );
   }
@@ -410,68 +415,87 @@ function MapContent({
   if (error) {
     return (
       <div className="flex h-full w-full items-center justify-center bg-gray-100">
+               {' '}
         <div className="text-center">
-          <p className="mb-2 text-red-600">Error: {error}</p>
-          <p className="text-sm text-gray-500">Check console for details</p>
+                    <p className="mb-2 text-red-600">Error: {error}</p>         {' '}
+          <p className="text-sm text-gray-500">Check console for details</p>   
+             {' '}
         </div>
+             {' '}
       </div>
     );
   }
 
-  if (signals.length === 0) {
+  if (TrafficLight.length === 0) {
     return (
       <div className="flex h-full w-full items-center justify-center bg-gray-100">
+               {' '}
         <div className="text-center">
-          <p className="text-gray-600">No traffic signals found in team 10</p>
+                   {' '}
+          <p className="text-gray-600">No traffic signals found in team 10</p> 
+                 {' '}
           <p className="mt-2 text-xs text-gray-500">
-            Check Firebase connection
+                        Check Firebase connection          {' '}
           </p>
+                 {' '}
         </div>
+             {' '}
       </div>
     );
   }
 
   return (
     <>
-      {visibleSignals.map((signal, index) => (
+           {' '}
+      {visibleSignals.map((Traffic, index) => (
         <TrafficSignalMarker
-          key={`${signal.junctionId}-${signal.direction}-${index}`}
-          signal={signal}
-          isSelected={
-            selectedSignal?.junctionId === signal.junctionId &&
-            selectedSignal?.direction === signal.direction
-          }
-          onClick={() => onSignalClick(signal)}
+          key={`${Traffic.interid}-${Traffic.roadid}-${index}`}
+          Trafficlight={Traffic}
+          isSelected={selectedSignal?.interid === Traffic.interid}
+          onClick={() => onSignalClick(Traffic)}
           setMarkerRef={setMarkerRef}
         />
       ))}
-
+           {' '}
       <div className="absolute bottom-4 left-4 rounded-lg bg-white px-4 py-2 shadow-lg">
+               {' '}
         <p className="text-sm font-semibold text-gray-800">
-          {visibleSignals.filter((s) => s.online).length} Active Signals
+                    {visibleSignals.filter((s) => s.autoON).length} Active
+          Signals        {' '}
         </p>
+               {' '}
         <p className="text-xs text-gray-600">
-          {new Set(visibleSignals.map((s) => s.junctionId)).size} Junctions
+                    {new Set(visibleSignals.map((s) => s.interid)).size}{' '}
+          Junctions        {' '}
         </p>
+               {' '}
         {settings.visibilityRange > 0 && userLocation && (
           <p className="mt-1 text-xs text-gray-500">
-            Within {settings.visibilityRange}m
+                        Within {settings.visibilityRange}m          {' '}
           </p>
         )}
+               {' '}
         {settings.enableClustering && (
           <p className="mt-1 text-xs text-blue-600">Clustering enabled</p>
         )}
+             {' '}
       </div>
-
+           {' '}
       <TrafficSettingPopup
         open={popupOpen}
         onOpenChange={(v) => setPopupOpen(v)}
-        trafficLight={selectedlight}
+        Lkey={String(selectedSignal?.key)}
+        currentColor={Number(selectedSignal?.color)}
+        remaintime={Number(selectedSignal?.remaintime)}
         onSave={(updated) => {
-          setSelectedlight((prev) => (prev ? { ...prev, ...updated } : null));
+          setSelectedlight((prev) => {
+            if (!prev) return prev; // or throw error
+            return { ...prev, status: 1 };
+          });
           setPopupOpen(false);
         }}
       />
+         {' '}
     </>
   );
 }
@@ -517,7 +541,7 @@ export default function TrafficAdminpage() {
     lat: number;
     lng: number;
   } | null>(null);
-  const [selectedSignal, setSelectedSignal] = useState<SignalWithMeta | null>(
+  const [selectedSignal, setSelectedSignal] = useState<TrafficRecord | null>(
     null
   );
   const [settings, setSettings] = useState<MapSettings>({
@@ -579,12 +603,9 @@ export default function TrafficAdminpage() {
     setShowSettings(false);
   };
 
-  const handleSignalSelect = useCallback((signal: SignalWithMeta) => {
+  const handleSignalSelect = useCallback((signal: TrafficRecord) => {
     setSelectedSignal((prev) => {
-      if (
-        prev?.junctionId === signal.junctionId &&
-        prev?.direction === signal.direction
-      ) {
+      if (prev?.interid === signal.interid && prev?.roadid === signal.roadid) {
         return null;
       }
       return signal;
@@ -595,22 +616,25 @@ export default function TrafficAdminpage() {
 
   return (
     <div className="relative mt-5 flex h-screen w-full gap-4">
-      {/* Location Input */}
+            {/* Location Input */}     {' '}
       <div className="absolute top-10 left-2/3 z-10 flex -translate-x-1/2 items-center gap-3 rounded-full bg-white px-4 py-2 shadow-lg">
+               {' '}
         <svg
           className="h-6 w-6 text-gray-400"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
         >
+                   {' '}
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
             strokeWidth={2}
             d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
           />
+                 {' '}
         </svg>
-
+               {' '}
         <input
           type="text"
           placeholder="Search your destination"
@@ -618,24 +642,24 @@ export default function TrafficAdminpage() {
           onChange={(e) => setDestination(e.target.value)}
           className="min-w-[250px] rounded-full border-none px-3 py-2 outline-none"
         />
-
+               {' '}
         <button
           onClick={handleStart}
           className="rounded-full bg-blue-600 px-8 py-2 font-medium text-white transition hover:bg-blue-700"
         >
-          search
+                    search        {' '}
         </button>
+             {' '}
       </div>
-
-      <TrafficLightsList
-        onSignalSelect={handleSignalSelect}
-        selectedSignal={selectedSignal}
-      />
-
+           {/*<TrafficDashboard/>*/}     {' '}
       <div className="flex flex-1 flex-row">
+               {' '}
         <div className="mx-auto flex w-full max-w-[1100px] flex-col items-center rounded-xl border-2 border-gray-200 bg-white p-6 shadow-md">
+                   {' '}
           <div className="relative h-[600px] w-full overflow-hidden rounded-lg">
+                       {' '}
             <APIProvider apiKey={apiKey}>
+                           {' '}
               <Map
                 mapId="traffic-signals-map"
                 defaultCenter={initialCenter}
@@ -653,128 +677,159 @@ export default function TrafficAdminpage() {
                 maxZoom={settings.maxZoom}
                 className="h-full w-full"
               >
+                               {' '}
                 <MapContent
                   settings={settings}
                   userLocation={userLocation}
                   selectedSignal={selectedSignal}
                   onSignalClick={handleSignalSelect}
                 />
+                             {' '}
               </Map>
+                         {' '}
             </APIProvider>
+                     {' '}
           </div>
+                 {' '}
         </div>
-
-        {/* Control Panel */}
-
+                {/* Control Panel */}       {' '}
         <div className="absolute top-15 right-8 z-10 mt-12 flex flex-col gap-2">
+                   {' '}
           {!requestOpen && !signalOpen && (
             <button
               onClick={() => handleMapSettingsClick()}
               className="flex items-center gap-2 rounded-lg bg-blue-600 px-6 py-3 text-white shadow-lg hover:bg-blue-700"
             >
+                           {' '}
               <svg
                 className="h-5 w-5"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
               >
+                               {' '}
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
                   d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
                 />
+                             {' '}
               </svg>
-              Map Settings
+                            Map Settings            {' '}
             </button>
           )}
-
-          {/*Emer*/}
+                    {/*Emer*/}         {' '}
           {!settingsOpen && !signalOpen && (
             <button
               onClick={() => setrequestOpen(!requestOpen)}
               className="relative flex items-center gap-2 rounded-lg bg-red-600 px-6 py-3 text-white shadow-lg hover:bg-red-700"
             >
+                           {' '}
               {emergencyRequests.length > 0 && (
                 <>
+                                   {' '}
                   <span className="absolute -top-2 -right-2 h-5 w-5 rounded-full border-2 border-white bg-red-500" />
+                                   {' '}
                   {/*<span className="absolute -top-2.75 -right-2 h-5 w-5 text-red-500 text-center" >{emergencyRequests.length}</span>*/}
+                                   {' '}
                   <span className="absolute -top-2 -right-2 h-5 w-5 animate-ping rounded-full bg-red-500" />
+                                 {' '}
                 </>
               )}
+                           {' '}
               <svg
                 className="h-5 w-5"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
               >
+                               {' '}
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
                   d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
                 />
+                             {' '}
               </svg>
-              Emergency Request
+                            Emergency Request            {' '}
             </button>
           )}
-
-          {/*Signal*/}
+                    {/*Signal*/}         {' '}
           {!settingsOpen && !requestOpen && (
             <button
               onClick={() => setsignalOpen(!signalOpen)}
               className="relative flex items-center gap-2 rounded-lg bg-yellow-500 px-6 py-3 text-white shadow-lg hover:bg-yellow-600"
             >
+                           {' '}
               {LightRequest.length > 0 && (
                 <>
+                                   {' '}
                   <span className="absolute -top-2 -right-2 h-5 w-5 rounded-full border-2 border-white bg-red-500" />
+                                   {' '}
                   {/*<span className="absolute -top-2.75 -right-2 h-5 w-5 text-red-500 text-center" >{emergencyRequests.length}</span>*/}
+                                   {' '}
                   <span className="absolute -top-2 -right-2 h-5 w-5 animate-ping rounded-full bg-red-500" />
+                                 {' '}
                 </>
               )}
+                           {' '}
               <svg
                 className="h-5 w-5"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
               >
+                               {' '}
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
                   d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
                 />
+                             {' '}
               </svg>
-              Signal offline
+                            Signal offline            {' '}
             </button>
           )}
-
-          {/*Emer re*/}
+                    {/*Emer re*/}         {' '}
           {requestOpen && (
             <div className="max-h-80 max-w-md overflow-y-auto rounded-lg border border-gray-200 bg-white p-6 shadow-lg">
+                           {' '}
               <div className="space-y-4">
+                               {' '}
                 <div className="flex items-center justify-between">
+                                   {' '}
                   <h3 className="text-lg font-semibold text-gray-800">
-                    Emergency Requests
+                                        Emergency Requests                
+                     {' '}
                   </h3>
+                                   {' '}
                   <button
                     onClick={() => setrequestOpen(false)}
                     className="text-xl text-gray-500 hover:text-gray-700"
                   >
-                    ×
+                                        ×                  {' '}
                   </button>
+                                 {' '}
                 </div>
-
+                               {' '}
                 <div className="max-h-96 space-y-3 overflow-y-auto">
+                                   {' '}
                   {emergencyRequests.map((request) => (
                     <div
                       key={request.id}
                       className="rounded-md border border-gray-200 p-3 hover:bg-gray-50"
                     >
+                                           {' '}
                       <div className="mb-2 flex items-start justify-between">
+                                               {' '}
                         <div className="font-semibold text-gray-800">
-                          {request.location}
+                                                    {request.location}         
+                                       {' '}
                         </div>
+                                               {' '}
                         <span
                           className={`rounded-full px-2 py-1 text-xs font-bold ${
                             request.status === 'Active'
@@ -782,99 +837,153 @@ export default function TrafficAdminpage() {
                               : 'bg-green-100 text-green-700'
                           }`}
                         >
-                          {request.status}
+                                                    {request.status}           
+                                     {' '}
                         </span>
+                                             {' '}
                       </div>
+                                           {' '}
                       <div className="text-sm text-gray-600">
+                                               {' '}
                         <p>
-                          <strong>Reason:</strong> {request.reason}
+                                                    <strong>Reason:</strong>{' '}
+                          {request.reason}                       {' '}
                         </p>
+                                               {' '}
                         <p>
-                          <strong>Time:</strong> {request.time}
+                                                    <strong>Time:</strong>{' '}
+                          {request.time}                       {' '}
                         </p>
+                                             {' '}
                       </div>
+                                         {' '}
                     </div>
                   ))}
+                                 {' '}
                 </div>
+                             {' '}
               </div>
+                         {' '}
             </div>
           )}
-
-          {/*Signal off*/}
+                    {/*Signal off*/}         {' '}
           {signalOpen && (
             <div className="max-h-80 max-w-md overflow-y-auto rounded-lg border border-gray-200 bg-white p-6 shadow-lg">
+                           {' '}
               <div className="space-y-4">
+                               {' '}
                 <div className="flex items-center justify-between">
+                                   {' '}
                   <h3 className="text-lg font-semibold text-gray-800">
-                    Offline Signals
+                                        Offline Signals                  {' '}
                   </h3>
+                                   {' '}
                   <button
                     onClick={() => setsignalOpen(false)}
                     className="text-xl text-gray-500 hover:text-gray-700"
                   >
-                    ×
+                                        ×                  {' '}
                   </button>
+                                 {' '}
                 </div>
-
+                               {' '}
                 <div className="max-h-96 space-y-3 overflow-y-auto">
+                                   {' '}
                   {LightRequest.length > 0 ? (
                     LightRequest.map((LR) => (
                       <div
                         key={LR.traffic_light_id}
                         className="rounded-md border border-yellow-200 bg-yellow-50 p-3 hover:bg-yellow-100"
                       >
+                                               {' '}
                         <div className="mb-2 flex items-start justify-between">
+                                                   {' '}
                           <div className="font-semibold text-gray-800">
-                            Traffic Light NO. {LR.traffic_light_id}
+                                                        Traffic Light NO.{' '}
+                            {LR.traffic_light_id}                         {' '}
                           </div>
+                                                   {' '}
                           <span className="rounded-full bg-yellow-100 px-2 py-1 text-xs font-bold text-yellow-700">
-                            Offline
+                                                        Offline                
+                                     {' '}
                           </span>
+                                                 {' '}
                         </div>
+                                               {' '}
                         <div className="text-sm text-gray-600">
+                                                   {' '}
                           <p>
-                            <strong>Reason:</strong> {LR.reason}
+                                                        <strong>Reason:</strong>{' '}
+                            {LR.reason}                         {' '}
                           </p>
+                                                   {' '}
                           <p>
-                            <strong>Request by</strong> {LR.requested_by}
+                                                       {' '}
+                            <strong>Request by</strong> {LR.requested_by}       
+                                             {' '}
                           </p>
+                                                   {' '}
                           <p>
-                            <strong>Last Seen:</strong> {LR.requested_at}
+                                                       {' '}
+                            <strong>Last Seen:</strong> {LR.requested_at}       
+                                             {' '}
                           </p>
+                                                 {' '}
                         </div>
+                                             {' '}
                       </div>
                     ))
                   ) : (
                     <p className="py-4 text-center text-gray-500">
-                      No offline signals
+                                            No offline signals                  
+                       {' '}
                     </p>
                   )}
+                                 {' '}
                 </div>
+                             {' '}
               </div>
+                         {' '}
             </div>
           )}
+                 {' '}
         </div>
-
-        {/*Note*/}
+                {/*Note*/}       {' '}
         <div className="absolute bottom-10 left-2/3 z-10 -translate-x-1/2 rounded-lg border border-yellow-400 bg-yellow-100 px-4 py-2 text-sm">
+                   {' '}
           <p className="text-yellow-800">
-            <strong>Note : </strong>
-            Now you are on Traffic Admin page
+                        <strong>Note : </strong>            Now you are on
+            Traffic Admin page          {' '}
           </p>
+                 {' '}
         </div>
-
+               {' '}
+        <ConfirmPopup
+          open={confirmOpen}
+          onOpenChange={setConfirmOpen}
+          title="Confirm Settings"
+          description={`Are you sure you want to save these settings? Refresh rate will be set to bababa ${refreshrate}.`}
+          confirmText="Save"
+          cancelText="Cancel"
+          onConfirm={() => {
+            setSettingsOpen(false);
+          }}
+        />
+               {' '}
         <MapSettingsDialog
           open={showSettings}
           onClose={handleCloseSettings}
           onSave={handleSaveSettings}
           currentSettings={settings}
         />
+             {' '}
       </div>
+         {' '}
     </div>
   );
 }
 
 /*<ControlPanel
-          onMapSettingsClick={handleMapSettingsClick}
-          onEmergencyClick={handleEmergencyClick}
-        /> */
+          onMapSettingsClick={handleMapSettingsClick}
+          onEmergencyClick={handleEmergencyClick}
+        /> */

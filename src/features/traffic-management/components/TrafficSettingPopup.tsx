@@ -12,89 +12,150 @@ import { Button } from '@/components/ui/button';
 import ConfirmPopup from './Comfirmpopup';
 import type { trafficLight } from '../types/traffic.types';
 import { putTrafficLight } from '../api/signal.api';
-import { set } from 'firebase/database';
+import { initializeApp } from 'firebase/app';
+import type { FirebaseApp } from 'firebase/app';
+import { getDatabase, ref, onValue, update } from 'firebase/database';
+import type { DatabaseReference } from 'firebase/database';
+
+interface TrafficData {
+  interid: number;
+  roadid: number;
+  lat: number;
+  lng: number;
+  autoON: boolean;
+  color: number;
+  remaintime: number;
+  timestamp: string;
+}
+
+interface TrafficRecord extends TrafficData {
+  key: string;
+}
 
 interface TrafficSettingPopupProps {
   open: boolean;
-  trafficLight: trafficLight | null;
+  Lkey: string | null;
+  currentColor: number | null;
+  remaintime: number | null;
   onOpenChange: (open: boolean) => void;
   onSave?: (trafficLight: trafficLight) => void;
 }
 
+// **โปรดแทนที่ด้วย Firebase Config ของคุณ**
+const firebaseConfig = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+};
+
+// **กำหนด ID ของสี่แยกที่คุณต้องการติดตาม**
+const Traffic_ID = 15;
+
+// Initialize Firebase
+const app: FirebaseApp = initializeApp(firebaseConfig);
+const database = getDatabase(app);
+const trafficRef: DatabaseReference = ref(
+  database,
+  `teams/10/traffic_lights/${Traffic_ID}`
+);
+
 export default function TrafficSettingPopup({
   open,
-  trafficLight,
+  Lkey,
+  currentColor,
+  remaintime,
   onOpenChange,
   onSave,
 }: TrafficSettingPopupProps) {
-  const [intersectionId, setIntersectionId] = useState(
-    trafficLight?.intersection_id ?? 0
-  );
-  const [TrafficID, setTrafficID] = useState(trafficLight?.id ?? 0);
-  const [color, setColor] = useState(trafficLight?.current_color);
-  const [duration, setDuration] = useState(trafficLight?.status);
+  const [TrafficLight, setTrafficLight] = useState<TrafficRecord[]>([]);
+
+  const [intersectionId, setIntersectionId] = useState(0);
+  const [TrafficID, setTrafficID] = useState(0);
+  const [color, setColor] = useState(0);
+  const [duration, setDuration] = useState(0);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pendingUpdate, setPendingUpdate] = useState<trafficLight | null>(null);
-  const [Automode, setAutomode] = useState(trafficLight?.auto_mode);
-  const [greenduration, setGreenduration] = useState(
-    trafficLight?.green_duration
-  );
-  const [redduration, setRedduration] = useState(trafficLight?.red_duration);
+  const [Automode, setAutomode] = useState(false);
+  const [greenduration, setGreenduration] = useState(0);
+  const [redduration, setRedduration] = useState(0);
+  const [roadid, setRoadid] = useState(0);
+  const [Lstatus, setLstatus] = useState(0);
+  const [density, setDensity] = useState(0);
+  const [lat, setLat] = useState(0);
+  const [lng, setLng] = useState(0);
+  const [roadname, setRoadname] = useState('');
 
   // Sync local state when the traffic light or open changes
   useEffect(() => {
-    if (trafficLight) {
-      setIntersectionId(trafficLight.intersection_id);
-      setTrafficID(trafficLight.id);
+    if (Lkey) {
+      setTrafficID(Number(Lkey));
 
       (async () => {
         try {
           const base = import.meta.env.VITE_API_BASE_URL ?? '';
-          const url = `http://localhost:3333/traffic-lights/${trafficLight.id}`;
+          const url = `http://localhost:3333/traffic-lights/${TrafficID}`;
           const res = await fetch(url);
           if (!res.ok) throw new Error('Failed to fetch traffic light');
           const response: any = await res.json();
 
           console.log('This traffic light data:', response);
-
           console.log('Current traffic data:', response.data.trafficLight);
-          // Normalize current_color (API may return number or string)
-          setColor(response.data.trafficLight.current_color);
+
+          setColor(Number(currentColor));
+          setDuration(Number(remaintime));
+
+          setIntersectionId(response.data.trafficLight.intersection_id);
+          setRoadid(response.data.trafficLight.road_id);
           setGreenduration(response.data.trafficLight.green_duration);
           setRedduration(response.data.trafficLight.red_duration);
           setAutomode(response.data.trafficLight.auto_mode);
+          setLat(response.data.trafficLight.location.coordinates[1]);
+          setLng(response.data.trafficLight.location.coordinates[0]);
+          setLstatus(response.data.trafficLight.status);
+          setDensity(response.data.trafficLight.density_level);
+
+          const Rurl = `http://localhost:3333/roads/${roadid}`;
+          const Rres = await fetch(Rurl);
+          if (!Rres.ok) throw new Error('Failed to fetch Road');
+          const RoadData: any = await Rres.json();
+
+          console.log('This Road data:', RoadData);
+          setRoadname(RoadData.data.name);
         } catch (err) {
           console.error('Error loading traffic light details', err);
           // fallback to values from the provided signal
-          setColor(trafficLight.current_color ?? color);
-          setGreenduration(trafficLight.green_duration ?? greenduration);
-          setRedduration(trafficLight.red_duration ?? redduration);
-          setAutomode(trafficLight.auto_mode ?? Automode);
+          setColor(0);
+          setGreenduration(0);
+          setRedduration(0);
+          setAutomode(false);
         }
       })();
-      setDuration(
-        typeof trafficLight.status === 'number' ? trafficLight.status : 0
-      );
     }
-  }, [trafficLight, open]);
+  }, [Lkey, open]);
 
   function handleSave() {
-    if (!trafficLight) return;
+    if (!Lkey) return;
     const updated: trafficLight = {
-      ...trafficLight,
-      // ensure we carry UI-edited values into the pending update
-      green_duration: greenduration ?? trafficLight.green_duration,
-      red_duration: redduration ?? trafficLight.red_duration,
-      auto_mode: Automode ?? trafficLight.auto_mode,
-      // status/current_color come from duration/color state
-      status:
-        typeof duration === 'number' && duration > 0
-          ? duration
-          : trafficLight.status,
-      current_color:
-        typeof color === 'number' && color > 0
-          ? color
-          : trafficLight.current_color,
+      id: TrafficID,
+      intersection_id: intersectionId,
+      road_id: roadid,
+      ip_address: '192.168.1.45',
+      location: {
+        type: 'Point',
+        coordinates: [lng, lat],
+      },
+      status: Lstatus,
+      current_color: color,
+      density_level: density,
+      auto_mode: Automode,
+      green_duration: greenduration,
+      red_duration: redduration,
+      last_color: color,
+      last_updated: new Date().toISOString(),
     };
     setPendingUpdate(updated);
     setConfirmOpen(true);
@@ -157,13 +218,11 @@ export default function TrafficSettingPopup({
                 </div>
                 <div className="flex w-1/2 flex-col rounded-lg bg-white p-4 shadow-md">
                   <div className="ml-2 font-bold">
-                    Intersection : {trafficLight?.intersection_id}
+                    Intersection : {intersectionId}
                   </div>
-                  <div className="ml-2 font-bold">
-                    Light NO : {trafficLight?.id}
-                  </div>
+                  <div className="ml-2 font-bold">Light NO : {TrafficID}</div>
                   <div className="ml-2 text-xs font-bold">
-                    Location : wait for connect with road
+                    Location : {roadname}
                   </div>
                   <div className="ml-2 text-xs font-bold">
                     Auto-mode : {Automode ? 'on' : 'off'}
@@ -181,13 +240,7 @@ export default function TrafficSettingPopup({
                     <label className="text-sm font-medium">
                       Red Duration (seconds)
                     </label>
-                    <input
-                      type="number"
-                      min={1}
-                      value={redduration}
-                      onChange={(e) => setRedduration(Number(e.target.value))}
-                      className="rounded-md border px-3 py-2"
-                    />
+                    <p>{redduration}</p>
                   </div>
                 </div>
                 <div className="row flex w-full items-center gap-4 rounded-lg bg-white p-4 shadow-md">
@@ -234,7 +287,7 @@ export default function TrafficSettingPopup({
         open={confirmOpen}
         onOpenChange={setConfirmOpen}
         title="Confirm Traffic light Settings"
-        description={`Are you sure you want to change the traffic light NO.${trafficLight?.id} at intersection ${trafficLight?.intersection_id}? This process will impact the system`}
+        description={`Are you sure you want to change the traffic light NO.${TrafficID} at intersection ${intersectionId}? This process will impact the system`}
         confirmText="Confirm"
         cancelText="Cancel"
         onConfirm={handleConfirm}
