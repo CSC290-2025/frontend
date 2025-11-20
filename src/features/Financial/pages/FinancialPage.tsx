@@ -113,11 +113,7 @@ export default function FinancialPage() {
                     userId={userId}
                     onSuccess={refetch}
                   />
-                  <TopUpModal
-                    wallet={wallet}
-                    userId={userId}
-                    onSuccess={refetch}
-                  />
+                  <TopUpModal />
                 </div>
               </div>
 

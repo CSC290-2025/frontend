@@ -23,8 +23,8 @@ export type Path =
   | `/power-bi/:type/:category/:id`
   | `/power-bi/create`
   | `/power-bi/edit/:id`
-  | `/users`
-  | `/register`;
+  | `/register`
+  | `/users`;
 
 export type Params = {
   '/district-detail/:district': { district: string };
