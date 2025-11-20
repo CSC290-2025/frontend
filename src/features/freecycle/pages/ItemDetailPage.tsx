@@ -376,7 +376,7 @@ export default function ItemDetailPage() {
                   disabled
                   className="mt-6 w-full cursor-not-allowed rounded-lg bg-gray-400 py-3 font-medium text-white opacity-80"
                 >
-                  You own this item 🚫
+                  You own this item
                 </button>
               ) : (
                 <button
