@@ -222,7 +222,11 @@ export default function TopupPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mb-4">
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Top Up</h1>
+            <p className="mt-1 text-gray-600">Recharge your account credits</p>
+          </div>
           <Button
             variant="ghost"
             onClick={() => navigate('/financial')}
@@ -237,9 +241,22 @@ export default function TopupPage() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-xl">Top Up Wallet</CardTitle>
+                <CardTitle className="text-xl">
+                  {topUpType === 'wallet'
+                    ? 'Top Up Wallet'
+                    : topUpType === 'metro'
+                      ? 'Top Up Metro Card'
+                      : 'Top Up Insurance Card'}
+                </CardTitle>
                 <p className="text-sm text-gray-600">
-                  Use your wallet to top up other services
+                  {topUpType === 'wallet' &&
+                    'Use PromptPay QR to add money to your wallet.'}
+
+                  {topUpType === 'metro' &&
+                    `Enter the metro card ID${cardId ? ` (${cardId})` : ''} and amount to top up using your wallet.`}
+
+                  {topUpType === 'insurance' &&
+                    `Enter the insurance card ID${cardId ? ` (${cardId})` : ''} and amount to top up using your wallet.`}
                 </p>
               </div>
             </div>

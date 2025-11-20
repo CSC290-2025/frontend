@@ -30,13 +30,18 @@ export default function ServiceNavigator({
   };
 
   return (
-    <Card className={`h-60 border-none shadow-sm ${className}`}>
+    <Card className={`h-60 w-full border-none shadow-sm ${className}`}>
       <CardContent className="p-6">
         <div className="mb-6 flex items-center gap-3">
           <div className="h-8 w-1 rounded-full bg-[#06b6d4]"></div>
           <h3 className="text-lg font-bold text-gray-900">{label}</h3>
         </div>
-        <ServiceGrid onItemClick={handleItemClick} label="" className="" />
+        <ServiceGrid
+          onItemClick={handleItemClick}
+          label=""
+          className=""
+          exclude={['wallet' as ServiceType]}
+        />
       </CardContent>
     </Card>
   );

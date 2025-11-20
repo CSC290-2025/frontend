@@ -43,6 +43,8 @@ interface ServiceGridProps {
   onItemClick: (id: ServiceType) => void;
   label?: string;
   className?: string;
+  // optional list of service ids to exclude from display
+  exclude?: ServiceType[];
 }
 
 export default function ServiceGrid({
@@ -50,18 +52,29 @@ export default function ServiceGrid({
   onItemClick,
   label,
   className = '',
+  exclude,
 }: ServiceGridProps) {
+  const displayed = SERVICES.filter((s) => !(exclude?.includes(s.id) ?? false));
   return (
     <div className={`mb-6 ${className}`}>
       {label && <Label className="text-base font-medium">{label}</Label>}
-      <div className="mt-3 grid grid-cols-3 gap-3">
-        {SERVICES.map((service) => (
+
+      <div
+        className={`mt-3 grid gap-3 ${
+          displayed.length >= 3
+            ? 'grid-cols-3'
+            : displayed.length === 2
+              ? 'grid-cols-2 justify-items-center'
+              : 'grid-cols-1 justify-items-center'
+        }`}
+      >
+        {displayed.map((service) => (
           <Button
             key={service.id}
             variant="outline"
             onClick={() => onItemClick(service.id)}
             aria-pressed={selectedId === service.id}
-            className={`flex h-28 flex-col items-center gap-2 border p-4 transition-transform duration-150 ease-in-out ${
+            className={`flex h-28 w-full flex-col items-center gap-2 border p-4 transition-transform duration-150 ease-in-out ${
               selectedId === service.id
                 ? `ring-2 ${service.ringColor}`
                 : 'hover:-translate-y-1 hover:scale-105'
