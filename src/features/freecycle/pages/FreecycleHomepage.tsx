@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import DiscoverPage from './DiscoverPage';
 import PostItemForm from './PostItemForm';
-import PostEventForm from './postEventForm';
+import PostEventForm from './PostEventForm';
 import type { PostItem } from '@/types/postItem';
 import DiscoverBanner from '@/features/freecycle/components/DiscoverBanner';
 import MyRequestsPage from './MyRequestsPage';
