@@ -2,12 +2,9 @@ import { useState } from 'react';
 import DiscoverPage from './DiscoverPage';
 import PostItemForm from './PostItemForm';
 import PostEventForm from './PostEventForm';
-import ItemDetailPage from './ItemDetailPage';
 import type { PostItem } from '@/types/postItem';
 import DiscoverBanner from '@/features/freecycle/components/DiscoverBanner';
-import MyItemsPage from './MyItemsPage';
 import MyRequestsPage from './MyRequestsPage';
-import SearchBar from '@/features/freecycle/components/SearchBar';
 import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from '@/router';
 
@@ -23,43 +20,44 @@ type Page =
 export default function FreecycleHomepage() {
   const navigate = useNavigate();
 
-  // State to manage current page
   const [currentPage, setCurrentPage] = useState<Page>('home');
-  // State to manage search query
-  const [searchQuery, setSearchQuery] = useState('');
-  // State to hold the selected item for detail view
-  const [selectedItem, setSelectedItem] = useState<PostItem | null>(null);
+  const [searchQuery] = useState('');
 
-  const handleSearch = () => {
-    setCurrentPage('discover');
-  };
+  const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
 
   const handleViewItem = (item: PostItem) => {
-    setSelectedItem(item);
-    setCurrentPage('item-detail');
+    navigate(`/freecycle/items/${item.id}` as any);
+  };
+
+  const handleToggleCategory = (categoryId: number) => {
+    setSelectedCategories((prev) => {
+      if (prev.includes(categoryId)) {
+        return prev.filter((id) => id !== categoryId);
+      }
+      return [...prev, categoryId];
+    });
   };
 
   const renderContent = () => {
     switch (currentPage) {
       case 'discover':
         return (
-          <DiscoverPage searchQuery={searchQuery} onViewItem={handleViewItem} />
+          <DiscoverPage
+            searchQuery={searchQuery}
+            onViewItem={handleViewItem}
+            selectedCategories={selectedCategories}
+            onToggleCategory={handleToggleCategory}
+          />
         );
-      // case 'my-items':
-      //   return <MyItemsPage _onViewItem={handleViewItem} />;
       case 'my-requests':
         return <MyRequestsPage />;
       case 'post-item':
-        return <PostItemForm onSuccess={() => setCurrentPage('my-items')} />;
+        return (
+          <PostItemForm onSuccess={() => navigate('/freecycle/my-items')} />
+        );
       case 'post-event':
         return <PostEventForm _onSuccess={() => setCurrentPage('home')} />;
-      case 'item-detail':
-        return (
-          <ItemDetailPage
-            _item={selectedItem!}
-            _onBack={() => setCurrentPage('discover')}
-          />
-        );
+
       default:
         return (
           <div className="space-y-6">
@@ -68,14 +66,6 @@ export default function FreecycleHomepage() {
             </div>
 
             <div className="flex flex-col items-center gap-4 md:flex-row">
-              {/* <div className="w-full md:flex-1">
-                <SearchBar
-                  value={searchQuery}
-                  onChange={setSearchQuery}
-                  placeholder="Search for items"
-                />
-              </div> */}
-
               <div className="flex w-full justify-stretch gap-3 md:w-auto md:justify-start">
                 <button
                   onClick={() => navigate('/freecycle/my-items')}
@@ -97,6 +87,8 @@ export default function FreecycleHomepage() {
                 searchQuery={searchQuery}
                 onViewItem={handleViewItem}
                 onPostItem={() => setCurrentPage('post-item')}
+                selectedCategories={selectedCategories}
+                onToggleCategory={handleToggleCategory}
               />
             </div>
           </div>
@@ -112,7 +104,6 @@ export default function FreecycleHomepage() {
             onClick={() => setCurrentPage('home')}
             className="mb-6 flex items-center gap-1 font-medium text-cyan-600 hover:text-cyan-700"
           >
-            {/* ← Back to Home */}
             <ArrowLeft className="h-5 w-5" /> Back to Home
           </button>
         )}

@@ -11,9 +11,10 @@ export type Path =
   | `/example`
   | `/example/:id`
   | `/freecycle`
+  | `/freecycle/items/:id`
   | `/freecycle/my-items`
   | `/freecycle/post-event`
-  | `/freecycle/postEvent`
+  | `/freecycle/post-item`
   | `/healthcare`
   | `/login`
   | `/power-bi`
@@ -26,6 +27,7 @@ export type Path =
 export type Params = {
   '/district-detail/:district': { district: string };
   '/example/:id': { id: string };
+  '/freecycle/items/:id': { id: string };
   '/power-bi/:type/:category': { type: string; category: string };
   '/power-bi/:type/:category/:id': {
     type: string;

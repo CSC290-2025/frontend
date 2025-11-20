@@ -8,7 +8,6 @@ interface PostEventFormProps {
 
 export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
   const [formData, setFormData] = useState({
-    // Regular Event Fields
     host_user_id: 1,
     title: '',
     description: '',
@@ -28,7 +27,7 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
 
   const [loading, setLoading] = useState(false);
 
-  const { mutateAsync: createEvent } = useCreateEvent();
+  const { mutateAsync: createEvent, isPending } = useCreateEvent();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,17 +46,14 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
       return;
     }
 
-    // Convert datetime-local to ISO format with Z suffix
+    // Convert datetime-local to ISO format
     const formatDatetime = (datetimeLocal: string): string => {
       if (!datetimeLocal) return '';
-      // datetime-local format: "2025-11-19T02:51"
-      // Convert to ISO format: "2025-11-19T02:51:00.000Z"
-      const date = new Date(datetimeLocal + ':00');
+      const date = new Date(datetimeLocal);
       return date.toISOString();
     };
 
-    // Regular event payload
-    const eventPayload = {
+    const payload = {
       host_user_id: formData.host_user_id,
       title: formData.title,
       description: formData.description,
@@ -88,15 +84,15 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
       : null;
 
     try {
-      // Create promises array
-      const promises = [createEvent(eventPayload)];
+      // Create event and optionally create volunteer data
+      const promises = [createEvent(payload)];
 
-      // Add volunteer event creation if needed
-      if (volunteerEventPayload) {
-        // TODO: Uncomment when volunteer events API is imported
-        // promises.push(createVolunteerEvent(volunteerEventPayload));
-      }
+      // if (volunteerPayload) {
+      //   // Add volunteer creation promise - uncomment when API is ready
+      //   promises.push(createVolunteer(volunteerPayload));
+      // }(ถามกลุ่มvolunteer ว่าให้ยิ่งไปendpintไหน)
 
+      //เเก้ตรงนี้ให้ทำพร้อมกันได้2อัน
       await Promise.all(promises);
       alert(
         formData.volunteer_required
@@ -105,13 +101,11 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
       );
       _onSuccess?.();
     } catch (err: any) {
-      console.log('Regular Event Payload:', eventPayload);
+      console.log('Regular Event Payload:', payload);
       if (volunteerEventPayload) {
         console.log('Volunteer Event Payload:', volunteerEventPayload);
       }
       console.error('Event creation error:', err);
-      console.error('Response data:', err?.response?.data);
-      console.error('Response status:', err?.response?.status);
       const errorMessage =
         err?.response?.data?.message ||
         err?.response?.data?.error ||
@@ -122,6 +116,8 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
       setLoading(false);
     }
   };
+
+  const isSubmitting = loading || isPending;
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -158,7 +154,7 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
             onChange={(e) =>
               setFormData({ ...formData, title: e.target.value })
             }
-            placeholder="Event title"
+            placeholder="Event title (Type 'fail' to test error)"
             className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
           />
         </div>
@@ -380,10 +376,10 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
 
         <button
           type="submit"
-          disabled={loading}
-          className="w-full rounded-lg bg-gray-300 py-3 font-medium text-gray-700 transition-colors hover:bg-gray-400 disabled:opacity-50"
+          disabled={isSubmitting}
+          className="w-full rounded-lg bg-cyan-500 py-3 font-medium text-white transition-colors hover:bg-cyan-600 disabled:opacity-50"
         >
-          {loading ? 'Posting...' : 'Post'}
+          {isSubmitting ? 'Posting...' : 'Post'}
         </button>
       </form>
     </div>

@@ -36,7 +36,24 @@ interface CreatePostPayload {
   donater_id?: number | null;
 }
 
-// Posts API
+// Receiver Requests API Types
+export interface ReceiverRequest {
+  id: number;
+  post_id: number;
+  receiver_id: number;
+  status: 'pending' | 'accepted' | 'rejected';
+  created_at: string;
+  updated_at: string;
+}
+
+interface RequestsData {
+  requests: ReceiverRequest[];
+}
+
+interface RequestData {
+  request: ReceiverRequest;
+}
+
 export const fetchAllPosts = async (): Promise<ApiPost[]> => {
   const response = await apiClient.get<ApiResponseWrapper<PostsData>>('/posts');
   return response.data.data.posts;
@@ -102,7 +119,8 @@ export const markPostAsNotGiven = async (id: number): Promise<ApiPost> => {
   return response.data.data.post;
 };
 
-// Categories API
+// --- Categories API ---
+
 export const fetchAllCategories = async (): Promise<Category[]> => {
   const response =
     await apiClient.get<ApiResponseWrapper<CategoriesData>>('/categories');
@@ -147,14 +165,15 @@ export const deleteCategory = async (categoryId: number): Promise<void> => {
   await apiClient.delete(`/categories/${categoryId}`);
 };
 
-// Post Categories API
+// --- Post Categories API ---
+
 export const addCategoriesToPost = async (
   postId: number,
   categoryIds: number[],
   donaterId: number = 1
 ): Promise<void> => {
   await apiClient.post(`/posts/${postId}/categories/add`, {
-    category_ids: categoryIds,
+    category_id: categoryIds,
     donater_id: donaterId,
   });
 };
@@ -177,23 +196,17 @@ export const fetchPostsByUserId = async (
   return response.data.data.posts;
 };
 
-// Receiver Requests API
-export interface ReceiverRequest {
-  id: number;
-  post_id: number;
-  receiver_id: number;
-  status: 'pending' | 'accepted' | 'rejected';
-  created_at: string;
-  updated_at: string;
-}
+// --- Receiver Requests API ---
 
-interface RequestsData {
-  requests: ReceiverRequest[];
-}
-
-interface RequestData {
-  request: ReceiverRequest;
-}
+export const fetchPostRequests = async (
+  postId: number
+): Promise<ReceiverRequest[]> => {
+  const response = await apiClient.get<ApiResponseWrapper<RequestsData>>(
+    `/posts/${postId}/requests`
+  );
+  const data = response.data.data;
+  return Array.isArray(data.requests) ? data.requests : [];
+};
 
 export const fetchUserRequests = async (): Promise<ReceiverRequest[]> => {
   const response =
@@ -236,102 +249,3 @@ export const updateRequestStatus = async (
   );
   return response.data.data.request;
 };
-
-// // Make for fetching Freecycle data from the Freecycle API
-
-// // import { apiClient } from '@/lib/apiClient';
-
-// // export const fetchItemsById = (id: number) => {
-// //   apiClient.get(`/items/${id}`);
-// // };
-
-// // Freecycle API integration
-
-// import { apiClient } from '@/lib/apiClient';
-// import type { PostItem, Category } from '../pages/Constants';
-
-// // Get all posts
-// export const fetchAllPosts = async (): Promise<PostItem[]> => {
-//   const res = await apiClient.get('/posts');
-//   return res.data?.data?.posts || [];
-// };
-
-// // Get post by ID
-// export const fetchPostById = async (id: number): Promise<PostItem> => {
-//   const res = await apiClient.get(`/posts/${id}`);
-//   return res.data?.data?.post;
-// };
-
-// // Get posts not given
-// export const fetchNotGivenPosts = async (): Promise<PostItem[]> => {
-//   const res = await apiClient.get('/posts/not-given');
-//   return res.data?.data?.posts || [];
-// };
-
-// // Get posts by user
-// export const fetchMyPosts = async (): Promise<PostItem[]> => {
-//   const res = await apiClient.get('/posts/me');
-//   return res.data?.data?.posts || [];
-// };
-
-// // Create post
-// export const createPost = async (
-//   data: Partial<PostItem>
-// ): Promise<PostItem> => {
-//   const res = await apiClient.post('/posts', data);
-//   return res.data?.data?.post;
-// };
-
-// // Update post
-// export const updatePost = async (
-//   id: number,
-//   data: Partial<PostItem>
-// ): Promise<PostItem> => {
-//   const res = await apiClient.put(`/posts/${id}`, data);
-//   return res.data?.data?.post;
-// };
-
-// // Delete post
-// export const deletePost = async (id: number): Promise<void> => {
-//   await apiClient.delete(`/posts/${id}`);
-// };
-
-// // Mark post as given / not-given
-// export const markPostAsGiven = async (id: number): Promise<PostItem> => {
-//   const res = await apiClient.put(`/posts/${id}/given`);
-//   return res.data?.data?.post;
-// };
-
-// export const markPostAsNotGiven = async (id: number): Promise<PostItem> => {
-//   const res = await apiClient.put(`/posts/${id}/not-given`);
-//   return res.data?.data?.post;
-// };
-
-// export const fetchCategories = async (): Promise<Category[]> => {
-//   const res = await apiClient.get('/categories');
-//   return res.data?.data?.categories || [];
-// };
-
-// export const fetchCategoryById = async (id: number): Promise<Category> => {
-//   const res = await apiClient.get(`/categories/${id}`);
-//   return res.data?.data?.category;
-// };
-
-// export const createCategory = async (
-//   data: Partial<Category>
-// ): Promise<Category> => {
-//   const res = await apiClient.post('/categories', data);
-//   return res.data?.data?.category;
-// };
-
-// export const updateCategory = async (
-//   id: number,
-//   data: Partial<Category>
-// ): Promise<Category> => {
-//   const res = await apiClient.put(`/categories/${id}`, data);
-//   return res.data?.data?.category;
-// };
-
-// export const deleteCategory = async (id: number): Promise<void> => {
-//   await apiClient.delete(`/categories/${id}`);
-// };

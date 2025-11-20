@@ -5,16 +5,16 @@ import {
 } from '@/features/freecycle/hooks/useFreecycle';
 import { fetchPostById } from '@/features/freecycle/api/freecycle.api';
 import RequestCard from '@/features/freecycle/components/RequestCard';
-import ItemDetailPage from './ItemDetailPage';
 import type { ReceiverRequest } from '@/features/freecycle/api/freecycle.api';
 import type { ApiPost, PostItem } from '@/types/postItem';
+import { useNavigate } from '@/router';
 
 export default function MyRequestsPage() {
+  const navigate = useNavigate();
   const { data: requests, isLoading, isError, error } = useUserRequests();
   const cancelRequestMutation = useCancelRequest();
   const [localRequests, setLocalRequests] = useState<ReceiverRequest[]>([]);
   const [postsMap, setPostsMap] = useState<Record<number, ApiPost | null>>({});
-  const [selectedPost, setSelectedPost] = useState<ApiPost | null>(null);
 
   useEffect(() => {
     if (Array.isArray(requests)) {
@@ -22,16 +22,21 @@ export default function MyRequestsPage() {
       // Fetch post details for each request
       const fetchPosts = async () => {
         const newPostsMap: Record<number, ApiPost | null> = {};
-        for (const request of requests) {
-          try {
-            const post = await fetchPostById(request.post_id);
-            newPostsMap[request.post_id] = post;
-          } catch (err) {
-            console.error(`Failed to fetch post ${request.post_id}:`, err);
-            newPostsMap[request.post_id] = null;
+        const postIds = requests.map((r) => r.post_id);
+        const uniquePostIds = [...new Set(postIds)];
+
+        for (const postId of uniquePostIds) {
+          if (!postsMap[postId]) {
+            try {
+              const post = await fetchPostById(postId);
+              newPostsMap[postId] = post;
+            } catch (err) {
+              console.error(`Failed to fetch post ${postId}:`, err);
+              newPostsMap[postId] = null;
+            }
           }
         }
-        setPostsMap(newPostsMap);
+        setPostsMap((prev) => ({ ...prev, ...newPostsMap }));
       };
       fetchPosts();
     } else {
@@ -55,7 +60,8 @@ export default function MyRequestsPage() {
 
   const handleRequestCardClick = (post: ApiPost | null | undefined) => {
     if (post) {
-      setSelectedPost(post);
+      // *** Router Navigation ***
+      navigate(`/freecycle/items/${post.id}` as any);
     }
   };
 
@@ -66,29 +72,6 @@ export default function MyRequestsPage() {
   const getRequestsByStatus = (status: string) => {
     return localRequests.filter((r) => r.status === status);
   };
-
-  // Show detail page when a post is selected
-  if (selectedPost) {
-    const itemWeight =
-      typeof selectedPost.item_weight === 'string'
-        ? parseFloat(selectedPost.item_weight)
-        : selectedPost.item_weight;
-
-    return (
-      <ItemDetailPage
-        _item={{
-          id: selectedPost.id,
-          item_name: selectedPost.item_name,
-          description: selectedPost.description || '',
-          photo_url: selectedPost.photo_url || '',
-          item_weight: itemWeight,
-          is_given: selectedPost.is_given || false,
-        }}
-        _onBack={() => setSelectedPost(null)}
-        _isRequestView={true}
-      />
-    );
-  }
 
   return (
     <div className="space-y-8">

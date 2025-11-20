@@ -1,36 +1,39 @@
 import { Filter, Plus } from 'lucide-react';
 import ItemCard from '@/features/freecycle/components/ItemCard';
 import CategoryFilter from '@/features/freecycle/components/CategoryFilter';
-// import SearchBar from '@/features/freecycle/components/SearchBar';
 import type { PostItem } from '@/types/postItem';
 import { mapApiPostToItem } from '@/types/postItem';
 import { useDiscoverPage } from '@/features/freecycle/hooks/useFreecycle';
 import SearchBar from '../components/SearchBar';
+import { useNavigate } from '@/router';
 
 interface DiscoverPageProps {
   searchQuery: string;
   onViewItem: (item: PostItem) => void;
   onPostItem?: () => void;
+  selectedCategories: number[];
+  onToggleCategory: (categoryId: number) => void;
 }
 
 export default function DiscoverPage({
   searchQuery,
   onViewItem,
   onPostItem,
+  selectedCategories,
+  onToggleCategory,
 }: DiscoverPageProps) {
   const {
     filteredItems,
     categories: categoriesData,
-    selectedCategories,
-    localSearch: _localSearch,
+    localSearch,
     showFilters,
     loading,
     hasError,
-    setLocalSearch: _setLocalSearch,
+    setLocalSearch,
     setShowFilters,
     toggleCategory,
-  } = useDiscoverPage(searchQuery);
-
+  } = useDiscoverPage(searchQuery, selectedCategories, onToggleCategory);
+  const navigate = useNavigate();
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-start gap-4">
@@ -43,6 +46,13 @@ export default function DiscoverPage({
           Post Item
         </button>
         <button
+          onClick={() => navigate(`/freecycle/post-event` as any)}
+          className="flex items-center gap-1 rounded-full bg-cyan-500 px-3 py-1 text-sm font-medium text-white shadow-sm transition-colors hover:bg-cyan-600"
+        >
+          <Plus className="h-4 w-4" />
+          Post Event
+        </button>
+        <button
           onClick={() => setShowFilters(!showFilters)}
           className="flex items-center gap-1 rounded-full border border-gray-300 bg-white px-3 py-1 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:border-cyan-500"
         >
@@ -52,8 +62,8 @@ export default function DiscoverPage({
       </div>
 
       <SearchBar
-        value={_localSearch}
-        onChange={_setLocalSearch}
+        value={localSearch}
+        onChange={setLocalSearch}
         placeholder="Search items..."
       />
 

@@ -1,29 +1,162 @@
 import { useState, useEffect } from 'react';
 import { ArrowLeft } from 'lucide-react';
-import type { PostItem, Category, CategoryWithName } from '@/types/postItem';
-import { fetchCategoriesByPostId } from '@/features/freecycle/api/freecycle.api';
-import { useCreateRequest } from '@/features/freecycle/hooks/useFreecycle';
+import { useNavigate } from '@/router';
+import { useParams } from 'react-router-dom';
+import { useQueryClient } from '@tanstack/react-query';
 
-interface ItemDetailPageProps {
-  _item?: PostItem;
-  _onBack?: () => void;
-  _isRequestView?: boolean;
+import type { PostItem, Category, CategoryWithName } from '@/types/postItem';
+
+import type { ReceiverRequest } from '@/features/freecycle/api/freecycle.api';
+
+import { fetchCategoriesByPostId } from '@/features/freecycle/api/freecycle.api';
+
+import {
+  useCreateRequest,
+  usePostById,
+  useCurrentUser,
+  usePostRequests,
+  useUpdateRequestStatus,
+} from '@/features/freecycle/hooks/useFreecycle';
+
+interface RequestsListProps {
+  postId: number;
+  requests: (ReceiverRequest & { id: number })[] | undefined;
+  isLoading: boolean;
+  isError: boolean;
 }
 
-export default function ItemDetailPage({
-  _item,
-  _onBack,
-  _isRequestView,
-}: ItemDetailPageProps) {
+function RequestsList({
+  postId,
+  requests,
+  isLoading,
+  isError,
+}: RequestsListProps) {
+  const queryClient = useQueryClient();
+  const { mutate: updateStatus } = useUpdateRequestStatus();
+
+  const handleUpdateStatus = (
+    requestId: number,
+    status: 'accepted' | 'rejected'
+  ) => {
+    updateStatus(
+      { id: requestId, status },
+      {
+        onSuccess: () => {
+          alert(`Request ${requestId} ${status} successfully.`);
+          queryClient.invalidateQueries({
+            queryKey: ['posts', postId, 'requests'],
+          });
+        },
+        onError: (err) => {
+          console.error(`Failed to update status for ${requestId}:`, err);
+          alert(`Failed to ${status} request.`);
+        },
+      }
+    );
+  };
+
+  if (isLoading) return <p className="text-gray-500">Loading requests...</p>;
+  if (isError)
+    return <p className="text-red-500">Failed to load request list.</p>;
+
+  if (!requests || requests.length === 0) {
+    return (
+      <p className="text-gray-500">
+        No requests have been made for this item yet.
+      </p>
+    );
+  }
+
+  return (
+    <ul className="space-y-3">
+      {requests.map((req) => (
+        <li
+          key={req.id}
+          className="flex flex-col items-start justify-between rounded-xl border bg-white p-4 shadow-sm md:flex-row md:items-center"
+        >
+          <div className="mb-2 md:mb-0">
+            <span className="font-semibold text-gray-800">
+              Receiver ID: {req.receiver_id}
+            </span>
+            <span
+              className={`ml-3 rounded-full px-3 py-1 text-sm font-semibold ${
+                req.status === 'accepted'
+                  ? 'bg-green-100 text-cyan-500'
+                  : req.status === 'rejected'
+                    ? 'bg-red-100 text-red-700'
+                    : 'bg-yellow-100 text-yellow-700'
+              }`}
+            >
+              {req.status}
+            </span>
+          </div>
+
+          {req.status === 'pending' && (
+            <div className="flex gap-2">
+              <button
+                onClick={() => handleUpdateStatus(req.id, 'accepted')}
+                className="rounded-lg bg-cyan-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-cyan-600"
+              >
+                Accept
+              </button>
+              <button
+                onClick={() => handleUpdateStatus(req.id, 'rejected')}
+                className="rounded-lg bg-red-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-red-600"
+              >
+                Deny
+              </button>
+            </div>
+          )}
+
+          {req.status !== 'pending' && (
+            <span className="text-sm text-gray-500">Action Taken</span>
+          )}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+export default function ItemDetailPage() {
+  const navigate = useNavigate();
   const [categories, setCategories] = useState<Category[]>([]);
   const createRequestMutation = useCreateRequest();
 
-  // Load categories for the item
+  const { id: itemId } = useParams<{ id: string }>();
+  const postId = Number(itemId);
+
+  const { data: post, isLoading, isError } = usePostById(postId);
+
+  const { data: currentUser } = useCurrentUser();
+  const currentUserId = currentUser?.id;
+
+  const item: PostItem | null = post
+    ? {
+        id: post.id,
+        item_name: post.item_name,
+        description: post.description || '',
+        photo_url: post.photo_url || '',
+        item_weight:
+          typeof post.item_weight === 'string'
+            ? parseFloat(post.item_weight)
+            : post.item_weight,
+        is_given: post.is_given || false,
+        owner_id: post.donater_id ?? 0,
+      }
+    : null;
+
+  const isOwner = currentUserId === item?.owner_id;
+
+  const {
+    data: requests,
+    isLoading: requestsLoading,
+    isError: requestsError,
+  } = usePostRequests(postId, isOwner);
+
   useEffect(() => {
-    if (_item?.id) {
-      fetchCategoriesByPostId(_item.id)
+    if (item?.id) {
+      fetchCategoriesByPostId(item.id)
         .then((cats: CategoryWithName[]) => {
-          // Transform CategoryWithName to Category (map category_id to id)
           const transformedCategories: Category[] = cats.map((cat) => ({
             id: cat.category_id,
             category_name: cat.category_name,
@@ -34,23 +167,11 @@ export default function ItemDetailPage({
           console.error('Failed to load categories:', err);
         });
     }
-  }, [_item?.id]);
-
-  // Mock item for display when no item is provided
-  const mockItem: PostItem = {
-    id: 1,
-    item_name: 'Vintage Wooden Chair',
-    description:
-      'A beautiful and comfortable wooden chair in excellent condition. Perfect for any room.',
-    photo_url:
-      'https://images.pexels.com/photos/1350789/pexels-photo-1350789.jpeg?auto=compress&cs=tinysrgb&w=600',
-    item_weight: 5,
-    is_given: false,
-  };
-
-  const item = _item || mockItem;
+  }, [item?.id]);
 
   const handleRequest = async () => {
+    if (!item) return;
+
     try {
       await createRequestMutation.mutateAsync(item.id);
       alert('Request sent successfully!');
@@ -60,10 +181,33 @@ export default function ItemDetailPage({
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="h-12 w-12 animate-spin rounded-full border-4 border-gray-200 border-t-cyan-600"></div>
+      </div>
+    );
+  }
+
+  if (isError || !item) {
+    return (
+      <div className="mx-auto max-w-4xl p-4">
+        <h1 className="text-2xl font-bold text-red-600">Item Not Found</h1>
+        <button
+          onClick={() => navigate('/freecycle')}
+          className="mt-4 flex items-center gap-2 font-medium text-cyan-600 hover:text-cyan-700"
+        >
+          <ArrowLeft className="h-5 w-5" />
+          Back to Home
+        </button>
+      </div>
+    );
+  }
+
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="mx-auto mt-12 max-w-4xl p-4 sm:p-0">
       <button
-        onClick={() => _onBack?.()}
+        onClick={() => navigate('/freecycle/my-items')}
         className="mb-6 flex items-center gap-2 font-medium text-cyan-600 hover:text-cyan-700"
       >
         <ArrowLeft className="h-5 w-5" />
@@ -115,7 +259,6 @@ export default function ItemDetailPage({
                   </div>
                 )}
 
-                {/* Display Categories if available */}
                 {categories.length > 0 && (
                   <div>
                     <h3 className="mb-2 text-sm font-semibold text-gray-700">
@@ -124,7 +267,7 @@ export default function ItemDetailPage({
                     <div className="flex flex-wrap gap-2">
                       {categories.map((category) => (
                         <span
-                          key={`category-${_item?.id}-${category.id}`}
+                          key={`category-${item.id}-${category.id}`}
                           className="inline-block rounded-full bg-cyan-100 px-3 py-1 text-sm text-cyan-800"
                         >
                           {category.category_name}
@@ -133,43 +276,44 @@ export default function ItemDetailPage({
                     </div>
                   </div>
                 )}
-
-                {/* TODO: INTEGRATION - Uncomment when phone and email are added to backend schema */}
-                {/* {item.phone && (
-                  <div>
-                    <h3 className="text-sm font-semibold text-gray-700 mb-1">
-                      Contact
-                    </h3>
-                    <div className="flex items-center gap-2 text-gray-600">
-                      <Phone className="w-4 h-4" />
-                      <span>{item.phone}</span>
-                    </div>
-                  </div>
-                )}
-
-
-                {item.email && (
-                  <div>
-                    <div className="flex items-center gap-2 text-gray-600">
-                      <Mail className="w-4 h-4" />
-                      <span>{item.email}</span>
-                    </div>
-                  </div>
-                )} */}
               </div>
             </div>
 
-            {!item.is_given && !_isRequestView && (
-              <button
-                onClick={handleRequest}
-                disabled={createRequestMutation.isPending}
-                className="mt-6 w-full rounded-lg bg-cyan-500 py-3 font-medium text-white transition-colors hover:bg-cyan-600 disabled:opacity-50"
-              >
-                {createRequestMutation.isPending
-                  ? 'Sending Request...'
-                  : 'Request Item'}
-              </button>
+            {/* Requests List (Only shown to owner) */}
+            {isOwner && (
+              <div className="mt-6 border-t pt-6">
+                <h3 className="mb-4 text-xl font-bold text-gray-900">
+                  Item Requests ({requests?.length || 0})
+                </h3>
+                <RequestsList
+                  postId={postId}
+                  requests={requests}
+                  isLoading={requestsLoading}
+                  isError={requestsError}
+                />
+              </div>
             )}
+
+            {/* Request Button */}
+            {!item.is_given &&
+              (isOwner ? (
+                <button
+                  disabled
+                  className="mt-6 w-full cursor-not-allowed rounded-lg bg-gray-400 py-3 font-medium text-white opacity-80"
+                >
+                  You own this item
+                </button>
+              ) : (
+                <button
+                  onClick={handleRequest}
+                  disabled={createRequestMutation.isPending}
+                  className="mt-6 w-full rounded-lg bg-cyan-500 py-3 font-medium text-white transition-colors hover:bg-cyan-600 disabled:opacity-50"
+                >
+                  {createRequestMutation.isPending
+                    ? 'Sending Request...'
+                    : 'Request Item'}
+                </button>
+              ))}
           </div>
         </div>
       </div>
