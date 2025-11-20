@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import { Upload } from 'lucide-react';
-import { useCreateEvent } from '@/features/freecycle/hooks/useEvent';
+import {
+  useCreateEvent,
+  useCreateVolunteerEvent,
+} from '@/features/freecycle/hooks/useEvent';
 
 interface PostEventFormProps {
   _onSuccess?: () => void;
@@ -20,7 +23,6 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
     event_tag_id: null as number | null,
     // Volunteer Fields (optional)
     volunteer_required: false,
-    department_id: 1,
     created_by_user_id: 1,
     registration_deadline: '',
   });
@@ -28,6 +30,8 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
   const [loading, setLoading] = useState(false);
 
   const { mutateAsync: createEvent, isPending } = useCreateEvent();
+  const { mutateAsync: createVolunteerEvent, isPending: isVolunteerPending } =
+    useCreateVolunteerEvent();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,11 +57,12 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
       return date.toISOString();
     };
 
-    const payload = {
+    // Regular event payload - always create
+    const eventPayload = {
       host_user_id: formData.host_user_id,
       title: formData.title,
       description: formData.description,
-      total_seats: formData.volunteer_required ? formData.total_seats : 0,
+      total_seats: 0, // Regular events don't have volunteer seats
       start_at: formatDatetime(formData.start_at),
       end_at: formatDatetime(formData.end_at),
       address_id: formData.address_id,
@@ -70,13 +75,12 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
       ? {
           title: formData.title,
           description: formData.description,
-          image_url: formData.image_url,
-          total_seats: formData.total_seats,
+          image_url: formData.image_url || '',
+          total_seats: formData.total_seats || 0,
           start_at: formatDatetime(formData.start_at),
           end_at: formatDatetime(formData.end_at),
-          created_by_user_id: formData.created_by_user_id,
-          department_id: formData.department_id,
-          address_id: formData.address_id,
+          created_by_user_id: formData.created_by_user_id || 1,
+          address_id: formData.address_id || 1,
           registration_deadline: formData.registration_deadline
             ? formatDatetime(formData.registration_deadline)
             : null,
@@ -84,15 +88,18 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
       : null;
 
     try {
-      // Create event and optionally create volunteer data
-      const promises = [createEvent(payload)];
+      // Create promises array - always create regular event
+      const promises = [createEvent(eventPayload)];
 
-      // if (volunteerPayload) {
-      //   // Add volunteer creation promise - uncomment when API is ready
-      //   promises.push(createVolunteer(volunteerPayload));
-      // }(ถามกลุ่มvolunteer ว่าให้ยิ่งไปendpintไหน)
+      // Add volunteer event creation if needed
+      if (volunteerEventPayload) {
+        console.log(
+          'Submitting volunteer event with payload:',
+          volunteerEventPayload
+        );
+        promises.push(createVolunteerEvent(volunteerEventPayload));
+      }
 
-      //เเก้ตรงนี้ให้ทำพร้อมกันได้2อัน
       await Promise.all(promises);
       alert(
         formData.volunteer_required
@@ -101,11 +108,13 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
       );
       _onSuccess?.();
     } catch (err: any) {
-      console.log('Regular Event Payload:', payload);
+      console.log('Regular Event Payload:', eventPayload);
       if (volunteerEventPayload) {
         console.log('Volunteer Event Payload:', volunteerEventPayload);
       }
       console.error('Event creation error:', err);
+      console.error('Error response:', err?.response?.data);
+      console.error('Error status:', err?.response?.status);
       const errorMessage =
         err?.response?.data?.message ||
         err?.response?.data?.error ||
@@ -117,7 +126,7 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
     }
   };
 
-  const isSubmitting = loading || isPending;
+  const isSubmitting = loading || isPending || isVolunteerPending;
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -303,39 +312,21 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
         {/* Volunteer Event Fields */}
         {formData.volunteer_required && (
           <>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="mb-2 block text-sm font-medium text-gray-900">
-                  Department ID
-                </label>
-                <input
-                  type="number"
-                  value={formData.department_id}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      department_id: parseInt(e.target.value) || 1,
-                    })
-                  }
-                  className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
-                />
-              </div>
-              <div>
-                <label className="mb-2 block text-sm font-medium text-gray-900">
-                  Created By User ID
-                </label>
-                <input
-                  type="number"
-                  value={formData.created_by_user_id}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      created_by_user_id: parseInt(e.target.value) || 1,
-                    })
-                  }
-                  className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
-                />
-              </div>
+            <div>
+              <label className="mb-2 block text-sm font-medium text-gray-900">
+                Created By User ID
+              </label>
+              <input
+                type="number"
+                value={formData.created_by_user_id}
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    created_by_user_id: parseInt(e.target.value) || 1,
+                  })
+                }
+                className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+              />
             </div>
 
             <div>
