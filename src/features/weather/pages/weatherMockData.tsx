@@ -10,6 +10,7 @@ import WarningModel from '../components/WarningModel';
 import { useWeatherData } from '../hooks/useWeatherData';
 import { useWeatherModel } from '../hooks/useWeatherModel';
 
+//fetch ข้อมูลสภาพอากาศและแสดงผลในหน้าเว็บ // fetch data and display on web page
 export default function WeatherMockData() {
   const { data, isLoading, isError, refetch, isForecastLoading } =
     useWeatherData();
@@ -34,12 +35,21 @@ export default function WeatherMockData() {
 
   return (
     <div className="mx-auto max-w-5xl p-6 text-black select-none">
-      <TopNavigation />
-
-      <h1 className="mb-6 text-3xl font-bold">Weather</h1>
-
+      <TopNavigation />{' '}
+      {/*function navigate ดู weather และ clean air detailing on-top*/}
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-3xl font-bold">Weather</h1>{' '}
+        {/*ฟังชั่น back ไปหาหน้าเลือก city*/}
+        <button
+          type="button"
+          onClick={() => window.history.back()}
+          className="text-m ml-4 cursor-pointer rounded px-4 py-1 transition-opacity duration-150 select-none active:opacity-75"
+        >
+          ← back
+        </button>
+      </div>
       {/* TOP ROW */}
-      <div className="flex items-stretch gap-6">
+      <div className="flex items-stretch gap-5">
         <div className="flex-1">
           <CurrentWeatherCard
             data={data}
@@ -77,7 +87,6 @@ export default function WeatherMockData() {
           />
         </div>
       </div>
-
       {/* BOTTOM ROW */}
       <div className="mt-6 flex items-stretch gap-6">
         <div className="grow basis-3/4">
@@ -113,14 +122,12 @@ export default function WeatherMockData() {
           />
         </div>
       </div>
-
       {/* MODELS */}
       <WeatherDetailModel
         open={detailModel.open}
         data={detailModel.payload}
         onClose={detailModel.hide}
       />
-
       <WarningModel
         open={warningModel.open}
         text={warningModel.payload?.text}

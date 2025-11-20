@@ -17,7 +17,7 @@ export default function HourlyForecast({ list, onSelect }: Props) {
           >
             <div className="text-gray-500">{h.time}</div>
             <div className="text-3xl">{h.icon}</div>
-            <div className="font-medium">{h.temp}°C</div>
+            <div className="font-medium">{h.temp} °C</div>
           </div>
         ))}
       </div>

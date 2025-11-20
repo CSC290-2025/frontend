@@ -64,11 +64,11 @@ export default function WeatherDetailModel({
         {/* Extra info */}
         <div className="mt-4 flex justify-around text-sm text-gray-700">
           <div className="text-center">
-            <div>temp</div>
+            <div>Highest temp</div>
             <div>Feels {data.feelLike}°</div>
           </div>
           <div className="text-center">
-            <div>wind</div>
+            <div>Lowest </div>
             <div>{data.wind} km/h</div>
           </div>
           <div className="text-center">

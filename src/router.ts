@@ -8,6 +8,7 @@ export type Path =
   | `/example`
   | `/example/:id`
   | `/weather`
+  | `/weatherCity`
   | `/weatherMain`;
 
 export type Params = {

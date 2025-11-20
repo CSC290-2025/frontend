@@ -10,6 +10,7 @@ export default function CurrentWeatherCard({ data, onClick }: Props) {
   const containerClass = `${'mb-6 w-full rounded-2xl border bg-white p-6 text-left shadow-sm'}${onClick ? ' cursor-pointer' : ''}`;
 
   return (
+    //component การ์ด แสดงสภาพอากาศปัจจุบัน
     <Wrapper
       {...(onClick ? { type: 'button' as const } : {})}
       className={containerClass}

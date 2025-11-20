@@ -17,7 +17,7 @@ export default function WeeklyForecast({ list, onSelect }: Props) {
           >
             <div className="font-semibold">{d.day}</div>
             <div className="text-3xl">{d.icon}</div>
-            <div className="font-medium">{d.temp}°C</div>
+            <div className="font-medium">{d.temp} °C</div>
           </div>
         ))}
       </div>
