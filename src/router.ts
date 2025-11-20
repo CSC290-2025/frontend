@@ -17,12 +17,14 @@ export type Path =
   | `/financial/metro/:user_id/info/:id`
   | `/financial/topup`
   | `/healthcare`
+  | `/login`
   | `/power-bi`
   | `/power-bi/:type/:category`
   | `/power-bi/:type/:category/:id`
   | `/power-bi/create`
   | `/power-bi/edit/:id`
-  | `/users`;
+  | `/users`
+  | `/register`;
 
 export type Params = {
   '/district-detail/:district': { district: string };
