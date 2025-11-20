@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Upload } from 'lucide-react';
 import { useCreateEvent } from '@/features/freecycle/hooks/useEvent';
+import { useCreateVolunteer } from '@/features/freecycle/hooks/useVolunteer';
 
 interface PostEventFormProps {
   _onSuccess?: () => void;
@@ -28,6 +29,7 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
   const [loading, setLoading] = useState(false);
 
   const { mutateAsync: createEvent, isPending } = useCreateEvent();
+  const { mutateAsync: createVolunteer } = useCreateVolunteer();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -76,25 +78,64 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
         }
       : null;
 
+    //   try {
+    //     // Create event and optionally create volunteer data
+    //     const promises = [createEvent(payload)];
+
+    //     // if (volunteerPayload) {
+    //     //   // Add volunteer creation promise - uncomment when API is ready
+    //     //   promises.push(createVolunteer(volunteerPayload));
+    //     // }(ถามกลุ่มvolunteer ว่าให้ยิ่งไปendpintไหน)
+
+    //     //เเก้ตรงนี้ให้ทำพร้อมกันได้2อัน
+    //     await Promise.all(promises);
+    //     alert('Event created successfully!');
+    //     _onSuccess?.();
+    //   } catch (err: any) {
+    //     console.log('Submitting event with payload:', payload);
+    //     console.log('Volunteer payload:', volunteerPayload);
+    //     console.error('Event creation error:', err);
+    //     console.error('Response data:', err?.response?.data);
+    //     console.error('Response status:', err?.response?.status);
+    //     const errorMessage =
+    //       err?.response?.data?.message ||
+    //       err?.response?.data?.error ||
+    //       err?.message ||
+    //       'Failed to create event';
+    //     alert(`Failed to create event: ${errorMessage}`);
+    //   } finally {
+    //     setLoading(false);
+    //   }
+    // };
+
     try {
-      // Create event and optionally create volunteer data
       const promises = [createEvent(payload)];
 
-      // if (volunteerPayload) {
-      //   // Add volunteer creation promise - uncomment when API is ready
-      //   promises.push(createVolunteer(volunteerPayload));
-      // }(ถามกลุ่มvolunteer ว่าให้ยิ่งไปendpintไหน)
+      if (volunteerPayload) {
+        const volunteerRequest = {
+          title: formData.title,
+          description: formData.volunteer_description,
+          start_at: formatDatetime(formData.start_at),
+          end_at: formatDatetime(formData.end_at),
+          total_seats: formData.volunteer_amount,
+          created_by_user_id: formData.host_user_id,
+          address_id: formData.address_id,
+          department_id: 1, // เปลี่ยนตามหลังบ้าน
+          image_url: formData.image_url || null,
+          registration_deadline: null,
+        };
 
-      //เเก้ตรงนี้ให้ทำพร้อมกันได้2อัน
+        promises.push(createVolunteer(volunteerRequest));
+      }
+
       await Promise.all(promises);
-      alert('Event created successfully!');
+
+      alert('Event + Volunteer created successfully!');
       _onSuccess?.();
     } catch (err: any) {
-      console.log('Submitting event with payload:', payload);
-      console.log('Volunteer payload:', volunteerPayload);
+      console.error('Submitting event with payload:', payload);
+      console.error('Volunteer payload:', volunteerPayload);
       console.error('Event creation error:', err);
-      console.error('Response data:', err?.response?.data);
-      console.error('Response status:', err?.response?.status);
       const errorMessage =
         err?.response?.data?.message ||
         err?.response?.data?.error ||
