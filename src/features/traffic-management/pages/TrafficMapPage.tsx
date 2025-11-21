@@ -541,7 +541,7 @@ function MapContent({
 }
 
 export default function TrafficMapPage() {
-  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+  const apiKey = import.meta.env.VITE_G10_GOOGLE_MAPS_API_KEY;
   const [currentLocation, setCurrentLocation] = useState('');
   const [destination, setDestination] = useState('');
   const [showSettings, setShowSettings] = useState(false);
