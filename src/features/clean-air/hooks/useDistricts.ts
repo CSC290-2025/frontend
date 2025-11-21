@@ -2,9 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getDistricts } from '../api/clean-air.api';
 import type { District } from '@/types/district';
 
-console.log('useDistricts module loaded');
-
-export function useDistrictsQuery() {
+export default function useDistrictsQuery() {
   return useQuery<District[], Error>(
     ['districts'],
     async () => {
