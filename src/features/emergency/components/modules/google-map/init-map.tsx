@@ -46,7 +46,7 @@ const MapInit: FC<MapInitProps> = ({ classname, children }) => {
       )}
     >
       <Crosshair
-        className="bg-secondary text-secondary-foreground hover:bg-secondary/80 absolute right-0 z-20 m-4 cursor-pointer rounded-full border-4"
+        className="bg-secondary text-secondary-foreground hover:bg-secondary/80 absolute right-0 z-20 z-50 m-4 cursor-pointer rounded-full border-4"
         size={30}
         onClick={() => {
           if (map) {

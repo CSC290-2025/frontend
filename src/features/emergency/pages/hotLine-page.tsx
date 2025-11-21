@@ -1,5 +1,15 @@
 import { useState } from 'react';
-import { BookUser } from 'lucide-react';
+import { BookUser, CircleAlert, Plus } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+  DialogClose,
+} from '@/features/emergency/components/ui/dialog';
 import {
   Tabs,
   TabsList,
@@ -10,6 +20,12 @@ import { Input } from '@/features/emergency/components/ui/input';
 import { Button } from '@/features/emergency/components/ui/button';
 import ContactCard from '@/features/emergency/components/modules/card/contact-card.tsx';
 import { useContactForm } from '@/features/emergency/hooks/contact-from.tsx';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+} from '@/features/emergency/components/ui/card.tsx';
+import { Textarea } from '@/features/emergency/components/ui/textarea.tsx';
 
 interface E_num {
   id: number;
@@ -18,8 +34,9 @@ interface E_num {
 }
 
 export default function HotlinePage() {
-  const [searchTerm, setSearchTerm] = useState('');
+  const [showAdd, setShowAdd] = useState(true);
   const { contact } = useContactForm();
+  const [open, setOpen] = useState(false);
 
   const E_num: E_num[] = [
     {
@@ -44,16 +61,36 @@ export default function HotlinePage() {
         </div>
 
         <div className="flex w-full items-center gap-3 sm:w-auto">
-          <Input
-            type="text"
-            placeholder="Search here"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full sm:w-64"
-          />
-          <Button className="bg-blue-600 text-white hover:bg-blue-700">
-            + Add new
-          </Button>
+          {showAdd && (
+            <Dialog open={open} onOpenChange={setOpen}>
+              <DialogTrigger asChild>
+                <Button variant="default" iconLeft={<Plus />}>
+                  Add Contact
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogTitle className="text-center">Add contact</DialogTitle>
+                <DialogDescription asChild>
+                  <CardContent>
+                    <div>
+                      <DialogTitle className="my-6">Name</DialogTitle>
+                      <Textarea placeholder="Type your name here" />
+                      <DialogTitle className="my-6">Phone number</DialogTitle>
+                      <Textarea placeholder="XXX-XXXX-XXXX" />
+                      <div className="mt-10 flex w-full justify-between">
+                        <DialogClose>
+                          <Button type="button" variant="secondary">
+                            cancel
+                          </Button>
+                        </DialogClose>
+                        <Button type="submit">confirm</Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </DialogDescription>
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
       </header>
 
@@ -62,7 +99,6 @@ export default function HotlinePage() {
           <TabsTrigger value="Emergency service">Emergency service</TabsTrigger>
           <TabsTrigger value="Family">Family</TabsTrigger>
         </TabsList>
-
         <TabsContent value="Family" className="mb-6">
           <div className="h-auto">
             {contact.map((c) => (
