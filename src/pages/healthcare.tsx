@@ -1,5 +1,5 @@
-import HealthcareHub from '@/features/_healthcare/components/HealthcareHub';
+import AdminHealthcareShell from '@/features/_healthcare/pages/AdminHealthcareShell';
 
 export default function HealthcarePage() {
-  return <HealthcareHub />;
+  return <AdminHealthcareShell />;
 }
