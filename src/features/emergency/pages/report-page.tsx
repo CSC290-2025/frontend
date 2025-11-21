@@ -6,6 +6,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogClose,
 } from '@/features/emergency/components/ui/dialog';
 import {
   Card,
@@ -25,7 +26,6 @@ import {
   ReportOmit,
   type ReportRequestFrom,
 } from '@/features/emergency/interfaces/report';
-import { DialogClose } from '@radix-ui/react-dialog';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
@@ -114,7 +114,6 @@ function ReportPage() {
 
               {showDetail && (
                 <div className="flex flex-col gap-6">
-                  {/* Description */}
                   <div>
                     <DialogTitle className="my-6">
                       What&apos;s happening?
