@@ -123,7 +123,9 @@ export default function FinancialPage() {
                 <TransactionHistory userId={loadedUserId} wallet={wallet} />
               </div>
             </div>
-            <WalletManagement wallet={wallet} updateWallet={updateWallet} />
+            <div className="pt-15">
+              <WalletManagement wallet={wallet} updateWallet={updateWallet} />
+            </div>
           </>
         )}
       </div>
