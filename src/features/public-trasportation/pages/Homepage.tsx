@@ -3,6 +3,7 @@ import Sidebar from '../components/Sidebar';
 import BusInfo from '../components/BusInfo';
 import MapView from '../components/MapView';
 import axios from 'axios';
+import { getBaseAPIURL } from '@/lib/apiClient.ts';
 
 const GOOGLE_API_KEY = 'AIzaSyAPNBcfQDaVuSGaC4LiSLTWMSvk3Xz3iNQ';
 
@@ -26,7 +27,7 @@ interface Coords {
   name?: string;
 }
 
-const API_BASE_URL = 'http://localhost:3000/api/routes/all';
+const API_BASE_URL = getBaseAPIURL + '/api/routes/all';
 const geocodeAddress = async (query: string): Promise<Coords | null> => {
   if (!query) return null;
 

@@ -9,6 +9,7 @@ import {
 import type { SuccessMarker, MapMarker } from '../interfaces/api';
 import { Trash2 } from 'lucide-react';
 import config from '../config/env';
+import { getBaseAPIURL } from '@/lib/apiClient.ts';
 
 export const MarkerIcon = {
   Trash: (
@@ -266,7 +267,7 @@ const MapContent = () => {
 
   async function handleDeleteMarker(id: number) {
     try {
-      const res = await fetch(`http://localhost:3000/api/markers/${id}`, {
+      const res = await fetch(getBaseAPIURL + `/api/markers/${id}`, {
         method: 'DELETE',
       });
 
@@ -293,7 +294,7 @@ const MapContent = () => {
       try {
         setLoading(true);
 
-        const res = await fetch('http://localhost:3000/api/markers?limit=200');
+        const res = await fetch(getBaseAPIURL + '/api/markers?limit=200');
         const json = await res.json();
         const data = json.data as SuccessMarker[];
 
