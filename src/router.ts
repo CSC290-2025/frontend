@@ -2,6 +2,7 @@
 
 import { components, hooks, utils } from '@generouted/react-router/client';
 
+export type Path = `/` | `/example/:id` | `/public_transportation`;
 export type Path =
   | `/`
   | `/citizen/setting`
