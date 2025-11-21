@@ -1,5 +1,6 @@
 import type { DistrictDetailData } from './districtDetailData';
-export interface DistrictDetail {
+export interface DistrictHistory {
   district: string;
-  currentData: DistrictDetailData;
+  period: string;
+  history: DistrictDetailData[];
 }

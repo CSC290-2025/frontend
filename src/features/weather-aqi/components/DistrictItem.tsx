@@ -57,7 +57,7 @@ export default function DistrictItem({
 
   const handleSelectDistrict = () => {
     if (district) {
-      navigate('/clean-air/district-detail/:district', {
+      navigate('/weather-aqi/overview/:district', {
         params: { district: district },
       });
     }
@@ -67,25 +67,34 @@ export default function DistrictItem({
     <div
       onClick={handleSelectDistrict}
       className={
-        'flex cursor-pointer items-center justify-between rounded-2xl border border-black bg-white p-4 text-black shadow-lg transition-colors hover:bg-gray-100'
+        'mx-auto mt-4 flex max-w-2xl cursor-pointer items-center justify-between rounded-2xl border border-gray-100 bg-white p-4 text-black shadow-md transition-all duration-200 hover:shadow-lg'
       }
     >
+           {' '}
       <div className="flex flex-col gap-1">
-        <div className="text-2xl font-bold">{district}</div>
-        <div className="text-sm text-gray-700">{time}</div>
+                <div className="text-2xl font-semibold">{district}</div>       {' '}
+        <div className="text-xl font-normal text-gray-700">{time}</div>   
+         {' '}
       </div>
+           {' '}
       <div className="flex flex-col items-end">
+               {' '}
         <div className="flex items-baseline">
-          <div className="text-3xl font-bold">{displayAqi}</div>
-          <div className="ml-1 text-base text-gray-700">AQI</div>
+                    <div className="text-3xl font-bold">{displayAqi}</div>     
+              <div className="ml-1 text-base text-gray-700">AQI</div>     
+           {' '}
         </div>
-        <div className="text-sm text-gray-700">PM2.5: {displayPm25} µg/m³</div>
+               {' '}
+        <div className="text-sm text-gray-700">PM2.5: {displayPm25} µg/m³</div> 
+             {' '}
         <div
           className={`text-sm font-semibold ${categoryText} ${categoryBg} mt-1 rounded px-2 py-0.5`}
         >
-          {categoryUpper}
+                    {categoryUpper}       {' '}
         </div>
+             {' '}
       </div>
+         {' '}
     </div>
   );
 }
