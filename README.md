@@ -8,8 +8,9 @@
    git clone https://github.com/CSC290-2025/frontend.git
    cd frontend
    ```
-   
+
 2. **Enable Corepack for package manager consistency:**
+
    ```sh
    corepack enable
    ```
@@ -20,9 +21,9 @@
    pnpm install
    ```
 
-3. **Configure `.env` files**.
+4. **Configure `.env` files**.
 
-4. **Run the app:**
+5. **Run the app:**
 
    ```sh
    pnpm run dev

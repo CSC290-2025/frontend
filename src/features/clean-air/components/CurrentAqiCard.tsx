@@ -9,7 +9,7 @@ import {
   faFaceFrown,
   faFaceDizzy,
 } from '@fortawesome/free-regular-svg-icons';
-import { useDistrictDetailQuery } from '../hooks/useDistrictDetail';
+import useDistrictDetailQuery from '../hooks/useDistrictDetail';
 
 interface CurrentAqiCardProps {
   onDocumentationClick: () => void;
@@ -19,41 +19,57 @@ interface StatusDetails {
   status: string;
   style: string;
   icon: IconDefinition;
+  iconStyle: string;
 }
 
 const getStatusAndStyle = (category: string): StatusDetails => {
   switch (category.toUpperCase()) {
+    case 'GOOD':
+    case 'HEALTHY':
+      return {
+        status: 'Good',
+        style: 'bg-green-600 text-white',
+        icon: faFaceGrinWide,
+        iconStyle: 'text-green-600',
+      };
+    case 'MODERATE':
+      return {
+        status: 'Moderate',
+        style: 'bg-lime-500 text-black',
+        icon: faFaceSmile,
+        iconStyle: 'text-lime-500',
+      };
+    case 'UNHEALTHY_FOR_SENSITIVE_GROUPS':
+    case 'USG':
+      return {
+        status: 'USG',
+        style: 'bg-yellow-500 text-black',
+        icon: faFaceMeh,
+        iconStyle: 'text-yellow-500',
+      };
     case 'UNHEALTHY':
     case 'BAD':
       return {
         status: 'Unhealthy',
         style: 'bg-red-600 text-white',
         icon: faFaceFrown,
+        iconStyle: 'text-red-500',
       };
-    case 'MODERATE':
-      return {
-        status: 'Moderate',
-        style: 'bg-yellow-500 text-black',
-        icon: faFaceMeh,
-      };
-    case 'HEALTHY':
-    case 'GOOD':
-      return {
-        status: 'Good',
-        style: 'bg-green-500 text-white',
-        icon: faFaceGrinWide,
-      };
+    case 'VERY_UNHEALTHY':
     case 'DANGEROUS':
+    case 'HAZARDOUS':
       return {
-        status: 'Dangerous',
-        style: 'bg-red-500 text-white',
+        status: 'Very Unhealthy',
+        style: 'bg-red-800 text-white',
         icon: faFaceDizzy,
+        iconStyle: 'text-red-800',
       };
     default:
       return {
         status: 'Unknown',
         style: 'bg-gray-400 text-black',
-        icon: faFaceSmile,
+        icon: faFaceMeh,
+        iconStyle: 'text-gray-600',
       };
   }
 };
@@ -76,8 +92,11 @@ const getFormattedTime = (iso?: string) => {
   }
 };
 
-export function CurrentAqiCard({ onDocumentationClick }: CurrentAqiCardProps) {
-  const { district } = useParams<{ district: string }>();
+export default function CurrentAqiCard({
+  onDocumentationClick,
+}: CurrentAqiCardProps) {
+  const { district } = useParams('/clean-air/district-detail/:district');
+  const displayDistrict = decodeURIComponent(district || '');
   const {
     data: districtDetail,
     isLoading,
@@ -86,18 +105,22 @@ export function CurrentAqiCard({ onDocumentationClick }: CurrentAqiCardProps) {
 
   if (isLoading) {
     return (
-      <div className="rounded-xl border border-gray-900 bg-white p-6 text-gray-900 shadow-2xl shadow-gray-400">
-        <div className="text-center">Loading air quality data...</div>
+      <div className="h-full rounded-xl border border-black bg-white p-6 text-gray-900 shadow-md">
+                <div className="text-center">Loading air quality data...</div> 
+           {' '}
       </div>
     );
   }
 
   if (error || !districtDetail?.currentData) {
     return (
-      <div className="rounded-xl border border-gray-900 bg-white p-6 text-gray-900 shadow-2xl shadow-gray-400">
+      <div className="h-full rounded-xl border border-black bg-white p-6 text-gray-900 shadow-md">
+               {' '}
         <div className="text-center text-red-600">
-          {error?.message || 'No air quality data available'}
+                    {error?.message || 'No air quality data available'}     
+           {' '}
         </div>
+             {' '}
       </div>
     );
   }
@@ -109,48 +132,77 @@ export function CurrentAqiCard({ onDocumentationClick }: CurrentAqiCardProps) {
 
   const lastUpdated = getFormattedTime(currentData.measured_at);
 
-  const { status, style: statusStyle, icon } = getStatusAndStyle(category);
+  const {
+    status,
+    style: statusStyle,
+    icon,
+    iconStyle,
+  } = getStatusAndStyle(category);
 
-  const badgeColorClass = statusStyle.split(' ')[0];
-  const iconColorClass = badgeColorClass.replace('bg-', 'text-');
+  const pm25Display = pm25.toFixed(1);
 
   return (
-    <div className="rounded-xl border border-gray-900 bg-white p-6 text-gray-900 shadow-2xl shadow-gray-400">
-      <div className="relative mb-4 flex items-start justify-between">
-        <h1 className="text-xl font-semibold">Current Air Quality</h1>
-
-        <span
-          className="cursor-pointer rounded-full border border-gray-300 bg-gray-100 px-3 py-1 text-sm text-gray-700 transition-colors hover:bg-gray-200"
+    <div className="h-full rounded-xl border border-black bg-white p-6 text-gray-900 shadow-md">
+           {' '}
+      <div className="mb-4 flex items-start justify-between">
+               {' '}
+        <h1 className="text-base font-semibold text-gray-800">
+                    Current Air Quality        {' '}
+        </h1>
+        <button
           onClick={onDocumentationClick}
+          className="rounded-full bg-gray-200 px-3 py-1 text-xs font-medium text-gray-800 transition-colors hover:bg-gray-300"
         >
-          Documentation
-        </span>
+          {' '}
+          Information
+        </button>
+             {' '}
       </div>
-
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <p className="text-6xl font-bold">
-            {aqi} <span className="text-2xl font-light">AQI</span>
+           {' '}
+      <div className="mb-4 flex items-start justify-between">
+               {' '}
+        <div className="flex flex-col">
+                   {' '}
+          <p className="text-6xl leading-none font-bold">
+                        {aqi}{' '}
+            <span className="align-top text-3xl font-normal">AQI</span>       
+             {' '}
           </p>
-          <p className="mt-1 text-xl">PM2.5: {pm25} µg/m³</p>
-
-          <span
-            className={`mt-3 inline-block rounded-full px-4 py-1 font-medium ${statusStyle}`}
-          >
-            {status}
-          </span>
+                   {' '}
+          <p className="mt-2 text-sm text-gray-700">
+                        PM 2.5: {pm25Display} µg/m³          {' '}
+          </p>
+                 {' '}
         </div>
-
-        <div className="flex flex-col items-end text-right">
-          <FontAwesomeIcon
-            icon={icon}
-            className={`text-6xl ${iconColorClass}`}
-          />
-
-          <h2 className="mt-6 text-xl text-black">{district}, Bangkok</h2>
-          <p className="text-sm text-gray-600">Last updated: {lastUpdated}</p>
+               {' '}
+        <div className="mt-1 text-right">
+                   {' '}
+          <FontAwesomeIcon icon={icon} className={`text-6xl ${iconStyle}`} />   
+             {' '}
         </div>
+             {' '}
       </div>
+           {' '}
+      <div className="mt-4 flex items-center justify-between">
+               {' '}
+        <span
+          className={`inline-block rounded-full px-4 py-1 text-sm font-semibold ${statusStyle}`}
+        >
+                    {status}       {' '}
+        </span>
+               {' '}
+        <div className="flex flex-col text-right">
+                   {' '}
+          <p className="text-sm font-semibold text-black">
+                        {displayDistrict}, Bangkok          {' '}
+          </p>
+                   {' '}
+          <p className="text-xs text-gray-500">Last updated: {lastUpdated}</p> 
+               {' '}
+        </div>
+             {' '}
+      </div>
+         {' '}
     </div>
   );
 }
