@@ -1,8 +1,7 @@
-import React, { useMemo } from 'react';
+import { useMemo } from 'react';
 import DistrictItem from './DistrictItem';
-import { useDistrictsQuery } from '../hooks/useDistricts';
+import useDistrictsQuery from '@/features/clean-air/hooks/useDistricts';
 import type { District } from '@/types/district';
-import { useNavigate } from '@/router';
 
 type Props = {
   searchTerm?: string;
