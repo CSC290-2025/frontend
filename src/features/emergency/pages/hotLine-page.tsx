@@ -1,11 +1,9 @@
 import { useState } from 'react';
-import { BookUser, CircleAlert, Plus } from 'lucide-react';
+import { BookUser, Plus } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
-  DialogHeader,
   DialogTitle,
   DialogTrigger,
   DialogClose,
@@ -16,15 +14,10 @@ import {
   TabsTrigger,
   TabsContent,
 } from '@/features/emergency/components/ui/tabs';
-import { Input } from '@/features/emergency/components/ui/input';
 import { Button } from '@/features/emergency/components/ui/button';
 import ContactCard from '@/features/emergency/components/modules/card/contact-card.tsx';
 import { useContactForm } from '@/features/emergency/hooks/contact-from.tsx';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-} from '@/features/emergency/components/ui/card.tsx';
+import { CardContent } from '@/features/emergency/components/ui/card.tsx';
 import { Textarea } from '@/features/emergency/components/ui/textarea.tsx';
 
 interface E_num {
