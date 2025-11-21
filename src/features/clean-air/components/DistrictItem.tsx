@@ -57,7 +57,9 @@ export default function DistrictItem({
 
   const handleSelectDistrict = () => {
     if (district) {
-      navigate(`/district-detail/${encodeURIComponent(district)}`);
+      navigate('/clean-air/district-detail/:district', {
+        params: { district: district },
+      });
     }
   };
 
