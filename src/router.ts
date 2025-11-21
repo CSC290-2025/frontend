@@ -10,12 +10,21 @@ export type Path =
   | `/Know-AI/createCourse`
   | `/Know-AI/exercises`
   | `/Know-AI/exercises/:level/:question`
+  | `/example`
+  | `/example/:id`
+  | `/weather`
+  | `/weatherCity`
+  | `/weatherMain`;
   | `/dashboard`
   | `/district-detail/:district`
   | `/district-selection`
   | `/example`
   | `/example/:id`
+  | `/harm`
+  | `/harm/:id`
   | `/healthcare`
+  | `/map`
+  | `/map/:id`
   | `/login`
   | `/power-bi`
   | `/power-bi/:type/:category`
@@ -30,6 +39,8 @@ export type Params = {
   '/Know-AI/exercises/:level/:question': { level: string; question: string };
   '/district-detail/:district': { district: string };
   '/example/:id': { id: string };
+  '/harm/:id': { id: string };
+  '/map/:id': { id: string };
   '/power-bi/:type/:category': { type: string; category: string };
   '/power-bi/:type/:category/:id': {
     type: string;
