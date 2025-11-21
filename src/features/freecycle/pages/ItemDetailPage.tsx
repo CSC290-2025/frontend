@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ArrowLeft, Edit, CheckCircle, RotateCw } from 'lucide-react';
 import { useNavigate } from '@/router';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
 
 import type { PostItem, Category, CategoryWithName } from '@/types/postItem';
