@@ -23,7 +23,8 @@ export type Path =
   | `/traffic/Manual-Manage`
   | `/traffic/admin`
   | `/traffic/control`
-  | `/traffic/mock`;
+  | `/traffic/mock`
+  | `/traffic/test`;
 
 export type Params = {
   '/district-detail/:district': { district: string };
