@@ -55,6 +55,7 @@ export type Path =
   | `/sos/:id`
   | `/sos/report`
   | `/sos/report/:id`
+  | `/waste-management`
   | `/weather`
   | `/weather-aqi`
   | `/weather-aqi/overview/:district`
