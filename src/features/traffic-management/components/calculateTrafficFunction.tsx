@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { getBaseAPIURL } from '@/lib/apiClient.ts';
 
 // --- Interfaces สำหรับโครงสร้างข้อมูล API ---
 
@@ -74,7 +75,7 @@ interface UpdateTrafficLightBody {
 
 // --- การตั้งค่าพื้นฐาน ---
 
-const baseUrl = 'http://localhost:3333';
+const baseUrl = getBaseAPIURL;
 const YELLOW_DURATION = 3; // สมมติว่า yellow duration = 3 วินาที (ตามข้อมูลตัวอย่าง)
 const OFFSET_DURATION = 9; // ค่าคงที่ + 9
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { getBaseAPIURL } from '@/lib/apiClient.ts';
 
 type TrafficLight = {
   id: number;
@@ -34,9 +35,7 @@ export default function BrokenLightsModal({
     setLoading(true);
     setError(null);
     try {
-      const BASE =
-        (import.meta as any).env?.VITE_API_BASE || 'http://localhost:3333';
-      const res = await fetch(`${BASE}/traffic-lights/status`);
+      const res = await fetch(`${getBaseAPIURL}/traffic-lights/status`);
       if (!res.ok) throw new Error('Failed to fetch status');
       const json = await res.json();
       const allLights = Array.isArray(json)

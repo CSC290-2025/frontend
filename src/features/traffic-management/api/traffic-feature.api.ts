@@ -1,10 +1,10 @@
-import { apiClient } from '@/lib/apiClient';
+import { apiClient, getBaseAPIURL } from '@/lib/apiClient';
 import type {
   trafficLight,
   TrafficLightsResponse,
 } from '../types/traffic.types';
 
-const BASE = (import.meta as any).env?.VITE_API_BASE || 'http://localhost:3333';
+const BASE = getBaseAPIURL;
 
 // Fetch all traffic lights from the API
 export const getTrafficLights = async (): Promise<TrafficLightsResponse> => {
