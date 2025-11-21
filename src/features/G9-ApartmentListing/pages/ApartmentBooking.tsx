@@ -132,38 +132,6 @@ export default function ApartmentBooking() {
     apartment &&
     availableRooms.length > 0;
 
-  // Show loading state
-  if (apartmentLoading || roomsLoading) {
-    return (
-      <div className="relative flex min-h-screen flex-col items-center justify-center bg-[#F9FAFB]">
-        <div className="text-xl">Loading booking information...</div>
-      </div>
-    );
-  }
-
-  // Show error state if no apartment data
-  if (!apartmentId || !apartment) {
-    return (
-      <div className="relative flex min-h-screen flex-col items-center justify-center bg-[#F9FAFB] px-4">
-        <div className="text-center">
-          <h1 className="mb-4 text-2xl font-bold text-red-600">
-            Booking Error
-          </h1>
-          <p className="mb-4 text-gray-600">
-            Missing apartment or room information. Please select a room from the
-            apartment details page.
-          </p>
-          <button
-            onClick={() => navigate('/ApartmentHomepage')}
-            className="rounded-md bg-[#01CEF8] px-6 py-2 text-white hover:bg-[#4E8FB1]"
-          >
-            Back to Apartments
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="font-poppins relative flex min-h-screen flex-col items-center bg-[#F9FAFB] px-4 py-10">
       <div className="mb-6 w-full max-w-5xl">

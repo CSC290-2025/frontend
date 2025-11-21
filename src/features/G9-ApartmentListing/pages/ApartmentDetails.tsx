@@ -161,19 +161,6 @@ export default function ApartmentDetailPage() {
       console.error('Failed to submit review:', error);
     }
   };
-
-  if (_isLoading) {
-    return (
-      <div className="font-poppins min-h-screen bg-[#F9FAFB] font-sans">
-        <div className="mx-auto max-w-7xl px-8 py-6">
-          <div className="flex h-96 items-center justify-center">
-            <div className="text-xl">Loading apartment details...</div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="font-poppins min-h-screen bg-[#F9FAFB] font-sans">
       <div className="mx-auto max-w-7xl px-8 py-6">

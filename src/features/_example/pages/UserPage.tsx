@@ -1,4 +1,4 @@
-import UserCard from '@/features/_example/components/UserCard';
+import UserCard from '@/features/Event_Hub/component/UserCard';
 export default function UserPage() {
   const id = 1; // example only in real website might use useParams instaed
   if (!id) {

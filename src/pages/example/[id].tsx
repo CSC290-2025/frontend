@@ -1,1 +1,1 @@
-export { default } from '@/features/_example/pages/UserPage';
+export { default } from '@/features/public-trasportation/pages/UserPage';

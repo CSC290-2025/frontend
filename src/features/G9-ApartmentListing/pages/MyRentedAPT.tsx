@@ -8,7 +8,17 @@ import type { bookingTypes } from '@/features/G9-ApartmentListing/types/index';
 // Component to display individual booking with room and apartment details
 function BookingCard({ booking }: { booking: bookingTypes.Booking }) {
   const { data: apartment } = useApartment(booking.apartment_id);
-  const { data: images } = usePicturesByApartment(booking.apartment_id);
+  const { data: images, error: imagesError } = usePicturesByApartment(
+    booking.apartment_id
+  );
+
+  if (imagesError) {
+    console.error(
+      'Error fetching images for apartment',
+      booking.apartment_id,
+      imagesError
+    );
+  }
 
   const getStatusColor = (status: bookingTypes.BookingStatus) => {
     switch (status) {
@@ -40,11 +50,11 @@ function BookingCard({ booking }: { booking: bookingTypes.Booking }) {
   const defaultImage =
     'https://bcdn.renthub.in.th/listing_picture/201603/20160323/KFVR1t5u5w6KhpFVDWLY.jpg?class=moptimized';
 
-  // Get apartment image from apartment_picture table
   const imageArray = images?.data?.data || images?.data || [];
+
   const apartmentImage =
     imageArray && imageArray.length > 0
-      ? imageArray[0].file_path
+      ? imageArray[0].file_path || imageArray[0].url || imageArray[0].path
       : defaultImage;
 
   return (
@@ -127,15 +137,7 @@ function BookingCard({ booking }: { booking: bookingTypes.Booking }) {
 export default function MyRentedAPT() {
   const currentUserId = 3;
 
-  const { data: bookings, isLoading, error } = useBookingsByUser(currentUserId);
-
-  if (isLoading) {
-    return (
-      <div className="font-poppins flex min-h-screen flex-col items-center justify-center bg-[#F9FAFB]">
-        <div className="text-xl text-gray-600">Loading your bookings...</div>
-      </div>
-    );
-  }
+  const { data: bookings, error } = useBookingsByUser(currentUserId);
 
   if (error) {
     console.error('Error loading bookings:', error);

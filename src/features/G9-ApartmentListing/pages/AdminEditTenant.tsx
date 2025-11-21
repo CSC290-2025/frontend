@@ -155,16 +155,6 @@ export default function AdminEditTenant() {
 
   const isAdmin = role === 'admin';
 
-  if (bookingLoading) {
-    return (
-      <div className="font-poppins flex min-h-screen items-center justify-center">
-        <div className="text-lg text-gray-600">
-          Loading tenant information...
-        </div>
-      </div>
-    );
-  }
-
   if (bookingError) {
     return (
       <div className="font-poppins flex min-h-screen items-center justify-center">

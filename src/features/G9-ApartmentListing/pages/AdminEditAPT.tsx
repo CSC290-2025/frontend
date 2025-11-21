@@ -39,7 +39,7 @@ export default function EditApartment(): React.ReactElement {
   const [showErrorPopup, setShowErrorPopup] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+  const [_isLoading, setIsLoading] = useState(true);
   const [existingImageUrls, setExistingImageUrls] = useState<string[]>([]);
   const [existingImageData, setExistingImageData] = useState<ImageData[]>([]);
   const [roomsToDelete, setRoomsToDelete] = useState<number[]>([]);

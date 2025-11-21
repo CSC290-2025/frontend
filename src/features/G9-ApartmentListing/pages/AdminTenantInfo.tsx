@@ -28,11 +28,7 @@ export default function AdminTenantInfo() {
   const apartmentId = Number(params.get('id') || 0);
 
   // Use existing hooks to fetch bookings for this apartment
-  const {
-    data: bookingsResp,
-    isLoading,
-    error,
-  } = useBookingsByApartment(apartmentId);
+  const { data: bookingsResp, error } = useBookingsByApartment(apartmentId);
   // Mutation hook to update booking status (end contract)
   const updateBookingStatus = useUpdateBookingStatus();
 
@@ -40,14 +36,6 @@ export default function AdminTenantInfo() {
   const [selectedId, setSelectedId] = useState<number | null>(null);
 
   const [showSuccess, setShowSuccess] = useState(false);
-
-  if (isLoading) {
-    return (
-      <div className="font-poppins flex min-h-screen flex-col items-center justify-center bg-[#F9FAFB]">
-        <div className="text-xl text-gray-600">Loading tenants...</div>
-      </div>
-    );
-  }
 
   if (error) {
     console.error('Error loading bookings for apartment:', error);
