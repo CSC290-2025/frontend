@@ -38,8 +38,10 @@ export type Path =
   | `/power-bi/:type/:category/:id`
   | `/power-bi/create`
   | `/power-bi/edit/:id`
+  | `/register`
+  | `/event_hub`
+  | `/event_hub/CreatePage`;
   | `/profile`
-  | `/register`;
 
 export type Params = {
   '/clean-air/district-detail/:district': { district: string };
