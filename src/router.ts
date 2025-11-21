@@ -27,6 +27,12 @@ export type Path =
   | `/district-selection`
   | `/example`
   | `/example/:id`
+  | `/freecycle`
+  | `/freecycle/items/:id`
+  | `/freecycle/items/edit/:id`
+  | `/freecycle/my-items`
+  | `/freecycle/post-event`
+  | `/freecycle/post-item`
   | `/harm`
   | `/harm/:id`
   | `/healthcare`
@@ -51,6 +57,8 @@ export type Params = {
   '/Know-AI/exercises/:level/:question': { level: string; question: string };
   '/district-detail/:district': { district: string };
   '/example/:id': { id: string };
+  '/freecycle/items/:id': { id: string };
+  '/freecycle/items/edit/:id': { id: string };
   '/weather-aqi/overview/:district': { district: string };
   '/harm/:id': { id: string };
   '/map/:id': { id: string };
