@@ -5,11 +5,22 @@ import { components, hooks, utils } from '@generouted/react-router/client';
 
 export type Path =
   | `/`
+  | `/AdminAddAPT`
+  | `/AdminEditAPT`
+  | `/AdminEditTenant`
+  | `/AdminListedAPT`
+  | `/AdminTenantInfo`
+  | `/ApartmentBooking`
+  | `/ApartmentDetails`
+  | `/ApartmentHomepage`
+  | `/ApartmentHomepage/:id`
+  | `/ApartmentPayment`
   | `/Know-AI/:course`
   | `/Know-AI/:course/:id`
   | `/Know-AI/createCourse`
   | `/Know-AI/exercises`
   | `/Know-AI/exercises/:level/:question`
+  | `/MyRentedAPT`
   | `/activity`
   | `/chat`
   | `/citizen/setting`
@@ -66,6 +77,7 @@ export type Path =
   | `/weatherMain`;
 
 export type Params = {
+  '/ApartmentHomepage/:id': { id: string };
   '/Know-AI/:course': { course: string };
   '/Know-AI/:course/:id': { course: string; id: string };
   '/Know-AI/exercises/:level/:question': { level: string; question: string };

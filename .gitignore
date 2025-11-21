@@ -78,5 +78,6 @@ CLAUDE.md
 # VSCode AI integrations cache
 .vscode/.ai/
 .vscode-ai/
+
 /src/features/Financial/src/api
 src/features/openapi.json
