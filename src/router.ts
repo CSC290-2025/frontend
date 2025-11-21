@@ -4,6 +4,7 @@ import { components, hooks, utils } from '@generouted/react-router/client';
 
 export type Path =
   | `/`
+  | `/citizen/setting`
   | `/clean-air/district-detail/:district`
   | `/clean-air/district-selection`
   | `/clean-air/overview/:district`
@@ -37,6 +38,7 @@ export type Path =
   | `/power-bi/:type/:category/:id`
   | `/power-bi/create`
   | `/power-bi/edit/:id`
+  | `/profile`
   | `/register`;
 
 export type Params = {
