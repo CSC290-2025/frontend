@@ -1,24 +1,20 @@
-// import { createBrowserRouter, RouterProvider } from 'react-router';
-// import DetectHarmPage from './features/G16-CommunitySupportMap/pages/detectHarmpage';
+import { Routes } from '@generouted/react-router';
+import { useAuthenticated } from '@/hooks/useAuthenticated';
+import { Spinner } from '@/components/ui/spinner';
 
-// const router = createBrowserRouter([
-//   {
-//     path: '/harm',
-//     element: <DetectHarmPage />,
-//   },
-
-// ]);
-// function App() {
-//   return <RouterProvider router={router} />;
-// }
-
-// export default App;
 function App() {
-  return (
-    <>
-      <h1 className="text-3xl font-bold underline"> Hello fellow CS-ers! </h1>
-    </>
-  );
+  const { isLoading } = useAuthenticated();
+
+  if (isLoading)
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="flex flex-col items-center gap-4">
+          <Spinner className="h-12 w-12" />
+        </div>
+      </div>
+    );
+
+  return <Routes />;
 }
 
 export default App;
