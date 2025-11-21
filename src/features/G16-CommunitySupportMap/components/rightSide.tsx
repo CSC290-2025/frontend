@@ -4,10 +4,14 @@ import type { MapMarker } from '../interfaces/api'; // ** อย่าลืม�
 export interface MarkerSidePanelProps {
   markers: MapMarker[];
   onDelete: (id: number) => void;
-  className?: string; 
+  className?: string;
 }
 
-export const MarkerSidePanel = ({ markers, onDelete, className = '' }: MarkerSidePanelProps) => {
+export const MarkerSidePanel = ({
+  markers,
+  onDelete,
+  className = '',
+}: MarkerSidePanelProps) => {
   return (
     <div
       className={`hidden w-[260px] shrink-0 rounded-xl border border-neutral-300 bg-white/95 p-3 shadow-sm md:block ${className}`}
@@ -20,14 +24,17 @@ export const MarkerSidePanel = ({ markers, onDelete, className = '' }: MarkerSid
         </span>
       </div>
 
-      <div className="space-y-2 overflow-y-auto pr-1" style={{ height: 'calc(100% - 30px)' }}>
+      <div
+        className="space-y-2 overflow-y-auto pr-1"
+        style={{ height: 'calc(100% - 30px)' }}
+      >
         {markers.map((m) => (
           <div
             key={m.id}
             className="flex items-start gap-2 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm"
           >
             <div className="flex-1">
-              <div className="text-xs font-semibold">Name : {m.id}</div>
+              <div className="text-xs font-semibold">MARKER ID : {m.id}</div>
               <div className="line-clamp-2 text-[11px] text-neutral-600">
                 {m.description || 'No description'}
               </div>
@@ -35,7 +42,7 @@ export const MarkerSidePanel = ({ markers, onDelete, className = '' }: MarkerSid
             <button
               type="button"
               onClick={() => onDelete(m.id)}
-              className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-red-100 transition-colors"
+              className="flex h-7 w-7 items-center justify-center rounded-full transition-colors hover:bg-red-100"
               title="Delete marker"
             >
               <Trash2 className="h-4 w-4 text-red-500" />

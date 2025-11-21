@@ -3,9 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import initMapAndMarkers from '../config/google-map';
 import type { SuccessMarker, MapMarker } from '../interfaces/api';
 import { MarkerSidePanel } from '../components/rightSide';
-import axios from 'axios';
 import { apiClient } from '@/lib/apiClient';
-
 
 export const MarkerIcon = {
   Trash: (
@@ -260,8 +258,18 @@ const MapPage = () => {
   const [markers, setMarkers] = useState<MapMarker[]>([]);
   const [loading, setLoading] = useState(false);
 
-  function handleDeleteMarker(id: number) {
-    setMarkers((prev) => prev.filter((m) => m.id !== id));
+  // function handleDeleteMarker(id: number) {
+  //   setMarkers((prev) => prev.filter((m) => m.id !== id));
+  // }
+
+  async function handleDeleteMarker(id: number) {
+    try {
+      await apiClient.delete(`/api/markers/${id}`);
+
+      setMarkers((prev) => prev.filter((m) => m.id !== id));
+    } catch (err) {
+      console.error('Delete failed:', err);
+    }
   }
 
   // Fetch markers from backend and normalize location
@@ -269,12 +277,13 @@ const MapPage = () => {
     async function loadMarkers() {
       try {
         setLoading(true);
-
-        const res = await apiClient.get('/api/markers?limit=200');
+        const res = await apiClient.get('/api/markers', {
+          params: { limit: 200 },
+        });
         const data = res.data.data as SuccessMarker[];
 
         const mapped: MapMarker[] = data
-        .filter((m) => m.location)
+          .filter((m) => m.location)
           .map((m) => {
             if (!m.location) return null;
 
@@ -390,10 +399,7 @@ const MapPage = () => {
           />
         </div>
 
-        <MarkerSidePanel 
-          markers={panelMarkers} 
-          onDelete={handleDeleteMarker} 
-        />
+        <MarkerSidePanel markers={panelMarkers} onDelete={handleDeleteMarker} />
       </div>
     </div>
   );
