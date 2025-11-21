@@ -15,7 +15,7 @@ import './index.css';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/features/auth';
 import App from './App';
-import { Toaster } from '@/features/emergency/components/ui/sonner.tsx';
+import { Toaster } from './components/ui/sonner';
 import { NotificationProvider } from '@/features/emergency/hooks/notification.tsx';
 
 const queryClient = new QueryClient();
@@ -29,6 +29,7 @@ createRoot(document.getElementById('root')!).render(
           <Toaster />
         </NotificationProvider>
       </AuthProvider>
+      <Toaster richColors />
     </QueryClientProvider>
   </StrictMode>
 );
