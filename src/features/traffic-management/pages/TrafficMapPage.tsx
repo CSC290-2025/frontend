@@ -12,6 +12,9 @@ import ControlPanel from '../components/ControlPanel';
 import LocationInput from '../components/LocationInput';
 import MapSettingsDialog from '../components/MapSettingsDialog';
 import TrafficLightsList from '../components/TrafficLightsList';
+import TrafficNotifications from '../components/TrafficNotifications';
+import BrokenLightsModal from '../components/BrokenLightsModal';
+import type { StatusEvent } from '../types/useTrafficSSE';
 import { getTrafficLightsByStatus } from '../api/traffic-feature.api';
 import type { trafficLight } from '../types/traffic.types';
 
@@ -54,6 +57,8 @@ interface MapSettings {
   maxZoom: number;
   enableClustering: boolean;
 }
+// NOTE: SSE connections are handled by `useTrafficSSE` inside the notification
+// component. Avoid creating a global EventSource here to prevent duplicate connections.
 
 function parseCoordinate(value: any): number | null {
   if (typeof value === 'number' && !isNaN(value) && isFinite(value)) {
@@ -540,6 +545,7 @@ export default function TrafficMapPage() {
   const [currentLocation, setCurrentLocation] = useState('');
   const [destination, setDestination] = useState('');
   const [showSettings, setShowSettings] = useState(false);
+  const [showBrokenLightsModal, setShowBrokenLightsModal] = useState(false);
   const [userLocation, setUserLocation] = useState<{
     lat: number;
     lng: number;
@@ -608,9 +614,20 @@ export default function TrafficMapPage() {
         selectedSignal={selectedSignal}
       />
 
+      <TrafficNotifications />
+
       <div className="flex flex-1 flex-col">
         <div className="mx-auto flex w-full max-w-[1100px] flex-col items-center rounded-xl border-2 border-gray-200 bg-white p-6 shadow-md">
           <div className="relative h-[600px] w-full overflow-hidden rounded-lg">
+            <div className="absolute top-4 right-4 z-40 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowBrokenLightsModal(true)}
+                className="z-50 rounded bg-red-600 px-3 py-1 text-sm font-semibold text-white hover:bg-red-700"
+              >
+                View Broken / Maintenance Lights
+              </button>
+            </div>
             <APIProvider apiKey={apiKey}>
               <Map
                 mapId="traffic-signals-map"
@@ -650,6 +667,10 @@ export default function TrafficMapPage() {
           onClose={handleCloseSettings}
           onSave={handleSaveSettings}
           currentSettings={settings}
+        />
+        <BrokenLightsModal
+          isOpen={showBrokenLightsModal}
+          onClose={() => setShowBrokenLightsModal(false)}
         />
       </div>
     </div>

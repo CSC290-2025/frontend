@@ -4,9 +4,11 @@ import type {
   TrafficLightsResponse,
 } from '../types/traffic.types';
 
+const BASE = (import.meta as any).env?.VITE_API_BASE || 'http://localhost:3333';
+
 // Fetch all traffic lights from the API
 export const getTrafficLights = async (): Promise<TrafficLightsResponse> => {
-  const response = await fetch('http://localhost:3000/traffic-lights');
+  const response = await fetch(`${BASE}/traffic-lights`);
   if (!response.ok) {
     throw new Error(`Failed to fetch traffic lights: ${response.statusText}`);
   }
@@ -19,7 +21,7 @@ export const getTrafficLightsByStatus = async (
 ): Promise<trafficLight[]> => {
   // The endpoint returns traffic lights filtered by status
   // Assuming the endpoint format is: /traffic-lights/status or /traffic-lights/status?status=broken
-  const response = await fetch(`http://localhost:3000/traffic-lights/status`);
+  const response = await fetch(`${BASE}/traffic-lights/status`);
   if (!response.ok) {
     throw new Error(
       `Failed to fetch traffic lights by status: ${response.statusText}`
@@ -39,11 +41,16 @@ export const getTrafficLightsByStatus = async (
     lights = Array.isArray(data.data) ? data.data : [];
   }
 
-  // Filter for broken lights (assuming status 0 means broken or status field equals "broken")
-  return lights.filter(
-    (light) =>
-      light.status === 0 || light.statusLabel?.toLowerCase() === 'broken'
-  );
+  // Filter for broken lights (assuming status 1/2 indicate broken/maintenance or statusLabel contains marker)
+  return lights.filter((light) => {
+    const label = (light.statusLabel || '').toString().toLowerCase();
+    return (
+      light.status === 1 ||
+      light.status === 2 ||
+      /broken/.test(label) ||
+      /maintenance/.test(label)
+    );
+  });
 };
 
 /*export const getTrafficLightStatus = async (id: number) => {
