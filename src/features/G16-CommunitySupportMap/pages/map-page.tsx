@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from 'react';
 import initMapAndMarkers from '../config/google-map';
 import type { SuccessMarker, MapMarker } from '../interfaces/api';
 import { MarkerSidePanel } from '../components/rightSide';
+import axios from 'axios';
+import { apiClient } from '@/lib/apiClient';
 
 
 export const MarkerIcon = {
@@ -268,9 +270,8 @@ const MapPage = () => {
       try {
         setLoading(true);
 
-        const res = await fetch('http://localhost:3000/api/markers?limit=200');
-        const json = await res.json();
-        const data = json.data as SuccessMarker[];
+        const res = await apiClient.get('/api/markers?limit=200');
+        const data = res.data.data as SuccessMarker[];
 
         const mapped: MapMarker[] = data
         .filter((m) => m.location)

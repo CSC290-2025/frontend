@@ -1,6 +1,8 @@
 import { setOptions, importLibrary } from '@googlemaps/js-api-loader';
 
-setOptions({ key: process.env.GOOGLE_MAPS_API_KEY });
+setOptions({ key: import.meta.env.VITE_G16_GOOGLE_MAPS_API_KEY });
+const key = import.meta.env.VITE_G16_GOOGLE_MAPS_API_KEY
+console.log(key)
 
 type MapInit = {
   mapEl: HTMLElement;
@@ -37,9 +39,17 @@ const initMapAndMarkers = async ({
       // when click marker show popup
       marker.addListener('click', () => {
         infoWindow.close();
+
+        const titleWithoutConfident = (opt.title ?? '')
+          .replace(/\(\d+%\)/, '')
+          .trim();
+        // const raw = opt.title ?? "";
+        // const typeOnly = raw.split(":")[1]
+        //                   ?.replace(/\(.*\)/, "");
+
         infoWindow.setContent(`
-          <div style="min-width:180px">
-            <strong>${opt.title}</strong><br />
+          <div style="min-width:180px; font-size: 14px">
+            <strong>${titleWithoutConfident}</strong><br />
             Lat: ${opt.position.lat}<br />
             Lng: ${opt.position.lng}
           </div>

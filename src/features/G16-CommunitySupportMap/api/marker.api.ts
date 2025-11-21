@@ -30,6 +30,6 @@ export const getMarkerById = async (
   }
 };
 
-// export const createMarker =async (id:type) => {
-
-// }
+// const { data } = await apiClient.post('/api/markers', payload);
+// const { data } = await apiClient.put(`/api/markers/${id}`, payload);
+// await apiClient.delete(`/api/markers/${id}`);
