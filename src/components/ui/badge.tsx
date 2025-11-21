@@ -25,7 +25,7 @@ import { cn } from '@/lib/utils';
 //   }
 // );
 
-export default function Badge({
+export function Badge({
   className,
   variant,
   asChild = false,
@@ -42,5 +42,3 @@ export default function Badge({
     />
   );
 }
-
-// export { Badge, badgeVariants };
