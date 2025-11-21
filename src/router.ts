@@ -5,6 +5,11 @@ import { components, hooks, utils } from '@generouted/react-router/client';
 
 export type Path =
   | `/`
+  | `/Know-AI/:course`
+  | `/Know-AI/:course/:id`
+  | `/Know-AI/createCourse`
+  | `/Know-AI/exercises`
+  | `/Know-AI/exercises/:level/:question`
   | `/example`
   | `/example/:id`
   | `/weather`
@@ -29,6 +34,9 @@ export type Path =
   | `/register`;
 
 export type Params = {
+  '/Know-AI/:course': { course: string };
+  '/Know-AI/:course/:id': { course: string; id: string };
+  '/Know-AI/exercises/:level/:question': { level: string; question: string };
   '/district-detail/:district': { district: string };
   '/example/:id': { id: string };
   '/harm/:id': { id: string };
