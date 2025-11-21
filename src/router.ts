@@ -5,6 +5,11 @@ import { components, hooks, utils } from '@generouted/react-router/client';
 
 export type Path =
   | `/`
+  | `/example`
+  | `/example/:id`
+  | `/weather`
+  | `/weatherCity`
+  | `/weatherMain`;
   | `/dashboard`
   | `/district-detail/:district`
   | `/district-selection`
