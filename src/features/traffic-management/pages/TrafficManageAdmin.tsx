@@ -3,7 +3,7 @@ import { initializeApp } from 'firebase/app';
 import type { FirebaseApp } from 'firebase/app';
 import { getDatabase, ref, onValue, update } from 'firebase/database';
 import type { DatabaseReference } from 'firebase/database';
-// ❌ ลบ import { Loader } ออกไป เพราะไม่ได้ใช้แล้ว
+// ลบ import { Loader } ออกไป เพราะไม่ได้ใช้แล้ว
 import { setOptions, importLibrary } from '@googlemaps/js-api-loader'; // 🆕 นำเข้า Functional API
 
 /**
@@ -35,8 +35,10 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
 };
 
-// ดึง Google Maps API Key จาก Environment Variable
-const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+//อย่าลืมแก้ด้วย V
+// ดึง Google Maps API Key จาก Environment Variable  (G10!!!!)
+//const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+const GOOGLE_MAPS_API_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY_G10;
 
 // **กำหนด ID ของสี่แยกที่คุณต้องการติดตาม**
 const Traffic_ID = 15;
