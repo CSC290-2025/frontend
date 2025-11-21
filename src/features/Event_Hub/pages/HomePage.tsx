@@ -40,7 +40,6 @@ interface Event {
   end_at: string;
   address_id?: number;
   organization_id?: number;
-  // Computed fields for display
   date?: string;
   time?: string;
   location?: string;
@@ -61,12 +60,10 @@ const HomePage = () => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
 
-  // API state
   const [events, setEvents] = useState<Event[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch events from API
   useEffect(() => {
     const loadEvents = async () => {
       setIsLoading(true);
@@ -78,18 +75,10 @@ const HomePage = () => {
           q: searchQuery || undefined,
         });
 
-        console.log('fetchEvents raw response:', response);
-
-        // 1) If it's an AxiosResponse -> use .data
         const body = (response as any).data ?? response;
-
-        // 2) If you use successResponse -> data is inside .data
-        //    otherwise items might already be at top level
         const payload = body.data ?? body;
-
         const items: any[] = Array.isArray(payload.items) ? payload.items : [];
 
-        // 3) Transform safely
         const transformedEvents: Event[] = items.map((event: any) => ({
           ...event,
           date: new Date(event.start_at).toLocaleDateString('en-GB', {
@@ -123,7 +112,6 @@ const HomePage = () => {
     loadEvents();
   }, [currentPage, searchQuery]);
 
-  // Fetch bookmarks on mount
   useEffect(() => {
     const loadBookmarks = async () => {
       try {
@@ -139,6 +127,20 @@ const HomePage = () => {
 
     loadBookmarks();
   }, []);
+
+  const filteredEvents = events.filter((event) => {
+    const query = searchQuery.toLowerCase();
+    const matchesSearch =
+      !query ||
+      event.title?.toLowerCase().includes(query) ||
+      event.description?.toLowerCase().includes(query);
+
+    if (activeTab === 'bookmark') {
+      return bookmarkedEvents.has(event.id) && matchesSearch;
+    }
+
+    return matchesSearch;
+  });
 
   const categories = [
     {
@@ -215,7 +217,6 @@ const HomePage = () => {
   const toggleBookmark = async (id: number) => {
     try {
       if (bookmarkedEvents.has(id)) {
-        // Remove bookmark
         await deleteBookmark(id);
         setBookmarkedEvents((prev) => {
           const updated = new Set(prev);
@@ -223,7 +224,6 @@ const HomePage = () => {
           return updated;
         });
       } else {
-        // Add bookmark
         await createBookmark({ event_id: id });
         setBookmarkedEvents((prev) => {
           const updated = new Set(prev);
@@ -233,7 +233,6 @@ const HomePage = () => {
       }
     } catch (err) {
       console.error('Error toggling bookmark:', err);
-      // Optionally show error message to user
     }
   };
 
@@ -249,7 +248,6 @@ const HomePage = () => {
 
   return (
     <div className="flex h-screen bg-gray-50">
-      {/* Sidebar Component */}
       <Sidebar
         sidebarOpen={sidebarOpen}
         setSidebarOpen={setSidebarOpen}
@@ -258,12 +256,9 @@ const HomePage = () => {
         categories={categories}
       />
 
-      {/* Main Content */}
       <div className="flex-1 overflow-y-auto">
-        {/* TopBar Component */}
         <TopBar topCategories={topCategories} />
 
-        {/* Content Area */}
         {activeTab === 'history' ? (
           <HistoryPage setActiveTab={setActiveTab} />
         ) : activeTab === 'contact' ? (
@@ -272,7 +267,6 @@ const HomePage = () => {
           <MonthlyPage setActiveTab={setActiveTab} />
         ) : (
           <div className="mx-auto max-w-7xl p-6">
-            {/* Tabs and Search */}
             <div className="mb-6 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
               <div className="flex flex-wrap gap-2">
                 {['Events', 'History', 'Contact', 'Monthly', 'Bookmark'].map(
@@ -306,7 +300,6 @@ const HomePage = () => {
               </div>
             </div>
 
-            {/* Events Header */}
             <div className="mb-6 flex items-center justify-between">
               <h2 className="text-3xl font-bold text-gray-800">Events</h2>
               <div className="flex gap-2">
@@ -321,7 +314,6 @@ const HomePage = () => {
               </div>
             </div>
 
-            {/* Events Grid */}
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
               {filteredEvents.map((event) => (
                 <div
@@ -343,7 +335,11 @@ const HomePage = () => {
                       className="rounded-lg p-2 transition-colors hover:bg-gray-100"
                     >
                       <BookmarkMinus
-                        className={`h-5 w-5 ${bookmarkedEvents.has(event.id) ? 'fill-cyan-500 text-cyan-500' : 'text-gray-400'}`}
+                        className={`h-5 w-5 ${
+                          bookmarkedEvents.has(event.id)
+                            ? 'fill-cyan-500 text-cyan-500'
+                            : 'text-gray-400'
+                        }`}
                       />
                     </button>
                   </div>
@@ -383,7 +379,6 @@ const HomePage = () => {
         )}
       </div>
 
-      {/* Event Detail Modal */}
       <EventDetailModal
         isOpen={isModalOpen}
         onClose={handleCloseModal}
