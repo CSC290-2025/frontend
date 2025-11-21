@@ -13,7 +13,7 @@
     "check": "eslint . && prettier --check .",
     "preview": "vite preview",
     "prepare": "husky",
-    "api:generate": "curl -s https://smartcity-api.sit.kmutt.ac.th/doc > ../openapi.json && orval",
+    "api:generate": "curl -s https://smartcity-api.sit.kmutt.ac.th/doc > ../openapi.json && orval | grep -E '^(🍻|🎉|api:)' || true",
     "api:types": "orval"
   },
   "dependencies": {
