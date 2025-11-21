@@ -14,7 +14,6 @@ import MapSettingsDialog from '../components/MapSettingsDialog';
 import TrafficLightsList from '../components/TrafficLightsList';
 import TrafficNotifications from '../components/TrafficNotifications';
 import BrokenLightsModal from '../components/BrokenLightsModal';
-import type { StatusEvent } from '../types/useTrafficSSE';
 import { getTrafficLightsByStatus } from '../api/traffic-feature.api';
 import type { trafficLight } from '../types/traffic.types';
 

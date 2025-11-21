@@ -65,10 +65,6 @@ export default function TrafficNotifications() {
 
   useTrafficSSE(handleEvent, { reconnect: true, maxRetries: 6 });
 
-  useEffect(() => {
-    // keep region accessible for screen readers
-  }, []);
-
   // Listen for programmatic notification requests dispatched from the page
   useEffect(() => {
     const handler = (e: Event) => {

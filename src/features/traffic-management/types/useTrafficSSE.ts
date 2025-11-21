@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { getBaseAPIURL } from '@/lib/apiClient.ts';
 
 export type StatusEvent = {
   type: 'status_change';
@@ -24,7 +25,7 @@ export function useTrafficSSE(
   const timeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
-    const envBase = (import.meta as any).env?.VITE_API_BASE || '';
+    const envBase = getBaseAPIURL || '';
     const normalizedBase = envBase.replace(/\/$/, '');
     let url: string;
     if (options.url) {
@@ -55,7 +56,7 @@ export function useTrafficSSE(
             onEvent(parsed);
           } catch (err) {
             // ignore malformed messages but surface to console
-             
+
             console.error('SSE: failed to parse message', err);
           }
         };
@@ -86,7 +87,7 @@ export function useTrafficSSE(
         };
       } catch (err) {
         // console and retry
-         
+
         console.error('SSE: connection failed', err);
         if (!options.reconnect) return;
       }
