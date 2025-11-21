@@ -1,4 +1,4 @@
-import { apiClient } from '@/lib/apiClient';
+import { apiClient, getBaseAPIURL } from '@/lib/apiClient';
 import type {
   trafficLight,
   TrafficLightsResponse,
@@ -6,7 +6,7 @@ import type {
 
 // Fetch all traffic lights from the API
 export const getTrafficLights = async (): Promise<TrafficLightsResponse> => {
-  const response = await fetch('http://localhost:3000/traffic-lights');
+  const response = await fetch(getBaseAPIURL + '/traffic-lights');
   if (!response.ok) {
     throw new Error(`Failed to fetch traffic lights: ${response.statusText}`);
   }
@@ -19,7 +19,7 @@ export const getTrafficLightsByStatus = async (
 ): Promise<trafficLight[]> => {
   // The endpoint returns traffic lights filtered by status
   // Assuming the endpoint format is: /traffic-lights/status or /traffic-lights/status?status=broken
-  const response = await fetch(`http://localhost:3000/traffic-lights/status`);
+  const response = await fetch(getBaseAPIURL + `/traffic-lights/status`);
   if (!response.ok) {
     throw new Error(
       `Failed to fetch traffic lights by status: ${response.statusText}`
