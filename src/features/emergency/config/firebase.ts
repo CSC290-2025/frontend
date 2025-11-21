@@ -3,7 +3,7 @@ import { message } from '@/lib/firebase.ts';
 import TokenApi from '@/features/emergency/api/token.api.ts';
 import config from '@/features/emergency/config/env';
 
-const getFCMToken = async (cb: (token: string) => void) => {
+const getFCMToken = async () => {
   try {
     const registration = await navigator.serviceWorker.register(
       '/firebase-messaging-sw.js'
@@ -14,9 +14,10 @@ const getFCMToken = async (cb: (token: string) => void) => {
       vapidKey: config.FIREBASE_VAPID_KEY,
       serviceWorkerRegistration: registration,
     });
-    cb(token);
+
     console.log('Token: ', token);
     await TokenApi.storeToken(token);
+    return token;
   } catch (error) {
     console.error(error);
     return null;
