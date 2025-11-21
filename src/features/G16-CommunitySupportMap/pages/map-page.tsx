@@ -2,27 +2,8 @@
 import { useEffect, useRef, useState } from 'react';
 import initMapAndMarkers from '../config/google-map';
 import type { SuccessMarker, MapMarker } from '../interfaces/api';
-import { Trash2 } from 'lucide-react';
+import { MarkerSidePanel } from '../components/rightSide';
 
-// const parser = new DOMParser();
-
-// // A marker with a custom inline SVG.
-// const pinSvgString =
-//   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bus-front-icon lucide-bus-front"><path d="M4 6 2 7"/><path d="M10 6h4"/><path d="m22 7-2-1"/><rect width="16" height="16" x="4" y="3" rx="2"/><path d="M4 11h16"/><path d="M8 15h.01"/><path d="M16 15h.01"/><path d="M6 19v2"/><path d="M18 21v-2"/></svg>
-
-// const pinSvg = parser.parseFromString(
-//   pinSvgString,
-//   'image/svg+xml'
-// ).documentElement;
-// const pinSvgMarker = new AdvancedMarkerElement({
-//   position: { lat: 37.42475, lng: -122.094 },
-//   title: 'busfront'
-//   //@ts-ignore
-//   anchorLeft: '-50%',
-//   anchorTop: '-50%',
-// });
-// pinSvgMarker.append(pinSvg);
-// mapElement.append(pinSvgMarker);
 
 export const MarkerIcon = {
   Trash: (
@@ -276,6 +257,7 @@ const MapPage = () => {
   const mapRef = useRef<HTMLDivElement>(null);
   const [markers, setMarkers] = useState<MapMarker[]>([]);
   const [loading, setLoading] = useState(false);
+
   function handleDeleteMarker(id: number) {
     setMarkers((prev) => prev.filter((m) => m.id !== id));
   }
@@ -291,6 +273,7 @@ const MapPage = () => {
         const data = json.data as SuccessMarker[];
 
         const mapped: MapMarker[] = data
+        .filter((m) => m.location)
           .map((m) => {
             if (!m.location) return null;
 
@@ -338,6 +321,7 @@ const MapPage = () => {
               lat,
               lng,
               description: m.description,
+              marker_type_id: m.marker_type_id,
             };
           })
           // Remove null entries
@@ -379,6 +363,7 @@ const MapPage = () => {
     const markerOptions = filtered.map((m) => ({
       position: { lat: m.lat, lng: m.lng },
       title: m.description ?? `Marker #${m.id}`,
+      markerTypeId: m.marker_type_id ?? 1,
     }));
 
     initMapAndMarkers({
@@ -403,46 +388,11 @@ const MapPage = () => {
             style={{ height: 'calc(95vh - 180px)' }}
           />
         </div>
-        <div
-          className="hidden w-[260px] shrink-0 rounded-xl border border-neutral-300 bg-white/95 p-3 shadow-sm md:block"
-          style={{ maxHeight: 'calc(95vh - 180px)' }}
-        >
-          <div className="mb-2 text-sm font-semibold">
-            Selected markers
-            <span className="ml-1 text-xs text-neutral-500">
-              ({panelMarkers.length})
-            </span>
-          </div>
 
-          <div className="space-y-2 overflow-y-auto pr-1">
-            {panelMarkers.map((m) => (
-              <div
-                key={m.id}
-                className="flex items-start gap-2 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm"
-              >
-                <div className="flex-1">
-                  <div className="text-xs font-semibold">Name : {m.id}</div>
-                  <div className="line-clamp-2 text-[11px] text-neutral-600">
-                    {m.description || 'No description'}
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => handleDeleteMarker(m.id)}
-                  className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-red-100"
-                >
-                  <Trash2 className="h-4 w-4 text-red-500" />
-                </button>
-              </div>
-            ))}
-
-            {panelMarkers.length === 0 && (
-              <p className="text-xs text-neutral-500">
-                No markers in this area.
-              </p>
-            )}
-          </div>
-        </div>
+        <MarkerSidePanel 
+          markers={panelMarkers} 
+          onDelete={handleDeleteMarker} 
+        />
       </div>
     </div>
   );

@@ -1,8 +1,6 @@
 import { setOptions, importLibrary } from '@googlemaps/js-api-loader';
 
-import config from './env';
-
-setOptions({ key: config.GOOGLE_MAPS_API_KEY });
+setOptions({ key: process.env.GOOGLE_MAPS_API_KEY });
 
 type MapInit = {
   mapEl: HTMLElement;
