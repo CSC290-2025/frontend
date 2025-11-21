@@ -10,12 +10,12 @@ export const fetchWasteTypes = async (): Promise<{
   wasteTypes: WasteType[];
 }> => {
   const response = await apiClient.get('/waste-types');
-  return response.data;
+  return response.data.data;
 };
 
 export const logWaste = async (data: WasteLogRequest) => {
   const response = await apiClient.post('/waste/log', data);
-  return response.data;
+  return response.data.data;
 };
 
 export const fetchMonthlyStats = async (
@@ -27,7 +27,7 @@ export const fetchMonthlyStats = async (
   if (year) params.append('year', year.toString());
 
   const response = await apiClient.get(`/waste/stats?${params.toString()}`);
-  return response.data;
+  return response.data.data;
 };
 
 export const fetchDailyStats = async (
@@ -35,5 +35,5 @@ export const fetchDailyStats = async (
 ): Promise<{ stats: DailyStats }> => {
   const params = date ? `?date=${date}` : '';
   const response = await apiClient.get(`/waste/stats/daily${params}`);
-  return response.data;
+  return response.data.data;
 };
