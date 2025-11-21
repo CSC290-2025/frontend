@@ -8,6 +8,7 @@ import {
 import { usePostMetroCardsTopUp } from '@/api/generated/metro-cards';
 import { usePostInsuranceCardsCardIdTopUp } from '@/api/generated/insurance-cards';
 import { usePostScbQrCreate } from '@/api/generated/scb';
+import { getScbVerifyPayment } from '@/api/generated/scb';
 import type { PostScbQrCreate200Data } from '@/api/generated/model/postScbQrCreate200Data';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -51,6 +52,10 @@ export default function TopupPage() {
   // ref1 is used to track and verify whether the payment completed successfully
   const [scbRef1, setScbRef1] = useState<string | undefined>(undefined);
 
+  // this is for backup polling  for payment confirmation if pusher fails
+  const intervalRef = useRef<number | null>(null);
+  const POOL_START_DELAY_MS = 20000; // 20 seconds
+  const POOL_INTERVAL_MS = 4000; // 4 seconds
   // when initial state changes, make sure to keep the reference
   useEffect(() => {
     if (cardNumberFromState) {
@@ -197,6 +202,7 @@ export default function TopupPage() {
           setQrRawData('');
           setAmount('');
           refetchWallet();
+          setScbRef1(undefined);
         }
       } catch (err) {
         console.error('Failed to parse Pusher message', err);
@@ -211,10 +217,38 @@ export default function TopupPage() {
     channel.bind('pusher:error', (error: unknown) => {
       console.error('Pusher error:', error);
     });
+    // Start backup polling after a delay
+    const timeoutId = setTimeout(() => {
+      intervalRef.current = setInterval(async () => {
+        if (!scbRef1) {
+          if (intervalRef.current) clearInterval(intervalRef.current);
+          return;
+        }
+        try {
+          const response = await getScbVerifyPayment({ ref1: scbRef1 });
+          if (
+            response.data?.success === true &&
+            response.data?.data?.statusCode === 1000
+          ) {
+            toast.success('Payment confirmed via polling!');
+            setQrRawData('');
+            setAmount('');
+            refetchWallet();
+            setScbRef1(undefined);
+            setIsWaiting(false);
+            if (intervalRef.current) clearInterval(intervalRef.current);
+          }
+        } catch (err) {
+          console.error('Polling error:', err);
+        }
+      }, POOL_INTERVAL_MS);
+    }, POOL_START_DELAY_MS);
 
     // Cleanup function to unsubscribe and disconnect when the component unmounts
     // or when scbRef1 changes (which happens after payment confirmation/QR disappears).
     return () => {
+      clearTimeout(timeoutId);
+      if (intervalRef.current) clearInterval(intervalRef.current);
       // Unsubscribe from channel
       channel.unbind_all();
       pusher.unsubscribe(PUSHER_CHANNEL);
