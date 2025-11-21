@@ -14,7 +14,11 @@ export type Path =
   | `/district-selection`
   | `/example`
   | `/example/:id`
+  | `/harm`
+  | `/harm/:id`
   | `/healthcare`
+  | `/map`
+  | `/map/:id`
   | `/login`
   | `/power-bi`
   | `/power-bi/:type/:category`
@@ -25,6 +29,15 @@ export type Path =
 
 export type Params = {
   '/example/:id': { id: string };
+  '/harm/:id': { id: string };
+  '/map/:id': { id: string };
+  '/power-bi/:type/:category': { type: string; category: string };
+  '/power-bi/:type/:category/:id': {
+    type: string;
+    category: string;
+    id: string;
+  };
+  '/power-bi/edit/:id': { id: string };
 };
 
 export type ModalPath = never;
