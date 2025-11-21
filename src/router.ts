@@ -2,7 +2,26 @@
 
 import { components, hooks, utils } from '@generouted/react-router/client';
 
-export type Path = `/` | `/example` | `/example/:id`;
+export type Path =
+  | `/`
+  | `/example`
+  | `/example/:id`
+  | `/weather`
+  | `/weatherCity`
+  | `/weatherMain`;
+  | `/dashboard`
+  | `/district-detail/:district`
+  | `/district-selection`
+  | `/example`
+  | `/example/:id`
+  | `/healthcare`
+  | `/login`
+  | `/power-bi`
+  | `/power-bi/:type/:category`
+  | `/power-bi/:type/:category/:id`
+  | `/power-bi/create`
+  | `/power-bi/edit/:id`
+  | `/register`;
 
 export type Params = {
   '/example/:id': { id: string };
