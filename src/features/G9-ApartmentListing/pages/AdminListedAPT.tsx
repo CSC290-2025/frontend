@@ -182,11 +182,7 @@ function ApartmentCard({
 export default function AdminListedAPT() {
   const currentUserId = 3; // TODO: replace with real auth user id
 
-  const {
-    data: apartmentsData,
-    isLoading,
-    error,
-  } = useApartmentsByUser(currentUserId);
+  const { data: apartmentsData, error } = useApartmentsByUser(currentUserId);
 
   const [localApartments, setLocalApartments] = useState<Apartment[]>([]);
 

@@ -26,11 +26,9 @@ export default function AdminEditTenant() {
   // Admin role check
   const { role } = useUserRole();
   const apartmentId = bookingResp?.apartment_id;
-  const {
-    data: ownerData,
-    isLoading: ownerLoading,
-    error: ownerError,
-  } = useApartmentOwnerByAPT(apartmentId || 0);
+  const { data: ownerData, isLoading: ownerLoading } = useApartmentOwnerByAPT(
+    apartmentId || 0
+  );
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
