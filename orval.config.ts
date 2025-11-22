@@ -17,6 +17,7 @@ export default defineConfig({
           'Insurance Cards',
           'SCB',
           'Transactions',
+          'User',
         ],
       },
       // target: `${BACKEND_URL}/doc`,
@@ -31,6 +32,12 @@ export default defineConfig({
       clean: true,
       prettier: true,
       baseUrl: `${BACKEND_URL}`,
+      override: {
+        mutator: {
+          path: './src/api/client.ts',
+          name: 'request',
+        },
+      },
     },
   },
 });

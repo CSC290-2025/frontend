@@ -1,4 +1,5 @@
 import {
+  useGetMetroCardsMe,
   useGetMetroCardsUserUserId,
   usePostMetroCards,
 } from '@/api/generated/metro-cards';
@@ -21,17 +22,11 @@ import { useNavigate } from 'react-router';
 export default function MetroCardPage() {
   const navigate = useNavigate();
 
-  const { user_id } = useParams('/financial/metro/:user_id');
-
-  const {
-    data: metroCardResponse,
-    refetch,
-    isLoading,
-  } = useGetMetroCardsUserUserId(Number(user_id));
+  const { data: metroCardResponse, refetch, isLoading } = useGetMetroCardsMe();
 
   const { mutate, isPending } = usePostMetroCards({
     mutation: {
-      onSuccess: ({ data }) => {
+      onSuccess: (data) => {
         refetch();
         toast.success(data.message);
       },
@@ -44,11 +39,7 @@ export default function MetroCardPage() {
     },
   });
 
-  const metroCards = metroCardResponse?.data?.data.metroCards;
-
-  if (!user_id) {
-    return <div> no user id provided</div>;
-  }
+  const metroCards = metroCardResponse?.data?.metroCards;
 
   if (isLoading) return <Loading />;
 
@@ -93,7 +84,7 @@ export default function MetroCardPage() {
             spinner
             className="h-10 cursor-pointer"
             color="cyan"
-            onClick={() => mutate({ data: { user_id: Number(user_id) } })}
+            onClick={() => mutate({ data: {} })}
           />
         </div>
         {metroCards?.length === 0 ? (

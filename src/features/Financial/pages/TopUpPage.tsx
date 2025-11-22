@@ -8,6 +8,7 @@ import {
 import { usePostMetroCardsTopUp } from '@/api/generated/metro-cards';
 import { usePostInsuranceCardsCardIdTopUp } from '@/api/generated/insurance-cards';
 import { usePostScbQrCreate } from '@/api/generated/scb';
+import { getScbVerifyPayment } from '@/api/generated/scb';
 import type { PostScbQrCreate200Data } from '@/api/generated/model/postScbQrCreate200Data';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,6 +28,11 @@ import { toast } from 'sonner';
 import ServiceSelector, {
   type ServiceType as TopUpType,
 } from '../components/topup/ServiceSelector';
+import Pusher from 'pusher-js';
+const PUSHER_APP_KEY = import.meta.env.VITE_G11_PUSHER_APP_KEY;
+const PUSHER_CLUSTER = import.meta.env.VITE_G11_PUSHER_CLUSTER;
+const PUSHER_CHANNEL = import.meta.env.VITE_G11_PUSHER_CHANNEL;
+const PUSHER_EVENT = import.meta.env.VITE_G11_PUSHER_EVENT;
 
 export default function TopupPage() {
   const navigate = useNavigate();
@@ -46,6 +52,10 @@ export default function TopupPage() {
   // ref1 is used to track and verify whether the payment completed successfully
   const [scbRef1, setScbRef1] = useState<string | undefined>(undefined);
 
+  // this is for backup polling  for payment confirmation if pusher fails
+  const intervalRef = useRef<number | null>(null);
+  const POOL_START_DELAY_MS = 20000; // 20 seconds
+  const POOL_INTERVAL_MS = 4000; // 4 seconds
   // when initial state changes, make sure to keep the reference
   useEffect(() => {
     if (cardNumberFromState) {
@@ -57,7 +67,7 @@ export default function TopupPage() {
 
   const { data: walletResponse, refetch: refetchWallet } =
     useGetWalletsUserUserId(userId);
-  const wallet = walletResponse?.data?.data?.wallet;
+  const wallet = walletResponse?.data?.wallet;
 
   const { mutateAsync: topUpWallet, isPending: isTopUpWalletPending } =
     usePostWalletsWalletIdTopUp({
@@ -70,7 +80,7 @@ export default function TopupPage() {
       mutation: { onSuccess: () => refetchWallet() },
     });
   const { mutateAsync: generateQR } = usePostScbQrCreate();
-  // We'll use SSEs to be notified of SCB webhook confirmations.
+  // We'll use Pusher to be notified of SCB webhook confirmations.
   const [isWaiting, setIsWaiting] = useState(false);
 
   const quickAmounts = [100, 500, 1000, 2000, 5000, 10000];
@@ -108,7 +118,7 @@ export default function TopupPage() {
           data: { amount, user_id: userId },
         });
         // uhh this is mostly to shut TS up; blub doesnt believe qrResponse is real
-        const qrResponseContainer = response.data?.data as unknown as
+        const qrResponseContainer = response.data as unknown as
           | { qrResponse: PostScbQrCreate200Data }
           | undefined;
         const qrData = qrResponseContainer?.qrResponse?.qrRawData;
@@ -171,50 +181,75 @@ export default function TopupPage() {
       toast.error('Payment simulation failed');
     }
   };
-  // Subscribe to the SSE stream when we have a ref1.
-  // when the scb webhook confirms payment, we'll get notified here.
   useEffect(() => {
     if (!scbRef1) return;
-    const base = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
-
-    // this is where i have my backend set up for sending sse
-    const url = `${base}/scb/stream?ref1=${encodeURIComponent(scbRef1)}`;
-
-    // make a new event source and wait
-    const es = new EventSource(url);
-    es.onopen = () => setIsWaiting(true);
-
-    // if we get a call from backend that payment is confirmed so we will process it
-    es.onmessage = (e) => {
+    // Initialize Pusher connection
+    const pusher = new Pusher(PUSHER_APP_KEY, {
+      cluster: PUSHER_CLUSTER,
+    });
+    // Subscribe to your channel
+    const channel = pusher.subscribe(PUSHER_CHANNEL);
+    // Set waiting state
+    setIsWaiting(true);
+    // Bind to your specific event
+    channel.bind(PUSHER_EVENT, (data: unknown) => {
       try {
-        const data = JSON.parse(e.data);
-        // we just checking for ref1 to confirm
-        // it is really not necessary since backend calling this already mean that payment has been confirmed
-        const confirmed = data?.ref1;
+        // We'll check if the received ref1 matches the one we are waiting for
+        const payload = data as { ref1?: string } | null;
+        const confirmed = payload?.ref1 === scbRef1;
         if (confirmed) {
-          toast.success('Payment confirmed');
-          // don't clear the ref here — we want to keep showing the ref1
-          // permanently in the UI as requested; only clear QR and refresh.
+          toast.success('Payment confirmed via Pusher!');
           setQrRawData('');
           setAmount('');
           refetchWallet();
+          setScbRef1(undefined);
         }
       } catch (err) {
-        console.error('Failed to parse SSE message', err);
+        console.error('Failed to parse Pusher message', err);
       } finally {
         setIsWaiting(false);
-        es.close();
       }
-    };
+    });
+    // Handle connection state changes (here just for debugging plsss)
+    channel.bind('pusher:subscription_succeeded', () => {
+      console.log(`Pusher subscription to ${PUSHER_CHANNEL} successful.`);
+    });
+    channel.bind('pusher:error', (error: unknown) => {
+      console.error('Pusher error:', error);
+    });
+    // Start backup polling after a delay
+    const timeoutId = setTimeout(() => {
+      intervalRef.current = setInterval(async () => {
+        if (!scbRef1) {
+          if (intervalRef.current) clearInterval(intervalRef.current);
+          return;
+        }
+        try {
+          const response = await getScbVerifyPayment({ ref1: scbRef1 });
+          if (response.success === true && response.data?.statusCode === 1000) {
+            toast.success('Payment confirmed via polling!');
+            setQrRawData('');
+            setAmount('');
+            refetchWallet();
+            setScbRef1(undefined);
+            setIsWaiting(false);
+            if (intervalRef.current) clearInterval(intervalRef.current);
+          }
+        } catch (err) {
+          console.error('Polling error:', err);
+        }
+      }, POOL_INTERVAL_MS);
+    }, POOL_START_DELAY_MS);
 
-    es.onerror = (err) => {
-      console.error('SSE connection error', err);
-      setIsWaiting(false);
-      es.close();
-    };
-
+    // Cleanup function to unsubscribe and disconnect when the component unmounts
+    // or when scbRef1 changes (which happens after payment confirmation/QR disappears).
     return () => {
-      es.close();
+      clearTimeout(timeoutId);
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      // Unsubscribe from channel
+      channel.unbind_all();
+      pusher.unsubscribe(PUSHER_CHANNEL);
+      pusher.disconnect();
       setIsWaiting(false);
     };
   }, [scbRef1, refetchWallet]);
@@ -350,7 +385,6 @@ export default function TopupPage() {
                 <div className="inline-block border p-4">
                   {/* This is just old qr without the logo and stuff. useable*/}
                   {/* <QRCodeSVG value={qrRawData} size={200} /> */}
-
                   {/* top part of the prompt pay */}
                   <div className="flex w-full justify-center pb-4">
                     <img

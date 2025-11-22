@@ -14,7 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useNavigate, useParams } from '@/router';
 import { ArrowLeft, CreditCard, Eye, EyeOff } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Loading from '@/features/Financial/components/metro-cards/Loading';
 import MetroCard from '@/features/Financial/components/metro-cards/MetroCard';
 import ReuseableButton from '@/features/Financial/components/metro-cards/ReuseableButton';
@@ -28,27 +28,21 @@ export default function MetroCardInfoPage() {
 
   const [isEyeOff, setIsEyeOff] = useState<boolean>(true);
 
-  const { id, user_id } = useParams('/financial/metro/:user_id/info/:id');
+  const { id } = useParams('/financial/metro/info/:id');
 
-  const { data: metroCardResponse, isLoading } = useGetMetroCardsMetroCardId(
-    Number(id)
-  );
+  const {
+    data: metroCardResponse,
+    isLoading,
+    error,
+  } = useGetMetroCardsMetroCardId(Number(id));
 
   const { mutate, isPending } = useDeleteMetroCardsMetroCardId({
     mutation: {
-      onSuccess: ({ data }) => {
+      onSuccess: (data) => {
         toast.success(data.message);
 
-        //5 sec delay
-        setTimeout(
-          () =>
-            navigate('/financial/metro/:user_id', {
-              params: {
-                user_id,
-              },
-            }),
-          1000
-        );
+        //1 sec delay
+        setTimeout(() => navigate('/financial/metro'), 1000);
       },
       onError: (error: AxiosError<DeleteMetroCardsMetroCardId404Error>) => {
         const err = error.response?.data?.message;
@@ -59,7 +53,7 @@ export default function MetroCardInfoPage() {
     },
   });
 
-  const metroCard = metroCardResponse?.data.data;
+  const metroCard = metroCardResponse?.data;
 
   if (isLoading) return <Loading />;
 
@@ -89,13 +83,7 @@ export default function MetroCardInfoPage() {
       <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6 lg:px-8">
         <Button
           variant="ghost"
-          onClick={() =>
-            navigate('/financial/metro/:user_id', {
-              params: {
-                user_id,
-              },
-            })
-          }
+          onClick={() => navigate('/financial/metro')}
           className="mb-6"
         >
           <ArrowLeft className="h-4 w-4" />
@@ -164,13 +152,7 @@ export default function MetroCardInfoPage() {
               <div className="flex gap-4">
                 <ReuseableButton
                   text="Cancel"
-                  onClick={() =>
-                    navigate('/financial/metro/:user_id', {
-                      params: {
-                        user_id,
-                      },
-                    })
-                  }
+                  onClick={() => navigate('/financial/metro')}
                   className="flex-1 cursor-pointer"
                   variant={'outline'}
                 />

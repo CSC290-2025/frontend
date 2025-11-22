@@ -22,7 +22,7 @@ interface WalletManagementProps {
       status?: PutWalletsWalletIdBodyStatus;
     };
     walletId?: number | null;
-  }) => Promise<unknown>;
+  }) => void;
 }
 
 export default function WalletManagement({
