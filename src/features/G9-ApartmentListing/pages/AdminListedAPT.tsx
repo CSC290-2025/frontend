@@ -12,6 +12,7 @@ import {
   useDeleteApartment,
 } from '@/features/G9-ApartmentListing/hooks/useApartment';
 import { Upload } from '@/features/G9-ApartmentListing/hooks/index';
+import { FollowerPointerCard } from '@/features/G9-ApartmentListing/components/following-pointer';
 
 interface Apartment {
   apartmentId?: number;
@@ -103,74 +104,78 @@ function ApartmentCard({
   }
 
   return (
-    <div
-      key={id}
-      onClick={() => (window.location.href = `/AdminTenantInfo?id=${id}`)}
-      className="flex cursor-pointer flex-col rounded-xl border border-gray-200 bg-white p-5 shadow-md transition hover:shadow-lg md:flex-row md:items-start"
+    <FollowerPointerCard
+      title={'Click on an apartment to view tenant information'}
     >
-      <img
-        src={apartmentImage}
-        alt={name}
-        className="h-48 w-full rounded-xl object-cover md:w-64"
-        onError={(e) => {
-          const target = e.target as HTMLImageElement;
-          target.src = defaultImage;
-        }}
-      />
+      <div
+        key={id}
+        onClick={() => (window.location.href = `/AdminTenantInfo?id=${id}`)}
+        className="flex cursor-pointer flex-col rounded-xl border border-gray-200 bg-white p-5 shadow-md transition hover:shadow-lg md:flex-row md:items-start"
+      >
+        <img
+          src={apartmentImage}
+          alt={name}
+          className="h-48 w-full rounded-xl object-cover md:w-64"
+          onError={(e) => {
+            const target = e.target as HTMLImageElement;
+            target.src = defaultImage;
+          }}
+        />
 
-      <div className="mt-4 flex-1 md:mt-0 md:ml-6">
-        <h3 className="text-[24px] font-bold text-gray-800">{name}</h3>
+        <div className="mt-4 flex-1 md:mt-0 md:ml-6">
+          <h3 className="text-[24px] font-bold text-gray-800">{name}</h3>
 
-        <div className="mt-1 flex items-center gap-2">
-          <p className="text-[18px] text-gray-700">{rating.toFixed(1)}</p>
+          <div className="mt-1 flex items-center gap-2">
+            <p className="text-[18px] text-gray-700">{rating.toFixed(1)}</p>
 
-          <div className="flex">
-            {Array.from({ length: 5 }, (_, i) => {
-              const filledStars = Math.floor(rating);
-              return (
-                <img
-                  key={i}
-                  src={i < filledStars ? StarIcon : GrayStarIcon}
-                  alt={i < filledStars ? 'Star' : 'Gray Star'}
-                  className="h-6 w-6"
-                />
-              );
-            })}
+            <div className="flex">
+              {Array.from({ length: 5 }, (_, i) => {
+                const filledStars = Math.floor(rating);
+                return (
+                  <img
+                    key={i}
+                    src={i < filledStars ? StarIcon : GrayStarIcon}
+                    alt={i < filledStars ? 'Star' : 'Gray Star'}
+                    className="h-6 w-6"
+                  />
+                );
+              })}
+            </div>
+
+            <span className="text-[18px] text-gray-600">({reviews})</span>
           </div>
 
-          <span className="text-[18px] text-gray-600">({reviews})</span>
+          <div className="mt-2 flex items-center text-[16px] text-gray-600">
+            <img src={LocationIcon} alt="Location" className="mr-2 h-6 w-6" />
+            <p className="mt-2 text-[18px] text-gray-700">{address}</p>
+          </div>
+
+          <div className="mt-2 flex items-center text-[16px] text-gray-600">
+            <img src={PhoneIcon} alt="Phone" className="mr-3 h-5 w-5" />
+            <p className="text-[18px] text-gray-700">{phone}</p>
+          </div>
         </div>
 
-        <div className="mt-2 flex items-center text-[16px] text-gray-600">
-          <img src={LocationIcon} alt="Location" className="mr-2 h-6 w-6" />
-          <p className="mt-2 text-[18px] text-gray-700">{address}</p>
-        </div>
+        <div
+          className="mt-4 flex flex-col items-end gap-20 md:mt-0 md:ml-4"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <a
+            href={`/AdminEditAPT?apartmentId=${id}`}
+            className="flex items-center justify-center gap-2 px-3 py-2 font-medium text-gray-700"
+          >
+            <img src={EditIcon} alt="Edit" className="h-5 w-5" />
+          </a>
 
-        <div className="mt-2 flex items-center text-[16px] text-gray-600">
-          <img src={PhoneIcon} alt="Phone" className="mr-3 h-5 w-5" />
-          <p className="text-[18px] text-gray-700">{phone}</p>
+          <button
+            onClick={() => onDelete(id)}
+            className="mt-8 flex items-center justify-center gap-2 rounded-md border border-gray-300 bg-white px-7 py-2 font-medium text-[#2B5991] hover:bg-gray-200"
+          >
+            Delete
+          </button>
         </div>
       </div>
-
-      <div
-        className="mt-4 flex flex-col items-end gap-20 md:mt-0 md:ml-4"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <a
-          href={`/AdminEditAPT?apartmentId=${id}`}
-          className="flex items-center justify-center gap-2 px-3 py-2 font-medium text-gray-700"
-        >
-          <img src={EditIcon} alt="Edit" className="h-5 w-5" />
-        </a>
-
-        <button
-          onClick={() => onDelete(id)}
-          className="mt-8 flex items-center justify-center gap-2 rounded-md border border-gray-300 bg-white px-7 py-2 font-medium text-[#2B5991] hover:bg-gray-200"
-        >
-          Delete
-        </button>
-      </div>
-    </div>
+    </FollowerPointerCard>
   );
 }
 
@@ -225,14 +230,6 @@ export default function AdminListedAPT() {
 
     setShowPopup(false);
   };
-
-  if (isLoading) {
-    return (
-      <div className="font-poppins flex min-h-screen flex-col items-center justify-center bg-[#F9FAFB]">
-        <div className="text-xl text-gray-600">Loading your apartments...</div>
-      </div>
-    );
-  }
 
   if (error) {
     console.error('Error loading apartments:', error);

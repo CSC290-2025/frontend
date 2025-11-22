@@ -24,7 +24,11 @@ import LeftIcon from '@/features/G9-ApartmentListing/assets/LeftIcon.svg';
 import RightIcon from '@/features/G9-ApartmentListing/assets/RightIcon.svg';
 import ShareModal from '@/features/G9-ApartmentListing/components/Share';
 import ReviewModal from '@/features/G9-ApartmentListing/components/Review';
-
+import {
+  FailedError,
+  SuccessToast,
+} from '@/features/G9-ApartmentListing/components/toastBox';
+import { MessageCircle } from 'lucide-react';
 export default function ApartmentDetailPage() {
   const params = useParams('/ApartmentHomepage/:id');
   const apartmentId = params.id;
@@ -33,6 +37,17 @@ export default function ApartmentDetailPage() {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [isSubmittingReview, setIsSubmittingReview] = useState(false);
+  const [deletingReviewId, setDeletingReviewId] = useState<number | null>(null);
+  const [newlyAddedReview, setNewlyAddedReview] = useState<number | null>(null);
+  const [editingReview, setEditingReview] = useState<{
+    id: number;
+    rating: number;
+    comment: string;
+  } | null>(null);
+  const [reviewModalMode, setReviewModalMode] = useState<'create' | 'edit'>(
+    'create'
+  );
   const reviewsPerPage = 3;
   const shareUrl = window.location.href;
 
@@ -46,6 +61,8 @@ export default function ApartmentDetailPage() {
   const averageRating = Rating.useAverageRating(parseInt(apartmentId));
   const { data: images } = Upload.usePicturesByApartment(parseInt(apartmentId));
   const createRating = Rating.useCreateRating();
+  const updateRating = Rating.useUpdateRatingWithContext(parseInt(apartmentId));
+  const deleteRating = Rating.useDeleteRatingWithContext(parseInt(apartmentId));
   const rawApartment = apartmentData?.data || apartmentData || null;
   const ratingArray: ratingTypes.default[] =
     rating?.data?.data || rating?.data || [];
@@ -54,6 +71,10 @@ export default function ApartmentDetailPage() {
     images?.data?.data || images?.data || [];
   const roomArray: roomTypes.Room[] =
     room || room?.data?.data || room?.data || [];
+
+  // TODO: Replace with actual user ID from authentication context
+  const currentUserId = 14;
+
   // Calculate manual average from rating array as fallback
   const manualAverage =
     totalRatings > 0
@@ -92,16 +113,26 @@ export default function ApartmentDetailPage() {
       status: room.room_status === 'available' ? 'Available' : 'Unavailable',
     })),
     nearbyPlaces: [], // TODO: Add nearby places API
-    reviews: ratingArray.map((rating) => ({
-      id: rating.id,
-      author: `User ${rating.userId}`, // TODO: Join with user table for actual names
-      date: rating.createdAt
-        ? new Date(rating.createdAt).toLocaleDateString()
-        : new Date().toLocaleDateString(),
-      rating: rating.rating,
-      comment: rating.comment,
-      avatar: '👤',
-    })),
+    reviews: ratingArray
+      .map((rating) => ({
+        id: rating.id,
+        author: `User ${rating.userId}`, // TODO: Join with user table for actual names
+        date: rating.createdAt
+          ? new Date(rating.createdAt).toLocaleDateString()
+          : new Date().toLocaleDateString(),
+        rating: rating.rating,
+        comment: rating.comment,
+        avatar: '👤',
+        userId: rating.userId,
+        isCurrentUser: rating.userId === currentUserId,
+      }))
+      .sort((a, b) => {
+        // Sort user's own reviews to the top
+        if (a.isCurrentUser && !b.isCurrentUser) return -1;
+        if (!a.isCurrentUser && b.isCurrentUser) return 1;
+        // Then sort by creation date (newest first)
+        return new Date(b.date).getTime() - new Date(a.date).getTime();
+      }),
   };
 
   const totalReviewPages = Math.ceil(apartment.reviews.length / reviewsPerPage);
@@ -145,22 +176,105 @@ export default function ApartmentDetailPage() {
   };
 
   const handleReviewSubmit = async (ratingValue: number, comment: string) => {
+    // Prevent multiple submissions while one is in progress
+    if (createRating.isPending || isSubmittingReview) {
+      return;
+    }
     try {
-      // TODO: Replace with actual user ID from authentication context
-      const currentUserId = 14;
+      setIsSubmittingReview(true);
 
-      await createRating.mutateAsync({
+      // Check for existing review by this user
+      if (ratingArray.some((r) => r.userId === currentUserId)) {
+        FailedError('You can only review this apartment once');
+        return;
+      }
+
+      const result = await createRating.mutateAsync({
         apartmentId: apartment.id,
         userId: currentUserId,
         rating: ratingValue,
         comment,
       });
+
+      // Track newly added review for animation
+      if (result?.data?.id) {
+        setNewlyAddedReview(result.data.id);
+        setTimeout(() => setNewlyAddedReview(null), 2000);
+      }
+
+      SuccessToast('Review submitted successfully.');
       setIsReviewModalOpen(false);
       setCurrentReviewPage(1);
     } catch (error) {
       console.error('Failed to submit review:', error);
+      FailedError('Failed to submit review. Please try again.');
+    } finally {
+      setIsSubmittingReview(false);
     }
   };
+
+  const handleUpdateReview = async (
+    reviewId: number,
+    ratingValue: number,
+    comment: string
+  ) => {
+    try {
+      setIsSubmittingReview(true);
+
+      await updateRating.mutateAsync({
+        id: reviewId,
+        data: {
+          rating: ratingValue,
+          comment,
+        },
+      });
+
+      SuccessToast('Review updated successfully.');
+      setIsReviewModalOpen(false);
+      setEditingReview(null);
+      setReviewModalMode('create');
+    } catch (error) {
+      console.error('Failed to update review:', error);
+      FailedError('Failed to update review. Please try again.');
+    } finally {
+      setIsSubmittingReview(false);
+    }
+  };
+
+  const handleEditReview = (review: {
+    id: number;
+    rating: number;
+    comment: string;
+  }) => {
+    setEditingReview(review);
+    setReviewModalMode('edit');
+    setIsReviewModalOpen(true);
+  };
+
+  const handleDeleteReview = async (ratingId: number) => {
+    try {
+      setDeletingReviewId(ratingId);
+
+      // Small delay for visual feedback
+      await new Promise((resolve) => setTimeout(resolve, 200));
+
+      await deleteRating.mutateAsync(ratingId);
+      SuccessToast('Review deleted successfully.');
+
+      // Reset to first page if current page becomes empty
+      const remainingReviews = apartment.reviews.length - 1;
+      const maxPages = Math.ceil(remainingReviews / reviewsPerPage);
+      if (currentReviewPage > maxPages && maxPages > 0) {
+        setCurrentReviewPage(maxPages);
+      }
+    } catch (error) {
+      console.error('Failed to delete review:', error);
+      FailedError('Failed to delete review. Please try again.');
+    } finally {
+      setDeletingReviewId(null);
+    }
+  };
+
   return (
     <div className="font-poppins min-h-screen bg-[#F9FAFB] font-sans">
       <div className="mx-auto max-w-7xl px-8 py-6">
@@ -270,20 +384,32 @@ export default function ApartmentDetailPage() {
             </div>
 
             {/* Reviews */}
-            <div className="rounded-lg bg-white p-6 shadow-sm">
+            <div className="rounded-lg bg-white p-6 shadow-sm transition-all duration-300 hover:shadow-md">
               <div className="mb-6 flex items-center justify-between">
                 <h2 className="text-2xl font-bold">Reviews</h2>
                 <button
                   onClick={() => setIsReviewModalOpen(true)}
-                  className="rounded-lg bg-cyan-400 px-6 py-2 text-sm text-white hover:bg-cyan-500"
+                  disabled={isSubmittingReview}
+                  className={`transform rounded-lg px-6 py-2 text-sm text-white transition-all duration-200 ${
+                    isSubmittingReview
+                      ? 'cursor-not-allowed bg-gray-400'
+                      : 'bg-cyan-400 hover:scale-105 hover:bg-cyan-500 active:scale-95'
+                  }`}
                 >
-                  Write a review
+                  {isSubmittingReview ? (
+                    <span className="flex items-center gap-2">
+                      <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                      Submitting...
+                    </span>
+                  ) : (
+                    'Write a review'
+                  )}
                 </button>
               </div>
 
               <div className="mb-6">
                 <h3 className="mb-2 font-semibold">Rating</h3>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 transition-all duration-300">
                   <span className="text-2xl font-bold">
                     {Number(apartment.rating).toFixed(1)}
                   </span>
@@ -299,32 +425,159 @@ export default function ApartmentDetailPage() {
               <div className="mb-6">
                 <h3 className="mb-4 font-semibold">Comment</h3>
                 <div className="space-y-6">
-                  {currentReviews.map((review) => (
-                    <div
-                      key={review.id}
-                      className="border-b pb-6 last:border-b-0"
-                    >
-                      <div className="mb-3 flex items-start justify-between">
-                        <div className="flex gap-3">
-                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gray-200 text-xl">
-                            {review.avatar}
-                          </div>
-                          <div>
-                            <p className="font-semibold">{review.author}</p>
-                            <p className="text-sm text-gray-500">
-                              {review.date}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex text-lg">
-                          {renderStars(review.rating)}
-                        </div>
+                  {currentReviews.length === 0 ? (
+                    <div className="py-12 text-center opacity-75 transition-all duration-500 hover:opacity-100">
+                      <div className="mb-4 flex justify-center text-8xl text-gray-500">
+                        <MessageCircle size={70} />
                       </div>
-                      <p className="ml-13 text-sm leading-relaxed text-gray-700">
-                        {review.comment}
+                      <p className="text-gray-500">
+                        No reviews yet. Be the first to write a review!
                       </p>
                     </div>
-                  ))}
+                  ) : (
+                    currentReviews.map((review, index) => {
+                      const isCurrentUserReview = review.isCurrentUser;
+                      const isDeleting = deletingReviewId === review.id;
+                      const isNewlyAdded = newlyAddedReview === review.id;
+
+                      return (
+                        <div
+                          key={review.id}
+                          className={`group relative border-b pb-6 transition-all duration-500 ease-out last:border-b-0 ${
+                            isDeleting
+                              ? 'scale-95 opacity-30 blur-sm'
+                              : 'scale-100 opacity-100'
+                          } ${
+                            isNewlyAdded
+                              ? '-m-4 animate-pulse rounded-lg bg-green-50 p-4 shadow-lg'
+                              : ''
+                          } ${
+                            isCurrentUserReview
+                              ? '-m-4 rounded-lg border-l-4 border-blue-400 bg-blue-50 p-4'
+                              : ''
+                          }`}
+                          style={{
+                            transitionDelay: `${index * 50}ms`,
+                            animation: isNewlyAdded
+                              ? 'pulse 2s ease-in-out'
+                              : undefined,
+                          }}
+                        >
+                          {isCurrentUserReview && (
+                            <div className="absolute -top-2 -left-2 z-10 rounded-full bg-blue-500 px-2 py-1 text-xs text-white shadow-md">
+                              Your Review
+                            </div>
+                          )}
+                          <div className="mb-3 flex items-start justify-between">
+                            <div className="flex gap-3">
+                              <div
+                                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xl transition-all duration-300 ${
+                                  isNewlyAdded
+                                    ? 'animate-bounce bg-green-400 text-white shadow-lg'
+                                    : isCurrentUserReview
+                                      ? 'bg-blue-400 text-white shadow-md'
+                                      : 'bg-gray-200 group-hover:bg-gray-300'
+                                }`}
+                              >
+                                {review.avatar}
+                              </div>
+                              <div className="transition-transform duration-200 group-hover:translate-x-1">
+                                <p
+                                  className={`font-semibold ${isCurrentUserReview ? 'text-blue-700' : ''}`}
+                                >
+                                  {review.author}
+                                  {isCurrentUserReview && (
+                                    <span className="ml-2 rounded-full bg-blue-100 px-2 py-1 text-xs text-blue-600">
+                                      You
+                                    </span>
+                                  )}
+                                </p>
+                                <p className="text-sm text-gray-500">
+                                  {review.date}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <div className="flex text-lg transition-transform duration-200 hover:scale-110">
+                                {renderStars(review.rating)}
+                              </div>
+                              {isCurrentUserReview && (
+                                <div className="flex gap-1">
+                                  <button
+                                    onClick={() =>
+                                      handleEditReview({
+                                        id: review.id,
+                                        rating: review.rating,
+                                        comment: review.comment,
+                                      })
+                                    }
+                                    className="ml-2 transform rounded-full p-1 text-blue-600 opacity-0 transition-all duration-200 group-hover:opacity-100 hover:scale-110 hover:bg-blue-100 hover:text-blue-800"
+                                    title="Edit your review"
+                                    disabled={isSubmittingReview || isDeleting}
+                                  >
+                                    <svg
+                                      className="h-4 w-4"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                      xmlns="http://www.w3.org/2000/svg"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"
+                                      />
+                                    </svg>
+                                  </button>
+                                  <button
+                                    onClick={() =>
+                                      handleDeleteReview(review.id)
+                                    }
+                                    className={`transform rounded-full p-1 text-red-500 opacity-0 transition-all duration-200 group-hover:opacity-100 hover:scale-110 hover:text-red-700 ${
+                                      isDeleting
+                                        ? 'animate-spin opacity-100'
+                                        : 'hover:bg-red-100'
+                                    }`}
+                                    title="Delete your review"
+                                    disabled={
+                                      deleteRating.isPending || isDeleting
+                                    }
+                                  >
+                                    <svg
+                                      className="h-4 w-4"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                      xmlns="http://www.w3.org/2000/svg"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                      />
+                                    </svg>
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          <p className="ml-13 text-sm leading-relaxed text-gray-700 transition-all duration-200 group-hover:text-gray-900">
+                            {review.comment}
+                          </p>
+                          {isNewlyAdded && (
+                            <div
+                              className="absolute -top-2 -right-2 animate-bounce rounded-full bg-green-500 px-2 py-1 text-xs text-white shadow-md"
+                              style={{ animationDuration: '1s' }}
+                            >
+                              New!
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })
+                  )}
                 </div>
               </div>
 
@@ -388,7 +641,7 @@ export default function ApartmentDetailPage() {
               <h2 className="mb-4 text-xl font-bold">About this place</h2>
 
               <h3 className="mb-2 font-semibold">Description</h3>
-              <p className="text-sm leading-relaxed whitespace-pre-line text-gray-700">
+              <p className="pb-3 text-sm leading-relaxed whitespace-pre-line text-gray-700">
                 {apartment.description}
               </p>
 
@@ -444,26 +697,37 @@ export default function ApartmentDetailPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {apartment.roomTypes.map((room, index) => {
-                      return (
-                        <tr key={index} className="border-b last:border-b-0">
-                          <td className="py-3">{room.type}</td>
-                          <td className="py-3">{room.size}</td>
-                          <td className="py-3">{room.price}</td>
-                          <td className="py-3">
-                            <span
-                              className={`rounded-md px-3 py-1 text-xs font-semibold ${
-                                room.status === 'Available'
-                                  ? 'bg-green-500 text-white'
-                                  : 'bg-red-500 text-white'
-                              }`}
-                            >
-                              {room.status}
-                            </span>
-                          </td>
-                        </tr>
-                      );
-                    })}
+                    {apartment.roomTypes.length > 0 ? (
+                      apartment.roomTypes.map((room, index) => {
+                        return (
+                          <tr key={index} className="border-b last:border-b-0">
+                            <td className="py-3">{room.type}</td>
+                            <td className="py-3">{room.size}</td>
+                            <td className="py-3">{room.price}</td>
+                            <td className="py-3">
+                              <span
+                                className={`rounded-md px-3 py-1 text-xs font-semibold ${
+                                  room.status === 'Available'
+                                    ? 'bg-green-500 text-white'
+                                    : 'bg-red-500 text-white'
+                                }`}
+                              >
+                                {room.status}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })
+                    ) : (
+                      <tr>
+                        <td
+                          colSpan={4}
+                          className="py-6 text-center text-sm text-gray-500"
+                        >
+                          No rooms available at this time
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
@@ -482,7 +746,7 @@ export default function ApartmentDetailPage() {
               onClick={() => {
                 window.location.href = `/ApartmentBooking?apartmentId=${apartment.id}`;
               }}
-              className="flex w-full items-center justify-center rounded-lg bg-cyan-400 py-4 text-xl font-bold text-white hover:bg-cyan-500"
+              className="flex w-full transform items-center justify-center rounded-lg bg-cyan-400 py-4 text-xl font-bold text-white transition-all duration-200 hover:scale-105 hover:bg-cyan-500 active:scale-95"
             >
               Book now !
             </button>
@@ -506,8 +770,15 @@ export default function ApartmentDetailPage() {
 
       <ReviewModal
         isOpen={isReviewModalOpen}
-        onClose={() => setIsReviewModalOpen(false)}
+        onClose={() => {
+          setIsReviewModalOpen(false);
+          setEditingReview(null);
+          setReviewModalMode('create');
+        }}
         onSubmit={handleReviewSubmit}
+        onUpdate={handleUpdateReview}
+        mode={reviewModalMode}
+        existingReview={editingReview}
       />
     </div>
   );
