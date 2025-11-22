@@ -1,27 +1,15 @@
-// src/pages/MapPage.tsx
-import { useEffect, useRef, useState } from 'react';
-import initMapAndMarkers from '../config/google-map';
+import { useEffect, useState } from 'react';
+import {
+  APIProvider,
+  Map,
+  AdvancedMarker,
+  InfoWindow,
+  useMap,
+} from '@vis.gl/react-google-maps';
 import type { SuccessMarker, MapMarker } from '../interfaces/api';
 import { Trash2 } from 'lucide-react';
-
-// const parser = new DOMParser();
-// // A marker with a custom inline SVG.
-// const pinSvgString =
-//   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-bus-front-icon lucide-bus-front"><path d="M4 6 2 7"/><path d="M10 6h4"/><path d="m22 7-2-1"/><rect width="16" height="16" x="4" y="3" rx="2"/><path d="M4 11h16"/><path d="M8 15h.01"/><path d="M16 15h.01"/><path d="M6 19v2"/><path d="M18 21v-2"/></svg>
-
-// const pinSvg = parser.parseFromString(
-//   pinSvgString,
-//   'image/svg+xml'
-// ).documentElement;
-// const pinSvgMarker = new AdvancedMarkerElement({
-//   position: { lat: 37.42475, lng: -122.094 },
-//   title: 'busfront'
-//   //@ts-ignore
-//   anchorLeft: '-50%',
-//   anchorTop: '-50%',
-// });
-// pinSvgMarker.append(pinSvg);
-// mapElement.append(pinSvgMarker);
+import config from '../config/env';
+import { getBaseAPIURL } from '@/lib/apiClient.ts';
 
 export const MarkerIcon = {
   Trash: (
@@ -218,37 +206,7 @@ export const MarkerIcon = {
   ),
 } as const;
 
-// export function createMarkerIcon(markerTypeId: number): HTMLElement {
-//   const parser = new DOMParser();
-//   let svgString: string;
-
-//   switch (markerTypeId) {
-//     case 1:
-//       svgString = MarkerIcon.Busfront;
-//       break;
-//     case 2:
-//       svgString = MarkerIcon.Wind;
-//       break;
-//     case 3:
-//       svgString = MarkerIcon.TrafficCone;
-//       break;
-//     case 4:
-//       svgString = MarkerIcon.Trophy;
-//       break;
-//     case 5:
-//       svgString = MarkerIcon.Siren;
-//       break;
-//     case 6:
-//       svgString = MarkerIcon.TriangleAlert;
-//       break;
-//     default:
-//       svgString = MarkerIcon.Busfront;
-//   }
-
-//   const svgDoc = parser.parseFromString(svgString.trim(), 'image/svg+xml');
-//   return svgDoc.documentElement as unknown as HTMLElement;
-// }
-// area of map with 4 district
+// Area of map with 4 districts
 const MAP_BOUNDS = {
   north: 13.745,
   south: 13.58,
@@ -271,16 +229,45 @@ function isInAnyZone(m: MapMarker): boolean {
   );
 }
 
-const MapPage = () => {
-  const mapRef = useRef<HTMLDivElement>(null);
+// Separate component for markers to have access to map context
+const MapMarkers = ({
+  markers,
+  onMarkerClick,
+}: {
+  markers: MapMarker[];
+  onMarkerClick: (marker: MapMarker) => void;
+}) => {
+  return (
+    <>
+      {markers.map((marker) => (
+        <AdvancedMarker
+          key={marker.id}
+          position={{ lat: marker.lat, lng: marker.lng }}
+          title={marker.description ?? `Marker #${marker.id}`}
+          onClick={() => onMarkerClick(marker)}
+        />
+      ))}
+    </>
+  );
+};
+
+const MapContent = () => {
   const [markers, setMarkers] = useState<MapMarker[]>([]);
   const [loading, setLoading] = useState(false);
+  const [selectedMarker, setSelectedMarker] = useState<MapMarker | null>(null);
 
   const panelMarkers = markers.filter(isInAnyZone);
+  const filteredMarkers = markers.filter(isInAnyZone);
+
+  // Center of the whole area
+  const center = {
+    lat: (MAP_BOUNDS.north + MAP_BOUNDS.south) / 2,
+    lng: (MAP_BOUNDS.east + MAP_BOUNDS.west) / 2,
+  };
 
   async function handleDeleteMarker(id: number) {
     try {
-      const res = await fetch(`http://localhost:3000/api/markers/${id}`, {
+      const res = await fetch(getBaseAPIURL + `/api/markers/${id}`, {
         method: 'DELETE',
       });
 
@@ -289,10 +276,17 @@ const MapPage = () => {
         return;
       }
       setMarkers((prev) => prev.filter((m) => m.id !== id));
+      if (selectedMarker?.id === id) {
+        setSelectedMarker(null);
+      }
     } catch (err) {
       console.error('Delete failed:', err);
     }
   }
+
+  const handleMarkerClick = (marker: MapMarker) => {
+    setSelectedMarker(marker);
+  };
 
   // Fetch markers from backend and normalize location
   useEffect(() => {
@@ -300,7 +294,7 @@ const MapPage = () => {
       try {
         setLoading(true);
 
-        const res = await fetch('http://localhost:3000/api/markers?limit=200');
+        const res = await fetch(getBaseAPIURL + '/api/markers?limit=200');
         const json = await res.json();
         const data = json.data as SuccessMarker[];
 
@@ -366,42 +360,6 @@ const MapPage = () => {
     loadMarkers();
   }, []);
 
-  // Render Google Map whenever markers change
-  useEffect(() => {
-    if (!mapRef.current) return;
-
-    // Only markers inside the 4 target districts
-    const filtered = markers.filter(isInAnyZone);
-
-    // Center of the whole area
-    const center = {
-      lat: (MAP_BOUNDS.north + MAP_BOUNDS.south) / 2,
-      lng: (MAP_BOUNDS.east + MAP_BOUNDS.west) / 2,
-    };
-
-    const mapOptions: google.maps.MapOptions = {
-      center,
-      zoom: 13,
-      mapId: 'map1',
-      // Lock map inside the bounding box
-      restriction: {
-        latLngBounds: MAP_BOUNDS,
-        strictBounds: true,
-      },
-    };
-
-    const markerOptions = filtered.map((m) => ({
-      position: { lat: m.lat, lng: m.lng },
-      title: m.description ?? `Marker #${m.id}`,
-    }));
-
-    initMapAndMarkers({
-      mapEl: mapRef.current,
-      mapOptions,
-      markerOptions,
-    });
-  }, [markers]);
-
   return (
     <div className="w-full space-y-4">
       {loading && <p className="text-sm text-gray-500">Loading markers...</p>}
@@ -409,12 +367,50 @@ const MapPage = () => {
       <div className="flex gap-4">
         <div className="flex-1">
           <div
-            ref={mapRef}
-            id="google_map"
             className="overflow-hidden rounded-xl border border-neutral-300 shadow-sm"
             style={{ height: 'calc(95vh - 180px)' }}
-          />
+          >
+            <Map
+              mapId="map1"
+              defaultCenter={center}
+              defaultZoom={13}
+              restriction={{
+                latLngBounds: MAP_BOUNDS,
+                strictBounds: true,
+              }}
+              gestureHandling="greedy"
+              disableDefaultUI={false}
+            >
+              <MapMarkers
+                markers={filteredMarkers}
+                onMarkerClick={handleMarkerClick}
+              />
+
+              {selectedMarker && (
+                <InfoWindow
+                  position={{
+                    lat: selectedMarker.lat,
+                    lng: selectedMarker.lng,
+                  }}
+                  onCloseClick={() => setSelectedMarker(null)}
+                >
+                  <div style={{ minWidth: '180px', fontSize: '14px' }}>
+                    <strong>
+                      {selectedMarker.description
+                        ?.replace(/\(\d+%\)/, '')
+                        .trim() || `Marker #${selectedMarker.id}`}
+                    </strong>
+                    <br />
+                    Lat: {selectedMarker.lat}
+                    <br />
+                    Lng: {selectedMarker.lng}
+                  </div>
+                </InfoWindow>
+              )}
+            </Map>
+          </div>
         </div>
+
         <div
           className="hidden w-[260px] shrink-0 flex-col rounded-xl border border-neutral-300 bg-white/95 p-3 shadow-sm md:flex"
           style={{ height: 'calc(95vh - 180px)' }}
@@ -457,6 +453,14 @@ const MapPage = () => {
         </div>
       </div>
     </div>
+  );
+};
+
+const MapPage = () => {
+  return (
+    <APIProvider apiKey={config.GOOGLE_MAPS_API_KEY}>
+      <MapContent />
+    </APIProvider>
   );
 };
 

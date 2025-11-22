@@ -41,6 +41,9 @@ Thumbs.db
 *.sln
 *.sw?
 
+# Open API one
+/src/api/generated/
+
 # Claude Code
 .claude/
 CLAUDE.md
@@ -78,3 +81,5 @@ CLAUDE.md
 
 #open API one
 /src/api/generated/
+/src/features/Financial/src/api
+src/features/openapi.json

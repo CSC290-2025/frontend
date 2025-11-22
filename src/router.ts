@@ -1,5 +1,4 @@
 // Generouted, changes to this file will be overridden
- 
 
 import { components, hooks, utils } from '@generouted/react-router/client';
 
@@ -30,6 +29,12 @@ export type Path =
   | `/event_hub`
   | `/event_hub/CreatePage`
   | `/example/:id`
+  | `/financial`
+  | `/financial/insurance/:user_id`
+  | `/financial/insurance/:user_id/info/:id`
+  | `/financial/metro/:user_id`
+  | `/financial/metro/:user_id/info/:id`
+  | `/financial/topup`
   | `/freecycle`
   | `/freecycle/items/:id`
   | `/freecycle/items/edit/:id`
@@ -55,6 +60,15 @@ export type Path =
   | `/sos/:id`
   | `/sos/report`
   | `/sos/report/:id`
+  | `/traffic`
+  | `/traffic/AddLight`
+  | `/traffic/Manual-Manage`
+  | `/traffic/admin`
+  | `/traffic/control`
+  | `/traffic/mock`
+  | `/traffic/test`
+  | `/users`
+  | `/waste-management`
   | `/weather`
   | `/weather-aqi`
   | `/weather-aqi/overview/:district`
@@ -68,6 +82,10 @@ export type Params = {
   '/Know-AI/exercises/:level/:question': { level: string; question: string };
   '/clean-air/district-detail/:district': { district: string };
   '/example/:id': { id: string };
+  '/financial/insurance/:user_id': { user_id: string };
+  '/financial/insurance/:user_id/info/:id': { user_id: string; id: string };
+  '/financial/metro/:user_id': { user_id: string };
+  '/financial/metro/:user_id/info/:id': { user_id: string; id: string };
   '/freecycle/items/:id': { id: string };
   '/freecycle/items/edit/:id': { id: string };
   '/harm/:id': { id: string };

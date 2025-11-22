@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Upload, ArrowLeft } from 'lucide-react';
 import { useNavigate } from '@/router';
-import { useParams } from 'react-router-dom';
+import { useParams } from 'react-router';
 import type { Category } from '@/types/postItem';
 import {
   fetchAllCategories,
