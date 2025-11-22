@@ -15,6 +15,37 @@ import {
   Upload as UploadHooks,
 } from '@/features/G9-ApartmentListing/hooks/index';
 
+// File upload constants
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ALLOWED_FILE_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+];
+const MAX_IMAGES = 5;
+
+// Helper function to validate files
+const validateFile = (file: File): { isValid: boolean; error?: string } => {
+  // Check file type
+  if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+    return {
+      isValid: false,
+      error: `Invalid file type: ${file.type}. Only JPEG, PNG, WebP, and GIF images are allowed.`,
+    };
+  }
+
+  // Check file size
+  if (file.size > MAX_FILE_SIZE) {
+    return {
+      isValid: false,
+      error: `File too large: ${(file.size / (1024 * 1024)).toFixed(2)}MB. Maximum size is 5MB.`,
+    };
+  }
+
+  return { isValid: true };
+};
+
 interface LocationData {
   [key: string]: {
     districts: string[];
@@ -45,7 +76,7 @@ export default function EditApartment(): React.ReactElement {
   const [roomsToDelete, setRoomsToDelete] = useState<number[]>([]);
 
   const updateApartmentMutation = APT.useUpdateApartment();
-  const uploadMultipleFilesMutation = UploadHooks.useUploadMultipleFiles();
+  const uploadSingleFile = UploadHooks.useUploadFile();
   const deleteFileMutation = UploadHooks.useDeleteFile();
   const createRoomMutation = Room.useCreateRoom();
   const updateRoomMutation = Room.useUpdateRoom();
@@ -245,29 +276,44 @@ export default function EditApartment(): React.ReactElement {
     if (!files) return;
 
     const currentImageCount = selectedImages.length + existingImageUrls.length;
-    const remainingSlots = 5 - currentImageCount;
+    const remainingSlots = MAX_IMAGES - currentImageCount;
 
     if (remainingSlots <= 0) {
-      setErrorMessage('Maximum 5 images allowed');
+      setErrorMessage(`Maximum ${MAX_IMAGES} images allowed`);
       setShowErrorPopup(true);
       return;
     }
 
     const newFiles: File[] = [];
     const newPreviews: string[] = [];
-    const filesToAdd = Math.min(files.length, remainingSlots);
+    const errors: string[] = [];
+    const filesToProcess = Math.min(files.length, remainingSlots);
 
-    for (let i = 0; i < filesToAdd; i++) {
+    for (let i = 0; i < filesToProcess; i++) {
       const file = files[i];
-      if (file.type.startsWith('image/')) {
+      const validation = validateFile(file);
+
+      if (validation.isValid) {
         const preview = URL.createObjectURL(file);
         newFiles.push(file);
         newPreviews.push(preview);
+      } else {
+        errors.push(`${file.name}: ${validation.error}`);
       }
     }
 
-    setSelectedImages((prev) => [...prev, ...newFiles]);
-    setImagePreviews((prev) => [...prev, ...newPreviews]);
+    if (errors.length > 0) {
+      setErrorMessage(`Some files were rejected:\n${errors.join('\n')}`);
+      setShowErrorPopup(true);
+    }
+
+    if (newFiles.length > 0) {
+      setSelectedImages((prev) => [...prev, ...newFiles]);
+      setImagePreviews((prev) => [...prev, ...newPreviews]);
+    }
+
+    // Reset the input to allow selecting the same files again if needed
+    e.target.value = '';
   };
 
   const removeImage = (index: number): void => {
@@ -431,10 +477,103 @@ export default function EditApartment(): React.ReactElement {
 
       // Upload new images if any are selected
       if (selectedImages.length > 0) {
-        await uploadMultipleFilesMutation.mutateAsync({
-          apartmentId: apartmentId,
-          files: selectedImages,
-        });
+        try {
+          console.log(
+            `Starting upload of ${selectedImages.length} images for apartment ${apartmentId}`
+          );
+
+          // Validate apartment ID
+          if (!apartmentId || apartmentId <= 0) {
+            throw new Error('Invalid apartment ID. Cannot upload images.');
+          }
+
+          // Verify apartment exists by checking if we have apartment data
+          if (!apartmentData) {
+            throw new Error(
+              'Apartment data not found. Please refresh the page and try again.'
+            );
+          }
+
+          console.log('Apartment validation passed. Apartment data:', {
+            id: apartmentId,
+            name: apartmentData.data?.name || apartmentData.name,
+            exists: !!apartmentData,
+          });
+
+          // Validate files one more time before upload
+          for (const file of selectedImages) {
+            const validation = validateFile(file);
+            if (!validation.isValid) {
+              throw new Error(`Invalid file ${file.name}: ${validation.error}`);
+            }
+          }
+
+          // Upload files sequentially to avoid overwhelming the server
+          const uploadResults = [];
+
+          for (let i = 0; i < selectedImages.length; i++) {
+            const file = selectedImages[i];
+            console.log(`Uploading file ${i + 1}/${selectedImages.length}:`, {
+              name: file.name,
+              size: `${(file.size / 1024).toFixed(2)}KB`,
+              type: file.type,
+              apartmentId: apartmentId,
+            });
+
+            try {
+              const result = await uploadSingleFile.mutateAsync({
+                apartmentId: apartmentId,
+                file: file,
+              });
+              uploadResults.push(result);
+              console.log(`Successfully uploaded ${file.name}:`, result);
+            } catch (fileUploadError) {
+              console.error(`Failed to upload file ${file.name}:`, {
+                error: fileUploadError,
+                apartmentId,
+                fileName: file.name,
+                fileSize: file.size,
+                fileType: file.type,
+              });
+
+              // Check if it's a specific error we can handle
+              if (
+                fileUploadError &&
+                typeof fileUploadError === 'object' &&
+                'response' in fileUploadError
+              ) {
+                const axiosError = fileUploadError as {
+                  response?: {
+                    status?: number;
+                    data?: {
+                      message?: string;
+                    };
+                  };
+                };
+                if (axiosError.response?.status === 404) {
+                  throw new Error(
+                    `Apartment not found (ID: ${apartmentId}). Please refresh the page and try again.`
+                  );
+                } else if (axiosError.response?.status === 400) {
+                  throw new Error(
+                    `Invalid file data for ${file.name}. Please try with a different image.`
+                  );
+                }
+              }
+
+              throw new Error(
+                `Failed to upload ${file.name}. Please check your internet connection and try again.`
+              );
+            }
+          }
+
+          console.log('All images uploaded successfully:', uploadResults);
+        } catch (uploadError) {
+          console.error('Image upload failed:', uploadError);
+          throw new Error(
+            `Failed to upload images: ${uploadError instanceof Error ? uploadError.message : 'Unknown error'}`
+          );
+        }
       }
 
       // Handle room operations (delete, update, create)
@@ -501,9 +640,13 @@ export default function EditApartment(): React.ReactElement {
           data?: {
             message?: string;
             error?: string;
+            statusCode?: number;
+            name?: string;
           };
+          status?: number;
         };
         message?: string;
+        name?: string;
       }
 
       const axiosError = error as AxiosError;
@@ -514,12 +657,56 @@ export default function EditApartment(): React.ReactElement {
       );
 
       let errorMsg = 'Failed to update apartment. Please try again.';
+
       if (axiosError?.response?.data?.message) {
-        errorMsg = `Failed to update apartment: ${axiosError.response.data.message}`;
+        const serverMessage = axiosError.response.data.message;
+        if (serverMessage === 'Upload failed.') {
+          errorMsg =
+            'Failed to upload images. Please check your internet connection and try again with smaller images (under 5MB each).';
+        } else if (serverMessage.includes('Unexpected error occurred')) {
+          errorMsg =
+            'Database error occurred while uploading images. Please ensure the apartment exists and try again.';
+        } else {
+          errorMsg = `Failed to update apartment: ${serverMessage}`;
+        }
       } else if (axiosError?.response?.data?.error) {
         errorMsg = `Failed to update apartment: ${axiosError.response.data.error}`;
+      } else if (axiosError?.response?.data?.name === 'InternalServerError') {
+        errorMsg =
+          'Server internal error. This might be a database issue. Please try refreshing the page and uploading again.';
+      } else if (axiosError?.response?.status === 500) {
+        errorMsg =
+          'Server error occurred. This might be due to invalid apartment data or database connection issues. Please try again or contact support.';
+      } else if (axiosError?.response?.status === 413) {
+        errorMsg =
+          'Files are too large. Please reduce image sizes and try again.';
+      } else if (axiosError?.response?.status === 415) {
+        errorMsg =
+          'Unsupported file format. Please use JPEG, PNG, WebP, or GIF images only.';
+      } else if (axiosError?.response?.status === 404) {
+        errorMsg =
+          'Apartment not found. Please refresh the page and try again.';
+      } else if (axiosError?.response?.status === 400) {
+        errorMsg =
+          'Invalid request data. Please check all form fields and try again.';
+      } else if (axiosError?.message?.includes('Network Error')) {
+        errorMsg =
+          'Network error. Please check your internet connection and try again.';
       } else if (axiosError?.message) {
-        errorMsg = `Failed to update apartment: ${axiosError.message}`;
+        if (axiosError.message.includes('Invalid apartment ID')) {
+          errorMsg =
+            'Invalid apartment ID. Please refresh the page and try again.';
+        } else if (axiosError.message.includes('Apartment data not found')) {
+          errorMsg =
+            'Apartment data is missing. Please refresh the page and try again.';
+        } else if (axiosError.message.includes('Apartment not found')) {
+          errorMsg =
+            'The apartment you are trying to edit no longer exists. Please go back to the apartment list.';
+        } else {
+          errorMsg = `Failed to update apartment: ${axiosError.message}`;
+        }
+      } else if (error instanceof Error) {
+        errorMsg = `Failed to update apartment: ${error.message}`;
       }
 
       setErrorMessage(errorMsg);
@@ -904,9 +1091,15 @@ export default function EditApartment(): React.ReactElement {
                   </label>
                 )}
               </div>
-              <p className="text-sm text-gray-500">
-                {existingImageUrls.length + selectedImages.length}/5 images
-              </p>
+              <div className="space-y-2">
+                <p className="text-sm text-gray-500">
+                  {existingImageUrls.length + selectedImages.length}/
+                  {MAX_IMAGES} images
+                </p>
+                <p className="text-xs text-gray-400">
+                  Supported formats: JPEG, PNG, WebP, GIF • Max size: 5MB each
+                </p>
+              </div>
             </div>
           </div>
 
