@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import CloseIcon from '@/features/G9-ApartmentListing/assets/CloseIcon.svg';
 import StarIcon from '@/features/G9-ApartmentListing/assets/StarIcon.svg';
 import GrayStarIcon from '@/features/G9-ApartmentListing/assets/GrayStarIcon.svg';
@@ -7,17 +7,39 @@ interface ReviewModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (rating: number, comment: string) => void;
+  onUpdate?: (reviewId: number, rating: number, comment: string) => void;
+  mode?: 'create' | 'edit';
+  existingReview?: {
+    id: number;
+    rating: number;
+    comment: string;
+  } | null;
 }
 
 export default function ReviewModal({
   isOpen,
   onClose,
   onSubmit,
+  onUpdate,
+  mode = 'create',
+  existingReview,
 }: ReviewModalProps) {
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [comment, setComment] = useState('');
   const [showError, setShowError] = useState(false);
+
+  // Populate form with existing review data when editing
+  useEffect(() => {
+    if (mode === 'edit' && existingReview) {
+      setRating(existingReview.rating);
+      setComment(existingReview.comment);
+    } else {
+      setRating(0);
+      setComment('');
+    }
+    setShowError(false);
+  }, [mode, existingReview, isOpen]);
 
   if (!isOpen) return null;
 
@@ -26,9 +48,17 @@ export default function ReviewModal({
       setShowError(true);
       return;
     }
-    onSubmit(rating, comment);
-    setRating(0);
-    setComment('');
+
+    if (mode === 'edit' && onUpdate && existingReview) {
+      onUpdate(existingReview.id, rating, comment);
+    } else {
+      onSubmit(rating, comment);
+    }
+
+    if (mode === 'create') {
+      setRating(0);
+      setComment('');
+    }
     setShowError(false);
     onClose();
   };
@@ -60,7 +90,9 @@ export default function ReviewModal({
           />
         </button>
 
-        <h2 className="mb-6 text-2xl font-bold">Write a review</h2>
+        <h2 className="mb-6 text-2xl font-bold">
+          {mode === 'edit' ? 'Edit your review' : 'Write a review'}
+        </h2>
 
         <div className="mb-6">
           <h3 className="mb-3 text-lg font-semibold">
@@ -102,12 +134,18 @@ export default function ReviewModal({
           />
         </div>
 
-        <div className="flex justify-end">
+        <div className="flex justify-end gap-3">
+          <button
+            onClick={onClose}
+            className="rounded-full border border-gray-300 px-6 py-3 text-lg font-semibold text-gray-600 hover:bg-gray-50"
+          >
+            Cancel
+          </button>
           <button
             onClick={handleSubmit}
             className="rounded-full bg-cyan-400 px-9 py-3 text-lg font-semibold text-white hover:bg-cyan-500"
           >
-            Done
+            {mode === 'edit' ? 'Update' : 'Done'}
           </button>
         </div>
       </div>

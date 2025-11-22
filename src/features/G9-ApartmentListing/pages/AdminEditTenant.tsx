@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
-// navigate with query params is done with window.location.href when needed
 import {
   useBooking,
   useUpdateBooking,
 } from '@/features/G9-ApartmentListing/hooks/useBooking';
+import { useApartmentOwnerByAPT } from '@/features/G9-ApartmentListing/hooks/userApartmentOwner';
 import { useUserRole } from '@/features/power-bi/hooks/useUserRole';
 import BackIcon from '@/features/G9-ApartmentListing/assets/BackIcon.svg';
 import UserIcon from '@/features/G9-ApartmentListing/assets/UserIcon.svg';
@@ -25,7 +25,10 @@ export default function AdminEditTenant() {
 
   // Admin role check
   const { role } = useUserRole();
-
+  const apartmentId = bookingResp?.apartment_id;
+  const { data: ownerData, isLoading: ownerLoading } = useApartmentOwnerByAPT(
+    apartmentId || undefined
+  );
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
   const [isDataLoaded, setIsDataLoaded] = useState(false);
@@ -41,12 +44,7 @@ export default function AdminEditTenant() {
   });
 
   useEffect(() => {
-    const booking = bookingResp?.data || null;
-
-    console.log('Booking Loading:', bookingLoading);
-    console.log('Booking Response:', bookingResp);
-    console.log('Booking Data:', booking);
-    console.log('Data Loaded:', isDataLoaded);
+    const booking = bookingResp || null;
 
     if (!bookingLoading && !isDataLoaded) {
       if (booking) {
@@ -55,11 +53,6 @@ export default function AdminEditTenant() {
         const guestEmail = booking.guest_email || booking.guestEmail || '';
         const checkIn = booking.check_in || booking.checkIn || '';
         const roomType = booking.room_type || booking.roomType || 'Single';
-
-        console.log('Guest Name:', guestName);
-        console.log('Phone:', guestPhone);
-        console.log('Email:', guestEmail);
-        console.log('Check-in:', checkIn);
 
         const [firstName, ...rest] = guestName.split(' ');
         const lastName = rest.join(' ');
@@ -73,34 +66,44 @@ export default function AdminEditTenant() {
           roomType: roomType || 'Single',
           confirmed: true,
         };
-
-        console.log('Setting Form Data:', newFormData);
         setFormData(newFormData);
         setIsDataLoaded(true);
-      } else {
-        console.log('No booking data, checking localStorage...');
+      } else if (bookingError) {
+        // Fallback: Try to get booking data from localStorage
         try {
-          const saved = localStorage.getItem('bookingData');
-          if (saved) {
-            const parsed = JSON.parse(saved);
-            setFormData({
-              firstName: parsed.firstName || '',
-              lastName: parsed.lastName || '',
-              phone: parsed.phone || '',
-              email: parsed.email || '',
-              checkin: parsed.checkin || '',
-              roomType: parsed.roomType || 'Single',
-              confirmed: parsed.confirmed ?? true,
-            });
+          const localBookingStr = localStorage.getItem(`booking_${bookingId}`);
+          if (localBookingStr) {
+            const localBooking = JSON.parse(localBookingStr);
+            const guestName =
+              localBooking.guest_name || localBooking.guestName || '';
+            const guestPhone =
+              localBooking.guest_phone || localBooking.guestPhone || '';
+            const guestEmail =
+              localBooking.guest_email || localBooking.guestEmail || '';
+            const checkIn = localBooking.check_in || localBooking.checkIn || '';
+            const roomType =
+              localBooking.room_type || localBooking.roomType || 'Single';
+            const [firstName, ...rest] = guestName.split(' ');
+            const lastName = rest.join(' ');
+            const newFormData = {
+              firstName: firstName || '',
+              lastName: lastName || '',
+              phone: guestPhone || '',
+              email: guestEmail || '',
+              checkin: checkIn ? checkIn.slice(0, 10) : '',
+              roomType: roomType || 'Single',
+              confirmed: true,
+            };
+            console.log('Setting Form Data from localStorage:', newFormData);
+            setFormData(newFormData);
             setIsDataLoaded(true);
-            console.log('Loaded from localStorage');
           }
-        } catch (error) {
-          console.error('localStorage error:', error);
+        } catch (e) {
+          console.error('Failed to parse booking from localStorage:', e);
         }
       }
     }
-  }, [bookingResp, bookingLoading, isDataLoaded]);
+  }, [bookingResp, bookingLoading, isDataLoaded, bookingError, bookingId]);
 
   const handleChange = (field: string, value: string | boolean) => {
     setFormData((prev) => ({
@@ -110,7 +113,7 @@ export default function AdminEditTenant() {
   };
 
   const handleSave = () => {
-    const booking = bookingResp?.data || null;
+    const booking = bookingResp || null;
     if (!booking) return;
 
     const payload = {
@@ -124,7 +127,6 @@ export default function AdminEditTenant() {
       booking_status: booking.booking_status,
       check_in: new Date(formData.checkin + 'T00:00:00Z').toISOString(),
     };
-    console.log('Updating booking with payload:', payload);
 
     updateBooking.mutate(
       { id: booking.id, data: payload },
@@ -151,9 +153,24 @@ export default function AdminEditTenant() {
     formData.email &&
     formData.checkin;
 
-  const booking = bookingResp?.data || null;
+  const booking = bookingResp || null;
 
+  // TODO: replace with real auth user id
+  const currentUserId = 3;
   const isAdmin = role === 'admin';
+  // Check ownership
+  const isOwner =
+    apartmentId &&
+    Array.isArray(ownerData) &&
+    !ownerLoading &&
+    ownerData.some(
+      (owner) =>
+        owner &&
+        typeof owner === 'object' &&
+        typeof owner.user_id === 'number' &&
+        owner.user_id === currentUserId
+    );
+  const canEdit = isOwner || isAdmin;
 
   if (bookingError) {
     return (
@@ -195,10 +212,11 @@ export default function AdminEditTenant() {
           </div>
         </div>
 
-        {booking && !isAdmin && (
+        {booking && !canEdit && (
           <div className="mb-6 w-full max-w-5xl rounded-3xl border border-yellow-300 bg-yellow-50 p-4">
             <p className="text-sm text-yellow-900">
-              You are not an admin. Only admins can edit tenant details.
+              You do not have permission to edit tenant details. Only admins and
+              apartment owners can edit tenant information.
             </p>
           </div>
         )}
@@ -223,7 +241,7 @@ export default function AdminEditTenant() {
                   value={formData.firstName}
                   onChange={(e) => handleChange('firstName', e.target.value)}
                   placeholder="Enter first name"
-                  disabled={!isAdmin}
+                  disabled={!canEdit}
                   className="w-full rounded-md border border-gray-300 p-2 focus:ring-1 focus:ring-[#01CEF8] focus:outline-none disabled:cursor-not-allowed disabled:bg-gray-50"
                 />
               </div>
@@ -237,7 +255,7 @@ export default function AdminEditTenant() {
                   value={formData.lastName}
                   onChange={(e) => handleChange('lastName', e.target.value)}
                   placeholder="Enter last name"
-                  disabled={!isAdmin}
+                  disabled={!canEdit}
                   className="w-full rounded-md border border-gray-300 p-2 focus:ring-1 focus:ring-[#01CEF8] focus:outline-none disabled:cursor-not-allowed disabled:bg-gray-50"
                 />
               </div>
@@ -251,7 +269,7 @@ export default function AdminEditTenant() {
                   value={formData.phone}
                   onChange={(e) => handleChange('phone', e.target.value)}
                   placeholder="Enter phone number"
-                  disabled={!isAdmin}
+                  disabled={!canEdit}
                   className="w-full rounded-md border border-gray-300 p-2 focus:ring-1 focus:ring-[#01CEF8] focus:outline-none disabled:cursor-not-allowed disabled:bg-gray-50"
                 />
               </div>
@@ -265,7 +283,7 @@ export default function AdminEditTenant() {
                   value={formData.email}
                   onChange={(e) => handleChange('email', e.target.value)}
                   placeholder="Enter email address"
-                  disabled={!isAdmin}
+                  disabled={!canEdit}
                   className="w-full rounded-md border border-gray-300 p-2 focus:ring-1 focus:ring-[#01CEF8] focus:outline-none disabled:cursor-not-allowed disabled:bg-gray-50"
                 />
               </div>
@@ -294,7 +312,7 @@ export default function AdminEditTenant() {
                   type="date"
                   value={formData.checkin}
                   onChange={(e) => handleChange('checkin', e.target.value)}
-                  disabled={!isAdmin}
+                  disabled={!canEdit}
                   className="w-full rounded-md border border-gray-300 p-2 focus:ring-1 focus:ring-[#01CEF8] focus:outline-none disabled:cursor-not-allowed disabled:bg-gray-50"
                 />
               </div>
@@ -306,7 +324,7 @@ export default function AdminEditTenant() {
                 <select
                   value={formData.roomType}
                   onChange={(e) => handleChange('roomType', e.target.value)}
-                  disabled={!isAdmin}
+                  disabled={!canEdit}
                   className="w-full rounded-md border border-gray-300 p-2 focus:ring-1 focus:ring-[#01CEF8] focus:outline-none disabled:cursor-not-allowed disabled:bg-gray-50"
                 >
                   <option value="Single">Single</option>
@@ -318,12 +336,12 @@ export default function AdminEditTenant() {
           </div>
 
           <div className="flex justify-end">
-            {/* Only admins can edit tenant information. */}
+            {/* Only admins and owner can edit tenant information. */}
             <button
               onClick={() => setIsPopupOpen(true)}
-              disabled={!isFormValid || !isAdmin}
+              disabled={!isFormValid || !canEdit}
               className={`rounded-md px-6 py-2 text-[20px] font-medium text-white transition-colors duration-200 ${
-                isFormValid && isAdmin
+                isFormValid && canEdit
                   ? 'bg-[#01CEF8] hover:bg-[#4E8FB1]'
                   : 'cursor-not-allowed bg-gray-400'
               }`}

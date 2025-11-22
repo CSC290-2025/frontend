@@ -14,6 +14,37 @@ import {
   Room,
   Upload as UploadHooks,
 } from '@/features/G9-ApartmentListing/hooks/index';
+import { FailedError } from '@/features/G9-ApartmentListing/components/toastBox';
+
+// File upload constants
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ALLOWED_FILE_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+];
+
+// Helper function to validate files
+const validateFile = (file: File): { isValid: boolean; error?: string } => {
+  // Check file type
+  if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+    return {
+      isValid: false,
+      error: `Invalid file type: ${file.type}. Only JPEG, PNG, WebP, and GIF images are allowed.`,
+    };
+  }
+
+  // Check file size
+  if (file.size > MAX_FILE_SIZE) {
+    return {
+      isValid: false,
+      error: `File too large: ${(file.size / (1024 * 1024)).toFixed(2)}MB. Maximum size is 5MB.`,
+    };
+  }
+
+  return { isValid: true };
+};
 
 interface LocationData {
   [key: string]: {
@@ -179,7 +210,6 @@ export default function EditApartment(): React.ReactElement {
   useEffect(() => {
     if (existingRoomsData) {
       const rooms = existingRoomsData;
-      console.log('Processing rooms:', rooms);
 
       if (rooms.length === 0) {
         setFormData((prev) => ({
@@ -200,8 +230,6 @@ export default function EditApartment(): React.ReactElement {
           room_status: room.room_status,
         })
       );
-
-      console.log('Loading existing rooms:', roomFormData);
       setFormData((prev) => ({
         ...prev,
         roomTypes: roomFormData,
@@ -284,7 +312,6 @@ export default function EditApartment(): React.ReactElement {
       if (imageToDelete) {
         await deleteFileMutation.mutateAsync(imageToDelete);
       }
-      console.log(imageToDelete, 'deleted');
       // Remove from local state after successful deletion
       setExistingImageUrls((prev) => prev.filter((_, i) => i !== index));
       setExistingImageData((prev) => prev.filter((_, i) => i !== index));
@@ -419,10 +446,6 @@ export default function EditApartment(): React.ReactElement {
         },
       };
 
-      console.log('Updating apartment with data:', apartmentUpdateData);
-      console.log('Apartment ID:', apartmentId);
-      console.log('Room data to create:', formData.roomTypes);
-
       // Update the apartment
       await updateApartmentMutation.mutateAsync({
         id: apartmentId,
@@ -431,6 +454,20 @@ export default function EditApartment(): React.ReactElement {
 
       // Upload new images if any are selected
       if (selectedImages.length > 0) {
+        // Validate all selected files before uploading
+        for (const file of selectedImages) {
+          const validation = validateFile(file);
+          if (!validation.isValid) {
+            FailedError(
+              validation.error ||
+                'Invalid file selected for upload, please choose a file under 5MB.'
+            );
+            throw new Error(
+              validation.error || 'Invalid file selected for upload.'
+            );
+          }
+        }
+
         await uploadMultipleFilesMutation.mutateAsync({
           apartmentId: apartmentId,
           files: selectedImages,
@@ -438,7 +475,6 @@ export default function EditApartment(): React.ReactElement {
       }
 
       // Handle room operations (delete, update, create)
-
       // 1. Delete rooms that were removed
       if (roomsToDelete.length > 0) {
         const deletionPromises = roomsToDelete.map((roomId) =>
