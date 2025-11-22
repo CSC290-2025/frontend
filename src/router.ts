@@ -33,8 +33,8 @@ export type Path =
   | `/financial`
   | `/financial/insurance/:user_id`
   | `/financial/insurance/:user_id/info/:id`
-  | `/financial/metro/:user_id`
-  | `/financial/metro/:user_id/info/:id`
+  | `/financial/metro`
+  | `/financial/metro/info/:id`
   | `/financial/topup`
   | `/freecycle`
   | `/freecycle/items/:id`
@@ -85,8 +85,7 @@ export type Params = {
   '/example/:id': { id: string };
   '/financial/insurance/:user_id': { user_id: string };
   '/financial/insurance/:user_id/info/:id': { user_id: string; id: string };
-  '/financial/metro/:user_id': { user_id: string };
-  '/financial/metro/:user_id/info/:id': { user_id: string; id: string };
+  '/financial/metro/info/:id': { id: string };
   '/freecycle/items/:id': { id: string };
   '/freecycle/items/edit/:id': { id: string };
   '/harm/:id': { id: string };

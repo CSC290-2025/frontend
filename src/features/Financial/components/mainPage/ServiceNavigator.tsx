@@ -21,7 +21,7 @@ export default function ServiceNavigator({
         navigate('/financial/topup');
         break;
       case 'metro':
-        navigate(`/financial/metro/${userId}`);
+        navigate(`/financial/metro`);
         break;
       case 'insurance':
         navigate(`/financial/insurance/${userId}`);

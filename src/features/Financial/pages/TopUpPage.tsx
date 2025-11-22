@@ -67,7 +67,7 @@ export default function TopupPage() {
 
   const { data: walletResponse, refetch: refetchWallet } =
     useGetWalletsUserUserId(userId);
-  const wallet = walletResponse?.data?.data?.wallet;
+  const wallet = walletResponse?.data?.wallet;
 
   const { mutateAsync: topUpWallet, isPending: isTopUpWalletPending } =
     usePostWalletsWalletIdTopUp({
@@ -118,7 +118,7 @@ export default function TopupPage() {
           data: { amount, user_id: userId },
         });
         // uhh this is mostly to shut TS up; blub doesnt believe qrResponse is real
-        const qrResponseContainer = response.data?.data as unknown as
+        const qrResponseContainer = response.data as unknown as
           | { qrResponse: PostScbQrCreate200Data }
           | undefined;
         const qrData = qrResponseContainer?.qrResponse?.qrRawData;
@@ -226,10 +226,7 @@ export default function TopupPage() {
         }
         try {
           const response = await getScbVerifyPayment({ ref1: scbRef1 });
-          if (
-            response.data?.success === true &&
-            response.data?.data?.statusCode === 1000
-          ) {
+          if (response.success === true && response.data?.statusCode === 1000) {
             toast.success('Payment confirmed via polling!');
             setQrRawData('');
             setAmount('');

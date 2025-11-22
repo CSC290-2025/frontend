@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import {
   useGetWalletsUserUserId,
   usePostWallets,
   usePutWalletsWalletId,
-  getGetWalletsUserUserIdQueryKey,
 } from '@/api/generated/wallets';
 import { getGetTransactionsQueryKey } from '@/api/generated/transactions';
 import { Card, CardContent } from '@/components/ui/card';
@@ -23,28 +23,36 @@ export default function FinancialPage() {
 
   const { data: wallets, refetch } = useGetWalletsUserUserId(Number(userId));
   const queryClient = useQueryClient();
-  const { mutateAsync: createWallet } = usePostWallets({
+  const { mutate: createWallet } = usePostWallets({
     mutation: {
-      onSuccess: () => {
+      onSuccess: (data) => {
+        toast.success(data.message || 'Wallet created successfully!');
         refetch();
         queryClient.invalidateQueries({
           queryKey: getGetTransactionsQueryKey(),
         });
       },
+      onError: (error: any) => {
+        toast.error(error.response?.data?.message || 'Failed to create wallet');
+      },
     },
   });
-  const { mutateAsync: updateWallet } = usePutWalletsWalletId({
+  const { mutate: updateWallet } = usePutWalletsWalletId({
     mutation: {
-      onSuccess: () => {
+      onSuccess: (data) => {
+        toast.success(data.message || 'Wallet updated successfully!');
         refetch();
         queryClient.invalidateQueries({
           queryKey: getGetTransactionsQueryKey(),
         });
+      },
+      onError: (error: any) => {
+        toast.error(error.response?.data?.message || 'Failed to update wallet');
       },
     },
   });
 
-  const wallet = wallets?.data?.data?.wallet;
+  const wallet = wallets?.data?.wallet;
 
   const handleLoadWallet = () => {
     setLoadedUserId(Number(userId));
