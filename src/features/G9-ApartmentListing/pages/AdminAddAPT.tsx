@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import '@/features/G9-ApartmentListing/styles/animations.css';
 import { Upload, X } from 'lucide-react';
 import BackIcon from '@/features/G9-ApartmentListing/assets/BackIcon.svg';
 import TrashIcon from '@/features/G9-ApartmentListing/assets/TrashIcon.svg';
@@ -283,7 +284,7 @@ export default function AddApartment(): React.ReactElement {
         internet_price: formData.internetFree
           ? null
           : Number(formData.internet_price),
-        userId: 1, // TODO: Get from user context/auth
+        userId: 3, // TODO: Get from user context/auth
         address: {
           address_line: formData.address_line.trim(),
           province: formData.province.trim(),
@@ -444,20 +445,22 @@ export default function AddApartment(): React.ReactElement {
   };
 
   return (
-    <div className="font-poppins min-h-screen bg-[#F9FAFB] p-4">
+    <div className="font-poppins animate-fade-in min-h-screen bg-[#F9FAFB] p-4">
       <div className="mx-auto max-w-4xl">
-        <div className="mb-6 flex items-center gap-4">
+        <div className="animate-slide-down mb-6 flex items-center gap-4">
           {/* Back Icon */}
           <button
             onClick={() => (window.location.href = '/ApartmentHomepage')}
-            className="flex h-10 w-10 items-center justify-center rounded-full text-2xl hover:bg-gray-100"
+            className="flex h-10 w-10 items-center justify-center rounded-full text-2xl transition-all duration-300 hover:scale-110 hover:bg-gray-100"
           >
             <img src={BackIcon} alt="Backpage" />
           </button>
-          <h1 className="text-3xl font-bold">Add Apartment</h1>
+          <h1 className="text-3xl font-bold transition-colors duration-300 hover:text-blue-600">
+            Add Apartment
+          </h1>
         </div>
 
-        <div className="rounded-lg bg-white p-8 shadow-sm">
+        <div className="animate-slide-up rounded-lg bg-white p-8 shadow-sm transition-all duration-300 hover:shadow-lg">
           <div className="mb-6">
             <label className="mb-2 block font-semibold">Apartment Name</label>
             <input
@@ -921,7 +924,7 @@ export default function AddApartment(): React.ReactElement {
             <button
               onClick={addRoomType}
               type="button"
-              className="rounded-lg bg-gray-300 px-4 py-2 text-sm font-semibold hover:bg-gray-400"
+              className="rounded-lg bg-gray-300 px-4 py-2 text-sm font-semibold transition-all hover:scale-105 hover:bg-gray-400"
             >
               Add Room Type
             </button>
@@ -949,7 +952,7 @@ export default function AddApartment(): React.ReactElement {
               onClick={handleSubmit}
               type="button"
               disabled={isSubmitting}
-              className="rounded-lg bg-cyan-400 px-9 py-3 text-lg font-semibold text-white hover:bg-cyan-500 disabled:cursor-not-allowed disabled:bg-gray-400"
+              className="rounded-lg bg-cyan-400 px-9 py-3 text-lg font-semibold text-white transition-all hover:scale-110 hover:bg-cyan-500 disabled:cursor-not-allowed disabled:bg-gray-400"
             >
               {isSubmitting ? 'Creating...' : 'Done'}
             </button>
@@ -968,7 +971,7 @@ export default function AddApartment(): React.ReactElement {
       {/* uppage */}
       <button
         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-        className="fixed right-8 bottom-8 flex h-12 w-12 items-center justify-center rounded-full border border-gray-300 bg-white text-xl shadow-lg transition-colors hover:bg-gray-50"
+        className="fixed right-8 bottom-8 flex h-12 w-12 items-center justify-center rounded-full border border-gray-300 bg-white text-xl shadow-lg transition-all duration-300 hover:scale-110 hover:bg-gray-50 hover:shadow-xl"
       >
         <img src={UppageIcon} alt="Uppage" />
       </button>

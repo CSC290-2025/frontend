@@ -459,14 +459,23 @@ export default function EditApartment(): React.ReactElement {
         id: apartmentId,
         data: apartmentUpdateData,
       });
-      if (validateFile(selectedImages[0]).isValid === false) {
-        FailedError(
-          'Invalid file selected for upload, please choose a file under 5MB.'
-        );
-        throw new Error('Invalid file selected for upload.');
-      }
+
       // Upload new images if any are selected
       if (selectedImages.length > 0) {
+        // Validate all selected files before uploading
+        for (const file of selectedImages) {
+          const validation = validateFile(file);
+          if (!validation.isValid) {
+            FailedError(
+              validation.error ||
+                'Invalid file selected for upload, please choose a file under 5MB.'
+            );
+            throw new Error(
+              validation.error || 'Invalid file selected for upload.'
+            );
+          }
+        }
+
         await uploadMultipleFilesMutation.mutateAsync({
           apartmentId: apartmentId,
           files: selectedImages,

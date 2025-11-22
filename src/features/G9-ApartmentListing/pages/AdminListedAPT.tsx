@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import '@/features/G9-ApartmentListing/styles/animations.css';
 import ConfirmDelete from '@/features/G9-ApartmentListing/components/ConfirmDelete';
 import SuccessModal from '@/features/G9-ApartmentListing/components/SuccessModal';
 import EditIcon from '@/features/G9-ApartmentListing/assets/EditIcon.svg';
@@ -162,14 +163,18 @@ function ApartmentCard({
         >
           <a
             href={`/AdminEditAPT?apartmentId=${id}`}
-            className="flex items-center justify-center gap-2 px-3 py-2 font-medium text-gray-700"
+            className="flex items-center justify-center gap-2 rounded-lg px-3 py-2 font-medium text-gray-700 transition-all duration-300 hover:scale-110 hover:bg-gray-100"
           >
-            <img src={EditIcon} alt="Edit" className="h-5 w-5" />
+            <img
+              src={EditIcon}
+              alt="Edit"
+              className="h-5 w-5 transition-transform duration-300 hover:rotate-12"
+            />
           </a>
 
           <button
             onClick={() => onDelete(id)}
-            className="mt-8 flex items-center justify-center gap-2 rounded-md border border-gray-300 bg-white px-7 py-2 font-medium text-[#2B5991] hover:bg-gray-200"
+            className="mt-8 flex items-center justify-center gap-2 rounded-md border border-gray-300 bg-white px-7 py-2 font-medium text-[#2B5991] transition-all duration-300 hover:scale-105 hover:border-red-300 hover:bg-red-50 hover:text-red-600 hover:shadow-md"
           >
             Delete
           </button>
@@ -234,42 +239,48 @@ export default function AdminListedAPT() {
   const apartments = localApartments;
 
   return (
-    <div className="font-poppins flex min-h-screen flex-col items-center bg-[#F9FAFB] px-4 py-10">
-      <div className="mb-6 flex w-full max-w-5xl items-center gap-3">
+    <div className="font-poppins animate-fade-in flex min-h-screen flex-col items-center bg-[#F9FAFB] px-4 py-10">
+      <div className="animate-slide-down mb-6 flex w-full max-w-5xl items-center gap-3">
         <a
           href="/ApartmentHomepage"
-          className="flex h-10 w-10 items-center justify-center rounded-full transition duration-200 hover:bg-gray-100"
+          className="flex h-10 w-10 items-center justify-center rounded-full transition-all duration-300 hover:scale-110 hover:bg-gray-100"
         >
-          <img src={BackIcon} alt="Back" className="h-7 w-7" />
+          <img
+            src={BackIcon}
+            alt="Back"
+            className="h-7 w-7 transition-transform duration-300"
+          />
         </a>
-        <h1 className="text-[48px] font-bold text-gray-900">
+        <h1 className="text-[48px] font-bold text-gray-900 transition-colors duration-300 hover:text-blue-600">
           My Listed Apartment
         </h1>
       </div>
 
-      <div className="mb-6 flex w-full max-w-5xl items-center justify-between">
+      <div className="animate-slide-up mb-6 flex w-full max-w-5xl items-center justify-between">
         <h2 className="text-[18px] font-semibold text-gray-800">
           Your Apartment
         </h2>
         <a
           href="/AdminAddAPT"
-          className="flex items-center gap-2 rounded-lg bg-[#01CEF8] px-4 py-2 font-medium text-white hover:bg-[#4E8FB1]"
+          className="flex items-center gap-2 rounded-lg bg-[#01CEF8] px-4 py-2 font-medium text-white transition-all duration-300 hover:scale-105 hover:bg-[#4E8FB1] hover:shadow-lg"
         >
           Add Apartment
         </a>
       </div>
 
-      <div className="w-full max-w-5xl space-y-6">
+      <div className="animate-fade-in w-full max-w-5xl space-y-6">
         {apartments.length > 0 ? (
-          apartments.map((apt: Apartment) => (
-            <ApartmentCard
+          apartments.map((apt: Apartment, index: number) => (
+            <div
               key={apt.apartmentId ?? apt.id}
-              apt={apt}
-              onDelete={handleDeleteClick}
-            />
+              className="animate-stagger"
+              style={{ animationDelay: `${index * 150}ms` }}
+            >
+              <ApartmentCard apt={apt} onDelete={handleDeleteClick} />
+            </div>
           ))
         ) : (
-          <div className="py-12 text-center">
+          <div className="animate-slide-up py-12 text-center">
             <h3 className="mb-2 text-xl font-medium text-gray-600">
               No Apartments
             </h3>

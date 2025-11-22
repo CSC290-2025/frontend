@@ -23,6 +23,7 @@ import {
 import LocationIcon from '@/features/G9-ApartmentListing/assets/LocationIcon.svg';
 import BackIcon from '@/features/G9-ApartmentListing/assets/BackIcon.svg';
 import EWalletIcon from '@/features/G9-ApartmentListing/assets/EWalletIcon.svg';
+import '@/features/G9-ApartmentListing/styles/animations.css';
 
 // Component to display apartment image with fallback
 const ApartmentImage: React.FC<{
@@ -44,10 +45,8 @@ const ApartmentImage: React.FC<{
   // Handle the backend response structure:
   const imageArray = images?.data?.data || images?.data || [];
   const imageUrl =
-    imageArray && imageArray.length > 0
-      ? imageArray[0].file_path
-      : defaultImage;
-
+    imageArray && imageArray.length > 0 ? imageArray[0].url : defaultImage;
+  console.log('ApartmentImage URL:', imageUrl);
   return (
     <img
       src={imageUrl}
@@ -71,11 +70,8 @@ export default function ApartmentPayment() {
   const bookingIdParam = urlParams.get('bookingId');
   const bookingId = bookingIdParam ? parseInt(bookingIdParam) : 0;
   // Fetch booking details using the booking ID
-  const {
-    data: bookingData,
-    isLoading: _bookingLoading,
-    error: bookingError,
-  } = useBooking(bookingId);
+  const { data: bookingData, isLoading: _bookingLoading } =
+    useBooking(bookingId);
 
   // Fetch apartment data based on booking
   const { data: apartmentData, isLoading: _apartmentLoading } =
@@ -112,6 +108,7 @@ export default function ApartmentPayment() {
     null
   );
   const [showPopup, setShowPopup] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     if (!bookingData) return;
@@ -125,30 +122,6 @@ export default function ApartmentPayment() {
       setApartment(apartmentData);
     }
   }, [bookingData, apartmentData, roomData]);
-
-  // Show error state
-  if (bookingError || !bookingId || !bookingData) {
-    return (
-      <div className="relative flex min-h-screen flex-col items-center justify-center bg-[#F9FAFB] px-4">
-        <div className="text-center">
-          <h1 className="mb-4 text-2xl font-bold text-red-600">
-            Booking Error
-          </h1>
-          <p className="mb-4 text-gray-600">
-            {bookingError
-              ? 'Failed to load booking details.'
-              : 'Invalid booking ID.'}
-          </p>
-          <button
-            onClick={() => navigate('/ApartmentHomepage')}
-            className="rounded-md bg-[#01CEF8] px-6 py-2 text-white hover:bg-[#4E8FB1]"
-          >
-            Back to Apartments
-          </button>
-        </div>
-      </div>
-    );
-  }
 
   const handleBooking = () => {
     (async () => {
@@ -174,6 +147,8 @@ export default function ApartmentPayment() {
         alert('Insufficient balance');
         return;
       }
+
+      setIsProcessing(true);
 
       try {
         // Transfer money from user to apartment owner
@@ -215,6 +190,8 @@ export default function ApartmentPayment() {
         }
       } catch (_err) {
         alert('Payment failed — check your wallet or try again.');
+      } finally {
+        setIsProcessing(false);
       }
     })();
   };
@@ -224,8 +201,8 @@ export default function ApartmentPayment() {
   };
 
   return (
-    <div className="relative flex min-h-screen flex-col items-center bg-[#F9FAFB] px-4 py-10">
-      <div className="mb-6 w-full max-w-5xl">
+    <div className="animate-fade-in relative flex min-h-screen flex-col items-center bg-[#F9FAFB] px-4 py-10">
+      <div className="animate-slide-down mb-6 w-full max-w-5xl">
         <div className="mb-6 flex w-full max-w-5xl items-center gap-3">
           <button
             onClick={() => {
@@ -262,7 +239,7 @@ export default function ApartmentPayment() {
         </div>
       </div>
 
-      <div className="w-full max-w-5xl rounded-2xl border border-gray-100 bg-white p-10 shadow-sm">
+      <div className="animate-slide-up w-full max-w-5xl rounded-2xl border border-gray-100 bg-white p-10 shadow-sm">
         <div className="mb-8">
           <div className="mb-3 flex items-center space-x-2">
             <img src={EWalletIcon} alt="EWalletIcon" className="h-10 w-10" />
@@ -277,15 +254,17 @@ export default function ApartmentPayment() {
               Available balance
             </span>
             <span className="text-[20px] font-semibold text-gray-900">
-              {walletData?.data?.wallet?.balance
-                ? walletData.data.wallet.balance.toLocaleString()
-                : 'Loading...'}
+              {walletData?.data?.wallet?.balance ? (
+                walletData.data.wallet.balance.toLocaleString()
+              ) : (
+                <div className="shimmer-skeleton h-6 w-20 rounded"></div>
+              )}
             </span>
           </div>
         </div>
 
         {apartment ? (
-          <div className="mb-8 flex flex-col gap-6 rounded-xl border border-gray-200 p-8 md:flex-row">
+          <div className="animate-fade-in-up mb-8 flex flex-col gap-6 rounded-xl border border-gray-200 p-8 md:flex-row">
             <ApartmentImage apartment_id={apartment.id} name={apartment.name} />
             <div className="flex flex-1 flex-col justify-between p-6">
               <div>
@@ -357,11 +336,22 @@ export default function ApartmentPayment() {
           </div>
 
           <button
-            disabled={!price || !walletData?.data?.wallet?.balance}
+            disabled={
+              !price || !walletData?.data?.wallet?.balance || isProcessing
+            }
             onClick={handleBooking}
-            className="rounded-lg bg-[#01CEF8] px-24 py-4 text-[20px] font-medium text-white hover:bg-[#4E8FB1] disabled:cursor-not-allowed disabled:opacity-50"
+            className={`rounded-lg bg-[#01CEF8] px-24 py-4 text-[20px] font-medium text-white transition-all duration-300 hover:bg-[#4E8FB1] disabled:cursor-not-allowed disabled:opacity-50 ${
+              isProcessing ? 'animate-pulse' : 'animate-bounce-subtle'
+            }`}
           >
-            Book now !
+            {isProcessing ? (
+              <div className="flex items-center gap-2">
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                Processing...
+              </div>
+            ) : (
+              'Book now !'
+            )}
           </button>
         </div>
       </div>

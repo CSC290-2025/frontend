@@ -81,27 +81,6 @@ export default function AdminEditTenant() {
         console.log('Setting Form Data:', newFormData);
         setFormData(newFormData);
         setIsDataLoaded(true);
-      } else {
-        console.log('No booking data, checking localStorage...');
-        try {
-          const saved = localStorage.getItem('bookingData');
-          if (saved) {
-            const parsed = JSON.parse(saved);
-            setFormData({
-              firstName: parsed.firstName || '',
-              lastName: parsed.lastName || '',
-              phone: parsed.phone || '',
-              email: parsed.email || '',
-              checkin: parsed.checkin || '',
-              roomType: parsed.roomType || 'Single',
-              confirmed: parsed.confirmed ?? true,
-            });
-            setIsDataLoaded(true);
-            console.log('Loaded from localStorage');
-          }
-        } catch (error) {
-          console.error('localStorage error:', error);
-        }
       }
     }
   }, [bookingResp, bookingLoading, isDataLoaded, bookingError]);

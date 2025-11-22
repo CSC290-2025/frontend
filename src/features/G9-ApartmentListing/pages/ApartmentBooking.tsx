@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from '@/router';
+import '@/features/G9-ApartmentListing/styles/animations.css';
 import BackIcon from '@/features/G9-ApartmentListing/assets/BackIcon.svg';
 import UserIcon from '@/features/G9-ApartmentListing/assets/UserIcon.svg';
 import RoomDetailIcon from '@/features/G9-ApartmentListing/assets/RoomDetailIcon.svg';
@@ -9,27 +10,27 @@ import { useCreateBooking } from '@/features/G9-ApartmentListing/hooks/useBookin
 
 const UserData = {
   userId: 14,
-  firstName: 'John',
+  firstName: 'Amy',
   lastName: 'Doe',
-  phone: '123-456-7890',
-  email: 'john.doe@example.com',
+  phone: '1548752589',
+  email: 'amy.doe@example.com',
 };
 
 export default function ApartmentBooking() {
-  const navigate = useNavigate();
-
   // Get URL parameters
   const urlParams = new URLSearchParams(window.location.search);
   const apartmentId = urlParams.get('apartmentId');
 
   // Fetch apartment data
-  const { data: apartmentData, isLoading: apartmentLoading } = APT.useApartment(
+  const { data: apartmentData } = APT.useApartment(
     apartmentId ? parseInt(apartmentId) : 0
   );
 
   // Fetch available rooms for the apartment
-  const { data: availableRoomsData, isLoading: roomsLoading } =
-    Room.useRoomsByStatus(apartmentId ? parseInt(apartmentId) : 0, 'available');
+  const { data: availableRoomsData } = Room.useRoomsByStatus(
+    apartmentId ? parseInt(apartmentId) : 0,
+    'available'
+  );
 
   const createBooking = useCreateBooking();
 
@@ -48,6 +49,8 @@ export default function ApartmentBooking() {
     roomType: '',
     confirmed: false,
   });
+
+  const [isCreatingBooking, setIsCreatingBooking] = useState(false);
 
   useEffect(() => {
     // Update roomType when availableRooms data loads and no room type is selected yet
@@ -88,6 +91,10 @@ export default function ApartmentBooking() {
       return;
     }
 
+    setIsCreatingBooking(true);
+
+    setIsCreatingBooking(true);
+
     try {
       // TODO: Replace with actual user ID from authentication context
       const currentUserId = 14;
@@ -119,6 +126,8 @@ export default function ApartmentBooking() {
     } catch (error) {
       console.error('Failed to create booking:', error);
       alert('Failed to create booking. Please try again.');
+    } finally {
+      setIsCreatingBooking(false);
     }
   };
 
@@ -133,16 +142,18 @@ export default function ApartmentBooking() {
     availableRooms.length > 0;
 
   return (
-    <div className="font-poppins relative flex min-h-screen flex-col items-center bg-[#F9FAFB] px-4 py-10">
-      <div className="mb-6 w-full max-w-5xl">
+    <div className="font-poppins animate-fade-in relative flex min-h-screen flex-col items-center bg-[#F9FAFB] px-4 py-10">
+      <div className="animate-slide-down mb-6 w-full max-w-5xl">
         <div className="mb-6 flex w-full max-w-5xl items-center gap-3">
           <button
             onClick={() => window.history.back()}
-            className="flex h-10 w-10 items-center justify-center rounded-full transition duration-200 hover:bg-gray-100"
+            className="flex h-10 w-10 items-center justify-center rounded-full transition-all duration-300 hover:scale-110 hover:bg-gray-100"
           >
             <img src={BackIcon} alt="Back" className="h-6 w-6" />
           </button>
-          <h1 className="text-[48px] font-bold text-gray-900">Room Booking</h1>
+          <h1 className="text-[48px] font-bold text-gray-900 transition-colors duration-300 hover:text-blue-600">
+            Room Booking
+          </h1>
         </div>
         <div className="mb-4 flex items-center space-x-4">
           <div className="flex items-center space-x-2">
@@ -293,14 +304,21 @@ export default function ApartmentBooking() {
         <div className="flex justify-end">
           <button
             onClick={handleNext}
-            disabled={!isFormValid}
-            className={`rounded-md px-6 py-2 text-[20px] font-medium text-white transition-colors duration-200 ${
-              isFormValid
-                ? 'bg-[#01CEF8] hover:bg-[#4E8FB1]'
+            disabled={!isFormValid || isCreatingBooking}
+            className={`rounded-md px-6 py-2 text-[20px] font-medium text-white transition-all duration-300 ${
+              isFormValid && !isCreatingBooking
+                ? 'animate-bounce-subtle bg-[#01CEF8] hover:scale-105 hover:bg-[#4E8FB1] hover:shadow-lg'
                 : 'cursor-not-allowed bg-gray-400'
-            }`}
+            } ${isCreatingBooking ? 'animate-pulse' : ''}`}
           >
-            Step 2 : Payment →
+            {isCreatingBooking ? (
+              <div className="flex items-center gap-2">
+                <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
+                Creating booking...
+              </div>
+            ) : (
+              'Step 2 : Payment →'
+            )}
           </button>
         </div>
       </div>

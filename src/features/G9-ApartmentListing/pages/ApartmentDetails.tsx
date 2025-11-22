@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import '@/features/G9-ApartmentListing/styles/animations.css';
 import { useParams } from '@/router';
 import {
   APT,
@@ -276,18 +277,26 @@ export default function ApartmentDetailPage() {
   };
 
   return (
-    <div className="font-poppins min-h-screen bg-[#F9FAFB] font-sans">
+    <div className="font-poppins animate-fade-in min-h-screen bg-[#F9FAFB] font-sans">
       <div className="mx-auto max-w-7xl px-8 py-6">
-        <div className="grid grid-cols-2 items-center gap-8">
+        <div className="animate-slide-down grid grid-cols-2 items-center gap-8">
           <div className="flex items-center gap-4">
             {/* Back Icon */}
             <button
               onClick={() => (window.location.href = '/ApartmentHomepage')}
-              className="flex h-10 w-10 items-center justify-center rounded-full text-2xl hover:bg-gray-100"
+              className="flex h-10 w-10 items-center justify-center rounded-full text-2xl transition-all duration-300 hover:scale-110 hover:bg-gray-100"
             >
-              <img src={BackIcon} alt="Backpage" />
+              <img
+                src={BackIcon}
+                alt="Backpage"
+                className="transition-transform duration-300"
+              />
             </button>
-            <h1 className="text-3xl font-bold">{apartment.name}</h1>
+            <h1
+              className={`text-3xl font-bold ${_isLoading ? 'shimmer-animation h-8 w-64 rounded bg-gray-200' : ''}`}
+            >
+              {_isLoading ? '' : apartment.name}
+            </h1>
           </div>
 
           {/* Share */}
@@ -311,14 +320,18 @@ export default function ApartmentDetailPage() {
           <div>
             <div className="mb-6">
               <div className="group relative mb-4">
-                <img
-                  src={
-                    apartment.images[currentImageIndex] ||
-                    'https://i.pinimg.com/736x/e6/b6/87/e6b6879516fe0c7e046dfc83922626d6.jpg'
-                  }
-                  alt={apartment.name}
-                  className="h-80 w-full rounded-lg object-cover"
-                />
+                {_isLoading ? (
+                  <div className="shimmer-animation h-80 w-full rounded-lg bg-gray-200"></div>
+                ) : (
+                  <img
+                    src={
+                      apartment.images[currentImageIndex] ||
+                      'https://i.pinimg.com/736x/e6/b6/87/e6b6879516fe0c7e046dfc83922626d6.jpg'
+                    }
+                    alt={apartment.name}
+                    className="animate-fade-in h-80 w-full rounded-lg object-cover"
+                  />
+                )}
 
                 <button
                   onClick={handlePrevImage}
@@ -373,13 +386,25 @@ export default function ApartmentDetailPage() {
                 <span className="inline-block h-9 w-9 text-gray-800">
                   <img src={LocationIcon} alt="LocationIcon" />
                 </span>
-                <span>{apartment.address}</span>
+                {_isLoading ? (
+                  <div className="shimmer-animation h-6 w-80 rounded bg-gray-200"></div>
+                ) : (
+                  <span className="animate-slide-right">
+                    {apartment.address}
+                  </span>
+                )}
               </div>
               <div className="flex items-center gap-4 text-gray-700">
                 <span className="ml-1 inline-block h-5 w-5 text-gray-800">
                   <img src={PhoneIcon} alt="PhoneIcon" />
                 </span>
-                <span className="text-lg">{apartment.phone}</span>
+                {_isLoading ? (
+                  <div className="shimmer-animation h-6 w-40 rounded bg-gray-200"></div>
+                ) : (
+                  <span className="animate-slide-right text-lg">
+                    {apartment.phone}
+                  </span>
+                )}
               </div>
             </div>
 
@@ -451,11 +476,7 @@ export default function ApartmentDetailPage() {
                             isNewlyAdded
                               ? '-m-4 animate-pulse rounded-lg bg-green-50 p-4 shadow-lg'
                               : ''
-                          } ${
-                            isCurrentUserReview
-                              ? '-m-4 rounded-lg border-l-4 border-blue-400 bg-blue-50 p-4'
-                              : ''
-                          }`}
+                          } `}
                           style={{
                             transitionDelay: `${index * 50}ms`,
                             animation: isNewlyAdded
@@ -463,11 +484,6 @@ export default function ApartmentDetailPage() {
                               : undefined,
                           }}
                         >
-                          {isCurrentUserReview && (
-                            <div className="absolute -top-2 -left-2 z-10 rounded-full bg-blue-500 px-2 py-1 text-xs text-white shadow-md">
-                              Your Review
-                            </div>
-                          )}
                           <div className="mb-3 flex items-start justify-between">
                             <div className="flex gap-3">
                               <div
@@ -641,37 +657,62 @@ export default function ApartmentDetailPage() {
               <h2 className="mb-4 text-xl font-bold">About this place</h2>
 
               <h3 className="mb-2 font-semibold">Description</h3>
-              <p className="pb-3 text-sm leading-relaxed whitespace-pre-line text-gray-700">
-                {apartment.description}
-              </p>
+              {_isLoading ? (
+                <div className="space-y-2">
+                  <div className="shimmer-animation h-4 w-full rounded bg-gray-200"></div>
+                  <div className="shimmer-animation h-4 w-3/4 rounded bg-gray-200"></div>
+                  <div className="shimmer-animation h-4 w-1/2 rounded bg-gray-200"></div>
+                </div>
+              ) : (
+                <p className="animate-fade-in pb-3 text-sm leading-relaxed whitespace-pre-line text-gray-700">
+                  {apartment.description}
+                </p>
+              )}
 
-              <div className="space-y-2 rounded-lg bg-gray-50 p-4 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Water price :</span>
-                  <span className="font-medium">
-                    {apartment.water_price} THB/unit
-                  </span>
+              {_isLoading ? (
+                <div className="space-y-2 rounded-lg bg-gray-50 p-4">
+                  <div className="flex justify-between">
+                    <div className="shimmer-animation h-4 w-24 rounded bg-gray-200"></div>
+                    <div className="shimmer-animation h-4 w-20 rounded bg-gray-200"></div>
+                  </div>
+                  <div className="flex justify-between">
+                    <div className="shimmer-animation h-4 w-28 rounded bg-gray-200"></div>
+                    <div className="shimmer-animation h-4 w-20 rounded bg-gray-200"></div>
+                  </div>
+                  <div className="flex justify-between">
+                    <div className="shimmer-animation h-4 w-16 rounded bg-gray-200"></div>
+                    <div className="shimmer-animation h-4 w-16 rounded bg-gray-200"></div>
+                  </div>
                 </div>
-                <div className="flex justify-end text-xs text-gray-500">
-                  <span>100 THB (minimum)</span>
+              ) : (
+                <div className="animate-fade-in space-y-2 rounded-lg bg-gray-50 p-4 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Water price :</span>
+                    <span className="font-medium">
+                      {apartment.water_price} THB/unit
+                    </span>
+                  </div>
+                  <div className="flex justify-end text-xs text-gray-500">
+                    <span>100 THB (minimum)</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Electricity Price :</span>
+                    <span className="font-medium">
+                      {apartment.electric_price} THB/unit
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Internet :</span>
+                    <span className="font-medium">
+                      {apartment.internet === 'not_free'
+                        ? 'not free'
+                        : apartment.internet === 'free'
+                          ? 'free'
+                          : 'none'}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Electricity Price :</span>
-                  <span className="font-medium">
-                    {apartment.electric_price} THB/unit
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Internet :</span>
-                  <span className="font-medium">
-                    {apartment.internet === 'not_free'
-                      ? 'not free'
-                      : apartment.internet === 'free'
-                        ? 'free'
-                        : 'none'}
-                  </span>
-                </div>
-              </div>
+              )}
             </div>
 
             {/* Room type */}
@@ -697,10 +738,31 @@ export default function ApartmentDetailPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {apartment.roomTypes.length > 0 ? (
+                    {_isLoading ? (
+                      [...Array(3)].map((_, index) => (
+                        <tr key={index} className="border-b last:border-b-0">
+                          <td className="py-3">
+                            <div className="shimmer-animation h-4 w-20 rounded bg-gray-200"></div>
+                          </td>
+                          <td className="py-3">
+                            <div className="shimmer-animation h-4 w-16 rounded bg-gray-200"></div>
+                          </td>
+                          <td className="py-3">
+                            <div className="shimmer-animation h-4 w-24 rounded bg-gray-200"></div>
+                          </td>
+                          <td className="py-3">
+                            <div className="shimmer-animation h-6 w-16 rounded bg-gray-200"></div>
+                          </td>
+                        </tr>
+                      ))
+                    ) : apartment.roomTypes.length > 0 ? (
                       apartment.roomTypes.map((room, index) => {
                         return (
-                          <tr key={index} className="border-b last:border-b-0">
+                          <tr
+                            key={index}
+                            className="animate-fade-in border-b last:border-b-0"
+                            style={{ animationDelay: `${index * 100}ms` }}
+                          >
                             <td className="py-3">{room.type}</td>
                             <td className="py-3">{room.size}</td>
                             <td className="py-3">{room.price}</td>

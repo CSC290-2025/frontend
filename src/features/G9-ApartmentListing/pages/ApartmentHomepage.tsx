@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from '@/router';
 import { APT, Upload } from '@/features/G9-ApartmentListing/hooks/index';
+import '@/features/G9-ApartmentListing/styles/animations.css';
 import type {
   apartmentTypes,
   roomTypes,
@@ -109,27 +110,6 @@ const ApartmentImage: React.FC<{
           onError={handleImageError}
         />
       )}
-
-      <style
-        dangerouslySetInnerHTML={{
-          __html: `
-          .shimmer-animation, .shimmer-skeleton {
-            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-            background-size: 200% 100%;
-            animation: shimmer 1.5s infinite;
-          }
-          
-          @keyframes shimmer {
-            0% {
-              background-position: -200% 0;
-            }
-            100% {
-              background-position: 200% 0;
-            }
-          }
-        `,
-        }}
-      />
     </div>
   );
 };
@@ -265,12 +245,12 @@ export default function ApartmentHomepage() {
   };
 
   return (
-    <div className="font-poppins min-h-screen bg-[#F9FAFB]">
-      <div className="flex items-center justify-between px-12 py-5">
+    <div className="font-poppins animate-fade-in min-h-screen bg-[#F9FAFB]">
+      <div className="animate-slide-down flex items-center justify-between px-12 py-5">
         <div>
           <div className="flex items-center gap-3">
             <img
-              className="h-12 w-12"
+              className="h-12 w-12 transition-transform duration-300 hover:scale-110 hover:rotate-12"
               src={ApartmentIcon}
               alt="ApartmentIcon"
             />
@@ -292,20 +272,20 @@ export default function ApartmentHomepage() {
               value={searchTerm}
               onChange={handleSearchChange}
               placeholder="Search by name"
-              className="w-full rounded-lg border border-gray-400 py-3 pr-16 pl-12 focus:border-[#2B5991] focus:outline-none"
+              className="w-full rounded-lg border border-gray-400 py-3 pr-16 pl-12 transition-all duration-300 hover:border-[#2B5991]/50 focus:border-[#2B5991] focus:ring-2 focus:ring-[#2B5991]/20 focus:outline-none"
             />
           </div>
 
           <div className="relative" ref={dropdownRef}>
             <img
-              className="h-16 w-16 cursor-pointer"
+              className="h-16 w-16 cursor-pointer transition-all duration-300 hover:scale-110 hover:rotate-12"
               src={UserIcon}
               alt="UserIcon"
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             />
 
             {isDropdownOpen && (
-              <div className="ring-opacity-5 absolute right-0 z-10 mt-2 w-50 origin-top-right rounded-lg border border-gray-400 bg-white shadow-lg focus:outline-none">
+              <div className="ring-opacity-5 animate-fade-in-up absolute right-0 z-10 mt-2 w-50 origin-top-right rounded-lg border border-gray-400 bg-white shadow-lg focus:outline-none">
                 <div className="py-1" role="none">
                   <Link
                     to="/MyRentedAPT"
@@ -332,8 +312,8 @@ export default function ApartmentHomepage() {
       </div>
 
       <main className="mx-auto max-w-7xl px-10 py-1">
-        <div className="mb-5 flex gap-8">
-          <div className="flex-1 rounded-xl bg-white p-8 shadow">
+        <div className="animate-fade-in-up mb-5 flex gap-8">
+          <div className="flex-1 rounded-xl bg-white p-8 shadow transition-all duration-300 hover:shadow-lg">
             <h3 className="mb-4 text-xl font-semibold text-[#2B5991]">
               Location
             </h3>
@@ -372,7 +352,7 @@ export default function ApartmentHomepage() {
             </div>
           </div>
 
-          <div className="flex-1 rounded-xl bg-white p-8 shadow">
+          <div className="flex-1 rounded-xl bg-white p-8 shadow transition-all duration-300 hover:shadow-lg">
             <h3 className="mb-4 text-xl font-semibold text-[#2B5991]">
               Rating
             </h3>
@@ -395,7 +375,7 @@ export default function ApartmentHomepage() {
             </div>
           </div>
 
-          <div className="flex-1 rounded-xl bg-white p-8 shadow">
+          <div className="flex-1 rounded-xl bg-white p-8 shadow transition-all duration-300 hover:shadow-lg">
             <h3 className="mb-6 text-center text-xl font-semibold text-[#2B5991]">
               Price Range
             </h3>
@@ -514,7 +494,7 @@ export default function ApartmentHomepage() {
             : `${filteredApartments.length} Listing found`}
         </p>
 
-        <div className="space-y-5">
+        <div className="animate-fade-in-up space-y-5">
           {isLoading
             ? // Enhanced loading skeleton
               Array.from({ length: itemsPerPage }).map((_, index) => (
@@ -566,114 +546,118 @@ export default function ApartmentHomepage() {
                   </div>
                 </div>
               ))
-            : currentApartments.map((apartment: ExtendedApartment) => (
-                <Link
-                  key={apartment.id}
-                  to="/ApartmentHomepage/:id"
-                  params={{ id: apartment.id.toString() }}
-                  className="flex gap-6 rounded-lg bg-white p-6 shadow-sm transition-shadow hover:shadow-md"
-                >
-                  <ApartmentImage
-                    apartment_id={apartment.id}
-                    name={apartment.name}
-                  />
-                  <div className="flex flex-1 flex-col justify-between">
-                    <div className="flex justify-between">
-                      <div>
-                        <h3 className="text-xl font-bold text-gray-800">
-                          {apartment.name}
-                        </h3>
-                        <div className="mt-2 flex items-center gap-2">
-                          <span className="font-md text-black">
-                            {apartment.rating && apartment.rating.length > 0
-                              ? (
-                                  apartment.rating.reduce(
-                                    (sum: number, r: RatingType) =>
-                                      sum + r.rating,
-                                    0
-                                  ) / apartment.rating.length
-                                ).toFixed(1)
-                              : '0.0'}
-                          </span>
-                          <div className="flex gap-0.5">
-                            {[...Array(5)].map((_, i) => {
-                              const avgRating =
-                                apartment.rating && apartment.rating.length > 0
-                                  ? apartment.rating.reduce(
+            : currentApartments.map(
+                (apartment: ExtendedApartment, index: number) => (
+                  <Link
+                    key={apartment.id}
+                    to="/ApartmentHomepage/:id"
+                    params={{ id: apartment.id.toString() }}
+                    className="animate-stagger flex gap-6 rounded-lg bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:scale-[1.02] hover:shadow-xl"
+                    style={{ animationDelay: `${index * 100}ms` }}
+                  >
+                    <ApartmentImage
+                      apartment_id={apartment.id}
+                      name={apartment.name}
+                    />
+                    <div className="flex flex-1 flex-col justify-between">
+                      <div className="flex justify-between">
+                        <div>
+                          <h3 className="text-xl font-bold text-gray-800">
+                            {apartment.name}
+                          </h3>
+                          <div className="mt-2 flex items-center gap-2">
+                            <span className="font-md text-black">
+                              {apartment.rating && apartment.rating.length > 0
+                                ? (
+                                    apartment.rating.reduce(
                                       (sum: number, r: RatingType) =>
                                         sum + r.rating,
                                       0
                                     ) / apartment.rating.length
-                                  : 0;
-                              return (
-                                <img
-                                  key={i}
-                                  src={
-                                    i < Math.floor(avgRating)
-                                      ? StarIcon
-                                      : GrayStarIcon
-                                  }
-                                />
-                              );
-                            })}
+                                  ).toFixed(1)
+                                : '0.0'}
+                            </span>
+                            <div className="flex gap-0.5">
+                              {[...Array(5)].map((_, i) => {
+                                const avgRating =
+                                  apartment.rating &&
+                                  apartment.rating.length > 0
+                                    ? apartment.rating.reduce(
+                                        (sum: number, r: RatingType) =>
+                                          sum + r.rating,
+                                        0
+                                      ) / apartment.rating.length
+                                    : 0;
+                                return (
+                                  <img
+                                    key={i}
+                                    src={
+                                      i < Math.floor(avgRating)
+                                        ? StarIcon
+                                        : GrayStarIcon
+                                    }
+                                  />
+                                );
+                              })}
+                            </div>
+                            <span className="text-sm text-gray-600">
+                              ({apartment.rating ? apartment.rating.length : 0})
+                            </span>
                           </div>
-                          <span className="text-sm text-gray-600">
-                            ({apartment.rating ? apartment.rating.length : 0})
-                          </span>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xl font-bold text-[#2B5991]">
+                            {apartment.room && apartment.room.length > 0
+                              ? (() => {
+                                  const minPrice = Math.min(
+                                    ...apartment.room.map(
+                                      (r: roomTypes.Room) => r.price_start
+                                    )
+                                  );
+                                  const maxPrice = Math.max(
+                                    ...apartment.room.map(
+                                      (r: roomTypes.Room) => r.price_end
+                                    )
+                                  );
+                                  return minPrice === maxPrice
+                                    ? minPrice.toLocaleString()
+                                    : `${minPrice.toLocaleString()} - ${maxPrice.toLocaleString()}`;
+                                })()
+                              : 'N/A'}{' '}
+                            <span className="text-sm font-normal text-gray-600">
+                              Baht / Month
+                            </span>
+                          </p>
+                          <p className="mt-1 text-sm text-gray-600">
+                            Room available:{' '}
+                            {apartment.room ? apartment.room.length : 0}
+                          </p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-xl font-bold text-[#2B5991]">
-                          {apartment.room && apartment.room.length > 0
-                            ? (() => {
-                                const minPrice = Math.min(
-                                  ...apartment.room.map(
-                                    (r: roomTypes.Room) => r.price_start
-                                  )
-                                );
-                                const maxPrice = Math.max(
-                                  ...apartment.room.map(
-                                    (r: roomTypes.Room) => r.price_end
-                                  )
-                                );
-                                return minPrice === maxPrice
-                                  ? minPrice.toLocaleString()
-                                  : `${minPrice.toLocaleString()} - ${maxPrice.toLocaleString()}`;
-                              })()
-                            : 'N/A'}{' '}
-                          <span className="text-sm font-normal text-gray-600">
-                            Baht / Month
+                      <div className="mt-3 space-y-2 text-sm text-gray-600">
+                        <div className="mb-2 flex items-center gap-3">
+                          <span className="inline-block h-6 w-6 text-gray-800">
+                            <img src={LocationIcon} alt="LocationIcon" />
                           </span>
-                        </p>
-                        <p className="mt-1 text-sm text-gray-600">
-                          Room available:{' '}
-                          {apartment.room ? apartment.room.length : 0}
-                        </p>
+                          <span>
+                            {apartment.addresses
+                              ? `${apartment.addresses.address_line || ''}, ${apartment.addresses.subdistrict || ''}, ${apartment.addresses.district || ''}, ${apartment.addresses.province || ''} ${apartment.addresses.postal_code || ''}`
+                                  .replace(/,\s*,/g, ',')
+                                  .replace(/^,\s*|,\s*$/g, '')
+                              : 'Address not available'}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="ml-1 inline-block h-4 w-4 text-gray-800">
+                            <img src={PhoneIcon} alt="PhoneIcon" />
+                          </span>
+                          <span>{apartment.phone}</span>
+                        </div>
                       </div>
                     </div>
-                    <div className="mt-3 space-y-2 text-sm text-gray-600">
-                      <div className="mb-2 flex items-center gap-3">
-                        <span className="inline-block h-6 w-6 text-gray-800">
-                          <img src={LocationIcon} alt="LocationIcon" />
-                        </span>
-                        <span>
-                          {apartment.addresses
-                            ? `${apartment.addresses.address_line || ''}, ${apartment.addresses.subdistrict || ''}, ${apartment.addresses.district || ''}, ${apartment.addresses.province || ''} ${apartment.addresses.postal_code || ''}`
-                                .replace(/,\s*,/g, ',')
-                                .replace(/^,\s*|,\s*$/g, '')
-                            : 'Address not available'}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className="ml-1 inline-block h-4 w-4 text-gray-800">
-                          <img src={PhoneIcon} alt="PhoneIcon" />
-                        </span>
-                        <span>{apartment.phone}</span>
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              ))}
+                  </Link>
+                )
+              )}
         </div>
 
         {totalPages > 0 && (
@@ -681,7 +665,7 @@ export default function ApartmentHomepage() {
             <button
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
-              className="flex h-10 items-center justify-center rounded-full border border-gray-300 bg-white px-4 hover:bg-gray-100 disabled:opacity-50"
+              className="flex h-10 items-center justify-center rounded-full border border-gray-300 bg-white px-4 transition-all duration-300 hover:scale-105 hover:bg-gray-100 disabled:opacity-50"
             >
               ‹ prev
             </button>
@@ -696,7 +680,7 @@ export default function ApartmentHomepage() {
                   <button
                     key={pageNum}
                     onClick={() => handlePageChange(pageNum)}
-                    className={`flex h-10 w-10 items-center justify-center rounded-full border ${
+                    className={`flex h-10 w-10 items-center justify-center rounded-full border transition-all duration-300 hover:scale-105 ${
                       currentPage === pageNum
                         ? 'border-cyan-400 bg-[#01CCFF] text-white'
                         : 'border-gray-300 bg-white hover:bg-gray-100'
@@ -711,7 +695,7 @@ export default function ApartmentHomepage() {
             <button
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
-              className="flex h-10 items-center justify-center rounded-full border border-gray-300 bg-white px-4 hover:bg-gray-100 disabled:opacity-50"
+              className="flex h-10 items-center justify-center rounded-full border border-gray-300 bg-white px-4 transition-all duration-300 hover:scale-105 hover:bg-gray-100 disabled:opacity-50"
             >
               next ›
             </button>
@@ -719,7 +703,7 @@ export default function ApartmentHomepage() {
             <button
               onClick={() => handlePageChange(totalPages)}
               disabled={currentPage === totalPages}
-              className="flex h-10 items-center justify-center rounded-full border border-gray-300 bg-white px-4 hover:bg-gray-100 disabled:opacity-50"
+              className="flex h-10 items-center justify-center rounded-full border border-gray-300 bg-white px-4 transition-all duration-300 hover:scale-105 hover:bg-gray-100 disabled:opacity-50"
             >
               last »
             </button>
@@ -729,9 +713,13 @@ export default function ApartmentHomepage() {
 
       <button
         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-        className="fixed right-8 bottom-8 flex h-12 w-12 items-center justify-center rounded-full border border-gray-300 bg-white text-xl shadow-lg transition-colors hover:bg-gray-50"
+        className="fixed right-8 bottom-8 flex h-12 w-12 items-center justify-center rounded-full border border-gray-300 bg-white text-xl shadow-lg transition-all duration-300 hover:scale-110 hover:bg-gray-50 hover:shadow-xl"
       >
-        <img src={UppageIcon} alt="Uppage" />
+        <img
+          src={UppageIcon}
+          alt="Uppage"
+          className="transition-transform duration-300 hover:scale-110"
+        />
       </button>
     </div>
   );
