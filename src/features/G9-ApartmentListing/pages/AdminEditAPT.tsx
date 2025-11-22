@@ -14,6 +14,7 @@ import {
   Room,
   Upload as UploadHooks,
 } from '@/features/G9-ApartmentListing/hooks/index';
+import { FailedError } from '@/features/G9-ApartmentListing/components/toastBox';
 
 // File upload constants
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -458,7 +459,12 @@ export default function EditApartment(): React.ReactElement {
         id: apartmentId,
         data: apartmentUpdateData,
       });
-
+      if (validateFile(selectedImages[0]).isValid === false) {
+        FailedError(
+          'Invalid file selected for upload, please choose a file under 5MB.'
+        );
+        throw new Error('Invalid file selected for upload.');
+      }
       // Upload new images if any are selected
       if (selectedImages.length > 0) {
         await uploadMultipleFilesMutation.mutateAsync({
@@ -468,7 +474,6 @@ export default function EditApartment(): React.ReactElement {
       }
 
       // Handle room operations (delete, update, create)
-
       // 1. Delete rooms that were removed
       if (roomsToDelete.length > 0) {
         const deletionPromises = roomsToDelete.map((roomId) =>
