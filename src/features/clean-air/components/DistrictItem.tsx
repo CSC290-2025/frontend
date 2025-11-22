@@ -1,5 +1,13 @@
 import { useNavigate } from '@/router';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faHeart as faHeartSolid } from '@fortawesome/free-solid-svg-icons';
+import { faHeart as faHeartRegular } from '@fortawesome/free-regular-svg-icons';
 import type { District as DistrictType } from '@/types/district';
+import {
+  useIsFavoriteDistrict,
+  useAddFavoriteDistrictMutation,
+  useRemoveFavoriteDistrictMutation,
+} from '../hooks/useFavoriteDistricts';
 
 type Props = Partial<
   Pick<DistrictType, 'district' | 'aqi' | 'pm25' | 'category' | 'measured_at'>
@@ -27,6 +35,11 @@ export default function DistrictItem({
   measured_at,
 }: Props) {
   const navigate = useNavigate();
+  const { isFavorite, isLoading: isFavoriteLoading } =
+    useIsFavoriteDistrict(district);
+  const addFavorite = useAddFavoriteDistrictMutation();
+  const removeFavorite = useRemoveFavoriteDistrictMutation();
+
   const categorySafe = (category ?? 'Unknown').toString();
   const categoryUpper = categorySafe.toUpperCase();
   const { categoryBg, categoryText } = getCategoryColors(categoryUpper);
@@ -63,6 +76,34 @@ export default function DistrictItem({
     }
   };
 
+  const handleToggleFavorite = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent navigating when clicking favorite button
+
+    if (!district) return;
+
+    try {
+      if (isFavorite) {
+        console.log('Removing from favorites:', district);
+        await removeFavorite.mutateAsync(district);
+      } else {
+        console.log('Adding to favorites:', district);
+        await addFavorite.mutateAsync(district);
+      }
+    } catch (error: any) {
+      if (
+        error?.response?.status === 409 ||
+        error?.message?.includes('already added')
+      ) {
+        console.info('District already in favorites, ignoring error');
+      } else {
+        console.error('Error toggling favorite:', error);
+      }
+    }
+  };
+
+  const isButtonLoading =
+    addFavorite.isLoading || removeFavorite.isLoading || isFavoriteLoading;
+
   return (
     <div
       onClick={handleSelectDistrict}
@@ -71,9 +112,27 @@ export default function DistrictItem({
       }
     >
       <div className="flex flex-col gap-1">
-        <div className="text-2xl font-bold">{district}</div>
+        <div className="flex items-center gap-2">
+          <div className="text-2xl font-bold">{district}</div>
+
+          {/* Favorite Button */}
+          <button
+            onClick={handleToggleFavorite}
+            disabled={isButtonLoading}
+            className="flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:bg-gray-200 disabled:opacity-50"
+            title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+          >
+            <FontAwesomeIcon
+              icon={isFavorite ? faHeartSolid : faHeartRegular}
+              className={`text-lg transition-colors ${
+                isFavorite ? 'text-red-500' : 'text-gray-400 hover:text-red-400'
+              }`}
+            />
+          </button>
+        </div>
         <div className="text-sm text-gray-700">{time}</div>
       </div>
+
       <div className="flex flex-col items-end">
         <div className="flex items-baseline">
           <div className="text-3xl font-bold">{displayAqi}</div>
