@@ -27,7 +27,7 @@ export default function AdminEditTenant() {
   const { role } = useUserRole();
   const apartmentId = bookingResp?.apartment_id;
   const { data: ownerData, isLoading: ownerLoading } = useApartmentOwnerByAPT(
-    apartmentId || 0
+    apartmentId || undefined
   );
   const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [showSuccess, setShowSuccess] = useState(false);
@@ -68,9 +68,42 @@ export default function AdminEditTenant() {
         };
         setFormData(newFormData);
         setIsDataLoaded(true);
+      } else if (bookingError) {
+        // Fallback: Try to get booking data from localStorage
+        try {
+          const localBookingStr = localStorage.getItem(`booking_${bookingId}`);
+          if (localBookingStr) {
+            const localBooking = JSON.parse(localBookingStr);
+            const guestName =
+              localBooking.guest_name || localBooking.guestName || '';
+            const guestPhone =
+              localBooking.guest_phone || localBooking.guestPhone || '';
+            const guestEmail =
+              localBooking.guest_email || localBooking.guestEmail || '';
+            const checkIn = localBooking.check_in || localBooking.checkIn || '';
+            const roomType =
+              localBooking.room_type || localBooking.roomType || 'Single';
+            const [firstName, ...rest] = guestName.split(' ');
+            const lastName = rest.join(' ');
+            const newFormData = {
+              firstName: firstName || '',
+              lastName: lastName || '',
+              phone: guestPhone || '',
+              email: guestEmail || '',
+              checkin: checkIn ? checkIn.slice(0, 10) : '',
+              roomType: roomType || 'Single',
+              confirmed: true,
+            };
+            console.log('Setting Form Data from localStorage:', newFormData);
+            setFormData(newFormData);
+            setIsDataLoaded(true);
+          }
+        } catch (e) {
+          console.error('Failed to parse booking from localStorage:', e);
+        }
       }
     }
-  }, [bookingResp, bookingLoading, isDataLoaded, bookingError]);
+  }, [bookingResp, bookingLoading, isDataLoaded, bookingError, bookingId]);
 
   const handleChange = (field: string, value: string | boolean) => {
     setFormData((prev) => ({
@@ -127,11 +160,16 @@ export default function AdminEditTenant() {
   const isAdmin = role === 'admin';
   // Check ownership
   const isOwner =
-    apartmentId && ownerData && !ownerLoading
-      ? ownerData.some(
-          (owner: { user_id: number }) => owner.user_id === currentUserId
-        )
-      : false;
+    apartmentId &&
+    Array.isArray(ownerData) &&
+    !ownerLoading &&
+    ownerData.some(
+      (owner) =>
+        owner &&
+        typeof owner === 'object' &&
+        typeof owner.user_id === 'number' &&
+        owner.user_id === currentUserId
+    );
   const canEdit = isOwner || isAdmin;
 
   if (bookingError) {

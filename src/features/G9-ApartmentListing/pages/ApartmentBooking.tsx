@@ -90,11 +90,7 @@ export default function ApartmentBooking() {
       );
       return;
     }
-
     setIsCreatingBooking(true);
-
-    setIsCreatingBooking(true);
-
     try {
       // TODO: Replace with actual user ID from authentication context
       const currentUserId = 14;

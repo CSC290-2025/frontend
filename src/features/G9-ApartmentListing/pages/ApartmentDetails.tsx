@@ -76,6 +76,9 @@ export default function ApartmentDetailPage() {
   // TODO: Replace with actual user ID from authentication context
   const currentUserId = 14;
 
+  // Check if current user already has a review
+  const hasExistingReview = ratingArray.some((r) => r.userId === currentUserId);
+
   // Calculate manual average from rating array as fallback
   const manualAverage =
     totalRatings > 0
@@ -178,14 +181,14 @@ export default function ApartmentDetailPage() {
 
   const handleReviewSubmit = async (ratingValue: number, comment: string) => {
     // Prevent multiple submissions while one is in progress
-    if (createRating.isPending || isSubmittingReview) {
+    if (isSubmittingReview) {
       return;
     }
     try {
       setIsSubmittingReview(true);
 
-      // Check for existing review by this user
-      if (ratingArray.some((r) => r.userId === currentUserId)) {
+      // Double-check for existing review by this user (defensive programming)
+      if (hasExistingReview) {
         FailedError('You can only review this apartment once');
         return;
       }
@@ -414,18 +417,25 @@ export default function ApartmentDetailPage() {
                 <h2 className="text-2xl font-bold">Reviews</h2>
                 <button
                   onClick={() => setIsReviewModalOpen(true)}
-                  disabled={isSubmittingReview}
+                  disabled={isSubmittingReview || hasExistingReview}
                   className={`transform rounded-lg px-6 py-2 text-sm text-white transition-all duration-200 ${
-                    isSubmittingReview
+                    isSubmittingReview || hasExistingReview
                       ? 'cursor-not-allowed bg-gray-400'
                       : 'bg-cyan-400 hover:scale-105 hover:bg-cyan-500 active:scale-95'
                   }`}
+                  title={
+                    hasExistingReview
+                      ? 'You have already reviewed this apartment'
+                      : ''
+                  }
                 >
                   {isSubmittingReview ? (
                     <span className="flex items-center gap-2">
                       <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></div>
                       Submitting...
                     </span>
+                  ) : hasExistingReview ? (
+                    'Already reviewed'
                   ) : (
                     'Write a review'
                   )}
