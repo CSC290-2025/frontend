@@ -46,12 +46,6 @@ export default function AdminEditTenant() {
   useEffect(() => {
     const booking = bookingResp || null;
 
-    console.log('Booking Loading:', bookingLoading);
-    console.log('Booking Response:', bookingResp);
-    console.log('Booking Data:', booking);
-    console.log('Data Loaded:', isDataLoaded);
-    console.log('Booking Error:', bookingError);
-
     if (!bookingLoading && !isDataLoaded) {
       if (booking) {
         const guestName = booking.guest_name || booking.guestName || '';
@@ -59,11 +53,6 @@ export default function AdminEditTenant() {
         const guestEmail = booking.guest_email || booking.guestEmail || '';
         const checkIn = booking.check_in || booking.checkIn || '';
         const roomType = booking.room_type || booking.roomType || 'Single';
-
-        console.log('Guest Name:', guestName);
-        console.log('Phone:', guestPhone);
-        console.log('Email:', guestEmail);
-        console.log('Check-in:', checkIn);
 
         const [firstName, ...rest] = guestName.split(' ');
         const lastName = rest.join(' ');
@@ -77,8 +66,6 @@ export default function AdminEditTenant() {
           roomType: roomType || 'Single',
           confirmed: true,
         };
-
-        console.log('Setting Form Data:', newFormData);
         setFormData(newFormData);
         setIsDataLoaded(true);
       }
@@ -107,7 +94,6 @@ export default function AdminEditTenant() {
       booking_status: booking.booking_status,
       check_in: new Date(formData.checkin + 'T00:00:00Z').toISOString(),
     };
-    console.log('Updating booking with payload:', payload);
 
     updateBooking.mutate(
       { id: booking.id, data: payload },

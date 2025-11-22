@@ -46,7 +46,7 @@ const ApartmentImage: React.FC<{
   const imageArray = images?.data?.data || images?.data || [];
   const imageUrl =
     imageArray && imageArray.length > 0 ? imageArray[0].url : defaultImage;
-  console.log('ApartmentImage URL:', imageUrl);
+
   return (
     <img
       src={imageUrl}

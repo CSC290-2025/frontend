@@ -210,7 +210,6 @@ export default function EditApartment(): React.ReactElement {
   useEffect(() => {
     if (existingRoomsData) {
       const rooms = existingRoomsData;
-      console.log('Processing rooms:', rooms);
 
       if (rooms.length === 0) {
         setFormData((prev) => ({
@@ -231,8 +230,6 @@ export default function EditApartment(): React.ReactElement {
           room_status: room.room_status,
         })
       );
-
-      console.log('Loading existing rooms:', roomFormData);
       setFormData((prev) => ({
         ...prev,
         roomTypes: roomFormData,
@@ -315,7 +312,6 @@ export default function EditApartment(): React.ReactElement {
       if (imageToDelete) {
         await deleteFileMutation.mutateAsync(imageToDelete);
       }
-      console.log(imageToDelete, 'deleted');
       // Remove from local state after successful deletion
       setExistingImageUrls((prev) => prev.filter((_, i) => i !== index));
       setExistingImageData((prev) => prev.filter((_, i) => i !== index));
@@ -449,10 +445,6 @@ export default function EditApartment(): React.ReactElement {
           postal_code: formData.postal_code,
         },
       };
-
-      console.log('Updating apartment with data:', apartmentUpdateData);
-      console.log('Apartment ID:', apartmentId);
-      console.log('Room data to create:', formData.roomTypes);
 
       // Update the apartment
       await updateApartmentMutation.mutateAsync({

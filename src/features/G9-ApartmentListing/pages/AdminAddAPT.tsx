@@ -314,8 +314,6 @@ export default function AddApartment(): React.ReactElement {
         throw new Error('Internet price must be greater than 0 when not free');
       }
 
-      console.log('Validated apartment data:', apartmentData);
-
       // Create the apartment first
       const apartmentResult =
         await createApartmentMutation.mutateAsync(apartmentData);
