@@ -18,6 +18,7 @@ export default defineConfig({
           'SCB',
           'Transactions',
           'User',
+          'Authentication',
         ],
       },
       // target: `${BACKEND_URL}/doc`,

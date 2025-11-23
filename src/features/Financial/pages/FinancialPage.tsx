@@ -16,9 +16,11 @@ import TopUpModal from '../components/mainPage/TopUpModal';
 import TransferModal from '../components/mainPage/TransferModal';
 import WalletManagement from '../components/mainPage/WalletManagement';
 import WalletLoader from '../components/mainPage/WalletLoader';
+import { useGetAuthMe } from '@/api/generated/authentication';
 
 export default function FinancialPage() {
-  const [userId, setUserId] = useState('1');
+  const userId = useGetAuthMe().data?.data?.userId.toString() ?? '';
+
   const [loadedUserId, setLoadedUserId] = useState<number | null>(null);
 
   const { data: wallets, refetch } = useGetWalletsUserUserId(Number(userId));
@@ -78,14 +80,6 @@ export default function FinancialPage() {
             Manage your wallet and financial transactions
           </p>
         </div>
-        {/* User Selection */}
-        <WalletLoader
-          userId={userId}
-          hasWallet={!!wallet}
-          onUserIdChange={setUserId}
-          onLoadWallet={handleLoadWallet}
-          onCreateWallet={handleCreateWallet}
-        />
 
         {!wallet && (
           <Card className="border-2 border-dashed border-gray-300">

@@ -28,6 +28,7 @@ import { toast } from 'sonner';
 import ServiceSelector, {
   type ServiceType as TopUpType,
 } from '../components/topup/ServiceSelector';
+import { useGetAuthMe } from '@/api/generated/authentication';
 import Pusher from 'pusher-js';
 const PUSHER_APP_KEY = import.meta.env.VITE_G11_PUSHER_APP_KEY;
 const PUSHER_CLUSTER = import.meta.env.VITE_G11_PUSHER_CLUSTER;
@@ -42,7 +43,7 @@ export default function TopupPage() {
 
   const initialCardRef = useRef<string | undefined>(cardNumberFromState);
 
-  const [userId] = useState(1); // Assuming user ID 1 for demo
+  const userId = useGetAuthMe().data?.data?.userId.toString() ?? '';
   const [topUpType, setTopUpType] = useState<TopUpType>(
     cardNumberFromState ? 'metro' : 'wallet'
   );
