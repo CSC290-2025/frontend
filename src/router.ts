@@ -10,6 +10,7 @@ export type Path =
   | `/example`
   | `/example/:id`
   | `/healthcare/healthcare-admin`
+  | `/healthcare/healthcare-user`
   | `/power-bi`
   | `/power-bi/:type/:category`
   | `/power-bi/:type/:category/:id`

@@ -36,6 +36,15 @@ export interface BedListParams {
   search?: string;
 }
 
+export interface BedPayload {
+  facilityId?: number | null;
+  bedNumber?: string | null;
+  bedType?: string | null;
+  status?: string | null;
+  patientId?: number | null;
+  admissionDate?: string | null;
+}
+
 export interface Facility {
   id: number;
   name: string;
@@ -117,5 +126,70 @@ export interface AppointmentListParams {
   staffUserId?: number;
   status?: string;
   type?: string;
+  search?: string;
+}
+
+export interface MedicineInventory {
+  id: number;
+  facilityId: Nullable<number>;
+  medicineName: Nullable<string>;
+  stockQuantity: Nullable<number>;
+  unitPrice: Nullable<number>;
+  isInStock: Nullable<boolean>;
+  createdAt: Nullable<string>;
+}
+
+export interface PaginatedMedicineInventory {
+  medicineInventory: MedicineInventory[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
+
+export interface MedicineInventoryListParams {
+  page?: number;
+  limit?: number;
+  sortBy?: 'id' | 'createdAt' | 'medicineName';
+  sortOrder?: 'asc' | 'desc';
+  facilityId?: number;
+  isInStock?: boolean;
+  search?: string;
+}
+
+export interface CreateMedicinePayload {
+  facilityId?: number;
+  medicineName?: string;
+  stockQuantity?: number;
+  unitPrice?: number;
+  isInStock?: boolean;
+}
+
+export type UpdateMedicinePayload = CreateMedicinePayload;
+
+export interface Prescription {
+  id: number;
+  patientId: Nullable<number>;
+  facilityId: Nullable<number>;
+  status: Nullable<string>;
+  medicinesList: unknown;
+  totalAmount: Nullable<number>;
+  createdAt: string;
+}
+
+export interface PaginatedPrescriptions {
+  prescriptions: Prescription[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
+
+export interface PrescriptionListParams {
+  page?: number;
+  limit?: number;
+  sortBy?: 'id' | 'createdAt' | 'status';
+  sortOrder?: 'asc' | 'desc';
+  patientId?: number;
+  facilityId?: number;
+  status?: string;
   search?: string;
 }

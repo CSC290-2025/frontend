@@ -3,12 +3,16 @@ import {
   fetchAppointments,
   fetchBeds,
   fetchFacilities,
+  fetchMedicineInventory,
+  fetchPrescriptions,
   fetchPatients,
 } from '@/features/_healthcare/api/healthcare.api';
 import type {
   AppointmentListParams,
   BedListParams,
   FacilityListParams,
+  MedicineInventoryListParams,
+  PrescriptionListParams,
   PatientListParams,
 } from '@/features/_healthcare/types';
 
@@ -39,5 +43,19 @@ export const useAppointments = (params?: AppointmentListParams) =>
   useQuery({
     queryKey: ['appointments', params ?? {}],
     queryFn: () => fetchAppointments(params),
+    staleTime: STALE_TIME,
+  });
+
+export const useMedicineInventory = (params?: MedicineInventoryListParams) =>
+  useQuery({
+    queryKey: ['medicineInventory', params ?? {}],
+    queryFn: () => fetchMedicineInventory(params),
+    staleTime: STALE_TIME,
+  });
+
+export const usePrescriptions = (params?: PrescriptionListParams) =>
+  useQuery({
+    queryKey: ['prescriptions', params ?? {}],
+    queryFn: () => fetchPrescriptions(params),
     staleTime: STALE_TIME,
   });
