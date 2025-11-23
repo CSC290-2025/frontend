@@ -6,13 +6,20 @@ import {
   removeFavoriteDistrict,
 } from '../api/clean-air.api';
 
-export function useFavoriteDistrictsQuery() {
+interface UseFavoriteDistrictsQueryOptions {
+  enabled?: boolean;
+}
+
+export function useFavoriteDistrictsQuery(
+  options: UseFavoriteDistrictsQueryOptions = {}
+) {
   return useQuery<District[], Error>({
     queryKey: ['clean-air', 'favorites'],
     queryFn: () => getFavoriteDistricts(),
     staleTime: 1000 * 60 * 2,
     retry: 1,
     refetchOnMount: 'always',
+    enabled: options.enabled,
   });
 }
 

@@ -22,6 +22,13 @@ const getCategoryColors = (category: string) => {
       return { categoryBg: 'bg-yellow-500', categoryText: 'text-black' };
     case 'GOOD':
       return { categoryBg: 'bg-green-500', categoryText: 'text-white' };
+    case 'UNHEALTHY_FOR_SENSITIVE_GROUPS':
+    case 'USG':
+      return { categoryBg: 'bg-orange-500', categoryText: 'text-white' };
+    case 'VERY_UNHEALTHY':
+    case 'DANGEROUS':
+    case 'HAZARDOUS':
+      return { categoryBg: 'bg-red-800', categoryText: 'text-white' };
     default:
       return { categoryBg: 'bg-gray-400', categoryText: 'text-black' };
   }
@@ -41,11 +48,11 @@ export default function DistrictItem({
   const removeFavorite = useRemoveFavoriteDistrictMutation();
 
   const categorySafe = (category ?? 'Unknown').toString();
-  const categoryUpper = categorySafe.toUpperCase();
+  const categoryUpper = categorySafe.toUpperCase().replace(/_/g, ' ');
   const { categoryBg, categoryText } = getCategoryColors(categoryUpper);
 
   const displayAqi = aqi ?? '—';
-  const displayPm25 = pm25 ?? '—';
+  const displayPm25 = pm25 ? pm25.toFixed(1) : '—';
 
   const getFormattedTime = (iso?: string) => {
     if (!iso) return '—';
@@ -77,7 +84,7 @@ export default function DistrictItem({
   };
 
   const handleToggleFavorite = async (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent navigating when clicking favorite button
+    e.stopPropagation();
 
     if (!district) return;
 
@@ -108,42 +115,47 @@ export default function DistrictItem({
     <div
       onClick={handleSelectDistrict}
       className={
-        'flex cursor-pointer items-center justify-between rounded-2xl border border-black bg-white p-4 text-black shadow-lg transition-colors hover:bg-gray-100'
+        'relative flex cursor-pointer items-center justify-between rounded-xl border border-gray-200 bg-white p-4 text-black shadow-sm transition-all duration-200 hover:border-gray-300 hover:shadow-md'
       }
     >
       <div className="flex flex-col gap-1">
         <div className="flex items-center gap-2">
-          <div className="text-2xl font-bold">{district}</div>
+          <h2 className="text-2xl leading-tight font-semibold text-gray-900">
+            {district}
+          </h2>
 
-          {/* Favorite Button */}
           <button
             onClick={handleToggleFavorite}
             disabled={isButtonLoading}
-            className="flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:bg-gray-200 disabled:opacity-50"
+            className="flex h-8 w-8 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-50"
             title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+            aria-label={
+              isFavorite ? 'Remove from favorites' : 'Add to favorites'
+            }
           >
             <FontAwesomeIcon
               icon={isFavorite ? faHeartSolid : faHeartRegular}
-              className={`text-lg transition-colors ${
-                isFavorite ? 'text-red-500' : 'text-gray-400 hover:text-red-400'
-              }`}
+              className={`text-xl ${isFavorite ? 'text-red-500' : 'text-gray-400'}`}
             />
           </button>
         </div>
-        <div className="text-sm text-gray-700">{time}</div>
+
+        <p className="text-sm text-gray-500">{time}</p>
       </div>
 
-      <div className="flex flex-col items-end">
-        <div className="flex items-baseline">
-          <div className="text-3xl font-bold">{displayAqi}</div>
-          <div className="ml-1 text-base text-gray-700">AQI</div>
+      <div className="flex flex-col items-end pl-2">
+        <div className="mb-1 flex items-baseline">
+          <p className="text-3xl leading-none font-bold text-gray-900">
+            {displayAqi}
+          </p>
+          <span className="ml-1 text-lg font-medium text-gray-600">AQI</span>
         </div>
-        <div className="text-sm text-gray-700">PM2.5: {displayPm25} µg/m³</div>
-        <div
-          className={`text-sm font-semibold ${categoryText} ${categoryBg} mt-1 rounded px-2 py-0.5`}
+        <p className="text-sm text-gray-700">PM2.5: {displayPm25} µg/m³</p>
+        <span
+          className={`mt-2 inline-block rounded-full px-3 py-1 text-xs font-semibold ${categoryText} ${categoryBg} min-w-[70px] text-center`}
         >
           {categoryUpper}
-        </div>
+        </span>
       </div>
     </div>
   );
