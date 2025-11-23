@@ -7,6 +7,7 @@ import { useTrafficLights } from '../hooks/useTrafficLights';
 import { limitTiltRange } from '@vis.gl/react-google-maps';
 import { getLightrequest } from '../api/traffic-feature.api';
 import { set } from 'firebase/database';
+import { getBaseAPIURL } from '@/lib/apiClient.ts';
 
 // Convert TrafficLight to TrafficSignal for UI display
 {
@@ -145,8 +146,7 @@ function MapContent({ refreshRateMs }: MapContentProps) {
   }, [map, trafficLights]);
 
   if (error) {
-    const apiBaseUrl =
-      import.meta.env.VITE_API_BASE_URL || 'http://localhost:3333';
+    const apiBaseUrl = getBaseAPIURL;
 
     return (
       <>
@@ -301,7 +301,7 @@ export default function TrafficAdminpage() {
     (async () => {
       try {
         //const base = import.meta.env.VITE_API_BASE_URL ?? '';
-        const url = `http://localhost:3333/api/light-requests`;
+        const url = getBaseAPIURL + `/api/light-requests`;
         const res = await fetch(url);
         if (!res.ok) throw new Error('Failed to get request details');
         const response: any = await res.json();
