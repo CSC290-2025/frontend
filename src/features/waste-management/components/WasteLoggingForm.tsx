@@ -53,7 +53,6 @@ export default function WasteLoggingForm() {
   const handleSubmit = () => {
     const finalType = wasteType === 'custom' ? customType : wasteType;
     if (finalType && weight) {
-      // Store values before clearing
       setLastSubmitted({ type: finalType, weight });
 
       logWasteMutation.mutate(
@@ -162,7 +161,6 @@ export default function WasteLoggingForm() {
           </Button>
         </div>
 
-        {/* Alert container with smooth height transition */}
         <div
           className="overflow-hidden transition-all duration-300 ease-in-out"
           style={{
