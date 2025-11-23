@@ -34,8 +34,8 @@ export type Path =
   | `/event_hub/CreatePage`
   | `/example/:id`
   | `/financial`
-  | `/financial/insurance/:user_id`
-  | `/financial/insurance/:user_id/info/:id`
+  | `/financial/insurance`
+  | `/financial/insurance/info/:id`
   | `/financial/metro`
   | `/financial/metro/info/:id`
   | `/financial/topup`
@@ -87,8 +87,7 @@ export type Params = {
   '/Know-AI/exercises/:level/:question': { level: string; question: string };
   '/clean-air/district-detail/:district': { district: string };
   '/example/:id': { id: string };
-  '/financial/insurance/:user_id': { user_id: string };
-  '/financial/insurance/:user_id/info/:id': { user_id: string; id: string };
+  '/financial/insurance/info/:id': { id: string };
   '/financial/metro/info/:id': { id: string };
   '/freecycle/items/:id': { id: string };
   '/freecycle/items/edit/:id': { id: string };

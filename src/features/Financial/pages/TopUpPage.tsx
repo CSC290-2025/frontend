@@ -6,7 +6,7 @@ import {
   usePostWalletsWalletIdTopUp,
 } from '@/api/generated/wallets';
 import { usePostMetroCardsTopUp } from '@/api/generated/metro-cards';
-import { usePostInsuranceCardsCardIdTopUp } from '@/api/generated/insurance-cards';
+import { useUseTopUpInsuranceCard as useTopUpInsuranceCard } from '@/api/generated/insurance-cards';
 import { usePostScbQrCreate } from '@/api/generated/scb';
 import { getScbVerifyPayment } from '@/api/generated/scb';
 import type { PostScbQrCreate200Data } from '@/api/generated/model/postScbQrCreate200Data';
@@ -40,13 +40,17 @@ export default function TopupPage() {
   const location = useLocation();
   const cardNumberFromState = (location.state as { cardNumber?: string })
     ?.cardNumber;
+  const typeFromState = (
+    location.state as { type?: 'wallet' | 'metro' | 'insurance' }
+  )?.type;
 
   const initialCardRef = useRef<string | undefined>(cardNumberFromState);
 
   const userId = useGetAuthMe().data?.data?.userId.toString() ?? '';
   const [topUpType, setTopUpType] = useState<TopUpType>(
-    cardNumberFromState ? 'metro' : 'wallet'
+    typeFromState || (cardNumberFromState ? 'metro' : 'wallet')
   );
+
   const [amount, setAmount] = useState('');
   const [cardId, setCardId] = useState(cardNumberFromState ?? '');
   const [qrRawData, setQrRawData] = useState('');
@@ -61,10 +65,14 @@ export default function TopupPage() {
   useEffect(() => {
     if (cardNumberFromState) {
       initialCardRef.current = cardNumberFromState;
-      setTopUpType('metro');
       setCardId(cardNumberFromState);
     }
-  }, [cardNumberFromState]);
+    if (typeFromState) {
+      setTopUpType(typeFromState);
+    } else if (cardNumberFromState) {
+      setTopUpType('metro');
+    }
+  }, [cardNumberFromState, typeFromState]);
 
   const { data: walletResponse, refetch: refetchWallet } =
     useGetWalletsUserUserId(userId);
@@ -77,7 +85,7 @@ export default function TopupPage() {
   const { mutateAsync: topUpMetro, isPending: isTopUpMetroPending } =
     usePostMetroCardsTopUp({ mutation: { onSuccess: () => refetchWallet() } });
   const { mutateAsync: topUpInsurance, isPending: isTopUpInsurancePending } =
-    usePostInsuranceCardsCardIdTopUp({
+    useTopUpInsuranceCard({
       mutation: { onSuccess: () => refetchWallet() },
     });
   const { mutateAsync: generateQR } = usePostScbQrCreate();
@@ -154,8 +162,11 @@ export default function TopupPage() {
           return;
         }
         await topUpInsurance({
-          data: { wallet_id: wallet.id, amount: parseFloat(amount) },
-          cardId: parseInt(cardId),
+          data: {
+            cardNumber: cardId.replace(/\s+/g, ''), // Remove spaces
+            wallet_id: wallet.id,
+            amount: parseFloat(amount),
+          },
         });
         toast.success('Insurance card topped up successfully');
         resetInputsForType('insurance');
@@ -220,7 +231,7 @@ export default function TopupPage() {
     });
     // Start backup polling after a delay
     const timeoutId = setTimeout(() => {
-      intervalRef.current = setInterval(async () => {
+      intervalRef.current = window.setInterval(async () => {
         if (!scbRef1) {
           if (intervalRef.current) clearInterval(intervalRef.current);
           return;

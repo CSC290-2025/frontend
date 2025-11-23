@@ -21,7 +21,10 @@ import ReuseableButton from '@/features/Financial/components/metro-cards/Reuseab
 import { ReusableDialog } from '../components/metro-cards/ReusableDialog';
 import { toast } from 'sonner';
 import type { AxiosError } from 'axios';
-import type { DeleteMetroCardsMetroCardId404Error } from '@/api/generated/model';
+import type {
+  DeleteMetroCardsMetroCardId404Error,
+  GetMetroCardsMe404Error,
+} from '@/api/generated/model';
 
 export default function MetroCardInfoPage() {
   const navigate = useNavigate();
@@ -35,6 +38,8 @@ export default function MetroCardInfoPage() {
     isLoading,
     error,
   } = useGetMetroCardsMetroCardId(Number(id));
+
+  console.log(error);
 
   const { mutate, isPending } = useDeleteMetroCardsMetroCardId({
     mutation: {
