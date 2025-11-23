@@ -3,22 +3,33 @@ import { useNavigate } from '@/router';
 import { useLogout } from '@/hooks/useLogout';
 import { useEffect } from 'react';
 import { Link } from 'react-router';
-// import { Building, BusFront, Trophy, CloudLightning, Hospital, BookText, Phone, CircleUser, Settings, Wallet } from 'lucide-react';
+import {
+  Building,
+  BusFront,
+  Trophy,
+  CloudLightning,
+  Hospital,
+  BookText,
+  Phone,
+  CircleUser,
+  Settings,
+  Wallet,
+} from 'lucide-react';
 
 export function Sidebar() {
   // Sidebar icons as SVG elements
-  //     const icons_sidebar = [
-  //       <Building></Building>,
-  //       <BusFront></BusFront>,
-  //       <Trophy></Trophy>,
-  //       <CloudLightning></CloudLightning>,
-  //       <Hospital></Hospital>,
-  //       <BookText></BookText>,
-  //       <Phone></Phone>,
-  //       <CircleUser></CircleUser>,
-  //       <Settings></Settings>,
-  //       <Wallet></Wallet>
-  //   ];
+  const icons_sidebar = [
+    Building,
+    BusFront,
+    Trophy,
+    CloudLightning,
+    Hospital,
+    BookText,
+    Phone,
+    CircleUser,
+    Settings,
+    Wallet,
+  ];
 
   const icons_name = [
     'City insights',
@@ -89,44 +100,49 @@ export function Sidebar() {
         style={{ fontFamily: 'Poppins, sans-serif' }}
       >
         {/*Menu_Top_one*/}
-        {positions.map((index, key) => (
-          <>
-            <Link
-              to={navigate_item[index]}
-              key={key}
-              className="flex cursor-pointer flex-col gap-1 px-4 py-3 hover:bg-gray-200"
-            >
-              <div className="flex items-center gap-3">
-                {/* <div>{icons_sidebar[index]}</div> */}
-
-                <div className="font-medium text-gray-800">
-                  {icons_name[index]}
-                </div>
-              </div>
-              <div className="text-[11px]">{icons_description[index]}</div>
-            </Link>
-          </>
-        ))}
-
-        {/*Menu_Bottom_one*/}
-        <div className="border-t-1 border-[#D9D9D9]">
-          {positions2.map((index, key) => (
+        {positions.map((index) => {
+          const Icon = icons_sidebar[index];
+          return (
             <>
               <Link
                 to={navigate_item[index]}
-                key={key}
+                key={index}
                 className="flex cursor-pointer flex-col gap-1 px-4 py-3 hover:bg-gray-200"
               >
                 <div className="flex items-center gap-3">
-                  {/* <div>{icons_sidebar[index]}</div> */}
+                  <Icon key={index} />
 
-                  <div className="text-[11px] font-medium text-gray-800">
+                  <div className="font-medium text-gray-800">
                     {icons_name[index]}
                   </div>
                 </div>
+                <div className="text-[11px]">{icons_description[index]}</div>
               </Link>
             </>
-          ))}
+          );
+        })}
+
+        {/*Menu_Bottom_one*/}
+        <div className="border-t-1 border-[#D9D9D9]">
+          {positions2.map((index) => {
+            const Icon = icons_sidebar[index];
+            return (
+              <>
+                <Link
+                  to={navigate_item[index]}
+                  key={index}
+                  className="flex cursor-pointer flex-col gap-1 px-4 py-3 hover:bg-gray-200"
+                >
+                  <div className="flex items-center gap-3">
+                    <Icon key={index} />
+                    <div className="text-[11px] font-medium text-gray-800">
+                      {icons_name[index]}
+                    </div>
+                  </div>
+                </Link>
+              </>
+            );
+          })}
         </div>
 
         {/* Button Log out */}
