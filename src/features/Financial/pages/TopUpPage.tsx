@@ -30,6 +30,25 @@ import ServiceSelector, {
 } from '../components/topup/ServiceSelector';
 import { useGetAuthMe } from '@/api/generated/authentication';
 import Pusher from 'pusher-js';
+import type { AxiosError } from 'axios';
+import type {
+  PostScbQrCreate400Error,
+  PostScbQrCreate409Error,
+  PostMetroCardsTopUp400Error,
+  PostMetroCardsTopUp409Error,
+  UseTopUpInsuranceCard400Error,
+  UseTopUpInsuranceCard409Error,
+} from '@/api/generated/model';
+
+type TopUpError = AxiosError<
+  | PostScbQrCreate400Error
+  | PostScbQrCreate409Error
+  | PostMetroCardsTopUp400Error
+  | PostMetroCardsTopUp409Error
+  | UseTopUpInsuranceCard400Error
+  | UseTopUpInsuranceCard409Error
+  | { message: string }
+>;
 const PUSHER_APP_KEY = import.meta.env.VITE_G11_PUSHER_APP_KEY;
 const PUSHER_CLUSTER = import.meta.env.VITE_G11_PUSHER_CLUSTER;
 const PUSHER_CHANNEL = import.meta.env.VITE_G11_PUSHER_CHANNEL;
@@ -75,7 +94,7 @@ export default function TopupPage() {
   }, [cardNumberFromState, typeFromState]);
 
   const { data: walletResponse, refetch: refetchWallet } =
-    useGetWalletsUserUserId(userId);
+    useGetWalletsUserUserId(Number(userId));
   const wallet = walletResponse?.data?.wallet;
 
   const { mutateAsync: topUpWallet, isPending: isTopUpWalletPending } =
@@ -124,7 +143,7 @@ export default function TopupPage() {
       if (topUpType === 'wallet') {
         // Generate QR for wallet topup
         const response = await generateQR({
-          data: { amount, user_id: userId },
+          data: { amount, user_id: Number(userId) },
         });
         // uhh this is mostly to shut TS up; blub doesnt believe qrResponse is real
         const qrResponseContainer = response.data as unknown as
@@ -171,9 +190,10 @@ export default function TopupPage() {
         toast.success('Insurance card topped up successfully');
         resetInputsForType('insurance');
       }
-    } catch (error) {
+    } catch (e) {
+      const error = e as TopUpError;
       console.error('Top up error:', error);
-      toast.error('Top up failed');
+      toast.error(error.response?.data?.message || 'Top up failed');
     }
   };
 
