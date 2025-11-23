@@ -18,6 +18,8 @@ interface RouteSummary {
     vehicle_type?: string;
   }>;
   fare: { value: number; currency: string; text: string } | null;
+  // 🟢 เพิ่ม Polyline ที่มาจาก Backend
+  overview_polyline: { points: string };
 }
 
 interface Coords {
@@ -27,6 +29,7 @@ interface Coords {
 }
 
 const API_BASE_URL = 'http://localhost:3000/api/routes/all';
+
 const geocodeAddress = async (query: string): Promise<Coords | null> => {
   if (!query) return null;
 
@@ -68,6 +71,8 @@ export default function Home() {
   const [routes, setRoutes] = useState<RouteSummary[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [selectedRouteIndex, setSelectedRouteIndex] = useState(0); // 🟢 State สำหรับเลือกเส้นทาง
 
   const [originQuery, setOriginQuery] = useState(
     "King Mongkut's University of Technology Thonburi"
@@ -118,6 +123,7 @@ export default function Home() {
         );
 
         setRoutes(sortedRoutes);
+        setSelectedRouteIndex(0); // 🟢 ตั้งค่าเริ่มต้นเป็นเส้นทางที่เร็วที่สุด
       } else {
         setError(response.data.message || 'No routes found.');
       }
@@ -226,6 +232,8 @@ export default function Home() {
     };
   }, [destinationCoords]);
 
+  const selectedRoute = routes[selectedRouteIndex]; // 🟢 เส้นทางปัจจุบันที่เลือก
+
   return (
     <div className="flex min-h-screen bg-white text-gray-800">
       <Sidebar active="Transport" />
@@ -321,6 +329,7 @@ export default function Home() {
                 lng: parseFloat(originLocation.origLng),
               }}
               destination={destinationMarker}
+              routePolyline={selectedRoute?.overview_polyline?.points}
             />
             <select className="absolute top-4 right-4 rounded-md border border-gray-300 bg-white px-3 py-1 text-sm">
               <option>Bus Station</option>
@@ -341,7 +350,6 @@ export default function Home() {
               </p>
             )}
 
-            {/* 🟢 ส่วนนี้จะแสดงผลลัพธ์ที่ถูกจัดเรียงแล้ว */}
             {routes.map((route, index) => {
               const mainTransport = route.detailedSteps.find(
                 (s) => s.travel_mode === 'TRANSIT'
@@ -358,16 +366,23 @@ export default function Home() {
               );
 
               return (
-                <BusInfo
+                <div
                   key={index}
-                  route={routeName}
-                  from={route.start_address.split(',')[0]}
-                  to={route.end_address.split(',')[0]}
-                  duration={route.duration.text}
-                  fare={fareText}
-                  gpsAvailable={!!mainTransport}
-                  stops={stopsList}
-                />
+                  // 🟢 เพิ่ม onClick เพื่อเปลี่ยนเส้นทางที่เลือก และเพิ่ม CSS active state
+                  onClick={() => setSelectedRouteIndex(index)}
+                  className={`cursor-pointer rounded-lg p-1 ${index === selectedRouteIndex ? 'border-2 border-yellow-300' : ''}`}
+                >
+                  <BusInfo
+                    key={index}
+                    route={routeName}
+                    from={route.start_address.split(',')[0]}
+                    to={route.end_address.split(',')[0]}
+                    duration={route.duration.text}
+                    fare={fareText}
+                    gpsAvailable={!!mainTransport}
+                    stops={stopsList}
+                  />
+                </div>
               );
             })}
           </div>
