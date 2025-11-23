@@ -288,10 +288,10 @@ export default function TopupPage() {
                     'Use PromptPay QR to add money to your wallet.'}
 
                   {topUpType === 'metro' &&
-                    `Enter the metro card ID${cardId ? ` (${cardId})` : ''} and amount to top up using your wallet.`}
+                    `Enter the metro card ID and amount to top up using your wallet.`}
 
                   {topUpType === 'insurance' &&
-                    `Enter the insurance card ID${cardId ? ` (${cardId})` : ''} and amount to top up using your wallet.`}
+                    `Enter the insurance card ID and amount to top up using your wallet.`}
                 </p>
               </div>
             </div>
