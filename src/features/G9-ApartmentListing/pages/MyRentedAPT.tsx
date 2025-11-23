@@ -6,6 +6,7 @@ import { useApartment } from '@/features/G9-ApartmentListing/hooks/useApartment'
 import { usePicturesByApartment } from '@/features/G9-ApartmentListing/hooks/useUpload';
 import { Spinner } from '@/components/ui/spinner';
 import type { bookingTypes } from '@/features/G9-ApartmentListing/types/index';
+import { Owner } from '@/features/G9-ApartmentListing/hooks';
 
 // Component to display individual booking with room and apartment details
 function BookingCard({ booking }: { booking: bookingTypes.Booking }) {
@@ -161,9 +162,9 @@ function BookingCard({ booking }: { booking: bookingTypes.Booking }) {
 }
 
 export default function MyRentedAPT() {
-  const currentUserId = 14;
-
-  const { data: bookings, error, isLoading } = useBookingsByUser(currentUserId);
+  const { data: userData } = Owner.useUser();
+  const userId = userData?.userId;
+  const { data: bookings, error, isLoading } = useBookingsByUser(userId);
 
   if (error) {
     console.error('Error loading bookings:', error);

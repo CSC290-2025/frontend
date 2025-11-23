@@ -93,9 +93,7 @@ export default function ApartmentPayment() {
   );
 
   // Fetch user wallet data
-  // Using booking user ID or fallback to default user for demo
   const userId = bookingData?.user_id || 1;
-
   const { data: walletResponse, isLoading: _walletLoading } =
     useGetWalletsUserUserId(userId);
   const walletData = walletResponse?.data;

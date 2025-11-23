@@ -7,6 +7,7 @@ import {
   Upload,
   Rating,
   Address,
+  Owner,
 } from '@/features/G9-ApartmentListing/hooks/index';
 import type {
   roomTypes,
@@ -14,6 +15,7 @@ import type {
   uploadTypes,
   apartmentTypes,
 } from '@/features/G9-ApartmentListing/types/index';
+import { useUserProfile } from '@/features/citizen/hooks/ProfileUser';
 import UppageIcon from '@/features/G9-ApartmentListing/assets/UppageIcon.svg';
 import LocationIcon from '@/features/G9-ApartmentListing/assets/LocationIcon.svg';
 import PhoneIcon from '@/features/G9-ApartmentListing/assets/PhoneIcon.svg';
@@ -61,6 +63,9 @@ export default function ApartmentDetailPage() {
   const { data: room } = Room.useRooms(parseInt(apartmentId));
   const averageRating = Rating.useAverageRating(parseInt(apartmentId));
   const { data: images } = Upload.usePicturesByApartment(parseInt(apartmentId));
+  const { data: userData } = Owner.useUser();
+  const userId = userData?.userId;
+  const { data: account } = useUserProfile(userId);
   const createRating = Rating.useCreateRating();
   const updateRating = Rating.useUpdateRatingWithContext(parseInt(apartmentId));
   const deleteRating = Rating.useDeleteRatingWithContext(parseInt(apartmentId));
@@ -73,11 +78,8 @@ export default function ApartmentDetailPage() {
   const roomArray: roomTypes.Room[] =
     room || room?.data?.data || room?.data || [];
 
-  // TODO: Replace with actual user ID from authentication context
-  const currentUserId = 14;
-
   // Check if current user already has a review
-  const hasExistingReview = ratingArray.some((r) => r.userId === currentUserId);
+  const hasExistingReview = ratingArray.some((r) => r.userId === userId);
 
   // Calculate manual average from rating array as fallback
   const manualAverage =
@@ -120,7 +122,7 @@ export default function ApartmentDetailPage() {
     reviews: ratingArray
       .map((rating) => ({
         id: rating.id,
-        author: `User ${rating.userId}`, // TODO: Join with user table for actual names
+        author: `${account?.username} || 'User ${rating.userId}'`,
         date: rating.createdAt
           ? new Date(rating.createdAt).toLocaleDateString()
           : new Date().toLocaleDateString(),
@@ -128,7 +130,7 @@ export default function ApartmentDetailPage() {
         comment: rating.comment,
         avatar: '👤',
         userId: rating.userId,
-        isCurrentUser: rating.userId === currentUserId,
+        isCurrentUser: rating.userId === userId,
       }))
       .sort((a, b) => {
         // Sort user's own reviews to the top
@@ -195,7 +197,7 @@ export default function ApartmentDetailPage() {
 
       const result = await createRating.mutateAsync({
         apartmentId: apartment.id,
-        userId: currentUserId,
+        userId: userId || undefined,
         rating: ratingValue,
         comment,
       });

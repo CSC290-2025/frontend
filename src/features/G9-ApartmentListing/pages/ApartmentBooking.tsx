@@ -1,26 +1,24 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from '@/router';
 import '@/features/G9-ApartmentListing/styles/animations.css';
 import BackIcon from '@/features/G9-ApartmentListing/assets/BackIcon.svg';
 import UserIcon from '@/features/G9-ApartmentListing/assets/UserIcon.svg';
 import RoomDetailIcon from '@/features/G9-ApartmentListing/assets/RoomDetailIcon.svg';
-import { APT, Room } from '@/features/G9-ApartmentListing/hooks/index';
+import { APT, Owner, Room } from '@/features/G9-ApartmentListing/hooks/index';
 import type { roomTypes } from '@/features/G9-ApartmentListing/types';
 import { useCreateBooking } from '@/features/G9-ApartmentListing/hooks/useBooking';
-
-const UserData = {
-  userId: 14,
-  firstName: 'Amy',
-  lastName: 'Doe',
-  phone: '1548752589',
-  email: 'amy.doe@example.com',
-};
+import { useUserProfileDetails } from '@/features/citizen/hooks/ProfileUser';
+import { useUserById } from '@/features/G9-ApartmentListing/hooks/userApartmentOwner';
 
 export default function ApartmentBooking() {
   // Get URL parameters
   const urlParams = new URLSearchParams(window.location.search);
   const apartmentId = urlParams.get('apartmentId');
-
+  const { data: userData } = Owner.useUser();
+  const { data: userProfile } = useUserById(userData?.userId || 0);
+  const { data: userProfileDetails } = useUserProfileDetails(
+    userData?.userId || 0
+  );
+  const userId = userData?.userId;
   // Fetch apartment data
   const { data: apartmentData } = APT.useApartment(
     apartmentId ? parseInt(apartmentId) : 0
@@ -41,10 +39,10 @@ export default function ApartmentBooking() {
   }, [availableRoomsData]);
 
   const [formData, setFormData] = useState({
-    firstName: UserData.firstName,
-    lastName: UserData.lastName,
-    phone: UserData.phone,
-    email: UserData.email,
+    firstName: userProfileDetails?.firstName || '',
+    lastName: userProfileDetails?.lastName || '',
+    phone: userProfile?.phone || '',
+    email: userProfile?.email || '',
     checkin: '',
     roomType: '',
     confirmed: false,
@@ -92,11 +90,8 @@ export default function ApartmentBooking() {
     }
     setIsCreatingBooking(true);
     try {
-      // TODO: Replace with actual user ID from authentication context
-      const currentUserId = 14;
-
       const bookingPayload = {
-        user_id: currentUserId,
+        user_id: userId,
         room_id: selectedRoom.id,
         apartment_id: parseInt(apartmentId),
         guest_name: `${formData.firstName} ${formData.lastName}`,

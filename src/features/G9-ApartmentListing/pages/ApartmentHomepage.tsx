@@ -134,7 +134,6 @@ export default function ApartmentHomepage() {
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const { data: apartments, isLoading, error: _error } = APT.useApartments();
-
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (

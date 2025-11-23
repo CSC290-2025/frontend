@@ -10,6 +10,7 @@ import UserIcon from '@/features/G9-ApartmentListing/assets/UserIcon.svg';
 import RoomDetailIcon from '@/features/G9-ApartmentListing/assets/RoomDetailIcon.svg';
 import SaveConfirm from '@/features/G9-ApartmentListing/components/SaveConfirm';
 import SuccessModal from '@/features/G9-ApartmentListing/components/SuccessModal';
+import { Owner } from '../hooks';
 
 export default function AdminEditTenant() {
   const params = new URLSearchParams(window.location.search);
@@ -156,7 +157,8 @@ export default function AdminEditTenant() {
   const booking = bookingResp || null;
 
   // TODO: replace with real auth user id
-  const currentUserId = 3;
+  const { data: userData } = Owner.useUser();
+  const userId = userData?.userId;
   const isAdmin = role === 'admin';
   // Check ownership
   const isOwner =
@@ -168,7 +170,7 @@ export default function AdminEditTenant() {
         owner &&
         typeof owner === 'object' &&
         typeof owner.user_id === 'number' &&
-        owner.user_id === currentUserId
+        owner.user_id === userId
     );
   const canEdit = isOwner || isAdmin;
 

@@ -12,7 +12,7 @@ import {
   useApartmentsByUser,
   useDeleteApartment,
 } from '@/features/G9-ApartmentListing/hooks/useApartment';
-import { Upload } from '@/features/G9-ApartmentListing/hooks/index';
+import { Owner, Upload } from '@/features/G9-ApartmentListing/hooks/index';
 import { FollowerPointerCard } from '@/features/G9-ApartmentListing/components/following-pointer';
 
 interface Apartment {
@@ -185,12 +185,10 @@ function ApartmentCard({
 }
 
 export default function AdminListedAPT() {
-  const currentUserId = 3; // TODO: replace with real auth user id
-
-  const { data: apartmentsData, error } = useApartmentsByUser(currentUserId);
-
+  const { data: userData } = Owner.useUser();
+  const userId = userData?.userId;
+  const { data: apartmentsData, error } = useApartmentsByUser(userId);
   const [localApartments, setLocalApartments] = useState<Apartment[]>([]);
-
   useEffect(() => {
     // apartmentsData may be the array itself or an object with .data
     if (Array.isArray(apartmentsData)) {
