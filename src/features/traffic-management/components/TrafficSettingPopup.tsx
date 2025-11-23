@@ -16,6 +16,8 @@ import { initializeApp } from 'firebase/app';
 import type { FirebaseApp } from 'firebase/app';
 import { getDatabase, ref, onValue, update } from 'firebase/database';
 import type { DatabaseReference } from 'firebase/database';
+import { calculateTraffic } from '../components/calculateTrafficFunction';
+import { getBaseAPIURL } from '@/lib/apiClient.ts';
 
 interface TrafficData {
   interid: number;
@@ -96,13 +98,11 @@ export default function TrafficSettingPopup({
 
       (async () => {
         try {
-          const base = import.meta.env.VITE_API_BASE_URL ?? '';
-          const url = `http://localhost:3333/traffic-lights/${TrafficID}`;
+          const url = getBaseAPIURL + `/traffic-lights/${Lkey}`;
           const res = await fetch(url);
           if (!res.ok) throw new Error('Failed to fetch traffic light');
           const response: any = await res.json();
 
-          console.log('This traffic light data:', response);
           console.log('Current traffic data:', response.data.trafficLight);
 
           setColor(Number(currentColor));
@@ -118,13 +118,13 @@ export default function TrafficSettingPopup({
           setLstatus(response.data.trafficLight.status);
           setDensity(response.data.trafficLight.density_level);
 
-          const Rurl = `http://localhost:3333/roads/${roadid}`;
+          /*const Rurl = getBaseAPIURL + `/roads/${roadid}`;
           const Rres = await fetch(Rurl);
           if (!Rres.ok) throw new Error('Failed to fetch Road');
           const RoadData: any = await Rres.json();
 
           console.log('This Road data:', RoadData);
-          setRoadname(RoadData.data.name);
+          setRoadname(RoadData.data.name);*/
         } catch (err) {
           console.error('Error loading traffic light details', err);
           // fallback to values from the provided signal
@@ -179,11 +179,13 @@ export default function TrafficSettingPopup({
 
     try {
       const updatedFromServer = await putTrafficLight(TrafficID, body);
-
+      console.log('Save data --> ', updatedFromServer);
       // Call onSave with the updated record (prefer server response)
       onSave?.(updatedFromServer ?? pendingUpdate);
       onOpenChange(false);
       setPendingUpdate(null);
+      //เรียกฟังชั่นคำนวณ
+      calculateTraffic(intersectionId);
       setConfirmOpen(false);
     } catch (err) {
       console.error('Error updating traffic light', err);
@@ -221,9 +223,9 @@ export default function TrafficSettingPopup({
                     Intersection : {intersectionId}
                   </div>
                   <div className="ml-2 font-bold">Light NO : {TrafficID}</div>
-                  <div className="ml-2 text-xs font-bold">
+                  {/*<div className="ml-2 text-xs font-bold">
                     Location : {roadname}
-                  </div>
+                  </div>*/}
                   <div className="ml-2 text-xs font-bold">
                     Auto-mode : {Automode ? 'on' : 'off'}
                   </div>
