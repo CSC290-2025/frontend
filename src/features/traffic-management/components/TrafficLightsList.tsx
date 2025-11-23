@@ -228,7 +228,7 @@ export default function TrafficLightsList({
   };
 
   return (
-    <Card className="ml-4 h-full w-80 flex-shrink-0">
+    <Card className="ml-4 h-full w-80 shrink-0">
       <CardHeader className="pb-3">
         <CardTitle className="text-lg">Traffic Lights</CardTitle>
         <div className="relative mt-2">
