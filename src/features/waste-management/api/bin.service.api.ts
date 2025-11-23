@@ -28,11 +28,16 @@ function transformBin(backendBin: any): Bin {
     bin_type: typeMap[backendBin.bin_type] || 'GENERAL',
     latitude: Number(backendBin.latitude),
     longitude: Number(backendBin.longitude),
-    capacity_kg: backendBin.capacity_kg
-      ? typeof backendBin.capacity_kg === 'string'
-        ? Number(backendBin.capacity_kg)
-        : backendBin.capacity_kg
-      : null,
+    capacity_kg:
+      backendBin.capacity_kg !== undefined && backendBin.capacity_kg !== null
+        ? typeof backendBin.capacity_kg === 'string'
+          ? Number(backendBin.capacity_kg)
+          : backendBin.capacity_kg
+        : backendBin.capacity !== undefined && backendBin.capacity !== null
+          ? typeof backendBin.capacity === 'string'
+            ? Number(backendBin.capacity)
+            : backendBin.capacity
+          : null,
     total_collected_weight:
       typeof backendBin.total_collected_weight === 'string'
         ? Number(backendBin.total_collected_weight)
@@ -69,11 +74,16 @@ export class BinApiService {
         typeof bin.longitude === 'string'
           ? Number(bin.longitude)
           : bin.longitude,
-      capacity_kg: bin.capacity_kg
-        ? typeof bin.capacity_kg === 'string'
-          ? Number(bin.capacity_kg)
-          : bin.capacity_kg
-        : null,
+      capacity_kg:
+        bin.capacity_kg !== undefined && bin.capacity_kg !== null
+          ? typeof bin.capacity_kg === 'string'
+            ? Number(bin.capacity_kg)
+            : bin.capacity_kg
+          : bin.capacity !== undefined && bin.capacity !== null
+            ? typeof bin.capacity === 'string'
+              ? Number(bin.capacity)
+              : bin.capacity
+            : null,
       total_collected_weight:
         typeof bin.total_collected_weight === 'string'
           ? Number(bin.total_collected_weight)
@@ -85,7 +95,7 @@ export class BinApiService {
     const response = await apiClient.get(`/bins/${id}`);
     const payload =
       response.data && response.data.data ? response.data.data : response.data;
-    // payload may be { bin } or the bin object itself
+
     return payload?.bin ?? payload;
   }
 
@@ -129,9 +139,7 @@ export class BinApiService {
   }
 
   static async updateBinStatus(id: number): Promise<BackendBin> {
-    const response = await apiClient.put(`/bins/${id}/status`, {
-      /* status payload */
-    });
+    const response = await apiClient.put(`/bins/${id}/status`, {});
     return response.data && response.data.data
       ? response.data.data
       : response.data;

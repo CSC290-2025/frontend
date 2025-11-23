@@ -8,7 +8,6 @@ export interface WasteLogRequest {
   waste_type_name: string;
   weight: number;
 }
-
 export interface WasteStats {
   month: number;
   year: number;
@@ -48,15 +47,6 @@ export interface CreateBinData {
   bin_type: 'RECYCLABLE' | 'GENERAL' | 'HAZARDOUS';
   latitude: number;
   longitude: number;
-  address?: string;
-  capacity_kg?: number;
-}
-
-export interface UpdateBinData {
-  bin_name?: string;
-  bin_type?: 'RECYCLABLE' | 'GENERAL' | 'HAZARDOUS';
-  latitude?: number;
-  longitude?: number;
   address?: string;
   capacity_kg?: number;
 }

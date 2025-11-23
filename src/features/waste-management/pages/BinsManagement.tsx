@@ -44,15 +44,6 @@ export default function BinsManagement() {
     }
   };
 
-  const handleRecordCollection = async (binId: number, weight?: number) => {
-    try {
-      await BinApiService.recordCollection(binId, weight);
-      loadBins();
-    } catch (error) {
-      console.error('Error recording collection:', error);
-    }
-  };
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -87,7 +78,7 @@ export default function BinsManagement() {
           </span>
           <span className="text-sm font-semibold text-blue-600">
             {bins
-              .reduce((sum, bin) => sum + (bin.capacity_kg || 0), 0)
+              .reduce((sum, bin) => sum + (Number(bin.capacity_kg) || 0), 0)
               .toLocaleString()}{' '}
             kg
           </span>
@@ -152,7 +143,6 @@ export default function BinsManagement() {
         </div>
       )}
 
-      {/* Add Bin Modal */}
       {showAddModal && (
         <AddBinModal
           onClose={() => setShowAddModal(false)}

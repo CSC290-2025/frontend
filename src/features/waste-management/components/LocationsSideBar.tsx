@@ -15,7 +15,7 @@ interface LocationsSideBarProps {
   onFilterChange: (filter: BinFilter) => void;
   onBinSelect: (binId: number) => void;
   onLocateUser: () => void;
-  onLocationSearch?: (coords: Coordinates) => void;
+  onLocationSearch?: (coords: Coordinates, address?: string) => void;
 }
 
 export default function LocationsSideBar({
@@ -62,7 +62,7 @@ export default function LocationsSideBar({
         const lng = parseFloat(result.lon);
 
         if (onLocationSearch) {
-          onLocationSearch({ lat, lng });
+          onLocationSearch({ lat, lng }, result.display_name);
         } else {
           window.dispatchEvent(
             new CustomEvent('locationSearch', {
