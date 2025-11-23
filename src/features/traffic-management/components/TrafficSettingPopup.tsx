@@ -17,6 +17,7 @@ import type { FirebaseApp } from 'firebase/app';
 import { getDatabase, ref, onValue, update } from 'firebase/database';
 import type { DatabaseReference } from 'firebase/database';
 import { calculateTraffic } from '../components/calculateTrafficFunction';
+import { getBaseAPIURL } from '@/lib/apiClient.ts';
 
 interface TrafficData {
   interid: number;
@@ -97,8 +98,7 @@ export default function TrafficSettingPopup({
 
       (async () => {
         try {
-          const base = import.meta.env.VITE_API_BASE_URL ?? '';
-          const url = `http://localhost:3333/traffic-lights/${Lkey}`;
+          const url = getBaseAPIURL + `/traffic-lights/${Lkey}`;
           const res = await fetch(url);
           if (!res.ok) throw new Error('Failed to fetch traffic light');
           const response: any = await res.json();
@@ -118,7 +118,7 @@ export default function TrafficSettingPopup({
           setLstatus(response.data.trafficLight.status);
           setDensity(response.data.trafficLight.density_level);
 
-          /*const Rurl = `http://localhost:3333/roads/${roadid}`;
+          /*const Rurl = getBaseAPIURL + `/roads/${roadid}`;
           const Rres = await fetch(Rurl);
           if (!Rres.ok) throw new Error('Failed to fetch Road');
           const RoadData: any = await Rres.json();

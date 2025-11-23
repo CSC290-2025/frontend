@@ -1,21 +1,42 @@
 import { useMemo } from 'react';
 import DistrictItem from './DistrictItem';
 import useDistrictsQuery from '@/features/clean-air/hooks/useDistricts';
+import { useFavoriteDistrictsQuery } from '@/features/clean-air/hooks/useFavoriteDistricts';
 import type { District } from '@/types/district';
 
 type Props = {
   searchTerm?: string;
+  isFavoriteList: boolean;
 };
 
-export default function DistrictList({ searchTerm = '' }: Props) {
+export default function DistrictList({
+  searchTerm = '',
+  isFavoriteList,
+}: Props) {
   const {
-    data: districts = [],
-    isLoading,
-    isError,
-    error,
-    refetch,
-    isFetched,
-  } = useDistrictsQuery();
+    data: allDistricts = [],
+    isLoading: isAllLoading,
+    isError: isAllError,
+    error: allError,
+    refetch: refetchAll,
+    isFetched: isAllFetched,
+  } = useDistrictsQuery({ enabled: !isFavoriteList });
+
+  const {
+    data: favoriteDistricts = [],
+    isLoading: isFavLoading,
+    isError: isFavError,
+    error: favError,
+    refetch: refetchFav,
+    isFetched: isFavFetched,
+  } = useFavoriteDistrictsQuery({ enabled: isFavoriteList });
+
+  const districts = isFavoriteList ? favoriteDistricts : allDistricts;
+  const isLoading = isFavoriteList ? isFavLoading : isAllLoading;
+  const isError = isFavoriteList ? isFavError : isAllError;
+  const error = isFavoriteList ? favError : allError;
+  const refetch = isFavoriteList ? refetchFav : refetchAll;
+  const isFetched = isFavoriteList ? isFavFetched : isAllFetched;
 
   const filtered = useMemo(() => {
     if (!searchTerm) return districts;
@@ -27,6 +48,7 @@ export default function DistrictList({ searchTerm = '' }: Props) {
 
   if (isLoading)
     return <div className="p-8 text-center">Loading districts...</div>;
+
   if (isError)
     return (
       <div className="p-8 text-center">
@@ -45,7 +67,9 @@ export default function DistrictList({ searchTerm = '' }: Props) {
   if (isFetched && filtered.length === 0)
     return (
       <div className="py-10 text-center text-gray-700">
-        Area/Zone not found{searchTerm ? ` for "${searchTerm}"` : '.'}
+        {isFavoriteList
+          ? 'You have no favorite districts yet. Select "All Districts" to add some!'
+          : `Area/Zone not found${searchTerm ? ` for "${searchTerm}"` : '.'}`}
       </div>
     );
 
