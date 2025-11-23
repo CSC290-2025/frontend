@@ -1,4 +1,5 @@
 // Generouted, changes to this file will be overridden
+ 
 
 import { components, hooks, utils } from '@generouted/react-router/client';
 
@@ -53,8 +54,6 @@ export type Path =
   | `/power-bi/:type/:category/:id`
   | `/power-bi/create`
   | `/power-bi/edit/:id`
-  | `/register`
-  | `/users`
   | `/profile`
   | `/public_transportation`
   | `/register`
@@ -68,6 +67,7 @@ export type Path =
   | `/traffic/admin`
   | `/traffic/control`
   | `/traffic/mock`
+  | `/users`
   | `/waste-management`
   | `/weather`
   | `/weather-aqi`
