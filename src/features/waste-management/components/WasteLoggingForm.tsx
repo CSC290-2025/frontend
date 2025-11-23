@@ -100,17 +100,18 @@ export default function WasteLoggingForm() {
                 />
               </SelectTrigger>
               <SelectContent>
-                {wasteTypesData?.wasteTypes.map((type) => (
-                  <SelectItem
-                    key={type.id}
-                    value={type.type_name}
-                    className="text-base"
-                  >
-                    {type.type_name}{' '}
-                    {type.typical_weight_kg &&
-                      `(${type.typical_weight_kg}kg typical)`}
-                  </SelectItem>
-                ))}
+                {wasteTypesData?.wasteTypes &&
+                  wasteTypesData?.wasteTypes.map((type) => (
+                    <SelectItem
+                      key={type.id}
+                      value={type.type_name}
+                      className="text-base"
+                    >
+                      {type.type_name}{' '}
+                      {type.typical_weight_kg &&
+                        `(${type.typical_weight_kg}kg typical)`}
+                    </SelectItem>
+                  ))}
                 <SelectItem value="custom" className="text-base">
                   + Add Custom Type
                 </SelectItem>
