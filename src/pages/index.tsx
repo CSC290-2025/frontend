@@ -3,6 +3,7 @@ import { useNavigate } from '@/router';
 import { useLogout } from '@/hooks/useLogout';
 import { Button } from '@/components/ui/button';
 import { useEffect } from 'react';
+import { Sidebar } from '@/components/main/Siderbar';
 
 export default function Home() {
   const navigate = useNavigate();
@@ -26,14 +27,19 @@ export default function Home() {
   };
 
   return (
-    <div>
-      <div>
-        Username: {user?.username}, Email: {user?.email}
+    <>
+      <div className="flex">
+        <Sidebar></Sidebar>
+        <div className="flex w-screen flex-col items-center justify-center">
+          <div>
+            Username: {user?.username}, Email: {user?.email}
+          </div>
+          <h1>Home</h1>
+          {/* <Button onClick={handleLogout}>
+          {isLoggingOut ? 'Signing out...' : 'Sign out'}
+        </Button> */}
+        </div>
       </div>
-      <h1>Home</h1>
-      <Button onClick={handleLogout}>
-        {isLoggingOut ? 'Signing out...' : 'Sign out'}
-      </Button>
-    </div>
+    </>
   );
 }
