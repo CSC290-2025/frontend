@@ -33,13 +33,10 @@ export default function MetroCardInfoPage() {
 
   const { id } = useParams('/financial/metro/info/:id');
 
-  const {
-    data: metroCardResponse,
-    isLoading,
-    error,
-  } = useGetMetroCardsMetroCardId(Number(id));
-
-  console.log(error);
+  const { data: metroCardResponse, isLoading } = useGetMetroCardsMetroCardId(
+    Number(id),
+    { query: { retry: false } }
+  );
 
   const { mutate, isPending } = useDeleteMetroCardsMetroCardId({
     mutation: {

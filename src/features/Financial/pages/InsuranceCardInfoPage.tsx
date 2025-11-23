@@ -30,7 +30,8 @@ export default function InsuranceCardInfoPage() {
   const { id } = useParams('/financial/insurance/info/:id');
 
   const { data: insuranceCardResponse, isLoading } = useGetInsuranceCardById(
-    Number(id)
+    Number(id),
+    { query: { retry: false } }
   );
 
   const { mutate, isPending } = useDeleteMyInsuranceCard({

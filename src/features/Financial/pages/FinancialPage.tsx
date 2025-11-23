@@ -121,7 +121,7 @@ export default function FinancialPage() {
 
               {/* Right Column: Services and History */}
               <div className="space-y-6">
-                <ServiceNavigator userId={loadedUserId?.toString() ?? '1'} />
+                <ServiceNavigator />
                 <TransactionHistory userId={loadedUserId} wallet={wallet} />
               </div>
             </div>
