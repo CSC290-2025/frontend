@@ -1,3 +1,3 @@
 export default function Page() {
-  return <h1>Error</h1>;
+  return <h1>404 Not Found</h1>;
 }
