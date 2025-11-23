@@ -1,10 +1,13 @@
-import { useMutation } from '@tanstack/react-query';
-import { apiClient } from '@/lib/apiClient';
-import { useAuth } from '@/features/auth/context/AuthContext';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiClient } from '@/lib/apiClient.ts';
+import { useAuth } from '@/features/auth/context/AuthContext.tsx';
 import type { RegisterFormData } from '@/features/auth/schemas';
+import { useNavigate } from '@/router';
 
 export const useRegister = () => {
   const { setUser, setError, setLoading } = useAuth();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (data: Omit<RegisterFormData, 'confirmPassword'>) => {
@@ -23,7 +26,8 @@ export const useRegister = () => {
     },
     onSuccess: (response) => {
       setUser(response.data.user);
-      window.location.href = '/';
+      queryClient.setQueryData(['user', 'me'], { user: response.data.user });
+      navigate('/');
     },
   });
 };
