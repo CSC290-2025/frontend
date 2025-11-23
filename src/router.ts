@@ -20,6 +20,9 @@ export type Path =
   | `/Know-AI/createCourse`
   | `/Know-AI/exercises`
   | `/Know-AI/exercises/:level/:question`
+  | `/clean-air/district-detail/:district`
+  | `/clean-air/district-selection`
+  | `/example`
   | `/MyRentedAPT`
   | `/activity`
   | `/chat`
@@ -54,6 +57,7 @@ export type Path =
   | `/power-bi/:type/:category/:id`
   | `/power-bi/create`
   | `/power-bi/edit/:id`
+  | `/register`
   | `/profile`
   | `/public_transportation`
   | `/register`
