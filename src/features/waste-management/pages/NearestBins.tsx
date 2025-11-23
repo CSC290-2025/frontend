@@ -206,7 +206,6 @@ export function BinLocator() {
       </p>
 
       <div className="grid w-full max-w-6xl gap-6 md:grid-cols-[2fr,1fr]">
-        {/* Map Wrapper */}
         <div
           className="relative h-[520px] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl"
           style={mapWrapperStyle}
