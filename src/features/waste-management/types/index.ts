@@ -32,16 +32,11 @@ export interface DailyStats {
 export interface Bin {
   id: number;
   bin_name: string;
-  bin_type: 'RECYCLABLE' | 'GENERAL' | 'HAZARDOUS' | 'ORGANIC';
+  bin_type: 'RECYCLABLE' | 'GENERAL' | 'HAZARDOUS';
   latitude: number;
   longitude: number;
   address: string | null;
   capacity_kg: number | null;
-  status: 'NORMAL' | 'OVERFLOW' | 'NEEDS_COLLECTION' | 'MAINTENANCE';
-  last_collected_at: string;
-  total_collected_weight: number;
-  created_at: string;
-  updated_at: string;
 }
 
 export interface BinWithDistance extends Bin {
@@ -50,60 +45,68 @@ export interface BinWithDistance extends Bin {
 
 export interface CreateBinData {
   bin_name: string;
-  bin_type: 'RECYCLABLE' | 'GENERAL' | 'HAZARDOUS' | 'ORGANIC';
+  bin_type: 'RECYCLABLE' | 'GENERAL' | 'HAZARDOUS';
   latitude: number;
   longitude: number;
   address?: string;
   capacity_kg?: number;
-  status?: 'NORMAL' | 'OVERFLOW' | 'NEEDS_COLLECTION' | 'MAINTENANCE';
 }
 
 export interface UpdateBinData {
   bin_name?: string;
-  bin_type?: 'RECYCLABLE' | 'GENERAL' | 'HAZARDOUS' | 'ORGANIC';
+  bin_type?: 'RECYCLABLE' | 'GENERAL' | 'HAZARDOUS';
   latitude?: number;
   longitude?: number;
   address?: string;
   capacity_kg?: number;
-  status?: 'NORMAL' | 'OVERFLOW' | 'NEEDS_COLLECTION' | 'MAINTENANCE';
 }
-
-export interface BinStats {
-  totalBins: number;
-  byType: {
-    bin_type: string;
-    _count: { id: number };
-  }[];
-  byStatus: {
-    status: string;
-    _count: { id: number };
-  }[];
-  overflowBins: number;
-}
-
-export const BinStatus = {
-  NORMAL: 'NORMAL',
-  OVERFLOW: 'OVERFLOW',
-  NEEDS_COLLECTION: 'NEEDS_COLLECTION',
-  MAINTENANCE: 'MAINTENANCE',
-} as const;
-
-export type BinStatus = (typeof BinStatus)[keyof typeof BinStatus];
 
 export const BinType = {
   RECYCLABLE: 'RECYCLABLE',
   GENERAL: 'GENERAL',
   HAZARDOUS: 'HAZARDOUS',
-  ORGANIC: 'ORGANIC',
 } as const;
 
 export type BinType = (typeof BinType)[keyof typeof BinType];
 
+export type BinFilter = 'All' | BinType;
+
 export interface BinFilters {
-  status?: BinStatus;
   bin_type?: Bin['bin_type'];
   search?: string;
   min_capacity?: number;
   max_capacity?: number;
   [key: string]: string | number | boolean | undefined;
+}
+
+export interface Coordinates {
+  lat: number;
+  lng: number;
+}
+
+export interface Bin {
+  id: number;
+  name: string;
+  type: 'Recyclable' | 'General Waste' | 'Hazardous';
+  color: string;
+  lat: number;
+  lng: number;
+  distance?: string;
+  numericDistance?: number;
+}
+
+export interface BackendBin {
+  id: number;
+  bin_name: string;
+  bin_type: 'RECYCLABLE' | 'GENERAL' | 'HAZARDOUS';
+  latitude: number;
+  longitude: number;
+  address: string | null;
+  capacity_kg: number | null;
+}
+
+export interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  message?: string;
 }

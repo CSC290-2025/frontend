@@ -1,36 +1,27 @@
 import { useState, useEffect } from 'react';
-import { Plus, MapPin, Trash2, Check, X } from 'lucide-react';
-import { BinApiService } from '@/features/waste-management/api/bin.api';
-import type {
-  Bin,
-  BinType,
-  BinStatus,
-} from '@/features/waste-management/types';
-import {
-  BIN_TYPE_COLORS,
-  BIN_STATUS_COLORS,
-  BIN_TYPE_LABELS,
-} from '@/constant';
+import { Plus, MapPin, Trash2 } from 'lucide-react';
+import { BinApiService } from '@/features/waste-management/api/bin.service.api';
+import type { BackendBin, BinType } from '@/features/waste-management/types';
+import { BIN_TYPE_COLORS, BIN_TYPE_LABELS } from '@/constant';
 import AddBinModal from '@/features/waste-management/components/AddBinModal';
 
 export default function BinsManagement() {
-  const [bins, setBins] = useState<Bin[]>([]);
+  const [bins, setBins] = useState<BackendBin[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState<BinType | ''>('');
-  const [filterStatus, setFilterStatus] = useState<BinStatus | ''>('');
   const [showAddModal, setShowAddModal] = useState(false);
-  const [selectedBin, setSelectedBin] = useState<Bin | null>(null);
 
   const loadBins = async () => {
     try {
       setLoading(true);
       const filters: any = {};
       if (filterType) filters.bin_type = filterType;
-      if (filterStatus) filters.status = filterStatus;
       const data = await BinApiService.getAllBins(filters);
+      console.log('Fetched bins for management:', data);
       setBins(data);
     } catch (error) {
       console.error('Error loading bins:', error);
+      alert('Failed to load bins. Please check the console for details.');
     } finally {
       setLoading(false);
     }
@@ -38,14 +29,18 @@ export default function BinsManagement() {
 
   useEffect(() => {
     loadBins();
-  }, [filterType, filterStatus]);
+  }, [filterType]);
 
-  const handleStatusUpdate = async (binId: number, newStatus: BinStatus) => {
+  const handleDeleteBin = async (binId: number) => {
+    if (!confirm('Are you sure you want to delete this bin?')) {
+      return;
+    }
     try {
-      await BinApiService.updateBinStatus(binId, newStatus);
+      await BinApiService.deleteBin(binId);
       loadBins();
     } catch (error) {
-      console.error('Error updating status:', error);
+      console.error('Error deleting bin:', error);
+      alert('Failed to delete bin');
     }
   };
 
@@ -85,22 +80,20 @@ export default function BinsManagement() {
           <option value="RECYCLABLE">Recyclable</option>
           <option value="GENERAL">General</option>
           <option value="HAZARDOUS">Hazardous</option>
-          <option value="ORGANIC">Organic</option>
         </select>
-        <select
-          value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value as BinStatus | '')}
-          className="rounded-lg border border-gray-300 px-4 py-2 focus:border-transparent focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="">All Statuses</option>
-          <option value="NORMAL">Normal</option>
-          <option value="OVERFLOW">Overflow</option>
-          <option value="NEEDS_COLLECTION">Needs Collection</option>
-          <option value="MAINTENANCE">Maintenance</option>
-        </select>
+        <div className="flex items-center gap-2 rounded-lg border border-gray-300 bg-gray-50 px-4 py-2">
+          <span className="text-sm font-medium text-gray-700">
+            Total Capacity:
+          </span>
+          <span className="text-sm font-semibold text-blue-600">
+            {bins
+              .reduce((sum, bin) => sum + (bin.capacity_kg || 0), 0)
+              .toLocaleString()}{' '}
+            kg
+          </span>
+        </div>
       </div>
 
-      {/* Bins Grid */}
       {loading ? (
         <div className="py-12 text-center text-gray-500">Loading bins...</div>
       ) : (
@@ -132,87 +125,30 @@ export default function BinsManagement() {
                     </p>
                   </div>
                 </div>
-                <span
-                  className="rounded-full px-2 py-1 text-xs font-medium"
-                  style={{
-                    backgroundColor: BIN_STATUS_COLORS[bin.status] + '20',
-                    color: BIN_STATUS_COLORS[bin.status],
-                  }}
-                >
-                  {bin.status.replace('_', ' ')}
-                </span>
+                <div className="text-right">
+                  <p className="text-sm font-semibold text-blue-600">
+                    {bin.capacity_kg ? `${bin.capacity_kg} kg` : 'N/A'}
+                  </p>
+                  <p className="text-xs text-gray-500">Capacity</p>
+                </div>
               </div>
               <div className="mb-4 space-y-2 text-sm text-gray-600">
                 <p className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4" />
+                  <MapPin className="h-10 w-10" />
                   {bin.address ||
                     `${bin.latitude.toFixed(4)}, ${bin.longitude.toFixed(4)}`}
                 </p>
-                {bin.capacity_kg && <p>Capacity: {bin.capacity_kg} kg</p>}
-                <p>Collected: {bin.total_collected_weight.toFixed(1)} kg</p>
               </div>
               <div className="flex gap-2">
                 <button
-                  onClick={() => handleRecordCollection(bin.id, 10)}
-                  className="flex-1 rounded bg-green-500 py-2 text-sm text-white transition hover:bg-green-600"
+                  onClick={() => handleDeleteBin(bin.id)}
+                  className="rounded bg-red-500 px-3 py-2 text-sm text-white transition hover:bg-red-600"
                 >
-                  Collect
-                </button>
-                <button
-                  onClick={() => setSelectedBin(bin)}
-                  className="flex-1 rounded bg-gray-200 py-2 text-sm text-gray-700 transition hover:bg-gray-300"
-                >
-                  Status
+                  <Trash2 className="h-4 w-4" />
                 </button>
               </div>
             </div>
           ))}
-        </div>
-      )}
-
-      {/* Status Update Modal */}
-      {selectedBin && (
-        <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black p-4">
-          <div className="w-full max-w-md rounded-lg bg-white p-6">
-            <div className="mb-4 flex items-center justify-between">
-              <h3 className="text-lg font-semibold">
-                Update Status: {selectedBin.bin_name}
-              </h3>
-              <button onClick={() => setSelectedBin(null)}>
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <div className="space-y-2">
-              {(
-                [
-                  'NORMAL',
-                  'OVERFLOW',
-                  'NEEDS_COLLECTION',
-                  'MAINTENANCE',
-                ] as BinStatus[]
-              ).map((status) => (
-                <button
-                  key={status}
-                  onClick={() => {
-                    handleStatusUpdate(selectedBin.id, status);
-                    setSelectedBin(null);
-                  }}
-                  className="flex w-full items-center justify-between rounded-lg px-4 py-3 text-left transition hover:bg-gray-100"
-                  style={{
-                    backgroundColor:
-                      selectedBin.status === status
-                        ? BIN_STATUS_COLORS[status] + '20'
-                        : 'transparent',
-                  }}
-                >
-                  {status.replace('_', ' ')}
-                  {selectedBin.status === status && (
-                    <Check className="h-5 w-5" />
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
       )}
 
