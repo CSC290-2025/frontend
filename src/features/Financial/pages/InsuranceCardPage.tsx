@@ -11,6 +11,7 @@ import { useNavigate } from 'react-router';
 import Loading from '@/features/Financial/components/metro-cards/Loading';
 import ReuseableButton from '@/features/Financial/components/metro-cards/ReuseableButton';
 import InsuranceCard from '@/features/Financial/components/insurance-cards/InsuranceCard';
+import AmountBox from '@/features/Financial/components/metro-cards/AmountBox';
 import { toast } from 'sonner';
 
 export default function InsuranceCardPage() {
@@ -114,18 +115,14 @@ export default function InsuranceCardPage() {
           </Button>
         </div>
 
-        <div className="mb-6">
-          <div className="rounded-lg bg-white p-6 shadow">
-            <div className="text-sm text-gray-600">Total Balance</div>
-            <div className="text-3xl font-bold text-gray-900">
-              ${totalBalance.toFixed(2)}
-            </div>
-            <div className="mt-2 text-sm text-gray-500">
-              {insuranceCards.length}{' '}
-              {insuranceCards.length === 1 ? 'card' : 'cards'}
-            </div>
-          </div>
-        </div>
+        <AmountBox
+          balance={totalBalance}
+          onRefetch={async () => {
+            await refetch();
+          }}
+          isLoading={isLoading}
+          color="green"
+        />
 
         <div className="mb-6 flex items-center justify-between">
           <h2 className="text-xl font-semibold text-gray-900">

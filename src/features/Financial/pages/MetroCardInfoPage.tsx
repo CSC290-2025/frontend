@@ -57,6 +57,11 @@ export default function MetroCardInfoPage() {
 
   if (isLoading) return <Loading />;
 
+  if (!metroCard) {
+    navigate('/financial/metro');
+    return;
+  }
+
   const hideCardNumber = (cardNumber: string): string => {
     // Remove any spaces first
     const cleanNumber = cardNumber.replace(/\s+/g, '');
