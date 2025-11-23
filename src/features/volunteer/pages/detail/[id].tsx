@@ -224,7 +224,7 @@ export default function VolunteerDetailPage() {
             </span>
           </button>
 
-          {isOwner && (
+          {
             <div className="flex gap-3">
               <button
                 onClick={() =>
@@ -244,7 +244,7 @@ export default function VolunteerDetailPage() {
                 <Trash2 className="h-5 w-5 text-red-500" />
               </button>
             </div>
-          )}
+          }
         </div>
       </div>
 
@@ -318,7 +318,7 @@ export default function VolunteerDetailPage() {
             </p>
           </div>
 
-          {!isOwner && (
+          {
             <div className="rounded-2xl border border-gray-200 bg-white p-6">
               <div className="mb-6">
                 <div className="mb-2 flex items-center justify-between">
@@ -341,7 +341,7 @@ export default function VolunteerDetailPage() {
                 </p>
               )}
             </div>
-          )}
+          }
         </div>
       </div>
     </div>
