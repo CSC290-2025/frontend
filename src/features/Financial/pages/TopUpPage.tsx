@@ -6,8 +6,9 @@ import {
   usePostWalletsWalletIdTopUp,
 } from '@/api/generated/wallets';
 import { usePostMetroCardsTopUp } from '@/api/generated/metro-cards';
-import { usePostInsuranceCardsCardIdTopUp } from '@/api/generated/insurance-cards';
+import { useUseTopUpInsuranceCard as useTopUpInsuranceCard } from '@/api/generated/insurance-cards';
 import { usePostScbQrCreate } from '@/api/generated/scb';
+import { getScbVerifyPayment } from '@/api/generated/scb';
 import type { PostScbQrCreate200Data } from '@/api/generated/model/postScbQrCreate200Data';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -27,37 +28,74 @@ import { toast } from 'sonner';
 import ServiceSelector, {
   type ServiceType as TopUpType,
 } from '../components/topup/ServiceSelector';
+import { useGetAuthMe } from '@/api/generated/authentication';
+import Pusher from 'pusher-js';
+import type { AxiosError } from 'axios';
+import type {
+  PostScbQrCreate400Error,
+  PostScbQrCreate409Error,
+  PostMetroCardsTopUp400Error,
+  PostMetroCardsTopUp409Error,
+  UseTopUpInsuranceCard400Error,
+  UseTopUpInsuranceCard409Error,
+} from '@/api/generated/model';
+
+type TopUpError = AxiosError<
+  | PostScbQrCreate400Error
+  | PostScbQrCreate409Error
+  | PostMetroCardsTopUp400Error
+  | PostMetroCardsTopUp409Error
+  | UseTopUpInsuranceCard400Error
+  | UseTopUpInsuranceCard409Error
+  | { message: string }
+>;
+const PUSHER_APP_KEY = import.meta.env.VITE_G11_PUSHER_APP_KEY;
+const PUSHER_CLUSTER = import.meta.env.VITE_G11_PUSHER_CLUSTER;
+const PUSHER_CHANNEL = import.meta.env.VITE_G11_PUSHER_CHANNEL;
+const PUSHER_EVENT = import.meta.env.VITE_G11_PUSHER_EVENT;
 
 export default function TopupPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const cardNumberFromState = (location.state as { cardNumber?: string })
     ?.cardNumber;
+  const typeFromState = (
+    location.state as { type?: 'wallet' | 'metro' | 'insurance' }
+  )?.type;
 
   const initialCardRef = useRef<string | undefined>(cardNumberFromState);
 
-  const [userId] = useState(1); // Assuming user ID 1 for demo
+  const userId = useGetAuthMe().data?.data?.userId.toString() ?? '';
   const [topUpType, setTopUpType] = useState<TopUpType>(
-    cardNumberFromState ? 'metro' : 'wallet'
+    typeFromState || (cardNumberFromState ? 'metro' : 'wallet')
   );
+
   const [amount, setAmount] = useState('');
   const [cardId, setCardId] = useState(cardNumberFromState ?? '');
   const [qrRawData, setQrRawData] = useState('');
   // ref1 is used to track and verify whether the payment completed successfully
   const [scbRef1, setScbRef1] = useState<string | undefined>(undefined);
 
+  // this is for backup polling  for payment confirmation if pusher fails
+  const intervalRef = useRef<number | null>(null);
+  const POOL_START_DELAY_MS = 20000; // 20 seconds
+  const POOL_INTERVAL_MS = 4000; // 4 seconds
   // when initial state changes, make sure to keep the reference
   useEffect(() => {
     if (cardNumberFromState) {
       initialCardRef.current = cardNumberFromState;
-      setTopUpType('metro');
       setCardId(cardNumberFromState);
     }
-  }, [cardNumberFromState]);
+    if (typeFromState) {
+      setTopUpType(typeFromState);
+    } else if (cardNumberFromState) {
+      setTopUpType('metro');
+    }
+  }, [cardNumberFromState, typeFromState]);
 
   const { data: walletResponse, refetch: refetchWallet } =
-    useGetWalletsUserUserId(userId);
-  const wallet = walletResponse?.data?.data?.wallet;
+    useGetWalletsUserUserId(Number(userId));
+  const wallet = walletResponse?.data?.wallet;
 
   const { mutateAsync: topUpWallet, isPending: isTopUpWalletPending } =
     usePostWalletsWalletIdTopUp({
@@ -66,11 +104,11 @@ export default function TopupPage() {
   const { mutateAsync: topUpMetro, isPending: isTopUpMetroPending } =
     usePostMetroCardsTopUp({ mutation: { onSuccess: () => refetchWallet() } });
   const { mutateAsync: topUpInsurance, isPending: isTopUpInsurancePending } =
-    usePostInsuranceCardsCardIdTopUp({
+    useTopUpInsuranceCard({
       mutation: { onSuccess: () => refetchWallet() },
     });
   const { mutateAsync: generateQR } = usePostScbQrCreate();
-  // We'll use SSEs to be notified of SCB webhook confirmations.
+  // We'll use Pusher to be notified of SCB webhook confirmations.
   const [isWaiting, setIsWaiting] = useState(false);
 
   const quickAmounts = [100, 500, 1000, 2000, 5000, 10000];
@@ -105,10 +143,10 @@ export default function TopupPage() {
       if (topUpType === 'wallet') {
         // Generate QR for wallet topup
         const response = await generateQR({
-          data: { amount, user_id: userId },
+          data: { amount, user_id: Number(userId) },
         });
         // uhh this is mostly to shut TS up; blub doesnt believe qrResponse is real
-        const qrResponseContainer = response.data?.data as unknown as
+        const qrResponseContainer = response.data as unknown as
           | { qrResponse: PostScbQrCreate200Data }
           | undefined;
         const qrData = qrResponseContainer?.qrResponse?.qrRawData;
@@ -143,15 +181,19 @@ export default function TopupPage() {
           return;
         }
         await topUpInsurance({
-          data: { wallet_id: wallet.id, amount: parseFloat(amount) },
-          cardId: parseInt(cardId),
+          data: {
+            cardNumber: cardId.replace(/\s+/g, ''), // Remove spaces
+            wallet_id: wallet.id,
+            amount: parseFloat(amount),
+          },
         });
         toast.success('Insurance card topped up successfully');
         resetInputsForType('insurance');
       }
-    } catch (error) {
+    } catch (e) {
+      const error = e as TopUpError;
       console.error('Top up error:', error);
-      toast.error('Top up failed');
+      toast.error(error.response?.data?.message || 'Top up failed');
     }
   };
 
@@ -171,50 +213,75 @@ export default function TopupPage() {
       toast.error('Payment simulation failed');
     }
   };
-  // Subscribe to the SSE stream when we have a ref1.
-  // when the scb webhook confirms payment, we'll get notified here.
   useEffect(() => {
     if (!scbRef1) return;
-    const base = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
-
-    // this is where i have my backend set up for sending sse
-    const url = `${base}/scb/stream?ref1=${encodeURIComponent(scbRef1)}`;
-
-    // make a new event source and wait
-    const es = new EventSource(url);
-    es.onopen = () => setIsWaiting(true);
-
-    // if we get a call from backend that payment is confirmed so we will process it
-    es.onmessage = (e) => {
+    // Initialize Pusher connection
+    const pusher = new Pusher(PUSHER_APP_KEY, {
+      cluster: PUSHER_CLUSTER,
+    });
+    // Subscribe to your channel
+    const channel = pusher.subscribe(PUSHER_CHANNEL);
+    // Set waiting state
+    setIsWaiting(true);
+    // Bind to your specific event
+    channel.bind(PUSHER_EVENT, (data: unknown) => {
       try {
-        const data = JSON.parse(e.data);
-        // we just checking for ref1 to confirm
-        // it is really not necessary since backend calling this already mean that payment has been confirmed
-        const confirmed = data?.ref1;
+        // We'll check if the received ref1 matches the one we are waiting for
+        const payload = data as { ref1?: string } | null;
+        const confirmed = payload?.ref1 === scbRef1;
         if (confirmed) {
-          toast.success('Payment confirmed');
-          // don't clear the ref here — we want to keep showing the ref1
-          // permanently in the UI as requested; only clear QR and refresh.
+          toast.success('Payment confirmed via Pusher!');
           setQrRawData('');
           setAmount('');
           refetchWallet();
+          setScbRef1(undefined);
         }
       } catch (err) {
-        console.error('Failed to parse SSE message', err);
+        console.error('Failed to parse Pusher message', err);
       } finally {
         setIsWaiting(false);
-        es.close();
       }
-    };
+    });
+    // Handle connection state changes (here just for debugging plsss)
+    channel.bind('pusher:subscription_succeeded', () => {
+      console.log(`Pusher subscription to ${PUSHER_CHANNEL} successful.`);
+    });
+    channel.bind('pusher:error', (error: unknown) => {
+      console.error('Pusher error:', error);
+    });
+    // Start backup polling after a delay
+    const timeoutId = setTimeout(() => {
+      intervalRef.current = window.setInterval(async () => {
+        if (!scbRef1) {
+          if (intervalRef.current) clearInterval(intervalRef.current);
+          return;
+        }
+        try {
+          const response = await getScbVerifyPayment({ ref1: scbRef1 });
+          if (response.success === true && response.data?.statusCode === 1000) {
+            toast.success('Payment confirmed via polling!');
+            setQrRawData('');
+            setAmount('');
+            refetchWallet();
+            setScbRef1(undefined);
+            setIsWaiting(false);
+            if (intervalRef.current) clearInterval(intervalRef.current);
+          }
+        } catch (err) {
+          console.error('Polling error:', err);
+        }
+      }, POOL_INTERVAL_MS);
+    }, POOL_START_DELAY_MS);
 
-    es.onerror = (err) => {
-      console.error('SSE connection error', err);
-      setIsWaiting(false);
-      es.close();
-    };
-
+    // Cleanup function to unsubscribe and disconnect when the component unmounts
+    // or when scbRef1 changes (which happens after payment confirmation/QR disappears).
     return () => {
-      es.close();
+      clearTimeout(timeoutId);
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      // Unsubscribe from channel
+      channel.unbind_all();
+      pusher.unsubscribe(PUSHER_CHANNEL);
+      pusher.disconnect();
       setIsWaiting(false);
     };
   }, [scbRef1, refetchWallet]);
@@ -253,10 +320,10 @@ export default function TopupPage() {
                     'Use PromptPay QR to add money to your wallet.'}
 
                   {topUpType === 'metro' &&
-                    `Enter the metro card ID${cardId ? ` (${cardId})` : ''} and amount to top up using your wallet.`}
+                    `Enter the metro card ID and amount to top up using your wallet.`}
 
                   {topUpType === 'insurance' &&
-                    `Enter the insurance card ID${cardId ? ` (${cardId})` : ''} and amount to top up using your wallet.`}
+                    `Enter the insurance card ID and amount to top up using your wallet.`}
                 </p>
               </div>
             </div>
@@ -350,7 +417,6 @@ export default function TopupPage() {
                 <div className="inline-block border p-4">
                   {/* This is just old qr without the logo and stuff. useable*/}
                   {/* <QRCodeSVG value={qrRawData} size={200} /> */}
-
                   {/* top part of the prompt pay */}
                   <div className="flex w-full justify-center pb-4">
                     <img
