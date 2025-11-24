@@ -50,7 +50,7 @@ export const HousingCard: React.FC<HousingCardProps> = ({
         ? `${facilities[0].addressId} blocks`
         : '2 blocks'}
     </div>
-    <button className="w-full rounded-xl bg-cyan-500 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-cyan-600 sm:w-auto">
+    <button className="w-full rounded-xl bg-[#01CCFF] px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-[#0091B5] sm:w-auto">
       Book Room
     </button>
   </div>

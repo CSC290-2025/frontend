@@ -30,6 +30,8 @@ export type Path =
   | `/event_hub`
   | `/event_hub/CreatePage`
   | `/example/:id`
+  | `/healthcare/healthcare-admin`
+  | `/healthcare/healthcare-user`
   | `/financial`
   | `/financial/insurance`
   | `/financial/insurance/info/:id`
