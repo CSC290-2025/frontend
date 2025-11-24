@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
+import {
+  createWeatherRating,
+  type WeatherRatingRecord,
+} from '../api/weather.api';
 
 type DayRatingProps = {
-  //ข้อมูลที่ subnit ส่งไปให้ database ของ weather rating ฝากใส่ต่อ
-  // public location id expected by backend (maps to address_id server-side)
-
+  // Public location id expected by backend (maps to address_id server-side)
   locationId?: number;
-  // optional callback invoked with server response record
-  onSubmitted?: (record: any) => void;
+  // Optional callback fired with the saved weather rating record
+  onSubmitted?: (record: WeatherRatingRecord) => void;
 };
 
 const EMOJIS = [
@@ -17,11 +19,16 @@ const EMOJIS = [
   { value: 5, label: 'Perfect', emoji: '😄', color: 'bg-green-500' },
 ];
 
-export default function DayRating({ locationId, onSubmitted }: DayRatingProps) {
+export default function DayRating({
+  locationId,
+  onSubmitted,
+}: Readonly<DayRatingProps>) {
   const [open, setOpen] = useState(false);
   const [selected, setSelected] = useState<number | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [savedRecord, setSavedRecord] = useState<any | null>(null);
+  const [savedRecord, setSavedRecord] = useState<WeatherRatingRecord | null>(
+    null
+  );
   const [error, setError] = useState<string | null>(null);
 
   const openModal = () => {
@@ -31,6 +38,15 @@ export default function DayRating({ locationId, onSubmitted }: DayRatingProps) {
   };
 
   const closeModal = () => setOpen(false);
+
+  const handleOverlayKeyDown = (
+    event: React.KeyboardEvent<HTMLButtonElement>
+  ) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      closeModal();
+    }
+  };
 
   const submitRating = async () => {
     if (!selected) {
@@ -44,16 +60,10 @@ export default function DayRating({ locationId, onSubmitted }: DayRatingProps) {
     setSubmitting(true);
     setError(null);
     try {
-      const res = await fetch('/weather-ratings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ location_id: locationId, rating: selected }),
+      const record = await createWeatherRating({
+        location_id: locationId,
+        rating: selected,
       });
-      if (!res.ok) {
-        const txt = await res.text();
-        throw new Error(txt || 'Failed to submit rating');
-      }
-      const record = await res.json();
       setSavedRecord(record);
       onSubmitted?.(record);
       setOpen(false);
@@ -101,7 +111,13 @@ export default function DayRating({ locationId, onSubmitted }: DayRatingProps) {
       {/* modal */}
       {open && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/40" onClick={closeModal} />
+          <button
+            type="button"
+            className="absolute inset-0 bg-black/40"
+            aria-label="Close rating modal"
+            onClick={closeModal}
+            onKeyDown={handleOverlayKeyDown}
+          />
           <div className="relative z-10 w-[92%] max-w-md rounded-lg bg-white p-6 shadow-lg">
             <div className="flex items-start justify-between">
               <div>
