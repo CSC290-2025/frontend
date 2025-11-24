@@ -1,9 +1,8 @@
 // Main page for Insurance Card feature
 import {
-  useUserInsuranceCards,
-  useCreateInsuranceCard,
-} from '@/features/Financial/hooks';
-import { useParams } from '@/router';
+  useUseCreateInsuranceCard as useCreateInsuranceCard,
+  useUseGetMyInsuranceCards as useGetMyInsuranceCards,
+} from '@/api/generated/insurance-cards';
 import { Plus, CreditCard } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
@@ -11,72 +10,58 @@ import { useNavigate } from 'react-router';
 import Loading from '@/features/Financial/components/metro-cards/Loading';
 import ReuseableButton from '@/features/Financial/components/metro-cards/ReuseableButton';
 import InsuranceCard from '@/features/Financial/components/insurance-cards/InsuranceCard';
+import AmountBox from '@/features/Financial/components/metro-cards/AmountBox';
 import { toast } from 'sonner';
+import type { AxiosError } from 'axios';
+import type {
+  UseCreateInsuranceCard400,
+  UseCreateInsuranceCard409,
+} from '@/api/generated/model';
 
 export default function InsuranceCardPage() {
-  const { user_id } = useParams('/financial/insurance/:user_id');
   const navigate = useNavigate();
 
   const {
-    data: insuranceCards,
+    data: insuranceCardsData,
     refetch,
     isLoading,
     error,
-  } = useUserInsuranceCards(Number(user_id));
+  } = useGetMyInsuranceCards();
 
-  const { mutate, isPending } = useCreateInsuranceCard();
-
-  // Debug logging
-  console.log('InsuranceCardPage - user_id:', user_id);
-  console.log('InsuranceCardPage - insuranceCards:', insuranceCards);
-  console.log('InsuranceCardPage - isLoading:', isLoading);
-  console.log('InsuranceCardPage - error:', error);
+  const { mutate, isPending } =
+    useCreateInsuranceCard<
+      AxiosError<UseCreateInsuranceCard400 | UseCreateInsuranceCard409>
+    >();
 
   const handleCreateCard = () => {
     mutate(
-      { user_id: Number(user_id) },
+      { data: {} },
       {
         onSuccess: async () => {
           await refetch();
           toast.success('Insurance card created successfully');
         },
         onError: (error) => {
-          const err = (error as Error).message || 'An error occurred';
+          const err =
+            error.response?.data?.error?.message || 'An error occurred';
           toast.error(err);
         },
       }
     );
   };
 
-  const totalBalance = (insuranceCards || []).reduce(
+  const cards = insuranceCardsData?.data?.insuranceCards || [];
+
+  const totalBalance = cards.reduce(
     (sum, card) => sum + (card.balance || 0),
     0
   );
-
-  if (!user_id) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900">
-            No User ID Provided
-          </h2>
-          <p className="mt-2 text-gray-600">
-            Please provide a user ID in the URL
-          </p>
-          <p className="mt-4 text-sm text-gray-500">
-            Try: /financial/insurance/1 or /financial/insurance/2
-          </p>
-        </div>
-      </div>
-    );
-  }
 
   if (isLoading) return <Loading />;
 
   if (error) {
     const errorMessage =
       error instanceof Error ? error.message : 'Failed to load insurance cards';
-    console.error('Insurance cards error:', error);
     return (
       <div className="p-6 text-center">
         <div className="font-semibold text-red-600">Error Loading Cards</div>
@@ -91,7 +76,7 @@ export default function InsuranceCardPage() {
     );
   }
 
-  if (!insuranceCards)
+  if (!insuranceCardsData)
     return <div className="p-6 text-center">No data found</div>;
 
   return (
@@ -114,18 +99,14 @@ export default function InsuranceCardPage() {
           </Button>
         </div>
 
-        <div className="mb-6">
-          <div className="rounded-lg bg-white p-6 shadow">
-            <div className="text-sm text-gray-600">Total Balance</div>
-            <div className="text-3xl font-bold text-gray-900">
-              ${totalBalance.toFixed(2)}
-            </div>
-            <div className="mt-2 text-sm text-gray-500">
-              {insuranceCards.length}{' '}
-              {insuranceCards.length === 1 ? 'card' : 'cards'}
-            </div>
-          </div>
-        </div>
+        <AmountBox
+          balance={totalBalance}
+          onRefetch={async () => {
+            await refetch();
+          }}
+          isLoading={isLoading}
+          color="green"
+        />
 
         <div className="mb-6 flex items-center justify-between">
           <h2 className="text-xl font-semibold text-gray-900">
@@ -141,7 +122,7 @@ export default function InsuranceCardPage() {
             onClick={handleCreateCard}
           />
         </div>
-        {insuranceCards.length === 0 ? (
+        {cards.length === 0 ? (
           <div className="rounded-lg border-2 border-dashed border-gray-300 p-12 text-center">
             <CreditCard className="mx-auto h-12 w-12 text-gray-400" />
             <h3 className="mt-2 text-sm font-semibold text-gray-900">
@@ -163,7 +144,7 @@ export default function InsuranceCardPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {insuranceCards.map((card) => (
+            {cards.map((card) => (
               <InsuranceCard key={card.id} card={card} />
             ))}
           </div>

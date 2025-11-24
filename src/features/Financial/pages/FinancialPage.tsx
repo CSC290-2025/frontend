@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import {
   useGetWalletsUserUserId,
   usePostWallets,
   usePutWalletsWalletId,
-  getGetWalletsUserUserIdQueryKey,
 } from '@/api/generated/wallets';
 import { getGetTransactionsQueryKey } from '@/api/generated/transactions';
 import { Card, CardContent } from '@/components/ui/card';
@@ -16,35 +16,45 @@ import TopUpModal from '../components/mainPage/TopUpModal';
 import TransferModal from '../components/mainPage/TransferModal';
 import WalletManagement from '../components/mainPage/WalletManagement';
 import WalletLoader from '../components/mainPage/WalletLoader';
+import { useGetAuthMe } from '@/api/generated/authentication';
 
 export default function FinancialPage() {
-  const [userId, setUserId] = useState('1');
+  const userId = useGetAuthMe().data?.data?.userId.toString() ?? '';
+
   const [loadedUserId, setLoadedUserId] = useState<number | null>(null);
 
   const { data: wallets, refetch } = useGetWalletsUserUserId(Number(userId));
   const queryClient = useQueryClient();
-  const { mutateAsync: createWallet } = usePostWallets({
+  const { mutate: createWallet } = usePostWallets({
     mutation: {
-      onSuccess: () => {
+      onSuccess: (data) => {
+        toast.success(data.message || 'Wallet created successfully!');
         refetch();
         queryClient.invalidateQueries({
           queryKey: getGetTransactionsQueryKey(),
         });
       },
+      onError: (error: any) => {
+        toast.error(error.response?.data?.message || 'Failed to create wallet');
+      },
     },
   });
-  const { mutateAsync: updateWallet } = usePutWalletsWalletId({
+  const { mutate: updateWallet } = usePutWalletsWalletId({
     mutation: {
-      onSuccess: () => {
+      onSuccess: (data) => {
+        toast.success(data.message || 'Wallet updated successfully!');
         refetch();
         queryClient.invalidateQueries({
           queryKey: getGetTransactionsQueryKey(),
         });
+      },
+      onError: (error: any) => {
+        toast.error(error.response?.data?.message || 'Failed to update wallet');
       },
     },
   });
 
-  const wallet = wallets?.data?.data?.wallet;
+  const wallet = wallets?.data?.wallet;
 
   const handleLoadWallet = () => {
     setLoadedUserId(Number(userId));
@@ -67,17 +77,10 @@ export default function FinancialPage() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Digital Wallet</h1>
           <p className="mt-1 text-gray-600">
-            Manage your wallet and financial transactions
+            Manage your wallet and financial transactions.{' '}
+            {` {Demo: Your User ID: ${userId}}`}
           </p>
         </div>
-        {/* User Selection */}
-        <WalletLoader
-          userId={userId}
-          hasWallet={!!wallet}
-          onUserIdChange={setUserId}
-          onLoadWallet={handleLoadWallet}
-          onCreateWallet={handleCreateWallet}
-        />
 
         {!wallet && (
           <Card className="border-2 border-dashed border-gray-300">
@@ -119,11 +122,13 @@ export default function FinancialPage() {
 
               {/* Right Column: Services and History */}
               <div className="space-y-6">
-                <ServiceNavigator userId={loadedUserId?.toString() ?? '1'} />
+                <ServiceNavigator />
                 <TransactionHistory userId={loadedUserId} wallet={wallet} />
               </div>
             </div>
-            <WalletManagement wallet={wallet} updateWallet={updateWallet} />
+            <div className="pt-15">
+              <WalletManagement wallet={wallet} updateWallet={updateWallet} />
+            </div>
           </>
         )}
       </div>

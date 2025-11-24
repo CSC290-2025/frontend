@@ -53,7 +53,6 @@ export default function WasteLoggingForm() {
   const handleSubmit = () => {
     const finalType = wasteType === 'custom' ? customType : wasteType;
     if (finalType && weight) {
-      // Store values before clearing
       setLastSubmitted({ type: finalType, weight });
 
       logWasteMutation.mutate(
@@ -100,17 +99,18 @@ export default function WasteLoggingForm() {
                 />
               </SelectTrigger>
               <SelectContent>
-                {wasteTypesData?.wasteTypes.map((type) => (
-                  <SelectItem
-                    key={type.id}
-                    value={type.type_name}
-                    className="text-base"
-                  >
-                    {type.type_name}{' '}
-                    {type.typical_weight_kg &&
-                      `(${type.typical_weight_kg}kg typical)`}
-                  </SelectItem>
-                ))}
+                {wasteTypesData?.wasteTypes &&
+                  wasteTypesData?.wasteTypes.map((type) => (
+                    <SelectItem
+                      key={type.id}
+                      value={type.type_name}
+                      className="text-base"
+                    >
+                      {type.type_name}{' '}
+                      {type.typical_weight_kg &&
+                        `(${type.typical_weight_kg}kg typical)`}
+                    </SelectItem>
+                  ))}
                 <SelectItem value="custom" className="text-base">
                   + Add Custom Type
                 </SelectItem>
@@ -161,7 +161,6 @@ export default function WasteLoggingForm() {
           </Button>
         </div>
 
-        {/* Alert container with smooth height transition */}
         <div
           className="overflow-hidden transition-all duration-300 ease-in-out"
           style={{

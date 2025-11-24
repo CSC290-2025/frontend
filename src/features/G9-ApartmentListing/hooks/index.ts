@@ -4,3 +4,4 @@ export * as Room from './useRoom';
 export * as Booking from './useBooking';
 export * as Upload from './useUpload';
 export * as Address from './useAddress';
+export * as Owner from './userApartmentOwner';

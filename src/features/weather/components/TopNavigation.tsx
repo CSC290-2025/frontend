@@ -11,7 +11,7 @@ export default function TopNavigation() {
       </Link>
 
       <Link
-        to="/air-quality"
+        to="/clean-air/district-selection"
         className="cursor-pointer rounded-xl border px-4 py-2 text-sm transition-all hover:border-blue-400 hover:bg-blue-50"
       >
         Clean Air

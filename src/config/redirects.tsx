@@ -2,7 +2,7 @@ import { Navigate, useLocation } from 'react-router';
 import { useAuth } from '@/features/auth';
 import type { Path } from '@/router';
 
-const PRIVATE: Path[] = [
+const PRIVATE: (Path | string)[] = [
   '/',
   '/dashboard',
   '/district-selection',

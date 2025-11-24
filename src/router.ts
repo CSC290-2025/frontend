@@ -1,5 +1,4 @@
 // Generouted, changes to this file will be overridden
- 
 
 import { components, hooks, utils } from '@generouted/react-router/client';
 
@@ -31,10 +30,10 @@ export type Path =
   | `/event_hub/CreatePage`
   | `/example/:id`
   | `/financial`
-  | `/financial/insurance/:user_id`
-  | `/financial/insurance/:user_id/info/:id`
-  | `/financial/metro/:user_id`
-  | `/financial/metro/:user_id/info/:id`
+  | `/financial/insurance`
+  | `/financial/insurance/info/:id`
+  | `/financial/metro`
+  | `/financial/metro/info/:id`
   | `/financial/topup`
   | `/freecycle`
   | `/freecycle/items/:id`
@@ -69,6 +68,11 @@ export type Path =
   | `/traffic/mock`
   | `/traffic/test`
   | `/users`
+  | `/volunteer/board`
+  | `/volunteer/createpost`
+  | `/volunteer/detail/:id`
+  | `/volunteer/edit/:id`
+  | `/volunteer/userjoin`
   | `/waste-management`
   | `/weather`
   | `/weather-aqi`
@@ -83,10 +87,8 @@ export type Params = {
   '/Know-AI/exercises/:level/:question': { level: string; question: string };
   '/clean-air/district-detail/:district': { district: string };
   '/example/:id': { id: string };
-  '/financial/insurance/:user_id': { user_id: string };
-  '/financial/insurance/:user_id/info/:id': { user_id: string; id: string };
-  '/financial/metro/:user_id': { user_id: string };
-  '/financial/metro/:user_id/info/:id': { user_id: string; id: string };
+  '/financial/insurance/info/:id': { id: string };
+  '/financial/metro/info/:id': { id: string };
   '/freecycle/items/:id': { id: string };
   '/freecycle/items/edit/:id': { id: string };
   '/harm/:id': { id: string };
@@ -100,6 +102,8 @@ export type Params = {
   '/power-bi/edit/:id': { id: string };
   '/sos/:id': { id: string };
   '/sos/report/:id': { id: string };
+  '/volunteer/detail/:id': { id: string };
+  '/volunteer/edit/:id': { id: string };
   '/weather-aqi/overview/:district': { district: string };
 };
 
