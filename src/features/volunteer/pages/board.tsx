@@ -157,7 +157,7 @@ export default function CityVolunteerHomepage() {
         };
 
         const response = await apiClient.get<ApiResponse>(
-          'api/v1/volunteer/getAll',
+          '/api/v1/volunteer/getAll',
           { params }
         );
 
