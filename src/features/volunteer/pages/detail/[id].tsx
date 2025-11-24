@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate, useParams } from '@/router';
 import { ArrowLeft, Calendar, Clock, Edit, Trash2, Users } from 'lucide-react';
+import { apiClient } from '@/lib/apiClient';
 
 interface VolunteerEvent {
   id: number;
@@ -49,8 +50,8 @@ export default function VolunteerDetailPage() {
       setIsLoading(true);
       setError(null);
       try {
-        const response = await axios.get<ApiResponse<EventDetailResponse>>(
-          `http://localhost:3000/api/v1/volunteer/${id}`
+        const response = await apiClient.get<ApiResponse<EventDetailResponse>>(
+          `/api/v1/volunteer/${id}`
         );
 
         if (response.data.success) {
@@ -77,10 +78,9 @@ export default function VolunteerDetailPage() {
     setActionError(null);
 
     try {
-      const response = await axios.post<ApiResponse<{ event: VolunteerEvent }>>(
-        `http://localhost:3000/api/v1/volunteer/${id}/join`,
-        { userId: currentUserId }
-      );
+      const response = await apiClient.post<
+        ApiResponse<{ event: VolunteerEvent }>
+      >(`/api/v1/volunteer/${id}/join`, { userId: currentUserId });
       if (response.data.success) {
         setEvent(response.data.data.event);
         setIsJoined(true);
@@ -100,9 +100,9 @@ export default function VolunteerDetailPage() {
     setActionError(null);
 
     try {
-      const response = await axios.delete<
+      const response = await apiClient.delete<
         ApiResponse<{ event: VolunteerEvent }>
-      >(`http://localhost:3000/api/v1/volunteer/${id}/join`, {
+      >(`/api/v1/volunteer/${id}/join`, {
         data: { userId: currentUserId },
       });
       if (response.data.success) {
@@ -125,9 +125,7 @@ export default function VolunteerDetailPage() {
     setActionError(null);
 
     try {
-      const response = await axios.delete(
-        `http://localhost:3000/api/v1/volunteer/${id}`
-      );
+      const response = await apiClient.delete(`/api/v1/volunteer/${id}`);
       if (response.data.success) {
         navigate('/volunteer/board');
       } else {
@@ -224,7 +222,7 @@ export default function VolunteerDetailPage() {
             </span>
           </button>
 
-          {isOwner && (
+          {
             <div className="flex gap-3">
               <button
                 onClick={() =>
@@ -244,7 +242,7 @@ export default function VolunteerDetailPage() {
                 <Trash2 className="h-5 w-5 text-red-500" />
               </button>
             </div>
-          )}
+          }
         </div>
       </div>
 
@@ -318,7 +316,7 @@ export default function VolunteerDetailPage() {
             </p>
           </div>
 
-          {!isOwner && (
+          {
             <div className="rounded-2xl border border-gray-200 bg-white p-6">
               <div className="mb-6">
                 <div className="mb-2 flex items-center justify-between">
@@ -341,7 +339,7 @@ export default function VolunteerDetailPage() {
                 </p>
               )}
             </div>
-          )}
+          }
         </div>
       </div>
     </div>
