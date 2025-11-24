@@ -12,6 +12,7 @@ interface MapViewProps {
   onMapClick?: (lat: number, lng: number) => void;
   routePolyline?: string;
 }
+const GOOGLE_API_KEY = 'AIzaSyAPNBcfQDaVuSGaC4LiSLTWMSvk3Xz3iNQ';
 
 const libraries: ('places' | 'drawing' | 'geometry' | 'visualization')[] = [
   'places',
@@ -39,7 +40,7 @@ const MapView = ({
 
   const { isLoaded, loadError } = useJsApiLoader({
     id: 'google-map-script',
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAPS_KEY as string,
+    googleMapsApiKey: GOOGLE_API_KEY as string,
     libraries: libraries,
   });
 
