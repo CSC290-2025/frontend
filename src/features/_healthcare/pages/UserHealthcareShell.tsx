@@ -1,46 +1,30 @@
 import React, { useState } from 'react';
-import { Ambulance, Menu, X } from 'lucide-react';
-import AdminDashboardPage from '@/features/_healthcare/pages/admin/AdminDashboardPage';
-import AdminHospitalPage from '@/features/_healthcare/pages/admin/AdminHospitalPage';
-import AdminPharmacyPage from '@/features/_healthcare/pages/admin/AdminPharmacyPage';
-import AdminBillingPage from '@/features/_healthcare/pages/admin/AdminBillingPage';
-import AdminEmergencyPage from '@/features/_healthcare/pages/admin/AdminEmergencyPage';
+import { Menu, X } from 'lucide-react';
+import UserOverviewPage from '@/features/_healthcare/pages/user/UserOverviewPage';
+import UserBookingPage from '@/features/_healthcare/pages/user/UserBookingPage';
+import UserMedicationsPage from '@/features/_healthcare/pages/user/UserMedicationsPage';
+import UserBillingPage from '@/features/_healthcare/pages/user/UserBillingPage';
+import UserProfilePage from '@/features/_healthcare/pages/user/UserProfilePage';
 
-type AdminScreen =
-  | 'admin-dashboard'
-  | 'admin-hospital'
-  | 'admin-pharmacy'
-  | 'admin-billing'
-  | 'admin-emergency';
+type UserScreen =
+  | 'overview'
+  | 'book-appointment'
+  | 'medications'
+  | 'billing'
+  | 'profile';
 
-const navItems: Array<{ key: AdminScreen; label: string }> = [
-  { key: 'admin-dashboard', label: 'Dashboard' },
-  { key: 'admin-hospital', label: 'Hospital' },
-  { key: 'admin-pharmacy', label: 'Pharmacy' },
-  { key: 'admin-billing', label: 'Billing' },
+const navItems: Array<{ key: UserScreen; label: string }> = [
+  { key: 'overview', label: 'Overview' },
+  { key: 'book-appointment', label: 'Book' },
+  { key: 'medications', label: 'Medications' },
+  { key: 'billing', label: 'Billing' },
+  { key: 'profile', label: 'Profile' },
 ];
 
-const AdminHealthcareShell: React.FC = () => {
-  const [currentScreen, setCurrentScreen] =
-    useState<AdminScreen>('admin-dashboard');
+const UserHealthcareShell: React.FC = () => {
+  const [currentScreen, setCurrentScreen] = useState<UserScreen>('overview');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
-  const renderScreen = () => {
-    switch (currentScreen) {
-      case 'admin-dashboard':
-        return <AdminDashboardPage />;
-      case 'admin-hospital':
-        return <AdminHospitalPage />;
-      case 'admin-pharmacy':
-        return <AdminPharmacyPage />;
-      case 'admin-billing':
-        return <AdminBillingPage />;
-      case 'admin-emergency':
-        return <AdminEmergencyPage />;
-      default:
-        return null;
-    }
-  };
+  const [emergencyContact, setEmergencyContact] = useState('');
 
   return (
     <div
@@ -52,7 +36,9 @@ const AdminHealthcareShell: React.FC = () => {
           <div className="flex h-16 items-center justify-between">
             <div>
               <div className="text-lg font-bold text-gray-800">Smart City</div>
-              <div className="text-xs text-gray-500">Healthcare Hub</div>
+              <div className="text-xs text-gray-500">
+                Healthcare Hub — Citizen
+              </div>
             </div>
 
             <div className="hidden space-x-2 md:flex">
@@ -67,25 +53,16 @@ const AdminHealthcareShell: React.FC = () => {
               ))}
             </div>
 
-            <div className="flex items-center space-x-3">
-              <button
-                onClick={() => setCurrentScreen('admin-emergency')}
-                className="flex items-center space-x-2 rounded-lg bg-red-500 px-4 py-2 text-sm font-semibold text-white hover:bg-red-600"
-              >
-                <Ambulance className="h-4 w-4" />
-                <span className="hidden sm:inline">Emergency</span>
-              </button>
-              <button
-                onClick={() => setMobileMenuOpen((open) => !open)}
-                className="rounded-lg p-2 hover:bg-gray-100 md:hidden"
-              >
-                {mobileMenuOpen ? (
-                  <X className="h-6 w-6" />
-                ) : (
-                  <Menu className="h-6 w-6" />
-                )}
-              </button>
-            </div>
+            <button
+              onClick={() => setMobileMenuOpen((open) => !open)}
+              className="rounded-lg p-2 hover:bg-gray-100 md:hidden"
+            >
+              {mobileMenuOpen ? (
+                <X className="h-6 w-6" />
+              ) : (
+                <Menu className="h-6 w-6" />
+              )}
+            </button>
           </div>
         </div>
 
@@ -110,7 +87,21 @@ const AdminHealthcareShell: React.FC = () => {
       </nav>
 
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        {renderScreen()}
+        {currentScreen === 'overview' && (
+          <UserOverviewPage
+            emergencyContact={emergencyContact}
+            onContactChange={setEmergencyContact}
+          />
+        )}
+        {currentScreen === 'book-appointment' && <UserBookingPage />}
+        {currentScreen === 'medications' && <UserMedicationsPage />}
+        {currentScreen === 'billing' && <UserBillingPage />}
+        {currentScreen === 'profile' && (
+          <UserProfilePage
+            emergencyContact={emergencyContact}
+            onContactChange={setEmergencyContact}
+          />
+        )}
       </main>
     </div>
   );
@@ -150,4 +141,4 @@ const MobileNavButton: React.FC<{
   </button>
 );
 
-export default AdminHealthcareShell;
+export default UserHealthcareShell;
