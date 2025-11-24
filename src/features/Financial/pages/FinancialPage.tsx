@@ -77,7 +77,8 @@ export default function FinancialPage() {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900">Digital Wallet</h1>
           <p className="mt-1 text-gray-600">
-            Manage your wallet and financial transactions
+            Manage your wallet and financial transactions.{' '}
+            {` {Demo: Your User ID: ${userId}}`}
           </p>
         </div>
 
