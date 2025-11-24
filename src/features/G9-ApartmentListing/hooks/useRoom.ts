@@ -25,12 +25,7 @@ export function useRooms(apartmentId: number) {
     queryKey: ['rooms', apartmentId],
     queryFn: () => ROOMapi.fetchAllRooms(apartmentId),
     select: (response) => {
-      // Handle the API response structure: { success: true, data: {...}, timestamp: "..." }
-      if (response.data && response.data.data) {
-        return response.data.data;
-      }
-      // Fallback to response.data if it's the direct data
-      return response.data;
+      return response.data.data;
     },
     enabled: !!apartmentId,
   });
@@ -41,7 +36,9 @@ export function useRoomsByStatus(apartmentId: number, status: string) {
   return useQuery({
     queryKey: ['rooms', apartmentId, 'status', status],
     queryFn: () => ROOMapi.getRoomByStatus(apartmentId, status),
-    enabled: !!apartmentId && !!status,
+    select: (response) => {
+      return response.data.data;
+    },
   });
 }
 
