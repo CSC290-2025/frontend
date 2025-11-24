@@ -6,6 +6,7 @@ import {
   ArrowRight, // NEW for Pagination
 } from 'lucide-react';
 import { useNavigate } from '@/router';
+import { apiClient } from '@/lib/apiClient';
 
 // --- Interfaces (No Change) ---
 interface VolunteerEvent {
@@ -155,8 +156,8 @@ export default function CityVolunteerHomepage() {
           search: debouncedSearch || undefined,
         };
 
-        const response = await axios.get<ApiResponse>(
-          'http://localhost:3000/api/v1/volunteer/getAll',
+        const response = await apiClient.get<ApiResponse>(
+          '/api/v1/volunteer/getAll',
           { params }
         );
 
