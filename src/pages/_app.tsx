@@ -1,10 +1,13 @@
 import { Outlet } from 'react-router';
 import { Redirects } from '@/config/redirects';
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 export default function App() {
   return (
     <Redirects>
-      <Outlet />
+      <ErrorBoundary>
+        <Outlet />
+      </ErrorBoundary>
     </Redirects>
   );
 }
