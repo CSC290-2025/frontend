@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate } from '@/router';
 import { ArrowLeft, Calendar, Users } from 'lucide-react';
-
+import { apiClient } from '@/lib/apiClient';
 interface VolunteerEvent {
   id: number;
   title: string;
@@ -31,8 +31,8 @@ const UserJoinPage: React.FC = () => {
   useEffect(() => {
     const fetchMyEvents = async () => {
       try {
-        const response = await axios.get<MyEventsApiResponse>(
-          `http://localhost:3000/api/v1/volunteer/my-events?userId=${currentUserId}`
+        const response = await apiClient.get<MyEventsApiResponse>(
+          `api/v1/volunteer/my-events?userId=${currentUserId}`
         );
         if (response.data.success) {
           setJoinedEvents(response.data.data.events);
