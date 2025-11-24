@@ -14,6 +14,7 @@ import MapSettingsDialog from '../components/MapSettingsDialog';
 import TrafficDashboard from '../components/TrafficLightListAdmin';
 import type { lightRequest } from '../types/traffic.types';
 import { da } from 'zod/v4/locales';
+import { getBaseAPIURL } from '@/lib/apiClient.ts';
 
 interface TrafficData {
   interid: number;
@@ -560,7 +561,7 @@ export default function TrafficAdminpage() {
     (async () => {
       try {
         //const base = import.meta.env.VITE_API_BASE_URL ?? '';
-        const url = `http://localhost:3333/api/light-requests`;
+        const url = getBaseAPIURL + `/api/light-requests`;
         const res = await fetch(url);
         if (!res.ok) throw new Error('Failed to get request details');
         const response: any = await res.json();

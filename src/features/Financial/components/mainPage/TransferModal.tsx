@@ -38,13 +38,14 @@ export default function TransferModal({
   const { data: recipientWalletResponse } = useGetWalletsUserUserId(
     transferToUserId ? Number(transferToUserId) : undefined
   );
-  const recipientWallet = recipientWalletResponse?.data?.data?.wallet;
+  const recipientWallet = recipientWalletResponse?.data?.wallet;
 
   const queryClient = useQueryClient();
 
-  const { mutateAsync: transferFunds } = usePostWalletsTransfer({
+  const { mutate: transferFunds, isPending } = usePostWalletsTransfer({
     mutation: {
-      onSuccess: () => {
+      onSuccess: (data) => {
+        toast.success(data.message || 'Transfer successful!');
         // Invalidate transactions + both wallets' queries for immediate refresh
         queryClient.invalidateQueries({
           queryKey: getGetTransactionsQueryKey(),
@@ -58,11 +59,16 @@ export default function TransferModal({
           });
         }
         onSuccess();
+        resetState();
+        setOpen(false);
+      },
+      onError: (error: any) => {
+        toast.error(error.response?.data?.message || 'Transfer failed');
       },
     },
   });
 
-  const handleTransfer = async () => {
+  const handleTransfer = () => {
     const validations: [boolean, string][] = [
       [
         Number(userId) === Number(transferToUserId),
@@ -82,20 +88,13 @@ export default function TransferModal({
       }
     }
 
-    try {
-      await transferFunds({
-        data: {
-          from_user_id: Number(userId),
-          to_user_id: Number(transferToUserId),
-          amount: Number(transferAmount),
-        },
-      });
-      resetState();
-      toast.success('Transfer successful!');
-      setOpen(false);
-    } catch (_error) {
-      toast.error('Transfer failed');
-    }
+    transferFunds({
+      data: {
+        from_user_id: Number(userId),
+        to_user_id: Number(transferToUserId),
+        amount: Number(transferAmount),
+      },
+    });
   };
 
   const resetState = () => {
@@ -155,10 +154,10 @@ export default function TransferModal({
 
           <Button
             onClick={handleTransfer}
-            disabled={!transferToUserId || !transferAmount}
+            disabled={!transferToUserId || !transferAmount || isPending}
             className="w-full"
           >
-            Transfer
+            {isPending ? 'Transferring...' : 'Transfer'}
           </Button>
         </div>
       </DialogContent>
