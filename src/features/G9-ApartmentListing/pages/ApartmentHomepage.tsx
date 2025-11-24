@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from '@/router';
 import { APT, Upload, Room } from '@/features/G9-ApartmentListing/hooks/index';
 import '@/features/G9-ApartmentListing/styles/animations.css';

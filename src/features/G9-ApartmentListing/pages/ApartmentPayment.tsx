@@ -97,12 +97,17 @@ export default function ApartmentPayment() {
   const userId = bookingData?.user_id || 1;
   const { data: walletResponse, isLoading: _walletLoading } =
     useGetWalletsUserUserId(userId);
-  const { data: apartmentOwnerData } = Owner.useApartmentOwnerByAPT(
-    bookingData?.apartment_id || 0
-  );
-  const apartmentOwnerId = apartmentOwnerData?.id;
-  const walletData = walletResponse;
+  const {
+    data: apartmentOwnerData,
+    isLoading: _ownerLoading,
+    error: _ownerError,
+  } = Owner.useApartmentOwnerByAPT(bookingData?.apartment_id || 0);
 
+  // Extract owner ID from nested API response structure
+  const apartmentOwnerId = apartmentOwnerData?.[0]?.id;
+  const walletData = walletResponse;
+  console.log('Wallet Data:', walletData);
+  console.log('owner Data:', apartmentOwnerId);
   // Hook for updating booking status
   const updateBookingStatusMutation = useUpdateBookingStatus();
 
@@ -156,9 +161,22 @@ export default function ApartmentPayment() {
       try {
         // Transfer money from user to apartment owner
         if (!apartmentOwnerId) {
-          alert('Unable to find apartment owner information');
+          console.error('apartmentOwnerData:', apartmentOwnerData);
+          console.error('apartmentOwnerId:', apartmentOwnerId);
+          alert(
+            'Unable to find apartment owner information. Please try again or contact support.'
+          );
           return;
         }
+
+        console.log(
+          'Transferring from user:',
+          bookingData.user_id,
+          'to owner:',
+          apartmentOwnerId,
+          'amount:',
+          price
+        );
 
         await postWalletsTransfer({
           from_user_id: bookingData.user_id,
