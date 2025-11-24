@@ -6,13 +6,14 @@ import { useAuth } from '@/features/auth';
 export const useAuthenticated = () => {
   const { setUser, setError } = useAuth();
 
-  const { data, isSuccess, isError, error, isLoading } = useQuery({
+  const { data, isSuccess, isError, error, isLoading, isFetching } = useQuery({
     queryKey: ['user', 'me'],
     queryFn: () => apiClient.get('/user/me').then((res) => res.data.data),
     retry: false,
     refetchOnWindowFocus: false,
     refetchOnReconnect: false,
-    refetchOnMount: false,
+    staleTime: 5 * 60 * 1000,
+    cacheTime: 10 * 60 * 1000,
   });
 
   useEffect(() => {
@@ -28,5 +29,5 @@ export const useAuthenticated = () => {
     }
   }, [isLoading, setError]);
 
-  return { data, isLoading, isSuccess, isError, error };
+  return { data, isLoading, isSuccess, isError, error, isFetching };
 };

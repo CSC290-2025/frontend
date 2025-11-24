@@ -3,6 +3,7 @@ import Sidebar from '../components/Sidebar';
 import BusInfo from '../components/BusInfo';
 import MapView from '../components/MapView';
 import axios from 'axios';
+import { getBaseAPIURL } from '@/lib/apiClient.ts';
 
 const GOOGLE_API_KEY = 'AIzaSyAPNBcfQDaVuSGaC4LiSLTWMSvk3Xz3iNQ';
 
@@ -28,8 +29,7 @@ interface Coords {
   name?: string;
 }
 
-const API_BASE_URL = 'http://localhost:3000/api/routes/all';
-
+const API_BASE_URL = getBaseAPIURL + '/api/routes/all';
 const geocodeAddress = async (query: string): Promise<Coords | null> => {
   if (!query) return null;
 
@@ -116,14 +116,13 @@ export default function Home() {
       });
 
       if (response.data.success && response.data.allRoutes) {
-        // 🟢 การจัดเรียงตาม duration.value (เร็วสุดไปช้าสุด)
         const sortedRoutes: RouteSummary[] = response.data.allRoutes.sort(
           (a: RouteSummary, b: RouteSummary) =>
             a.duration.value - b.duration.value
         );
 
         setRoutes(sortedRoutes);
-        setSelectedRouteIndex(0); // 🟢 ตั้งค่าเริ่มต้นเป็นเส้นทางที่เร็วที่สุด
+        setSelectedRouteIndex(0);
       } else {
         setError(response.data.message || 'No routes found.');
       }
