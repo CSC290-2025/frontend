@@ -1,6 +1,6 @@
 import { defineConfig } from 'orval';
 
-const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:3000';
+const BACKEND_URL = process.env.API_BASE_URL || 'http://localhost:3000';
 
 export default defineConfig({
   api: {
