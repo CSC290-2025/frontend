@@ -1,19 +1,21 @@
 // Component to display insurance card information
 import { Card, CardContent } from '@/components/ui/card';
-import type { InsuranceCard } from '@/features/Financial/types';
+import type { UseGetMyInsuranceCards200DataInsuranceCardsItem as InsuranceCard } from '@/api/generated/model';
 import { CreditCard, Calendar, DollarSign } from 'lucide-react';
 import { Link } from '@/router';
-import { useParams } from '@/router';
 
 interface InsuranceCardProps {
   card: InsuranceCard;
 }
 
 export default function InsuranceCard({ card }: InsuranceCardProps) {
-  const { user_id } = useParams('/financial/insurance/:user_id');
-
   const formatCardNumber = (cardNumber: string) => {
-    return cardNumber.replace(/(\d{4})(?=\d)/g, '$1 ');
+    // Remove the INS- prefix
+    const cleaned = cardNumber.replace(/^INS-/, '').replace(/-/g, '');
+    // cleaned = "000027213716"
+
+    // Insert a space between the two parts
+    return cleaned.replace(/(\d{6})(\d{6})/, '$1 $2');
   };
 
   const formatDate = (date: string | Date) => {
@@ -25,10 +27,7 @@ export default function InsuranceCard({ card }: InsuranceCardProps) {
   };
 
   return (
-    <Link
-      to="/financial/insurance/:user_id/info/:id"
-      params={{ user_id: user_id || '', id: String(card.id) }}
-    >
+    <Link to="/financial/insurance/info/:id" params={{ id: String(card.id) }}>
       <Card className="group cursor-pointer overflow-hidden border-2 border-transparent bg-gradient-to-br from-green-50 to-emerald-50 transition-all duration-300 hover:border-green-500 hover:shadow-xl">
         <CardContent className="p-6">
           <div className="mb-6 flex items-start justify-between">
@@ -49,7 +48,7 @@ export default function InsuranceCard({ card }: InsuranceCardProps) {
           <div className="mb-6 space-y-2">
             <div className="font-mono text-sm text-gray-500">Card Number</div>
             <div className="font-mono text-lg font-semibold tracking-wider text-gray-900">
-              {formatCardNumber(card.card_number.slice(4))}
+              {formatCardNumber(card.card_number)}
             </div>
           </div>
 
