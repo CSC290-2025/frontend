@@ -8,7 +8,7 @@ import React, {
 import { cn } from '@/lib/utils.ts';
 import { GoogleMap, useJsApiLoader, MarkerF } from '@react-google-maps/api';
 import config from '@/features/emergency/config/env';
-import { ref, set, remove } from 'firebase/database';
+import { ref, set } from 'firebase/database';
 import { database } from '@/lib/firebase';
 import { Crosshair } from 'lucide-react';
 

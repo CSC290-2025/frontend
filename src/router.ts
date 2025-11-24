@@ -5,11 +5,22 @@ import { components, hooks, utils } from '@generouted/react-router/client';
 
 export type Path =
   | `/`
+  | `/AdminAddAPT`
+  | `/AdminEditAPT`
+  | `/AdminEditTenant`
+  | `/AdminListedAPT`
+  | `/AdminTenantInfo`
+  | `/ApartmentBooking`
+  | `/ApartmentDetails`
+  | `/ApartmentHomepage`
+  | `/ApartmentHomepage/:id`
+  | `/ApartmentPayment`
   | `/Know-AI/:course`
   | `/Know-AI/:course/:id`
   | `/Know-AI/createCourse`
   | `/Know-AI/exercises`
   | `/Know-AI/exercises/:level/:question`
+  | `/MyRentedAPT`
   | `/activity`
   | `/chat`
   | `/citizen/setting`
@@ -19,6 +30,12 @@ export type Path =
   | `/event_hub`
   | `/event_hub/CreatePage`
   | `/example/:id`
+  | `/financial`
+  | `/financial/insurance`
+  | `/financial/insurance/info/:id`
+  | `/financial/metro`
+  | `/financial/metro/info/:id`
+  | `/financial/topup`
   | `/freecycle`
   | `/freecycle/items/:id`
   | `/freecycle/items/edit/:id`
@@ -50,6 +67,13 @@ export type Path =
   | `/traffic/admin`
   | `/traffic/control`
   | `/traffic/mock`
+  | `/traffic/test`
+  | `/users`
+  | `/volunteer/board`
+  | `/volunteer/createpost`
+  | `/volunteer/detail/:id`
+  | `/volunteer/edit/:id`
+  | `/volunteer/userjoin`
   | `/waste-management`
   | `/weather`
   | `/weather-aqi`
@@ -58,11 +82,14 @@ export type Path =
   | `/weatherMain`;
 
 export type Params = {
+  '/ApartmentHomepage/:id': { id: string };
   '/Know-AI/:course': { course: string };
   '/Know-AI/:course/:id': { course: string; id: string };
   '/Know-AI/exercises/:level/:question': { level: string; question: string };
   '/clean-air/district-detail/:district': { district: string };
   '/example/:id': { id: string };
+  '/financial/insurance/info/:id': { id: string };
+  '/financial/metro/info/:id': { id: string };
   '/freecycle/items/:id': { id: string };
   '/freecycle/items/edit/:id': { id: string };
   '/harm/:id': { id: string };
@@ -76,6 +103,8 @@ export type Params = {
   '/power-bi/edit/:id': { id: string };
   '/sos/:id': { id: string };
   '/sos/report/:id': { id: string };
+  '/volunteer/detail/:id': { id: string };
+  '/volunteer/edit/:id': { id: string };
   '/weather-aqi/overview/:district': { district: string };
 };
 
