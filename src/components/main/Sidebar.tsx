@@ -1,62 +1,67 @@
 import { useAuth } from '@/features/auth';
 import { useNavigate } from '@/router';
 import { useLogout } from '@/hooks/useLogout';
-import { useEffect } from 'react';
-import { Link } from 'react-router';
+import { useEffect, useState, useCallback } from 'react';
+import { Link, useLocation } from 'react-router';
 import {
-  Building,
   BusFront,
   Trophy,
   CloudLightning,
   Hospital,
   BookText,
-  Phone,
   CircleUser,
   Settings,
   Wallet,
+  Zap,
+  Leaf,
+  Shield,
+  Users,
+  MapPin,
+  Heart,
+  LogOut,
+  ChevronDown,
+  BarChart3,
 } from 'lucide-react';
 
 export default function Sidebar() {
-  // Sidebar icons as SVG elements
-  const icons_sidebar = [
-    Building,
-    BusFront,
-    Trophy,
-    CloudLightning,
-    Hospital,
-    BookText,
-    Phone,
-    CircleUser,
-    Settings,
-    Wallet,
+  const [expandedSections, setExpandedSections] = useState({
+    main: true,
+    additional: true,
+  });
+  const location = useLocation();
+
+  const toggleSection = (section: keyof typeof expandedSections) => {
+    setExpandedSections((prev) => ({
+      ...prev,
+      [section]: !prev[section],
+    }));
+  };
+
+  // Main services - compact for sidebar
+  const mainRoutes = [
+    { icon: BusFront, label: 'Transport', path: '/public_transportation' },
+    { icon: Trophy, label: 'Events', path: '/event_hub' },
+    { icon: CloudLightning, label: 'Weather', path: '/weatherCity' },
+    { icon: Hospital, label: 'Healthcare', path: '/healthcare' },
+    { icon: BookText, label: 'Learn AI', path: '/Know-AI/createCourse' },
   ];
 
-  const icons_name = [
-    'City insights',
-    'Transport',
-    'Events',
-    'Weather reports',
-    'Healthcare',
-    'Know Ai',
-    'Contact us',
-    'Profile',
-    'Setting',
-    'E-wallet',
+  // Additional services with dropdown
+  const additionalRoutes = [
+    { icon: Zap, label: 'Power BI', path: '/power-bi' },
+    { icon: Leaf, label: 'Waste Mgmt', path: '/waste-management' },
+    { icon: Shield, label: 'Emergency', path: '/sos' },
+    { icon: Users, label: 'Volunteer', path: '/volunteer/board' },
+    { icon: MapPin, label: 'Map', path: '/map' },
+    { icon: Heart, label: 'Freecycle', path: '/freecycle' },
   ];
 
-  const icons_description = [
-    'dashboard and quick service',
-    'Bus timing and routes',
-    'Activities and volunteer',
-    'Forecast & Air Quality',
-    'Hospital & Emergency services',
-    'Learning with Ai',
-    'Report issues',
+  // User routes
+  const userRoutes = [
+    { icon: CircleUser, label: 'Profile', path: '/profile' },
+    { icon: Settings, label: 'Settings', path: '/citizen/setting' },
+    { icon: Wallet, label: 'E-Wallet', path: '/financial' },
   ];
-
-  // Sidebar positions
-  const positions = [0, 1, 2, 3, 4, 5, 6];
-  const positions2 = [7, 8, 9];
 
   // Logout function and authentication check
   const navigate = useNavigate();
@@ -79,107 +84,119 @@ export default function Sidebar() {
     });
   };
 
-  // Navigate function for each sidebar item
-  const navigate_item = [
-    '/',
-    '/public_transportation',
-    '/event_hub',
-    '/weatherCity',
-    '/healthcare',
-    '/Know-AI/createCourse',
-    '/',
-    '/profile',
-    '/citizen/setting',
-    '/financial',
-  ];
+  const NavItem = ({
+    route,
+    compact = false,
+  }: {
+    route: any;
+    compact?: boolean;
+  }) => {
+    const Icon = route.icon;
+    const isActive =
+      location.pathname === route.path ||
+      location.pathname.startsWith(route.path + '/');
+    return (
+      <Link
+        to={route.path}
+        className={`group flex items-center gap-3 rounded-lg px-4 py-2.5 text-sm transition-all duration-200 ${
+          isActive
+            ? 'bg-blue-100 font-semibold text-blue-700'
+            : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700'
+        }`}
+      >
+        <Icon className="h-5 w-5 flex-shrink-0 transition-transform group-hover:scale-110" />
+        <span className="font-medium">{route.label}</span>
+      </Link>
+    );
+  };
 
   return (
-    <>
-      <aside
-        className={'min-h-screen w-[215px] border-r-2 border-[#D9D9D9]'}
-        style={{ fontFamily: 'Poppins, sans-serif' }}
-      >
-        {/*Menu_Top_one*/}
-        {positions.map((index) => {
-          const Icon = icons_sidebar[index];
-          return (
-            <>
-              <Link
-                to={navigate_item[index]}
-                key={index}
-                className="flex cursor-pointer flex-col gap-1 px-4 py-3 hover:bg-gray-200"
-              >
-                <div className="flex items-center gap-3">
-                  <Icon key={index} />
+    <aside
+      className="sticky top-0 flex h-screen w-64 flex-col border-r border-gray-200 bg-white"
+      style={{ fontFamily: 'Poppins, sans-serif' }}
+    >
+      {/* Header */}
+      <div className="border-b border-gray-200 bg-gradient-to-r from-blue-50 to-transparent px-6 py-5">
+        <div className="mb-1 flex items-center gap-2">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600">
+            <BarChart3 className="h-6 w-6 text-white" />
+          </div>
+          <div>
+            <h1 className="text-lg font-bold text-blue-600">CityHub</h1>
+            <p className="text-xs text-gray-500">Connected Services</p>
+          </div>
+        </div>
+      </div>
 
-                  <div className="font-medium text-gray-800">
-                    {icons_name[index]}
-                  </div>
-                </div>
-                <div className="text-[11px]">{icons_description[index]}</div>
-              </Link>
-            </>
-          );
-        })}
-
-        {/*Menu_Bottom_one*/}
-        <div className="border-t-1 border-[#D9D9D9]">
-          {positions2.map((index) => {
-            const Icon = icons_sidebar[index];
-            return (
-              <>
-                <Link
-                  to={navigate_item[index]}
-                  key={index}
-                  className="flex cursor-pointer flex-col gap-1 px-4 py-3 hover:bg-gray-200"
-                >
-                  <div className="flex items-center gap-3">
-                    <Icon key={index} />
-                    <div className="text-[11px] font-medium text-gray-800">
-                      {icons_name[index]}
-                    </div>
-                  </div>
-                </Link>
-              </>
-            );
-          })}
+      {/* Scrollable Navigation */}
+      <nav className="flex-1 overflow-y-auto px-2 py-4">
+        {/* Main Services */}
+        <div className="mb-2">
+          <button
+            onClick={() => toggleSection('main')}
+            className={`group flex w-full items-center justify-between px-4 py-2 text-xs font-semibold tracking-wider text-gray-600 uppercase hover:text-blue-600`}
+          >
+            <span>Quick Access</span>
+            <ChevronDown
+              className={`h-4 w-4 transition-transform ${expandedSections.main ? 'rotate-180' : ''}`}
+            />
+          </button>
+          {expandedSections.main && (
+            <div className="space-y-1">
+              {mainRoutes.map((route, idx) => (
+                <NavItem key={idx} route={route} />
+              ))}
+            </div>
+          )}
         </div>
 
-        {/* Button Log out */}
-        <div className="mt-7 flex justify-center">
+        {/* Additional Services - Collapsible */}
+        <div className="mb-2">
+          <button
+            onClick={() => toggleSection('additional')}
+            className={`flex w-full items-center justify-between px-4 py-2 text-xs font-semibold tracking-wider text-gray-600 uppercase hover:text-emerald-600`}
+          >
+            <span>More Services</span>
+            <ChevronDown
+              className={`h-4 w-4 transition-transform ${expandedSections.additional ? 'rotate-180' : ''}`}
+            />
+          </button>
+          {expandedSections.additional && (
+            <div className="space-y-1">
+              {additionalRoutes.map((route, idx) => (
+                <NavItem key={idx} route={route} />
+              ))}
+            </div>
+          )}
+        </div>
+      </nav>
+
+      {/* Bottom Section - Fixed */}
+      <div className="flex flex-col border-t border-gray-200 bg-gray-50">
+        {/* User Section */}
+        <div className="px-2 py-3">
+          <p className="mb-2 px-4 text-xs font-semibold text-gray-500 uppercase">
+            Account
+          </p>
+          <div className="space-y-1">
+            {userRoutes.map((route, idx) => (
+              <NavItem key={idx} route={route} />
+            ))}
+          </div>
+        </div>
+
+        {/* Logout Button */}
+        <div className="border-t border-gray-200 px-4 py-3">
           <button
             onClick={handleLogout}
-            className="flex cursor-pointer items-center gap-5 rounded-xl bg-[#01ccffeb] px-6 py-3"
+            className="flex w-full items-center justify-center gap-2 rounded-lg bg-red-50 px-3 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-100 hover:text-red-700"
+            disabled={isLoggingOut}
           >
-            <svg
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M9.00195 7C9.01406 4.82497 9.11051 3.64706 9.87889 2.87868C10.7576 2 12.1718 2 15.0002 2H16.0002C18.8286 2 20.2429 2 21.1215 2.87868C22.0002 3.75736 22.0002 5.17157 22.0002 8V16C22.0002 18.8284 22.0002 20.2426 21.1215 21.1213C20.2429 22 18.8286 22 16.0002 22H15.0002C12.1718 22 10.7576 22 9.87889 21.1213C9.11051 20.3529 9.01406 19.175 9.00195 17"
-                stroke="black"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-              />
-              <path
-                d="M15 12H2M2 12L5.5 9M2 12L5.5 15"
-                stroke="black"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-            <p
-              className={`font-medium ${isLoggingOut ? 'text-[12px]' : 'text-[16px]'}`}
-            >
-              {isLoggingOut ? 'Signing out...' : 'Sign out'}
-            </p>
+            <LogOut className="h-4 w-4" />
+            <span>{isLoggingOut ? 'Signing out...' : 'Sign out'}</span>
           </button>
         </div>
-      </aside>
-    </>
+      </div>
+    </aside>
   );
 }
