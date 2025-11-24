@@ -1,15 +1,15 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card.tsx';
 import { Eye, EyeOff, AlertCircle } from 'lucide-react';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { useAuth } from '@/features/auth/context/AuthContext';
+import { Label } from '@/components/ui/label.tsx';
+import { Input } from '@/components/ui/input.tsx';
+import { Button } from '@/components/ui/button.tsx';
+import { useAuth } from '@/features/auth/context/AuthContext.tsx';
 import { LoginSchema, type LoginFormData } from '@/features/auth/schemas';
-import { useLogin } from '../hooks/useLogin';
+import { useLogin } from '../hooks/useLogin.ts';
 import { useState } from 'react';
-import { Link } from '@/router';
+import { Link } from '@/router.ts';
 
 export default function LoginForm() {
   const { mutate, isPending } = useLogin();
