@@ -15,6 +15,7 @@ import {
   Room,
   Rating,
   Upload,
+  Owner,
 } from '@/features/G9-ApartmentListing/hooks/index';
 import {
   apartmentTypes,
@@ -96,7 +97,11 @@ export default function ApartmentPayment() {
   const userId = bookingData?.user_id || 1;
   const { data: walletResponse, isLoading: _walletLoading } =
     useGetWalletsUserUserId(userId);
-  const walletData = walletResponse?.data;
+  const { data: apartmentOwnerData } = Owner.useApartmentOwnerByAPT(
+    bookingData?.apartment_id || 0
+  );
+  const apartmentOwnerId = apartmentOwnerData?.id;
+  const walletData = walletResponse;
 
   // Hook for updating booking status
   const updateBookingStatusMutation = useUpdateBookingStatus();
@@ -150,42 +155,40 @@ export default function ApartmentPayment() {
 
       try {
         // Transfer money from user to apartment owner
-        const apartmentOwnerId = 4; //  placeholder
+        if (!apartmentOwnerId) {
+          alert('Unable to find apartment owner information');
+          return;
+        }
 
-        const response = await postWalletsTransfer({
+        await postWalletsTransfer({
           from_user_id: bookingData.user_id,
           to_user_id: apartmentOwnerId,
           amount: price,
         });
-
-        if (response.status === 200) {
-          try {
-            await updateBookingStatusMutation.mutateAsync({
-              id: bookingData.id,
-              status: 'confirmed',
-            });
-            setShowPopup(true);
-          } catch (_statusErr) {
-            // Try direct API call as fallback
-            try {
-              await BOOKapi.updateBookingStatus(bookingData.id, 'confirmed');
-              setShowPopup(true);
-            } catch (_directErr) {
-              alert(
-                'Payment successful, but booking status update failed. Please contact support.'
-              );
-              // Refund the payment
-              await postWalletsTransfer({
-                from_user_id: apartmentOwnerId,
-                to_user_id: bookingData.user_id,
-                amount: price,
-              });
-            }
-          }
+        try {
+          await updateBookingStatusMutation.mutateAsync({
+            id: bookingData.id,
+            status: 'confirmed',
+          });
           setShowPopup(true);
-        } else {
-          throw new Error('Payment failed with status: ' + response.status);
+        } catch (_statusErr) {
+          // Try direct API call as fallback
+          try {
+            await BOOKapi.updateBookingStatus(bookingData.id, 'confirmed');
+            setShowPopup(true);
+          } catch (_directErr) {
+            alert(
+              'Payment successful, but booking status update failed. Please contact support.'
+            );
+            // Refund the payment
+            await postWalletsTransfer({
+              from_user_id: apartmentOwnerId,
+              to_user_id: bookingData.user_id,
+              amount: price,
+            });
+          }
         }
+        setShowPopup(true);
       } catch (_err) {
         alert('Payment failed — check your wallet or try again.');
       } finally {

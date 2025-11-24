@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from '@/router';
-import { APT, Upload } from '@/features/G9-ApartmentListing/hooks/index';
+import { APT, Upload, Room } from '@/features/G9-ApartmentListing/hooks/index';
 import '@/features/G9-ApartmentListing/styles/animations.css';
 import type {
   apartmentTypes,
@@ -121,6 +121,29 @@ interface ExtendedApartment extends apartmentTypes.Apartment {
   addresses?: addressTypes.Address;
 }
 
+// Separate component to track room availability for each apartment
+const ApartmentRoomTracker: React.FC<{
+  apartmentId: number;
+  onUpdate: (id: number, count: number) => void;
+}> = React.memo(({ apartmentId, onUpdate }) => {
+  const { data: availableRooms } = Room.useRoomsByStatus(
+    apartmentId,
+    'available'
+  );
+
+  const roomCount = React.useMemo(() => {
+    return Array.isArray(availableRooms) ? availableRooms.length : 0;
+  }, [availableRooms]);
+
+  React.useEffect(() => {
+    onUpdate(apartmentId, roomCount);
+  }, [apartmentId, roomCount, onUpdate]);
+
+  return null;
+});
+
+ApartmentRoomTracker.displayName = 'ApartmentRoomTracker';
+
 export default function ApartmentHomepage() {
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
@@ -132,8 +155,35 @@ export default function ApartmentHomepage() {
 
   const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [roomAvailability, setRoomAvailability] = useState<
+    Record<number, number>
+  >({});
 
   const { data: apartments, isLoading, error: _error } = APT.useApartments();
+
+  // Callback to update room availability (wrapped in useCallback to prevent re-renders)
+  const updateRoomAvailability = React.useCallback(
+    (apartmentId: number, count: number) => {
+      setRoomAvailability((prev) => {
+        if (prev[apartmentId] !== count) {
+          return { ...prev, [apartmentId]: count };
+        }
+        return prev;
+      });
+    },
+    []
+  );
+
+  // Combined availability map: use API data if available, fallback to static room count
+  const apartmentAvailabilityMap = React.useMemo(() => {
+    const map: Record<number, number> = {};
+    apartments?.forEach((apt: ExtendedApartment) => {
+      // Use API data if available, otherwise fallback to static room count
+      map[apt.id] = roomAvailability[apt.id] ?? (apt.room?.length || 0);
+    });
+    return map;
+  }, [apartments, roomAvailability]);
+
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (
@@ -151,48 +201,69 @@ export default function ApartmentHomepage() {
     };
   }, [isDropdownOpen]);
 
-  const filteredApartments =
-    apartments?.filter((apt: ExtendedApartment) => {
-      const matchesSearch = apt.name
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase());
-      if (!matchesSearch) return false;
+  const filteredApartments = React.useMemo(() => {
+    const filtered =
+      apartments?.filter((apt: ExtendedApartment) => {
+        const matchesSearch = apt.name
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase());
+        if (!matchesSearch) return false;
 
-      if (
-        selectedLocations.length > 0 &&
-        !selectedLocations.includes(apt.apartment_location)
-      ) {
-        return false;
-      }
+        if (
+          selectedLocations.length > 0 &&
+          !selectedLocations.includes(apt.apartment_location)
+        ) {
+          return false;
+        }
 
-      if (selectedRatings.length > 0) {
-        const avgRating =
-          apt.rating && apt.rating.length > 0
-            ? apt.rating.reduce(
-                (sum: number, r: RatingType) => sum + r.rating,
-                0
-              ) / apt.rating.length
+        if (selectedRatings.length > 0) {
+          const avgRating =
+            apt.rating && apt.rating.length > 0
+              ? apt.rating.reduce(
+                  (sum: number, r: RatingType) => sum + r.rating,
+                  0
+                ) / apt.rating.length
+              : 0;
+          const matchesRating = selectedRatings.some(
+            (rating) => Math.floor(avgRating) === rating
+          );
+          if (!matchesRating) return false;
+        }
+
+        const minRoomPrice =
+          apt.room && apt.room.length > 0
+            ? Math.min(...apt.room.map((r: roomTypes.Room) => r.price_start))
             : 0;
-        const matchesRating = selectedRatings.some(
-          (rating) => Math.floor(avgRating) === rating
-        );
-        if (!matchesRating) return false;
-      }
+        const maxRoomPrice =
+          apt.room && apt.room.length > 0
+            ? Math.max(...apt.room.map((r: roomTypes.Room) => r.price_end))
+            : 0;
+        if (maxRoomPrice < minPrice || minRoomPrice > maxPrice) {
+          return false;
+        }
 
-      const minRoomPrice =
-        apt.room && apt.room.length > 0
-          ? Math.min(...apt.room.map((r: roomTypes.Room) => r.price_start))
-          : 0;
-      const maxRoomPrice =
-        apt.room && apt.room.length > 0
-          ? Math.max(...apt.room.map((r: roomTypes.Room) => r.price_end))
-          : 0;
-      if (maxRoomPrice < minPrice || minRoomPrice > maxPrice) {
-        return false;
-      }
+        return true;
+      }) || [];
 
-      return true;
-    }) || [];
+    // Sort apartments: those with available rooms first, then those without
+    return filtered.sort((a: ExtendedApartment, b: ExtendedApartment) => {
+      const aHasAvailableRooms = (apartmentAvailabilityMap[a.id] || 0) > 0;
+      const bHasAvailableRooms = (apartmentAvailabilityMap[b.id] || 0) > 0;
+
+      if (aHasAvailableRooms === bHasAvailableRooms) {
+        return 0; // Keep original order for apartments with same room availability
+      }
+      return bHasAvailableRooms ? 1 : -1; // Apartments with available rooms first
+    });
+  }, [
+    apartments,
+    searchTerm,
+    selectedLocations,
+    selectedRatings,
+    minPrice,
+    maxPrice,
+    apartmentAvailabilityMap,
+  ]);
 
   const totalPages = Math.ceil(filteredApartments.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -245,6 +316,15 @@ export default function ApartmentHomepage() {
 
   return (
     <div className="font-poppins animate-fade-in min-h-screen bg-[#F9FAFB]">
+      {/* Room availability trackers */}
+      {apartments?.map((apt: ExtendedApartment) => (
+        <ApartmentRoomTracker
+          key={`room-tracker-${apt.id}`}
+          apartmentId={apt.id}
+          onUpdate={updateRoomAvailability}
+        />
+      ))}
+
       <div className="animate-slide-down flex items-center justify-between px-12 py-5">
         <div>
           <div className="flex items-center gap-3">
@@ -627,9 +707,11 @@ export default function ApartmentHomepage() {
                               Baht / Month
                             </span>
                           </p>
-                          <p className="mt-1 text-sm text-gray-600">
+                          <p
+                            className={`mt-1 text-sm ${(apartmentAvailabilityMap[apartment.id] || 0) > 0 ? 'text-green-600' : 'text-red-600'}`}
+                          >
                             Room available:{' '}
-                            {apartment.room ? apartment.room.length : 0}
+                            {apartmentAvailabilityMap[apartment.id] || 0}
                           </p>
                         </div>
                       </div>

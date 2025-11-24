@@ -15,7 +15,6 @@ import type {
   uploadTypes,
   apartmentTypes,
 } from '@/features/G9-ApartmentListing/types/index';
-import { useUserProfile } from '@/features/citizen/hooks/ProfileUser';
 import UppageIcon from '@/features/G9-ApartmentListing/assets/UppageIcon.svg';
 import LocationIcon from '@/features/G9-ApartmentListing/assets/LocationIcon.svg';
 import PhoneIcon from '@/features/G9-ApartmentListing/assets/PhoneIcon.svg';
