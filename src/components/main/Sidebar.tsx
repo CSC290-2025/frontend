@@ -17,6 +17,7 @@ import {
   Shield,
   Users,
   MapPin,
+  House,
   Heart,
   LogOut,
   ChevronDown,
@@ -53,6 +54,7 @@ export default function Sidebar() {
     { icon: Shield, label: 'Emergency', path: '/sos' },
     { icon: Users, label: 'Volunteer', path: '/volunteer/board' },
     { icon: MapPin, label: 'Map', path: '/map' },
+    { icon: House, label: 'Apartments', path: '/apartmentHomePage' },
     { icon: Heart, label: 'Freecycle', path: '/freecycle' },
   ];
 
