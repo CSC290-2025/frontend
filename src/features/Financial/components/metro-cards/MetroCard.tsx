@@ -8,14 +8,12 @@ interface MetroCardProps {
 
 export default function MetroCard({ card }: MetroCardProps) {
   const navigate = useNavigate();
-  const { user_id } = useParams('/financial/metro/:user_id');
 
   return (
     <div
       onClick={() =>
-        navigate('/financial/metro/:user_id/info/:id', {
+        navigate('/financial/metro/info/:id', {
           params: {
-            user_id,
             id: String(card.id),
           },
         })
