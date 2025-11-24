@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import '@/features/G9-ApartmentListing/styles/animations.css';
 import { useParams } from '@/router';
 import {
@@ -32,6 +32,7 @@ import {
   SuccessToast,
 } from '@/features/G9-ApartmentListing/components/toastBox';
 import { MessageCircle } from 'lucide-react';
+import { OWN } from '@/features/G9-ApartmentListing/api/index';
 export default function ApartmentDetailPage() {
   const params = useParams('/ApartmentHomepage/:id');
   const apartmentId = params.id;
@@ -43,6 +44,7 @@ export default function ApartmentDetailPage() {
   const [isSubmittingReview, setIsSubmittingReview] = useState(false);
   const [deletingReviewId, setDeletingReviewId] = useState<number | null>(null);
   const [newlyAddedReview, setNewlyAddedReview] = useState<number | null>(null);
+  const [userMap, setUserMap] = useState<Record<number, string>>({});
   const [editingReview, setEditingReview] = useState<{
     id: number;
     rating: number;
@@ -65,13 +67,14 @@ export default function ApartmentDetailPage() {
   const { data: images } = Upload.usePicturesByApartment(parseInt(apartmentId));
   const { data: userData } = Owner.useUser();
   const userId = userData?.userId;
-  const { data: account } = useUserProfile(userId);
   const createRating = Rating.useCreateRating();
   const updateRating = Rating.useUpdateRatingWithContext(parseInt(apartmentId));
   const deleteRating = Rating.useDeleteRatingWithContext(parseInt(apartmentId));
   const rawApartment = apartmentData?.data || apartmentData || null;
-  const ratingArray: ratingTypes.default[] =
-    rating?.data?.data || rating?.data || [];
+  const ratingArray: ratingTypes.default[] = useMemo(
+    () => rating?.data?.data || rating?.data || [],
+    [rating]
+  );
   const totalRatings = ratingArray.length;
   const imageArray: uploadTypes.uploadData[] =
     images?.data?.data || images?.data || [];
@@ -80,6 +83,37 @@ export default function ApartmentDetailPage() {
 
   // Check if current user already has a review
   const hasExistingReview = ratingArray.some((r) => r.userId === userId);
+
+  // Fetch user data for all review authors
+  useEffect(() => {
+    const fetchUserData = async () => {
+      const uniqueUserIds = [
+        ...new Set(ratingArray.map((rating) => rating.userId)),
+      ];
+      const newUserMap: Record<number, string> = {};
+
+      for (const userId of uniqueUserIds) {
+        try {
+          const response = await OWN.getUserById(userId);
+          const userData = response.data?.data || response.data;
+          if (userData?.username) {
+            newUserMap[userId] = userData.username;
+          } else {
+            newUserMap[userId] = `User ${userId}`;
+          }
+        } catch (error) {
+          console.error(`Failed to fetch user ${userId}:`, error);
+          newUserMap[userId] = `User ${userId}`;
+        }
+      }
+
+      setUserMap(newUserMap);
+    };
+
+    if (ratingArray.length > 0) {
+      fetchUserData();
+    }
+  }, [ratingArray]);
 
   // Calculate manual average from rating array as fallback
   const manualAverage =
@@ -122,7 +156,7 @@ export default function ApartmentDetailPage() {
     reviews: ratingArray
       .map((rating) => ({
         id: rating.id,
-        author: `${account?.username} || 'User ${rating.userId}'`,
+        author: userMap[rating.userId] || `User ${rating.userId}`,
         date: rating.createdAt
           ? new Date(rating.createdAt).toLocaleDateString()
           : new Date().toLocaleDateString(),
