@@ -1,85 +1,111 @@
-import type {
-  Bin,
-  BinWithDistance,
-  BinType,
-  BinStatus,
-  BinStats,
-} from '@/features/waste-management/types';
+import { apiClient } from '@/lib/apiClient';
+import type { Bin } from '@/features/waste-management/types';
 
-const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
+function transformBin(backendBin: any): Bin {
+  const typeMap: Record<string, 'Recyclable' | 'General Waste' | 'Hazardous'> =
+    {
+      RECYCLABLE: 'Recyclable',
+      GENERAL: 'General Waste',
+      HAZARDOUS: 'Hazardous',
+    };
 
-export class BinApiService {
-  static async getAllBins(filters?: {
-    bin_type?: BinType;
-    status?: BinStatus;
-  }): Promise<Bin[]> {
-    const params = new URLSearchParams();
-    if (filters?.bin_type) params.append('bin_type', filters.bin_type);
-    if (filters?.status) params.append('status', filters.status);
+  const colorMap: Record<string, string> = {
+    RECYCLABLE: 'text-green-600',
+    GENERAL: 'text-blue-600',
+    HAZARDOUS: 'text-yellow-600',
+  };
 
-    const response = await fetch(`${API_BASE_URL}/bins?${params}`);
-    const data = await response.json();
-    return data.data.bins;
+  return {
+    ...backendBin,
+    name: backendBin.bin_name,
+    type: typeMap[backendBin.bin_type] || 'General Waste',
+    color: colorMap[backendBin.bin_type] || 'text-gray-600',
+    lat: Number(backendBin.latitude),
+    lng: Number(backendBin.longitude),
+  };
+}
+
+export async function fetchBins(): Promise<Bin[]> {
+  const response = await apiClient.get('/bins');
+  const payload =
+    response.data && response.data.data ? response.data.data : response.data;
+
+  if (Array.isArray(payload)) {
+    return payload.map(transformBin);
   }
 
-  static async getBinById(id: number): Promise<Bin> {
-    const response = await fetch(`${API_BASE_URL}/bins/${id}`);
-    const data = await response.json();
-    return data.data.bin;
+  if (!payload || !payload.bins || !Array.isArray(payload.bins)) {
+    console.error('Invalid response structure for /bins:', response.data);
+    throw new Error('Failed to fetch bins: Invalid response structure');
   }
 
-  static async createBin(binData: Partial<Bin>): Promise<Bin> {
-    const response = await fetch(`${API_BASE_URL}/bins`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(binData),
-    });
-    const data = await response.json();
-    return data.data;
+  return payload.bins.map(transformBin);
+}
+
+export async function fetchNearbyBins(
+  lat: number,
+  lng: number,
+  type: string = 'All',
+  search: string = ''
+): Promise<Bin[]> {
+  const params = new URLSearchParams({
+    lat: lat.toString(),
+    lng: lng.toString(),
+  });
+  if (type !== 'All') params.append('type', type);
+  if (search) params.append('search', search);
+
+  const response = await apiClient.get(`/bins/nearby?${params}`);
+  const payload =
+    response.data && response.data.data ? response.data.data : response.data;
+
+  if (Array.isArray(payload)) {
+    return payload.map(transformBin);
   }
 
-  static async updateBinStatus(id: number, status: BinStatus): Promise<Bin> {
-    const response = await fetch(`${API_BASE_URL}/bins/${id}/status`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status }),
-    });
-    const data = await response.json();
-    return data.data;
+  if (!payload || !payload.bins || !Array.isArray(payload.bins)) {
+    console.error(
+      'Invalid response structure for /bins/nearby:',
+      response.data
+    );
+    throw new Error('Failed to fetch nearby bins: Invalid response structure');
   }
 
-  static async recordCollection(id: number, weight?: number): Promise<Bin> {
-    const response = await fetch(`${API_BASE_URL}/bins/${id}/collect`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ collected_weight: weight }),
-    });
-    const data = await response.json();
-    return data.data;
+  return payload.bins.map(transformBin);
+}
+
+export async function fetchBinById(id: number): Promise<Bin> {
+  const response = await apiClient.get(`/bins/${id}`);
+  const payload =
+    response.data && response.data.data ? response.data.data : response.data;
+
+  if (!payload || !payload.bin) {
+    console.error('Invalid response structure for /bins/:id', response.data);
+    throw new Error('Bin not found');
   }
 
-  static async getNearestBins(
-    lat: number,
-    lng: number,
-    binType?: BinType,
-    limit = 5
-  ): Promise<BinWithDistance[]> {
-    const params = new URLSearchParams({
-      lat: lat.toString(),
-      lng: lng.toString(),
-      limit: limit.toString(),
-    });
-    if (binType) params.append('bin_type', binType);
+  return transformBin(payload.bin);
+}
 
-    const response = await fetch(`${API_BASE_URL}/bins/nearest?${params}`);
-    const data = await response.json();
-    return data.data.bins;
+export async function fetchNearestBin(lat: number, lng: number): Promise<Bin> {
+  const params = new URLSearchParams({
+    lat: lat.toString(),
+    lng: lng.toString(),
+  });
+
+  const response = await apiClient.get(`/bins/nearest?${params}`);
+  const payload =
+    response.data && response.data.data ? response.data.data : response.data;
+
+  const bins = Array.isArray(payload) ? payload : payload?.bins;
+
+  if (!bins || !Array.isArray(bins) || bins.length === 0) {
+    console.error(
+      'Invalid response structure for /bins/nearest:',
+      response.data
+    );
+    throw new Error('Failed to fetch nearest bin');
   }
 
-  static async getBinStats(): Promise<BinStats> {
-    const response = await fetch(`${API_BASE_URL}/bins/stats`);
-    const data = await response.json();
-    return data.data.stats;
-  }
+  return transformBin(bins[0]);
 }

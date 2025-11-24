@@ -43,7 +43,6 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen from-purple-50 via-pink-50 to-blue-50 p-6">
-      {/* Right Column - Statistics and Charts */}
       <div className="space-y-6 lg:col-span-3">
         <ViewSelector
           viewType={viewType}
