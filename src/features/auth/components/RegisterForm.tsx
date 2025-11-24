@@ -1,15 +1,20 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Label } from '@/components/ui/label';
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+} from '@/components/ui/card.tsx';
+import { Input } from '@/components/ui/input.tsx';
+import { Button } from '@/components/ui/button.tsx';
+import { Label } from '@/components/ui/label.tsx';
 import { AlertCircle, Eye, EyeOff } from 'lucide-react';
-import { useRegister } from '../hooks/useRegister';
-import { useAuth } from '@/features/auth/context/AuthContext';
+import { useRegister } from '../hooks/useRegister.ts';
+import { useAuth } from '@/features/auth/context/AuthContext.tsx';
 import { RegisterSchema, type RegisterFormData } from '@/features/auth/schemas';
 import { useState } from 'react';
-import { Link } from '@/router';
+import { Link } from '@/router.ts';
 
 export default function RegisterFormUI() {
   const { mutate, isPending } = useRegister();
