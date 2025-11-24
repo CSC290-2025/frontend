@@ -1,4 +1,5 @@
 // Generouted, changes to this file will be overridden
+ 
 
 import { components, hooks, utils } from '@generouted/react-router/client';
 
@@ -68,6 +69,11 @@ export type Path =
   | `/traffic/mock`
   | `/traffic/test`
   | `/users`
+  | `/volunteer/board`
+  | `/volunteer/createpost`
+  | `/volunteer/detail/:id`
+  | `/volunteer/edit/:id`
+  | `/volunteer/userjoin`
   | `/waste-management`
   | `/weather`
   | `/weather-aqi`
@@ -97,6 +103,8 @@ export type Params = {
   '/power-bi/edit/:id': { id: string };
   '/sos/:id': { id: string };
   '/sos/report/:id': { id: string };
+  '/volunteer/detail/:id': { id: string };
+  '/volunteer/edit/:id': { id: string };
   '/weather-aqi/overview/:district': { district: string };
 };
 

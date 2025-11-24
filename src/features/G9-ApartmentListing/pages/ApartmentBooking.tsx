@@ -35,7 +35,7 @@ export default function ApartmentBooking() {
   // Extract apartment and room info
   const apartment = apartmentData?.data || apartmentData || null;
   const availableRooms = useMemo(() => {
-    return availableRoomsData?.data?.data || availableRoomsData?.data || [];
+    return availableRoomsData || availableRoomsData?.data || [];
   }, [availableRoomsData]);
 
   const [formData, setFormData] = useState({
