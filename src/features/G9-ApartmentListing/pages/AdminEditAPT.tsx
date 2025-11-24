@@ -14,6 +14,37 @@ import {
   Room,
   Upload as UploadHooks,
 } from '@/features/G9-ApartmentListing/hooks/index';
+import { FailedError } from '@/features/G9-ApartmentListing/components/toastBox';
+
+// File upload constants
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ALLOWED_FILE_TYPES = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+];
+
+// Helper function to validate files
+const validateFile = (file: File): { isValid: boolean; error?: string } => {
+  // Check file type
+  if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+    return {
+      isValid: false,
+      error: `Invalid file type: ${file.type}. Only JPEG, PNG, WebP, and GIF images are allowed.`,
+    };
+  }
+
+  // Check file size
+  if (file.size > MAX_FILE_SIZE) {
+    return {
+      isValid: false,
+      error: `File too large: ${(file.size / (1024 * 1024)).toFixed(2)}MB. Maximum size is 5MB.`,
+    };
+  }
+
+  return { isValid: true };
+};
 
 interface LocationData {
   [key: string]: {
@@ -43,6 +74,7 @@ export default function EditApartment(): React.ReactElement {
   const [existingImageUrls, setExistingImageUrls] = useState<string[]>([]);
   const [existingImageData, setExistingImageData] = useState<ImageData[]>([]);
   const [roomsToDelete, setRoomsToDelete] = useState<number[]>([]);
+  const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
 
   const updateApartmentMutation = APT.useUpdateApartment();
   const uploadMultipleFilesMutation = UploadHooks.useUploadMultipleFiles();
@@ -123,6 +155,21 @@ export default function EditApartment(): React.ReactElement {
     confirmed: boolean;
   }
 
+  interface FieldErrors {
+    name?: string;
+    phone?: string;
+    address_line?: string;
+    province?: string;
+    district?: string;
+    subdistrict?: string;
+    postal_code?: string;
+    electric_price?: string;
+    water_price?: string;
+    internet_price?: string;
+    roomTypes?: { [key: number]: { [key: string]: string } };
+    confirmed?: string;
+  }
+
   // Separate state for images that will be uploaded
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);
@@ -179,7 +226,6 @@ export default function EditApartment(): React.ReactElement {
   useEffect(() => {
     if (existingRoomsData) {
       const rooms = existingRoomsData;
-      console.log('Processing rooms:', rooms);
 
       if (rooms.length === 0) {
         setFormData((prev) => ({
@@ -200,8 +246,6 @@ export default function EditApartment(): React.ReactElement {
           room_status: room.room_status,
         })
       );
-
-      console.log('Loading existing rooms:', roomFormData);
       setFormData((prev) => ({
         ...prev,
         roomTypes: roomFormData,
@@ -238,6 +282,15 @@ export default function EditApartment(): React.ReactElement {
 
       return updated;
     });
+
+    // Clear field error when user starts typing
+    if (fieldErrors[field as keyof FieldErrors]) {
+      setFieldErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[field as keyof FieldErrors];
+        return newErrors;
+      });
+    }
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>): void => {
@@ -284,7 +337,6 @@ export default function EditApartment(): React.ReactElement {
       if (imageToDelete) {
         await deleteFileMutation.mutateAsync(imageToDelete);
       }
-      console.log(imageToDelete, 'deleted');
       // Remove from local state after successful deletion
       setExistingImageUrls((prev) => prev.filter((_, i) => i !== index));
       setExistingImageData((prev) => prev.filter((_, i) => i !== index));
@@ -303,6 +355,33 @@ export default function EditApartment(): React.ReactElement {
     const newRoomTypes = [...formData.roomTypes];
     newRoomTypes[index] = { ...newRoomTypes[index], [field]: value };
     setFormData((prev) => ({ ...prev, roomTypes: newRoomTypes }));
+
+    // Clear room field error when user starts typing
+    if (fieldErrors.roomTypes?.[index]?.[field]) {
+      setFieldErrors((prev) => {
+        const newErrors = { ...prev };
+        if (newErrors.roomTypes?.[index]) {
+          const updatedRoomErrors = { ...newErrors.roomTypes[index] };
+          delete updatedRoomErrors[field];
+
+          if (Object.keys(updatedRoomErrors).length === 0) {
+            const updatedRoomTypes = { ...newErrors.roomTypes };
+            delete updatedRoomTypes[index];
+            if (Object.keys(updatedRoomTypes).length === 0) {
+              delete newErrors.roomTypes;
+            } else {
+              newErrors.roomTypes = updatedRoomTypes;
+            }
+          } else {
+            newErrors.roomTypes = {
+              ...newErrors.roomTypes,
+              [index]: updatedRoomErrors,
+            };
+          }
+        }
+        return newErrors;
+      });
+    }
   };
 
   const addRoomType = (): void => {
@@ -339,53 +418,151 @@ export default function EditApartment(): React.ReactElement {
   };
 
   const validateForm = (): boolean => {
-    const requiredStringFields = [
-      formData.name,
-      formData.phone,
-      formData.description,
-      formData.apartment_type,
-      formData.apartment_location,
-      formData.address_line,
-      formData.province,
-      formData.district,
-      formData.subdistrict,
-      formData.postal_code,
-      formData.electric_price.toString(),
-      formData.internetFree ? 'free' : formData.internet_price.toString(),
-    ];
+    const errors: FieldErrors = {};
+    let isValid = true;
 
-    const hasWaterPrice = !!formData.water_price;
+    // Validate apartment name
+    if (!formData.name.trim()) {
+      errors.name = 'Apartment name is required';
+      isValid = false;
+    } else if (formData.name.trim().length < 2) {
+      errors.name = 'Apartment name must be at least 2 characters';
+      isValid = false;
+    }
 
-    const roomTypesValid =
-      formData.roomTypes.length > 0 &&
-      formData.roomTypes.every(
-        (room) =>
-          room.name.trim() !== '' &&
-          room.type.trim() !== '' &&
-          room.size.trim() !== '' &&
-          room.price_start >= 0 &&
-          room.price_end >= 0 &&
-          room.price_start <= room.price_end &&
-          room.name.length >= 2 &&
-          room.name.length <= 255 &&
-          room.type.length >= 2 &&
-          room.type.length <= 255 &&
-          room.size.length >= 1
-      );
+    // Validate phone
+    if (!formData.phone.trim()) {
+      errors.phone = 'Contact number is required';
+      isValid = false;
+    } else if (formData.phone.trim().length < 10) {
+      errors.phone = 'Contact number must be at least 10 characters';
+      isValid = false;
+    }
 
-    return (
-      requiredStringFields.every(
-        (field) => typeof field === 'string' && field.trim() !== ''
-      ) &&
-      hasWaterPrice &&
-      roomTypesValid &&
-      formData.confirmed
-    );
+    // Validate address fields
+    if (!formData.address_line.trim()) {
+      errors.address_line = 'Address line is required';
+      isValid = false;
+    }
+
+    if (!formData.province.trim()) {
+      errors.province = 'Province is required';
+      isValid = false;
+    }
+
+    if (!formData.district.trim()) {
+      errors.district = 'District is required';
+      isValid = false;
+    }
+
+    if (!formData.subdistrict.trim()) {
+      errors.subdistrict = 'Subdistrict is required';
+      isValid = false;
+    }
+
+    if (!formData.postal_code.trim()) {
+      errors.postal_code = 'Postal code is required';
+      isValid = false;
+    }
+
+    // Validate prices
+    if (formData.electric_price <= 0) {
+      errors.electric_price = 'Electric price must be greater than 0';
+      isValid = false;
+    }
+
+    if (formData.water_price <= 0) {
+      errors.water_price = 'Water price must be greater than 0';
+      isValid = false;
+    }
+
+    if (!formData.internetFree && formData.internet_price <= 0) {
+      errors.internet_price =
+        'Internet price must be greater than 0 when not free';
+      isValid = false;
+    }
+
+    // Validate room types
+    if (formData.roomTypes.length === 0) {
+      errors.roomTypes = {
+        0: { general: 'At least one room type is required' },
+      };
+      isValid = false;
+    } else {
+      const roomErrors: { [key: number]: { [key: string]: string } } = {};
+
+      formData.roomTypes.forEach((room, index) => {
+        const roomFieldErrors: { [key: string]: string } = {};
+
+        if (!room.name.trim()) {
+          roomFieldErrors.name = 'Room name is required';
+          isValid = false;
+        } else if (room.name.trim().length < 2) {
+          roomFieldErrors.name = 'Room name must be at least 2 characters';
+          isValid = false;
+        }
+
+        if (!room.type.trim()) {
+          roomFieldErrors.type = 'Room type is required';
+          isValid = false;
+        } else if (room.type.trim().length < 2) {
+          roomFieldErrors.type = 'Room type must be at least 2 characters';
+          isValid = false;
+        }
+
+        if (!room.size.trim()) {
+          roomFieldErrors.size = 'Room size is required';
+          isValid = false;
+        }
+
+        if (room.price_start < 0) {
+          roomFieldErrors.price_start = 'Price start must be 0 or greater';
+          isValid = false;
+        }
+
+        if (room.price_end < 0) {
+          roomFieldErrors.price_end = 'Price end must be 0 or greater';
+          isValid = false;
+        }
+
+        if (room.price_start > room.price_end && room.price_end > 0) {
+          roomFieldErrors.price_start =
+            'Price start must be less than or equal to price end';
+          roomFieldErrors.price_end =
+            'Price end must be greater than or equal to price start';
+          isValid = false;
+        }
+
+        if (Object.keys(roomFieldErrors).length > 0) {
+          roomErrors[index] = roomFieldErrors;
+        }
+      });
+
+      if (Object.keys(roomErrors).length > 0) {
+        errors.roomTypes = roomErrors;
+      }
+    }
+
+    // Validate confirmation
+    if (!formData.confirmed) {
+      errors.confirmed = 'You must confirm the information is correct';
+      isValid = false;
+    }
+
+    setFieldErrors(errors);
+    return isValid;
   };
 
   const handleSubmit = async (): Promise<void> => {
     if (!validateForm()) {
-      setErrorMessage('Please fill in all fields');
+      const errorFields = Object.keys(fieldErrors);
+      if (errorFields.length > 0) {
+        setErrorMessage(
+          `Please fix the following errors: ${errorFields.join(', ')}`
+        );
+      } else {
+        setErrorMessage('Please fill in all required fields');
+      }
       setShowErrorPopup(true);
       return;
     }
@@ -419,10 +596,6 @@ export default function EditApartment(): React.ReactElement {
         },
       };
 
-      console.log('Updating apartment with data:', apartmentUpdateData);
-      console.log('Apartment ID:', apartmentId);
-      console.log('Room data to create:', formData.roomTypes);
-
       // Update the apartment
       await updateApartmentMutation.mutateAsync({
         id: apartmentId,
@@ -431,6 +604,20 @@ export default function EditApartment(): React.ReactElement {
 
       // Upload new images if any are selected
       if (selectedImages.length > 0) {
+        // Validate all selected files before uploading
+        for (const file of selectedImages) {
+          const validation = validateFile(file);
+          if (!validation.isValid) {
+            FailedError(
+              validation.error ||
+                'Invalid file selected for upload, please choose a file under 5MB.'
+            );
+            throw new Error(
+              validation.error || 'Invalid file selected for upload.'
+            );
+          }
+        }
+
         await uploadMultipleFilesMutation.mutateAsync({
           apartmentId: apartmentId,
           files: selectedImages,
@@ -438,7 +625,6 @@ export default function EditApartment(): React.ReactElement {
       }
 
       // Handle room operations (delete, update, create)
-
       // 1. Delete rooms that were removed
       if (roomsToDelete.length > 0) {
         const deletionPromises = roomsToDelete.map((roomId) =>
@@ -552,6 +738,26 @@ export default function EditApartment(): React.ReactElement {
     );
   };
 
+  // Helper function to get input class with error styling
+  const getInputClassName = (
+    fieldName: keyof FieldErrors,
+    baseClassName: string = 'w-full rounded-lg border px-4 py-2 focus:outline-none'
+  ): string => {
+    const hasError = fieldErrors[fieldName];
+    if (hasError) {
+      return `${baseClassName} border-red-500 focus:border-red-500 bg-red-50`;
+    }
+    return `${baseClassName} border-gray-300 focus:border-blue-500`;
+  };
+
+  // Helper function to get select class with error styling
+  const getSelectClassName = (fieldName: keyof FieldErrors): string => {
+    return getInputClassName(
+      fieldName,
+      'w-full rounded-lg border px-3 py-2.5 focus:outline-none'
+    );
+  };
+
   return (
     <div className="font-poppins min-h-screen bg-[#F9FAFB] p-4">
       <div className="mx-auto max-w-4xl">
@@ -568,23 +774,39 @@ export default function EditApartment(): React.ReactElement {
 
         <div className="rounded-lg bg-white p-8 shadow-sm">
           <div className="mb-6">
-            <label className="mb-2 block font-semibold">Apartment Name</label>
+            <label className="mb-2 block font-semibold">
+              Apartment Name <span className="text-red-500">*</span>
+            </label>
             <input
               type="text"
               value={formData.name}
               onChange={(e) => handleInputChange('name', e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none"
+              className={getInputClassName('name')}
+              placeholder="Enter apartment name"
             />
+            {fieldErrors.name && (
+              <div className="mt-1 text-sm text-red-500">
+                {fieldErrors.name}
+              </div>
+            )}
           </div>
 
           <div className="mb-6">
-            <label className="mb-2 block font-semibold">Contact Number</label>
+            <label className="mb-2 block font-semibold">
+              Contact Number <span className="text-red-500">*</span>
+            </label>
             <input
               type="text"
               value={formData.phone}
               onChange={(e) => handleInputChange('phone', e.target.value)}
-              className="w-full rounded-lg border border-gray-300 px-4 py-2 focus:border-blue-500 focus:outline-none"
+              className={getInputClassName('phone')}
+              placeholder="Enter contact number"
             />
+            {fieldErrors.phone && (
+              <div className="mt-1 text-sm text-red-500">
+                {fieldErrors.phone}
+              </div>
+            )}
           </div>
 
           <div className="mb-6">
@@ -696,39 +918,59 @@ export default function EditApartment(): React.ReactElement {
             </label>
             <div className="mb-4 grid grid-cols-3 gap-4">
               <div>
-                <label className="mb-1 block text-sm">Number</label>
+                <label className="mb-1 block text-sm">
+                  Number <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="text"
                   value={formData.address_line}
                   onChange={(e) =>
                     handleInputChange('address_line', e.target.value)
                   }
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                  className={getInputClassName(
+                    'address_line',
+                    'w-full rounded-lg border px-3 py-2 focus:outline-none'
+                  )}
+                  placeholder="House number, street, etc."
                 />
+                {fieldErrors.address_line && (
+                  <div className="mt-1 text-sm text-red-500">
+                    {fieldErrors.address_line}
+                  </div>
+                )}
               </div>
             </div>
             <div className="grid grid-cols-4 gap-4">
               <div>
-                <label className="mb-1 block text-sm">Province</label>
+                <label className="mb-1 block text-sm">
+                  Province <span className="text-red-500">*</span>
+                </label>
                 <select
                   value={formData.province}
                   onChange={(e) =>
                     handleInputChange('province', e.target.value)
                   }
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2.5 focus:border-blue-500 focus:outline-none"
+                  className={getSelectClassName('province')}
                 >
                   <option value="">Select</option>
                   <option value="Bangkok">Bangkok</option>
                 </select>
+                {fieldErrors.province && (
+                  <div className="mt-1 text-sm text-red-500">
+                    {fieldErrors.province}
+                  </div>
+                )}
               </div>
               <div>
-                <label className="mb-1 block text-sm">District</label>
+                <label className="mb-1 block text-sm">
+                  District <span className="text-red-500">*</span>
+                </label>
                 <select
                   value={formData.district}
                   onChange={(e) =>
                     handleInputChange('district', e.target.value)
                   }
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2.5 focus:border-blue-500 focus:outline-none"
+                  className={getSelectClassName('district')}
                   disabled={!formData.apartment_location}
                 >
                   <option value="">Select</option>
@@ -738,15 +980,22 @@ export default function EditApartment(): React.ReactElement {
                     </option>
                   ))}
                 </select>
+                {fieldErrors.district && (
+                  <div className="mt-1 text-sm text-red-500">
+                    {fieldErrors.district}
+                  </div>
+                )}
               </div>
               <div>
-                <label className="mb-1 block text-sm">Subdistrict</label>
+                <label className="mb-1 block text-sm">
+                  Subdistrict <span className="text-red-500">*</span>
+                </label>
                 <select
                   value={formData.subdistrict}
                   onChange={(e) =>
                     handleInputChange('subdistrict', e.target.value)
                   }
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2.5 focus:border-blue-500 focus:outline-none"
+                  className={getSelectClassName('subdistrict')}
                   disabled={!formData.district}
                 >
                   <option value="">Select</option>
@@ -756,6 +1005,11 @@ export default function EditApartment(): React.ReactElement {
                     </option>
                   ))}
                 </select>
+                {fieldErrors.subdistrict && (
+                  <div className="mt-1 text-sm text-red-500">
+                    {fieldErrors.subdistrict}
+                  </div>
+                )}
               </div>
               <div>
                 <label className="mb-1 block text-sm">Postal Code</label>
