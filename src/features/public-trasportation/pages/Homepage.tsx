@@ -72,7 +72,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [selectedRouteIndex, setSelectedRouteIndex] = useState(0); // 🟢 State สำหรับเลือกเส้นทาง
+  const [selectedRouteIndex, setSelectedRouteIndex] = useState(0);
 
   const [originQuery, setOriginQuery] = useState(
     "King Mongkut's University of Technology Thonburi"
