@@ -122,10 +122,10 @@ export default function TransactionHistory({
   const transactions = useMemo<UnifiedTx[]>(() => {
     if (!wallet) return [];
 
-    const wData = data?.data?.data?.wallet_transactions || [];
-    const cData = data?.data?.data?.card_transactions || [];
+    const wData = data?.data?.wallet_transactions || [];
+    const cData = data?.data?.card_transactions || [];
     const userCardIds = new Set(
-      metroCardsResp?.data?.data?.metroCards?.map((c) => c.id) || []
+      metroCardsResp?.data?.metroCards?.map((c) => c.id) || []
     );
 
     const mappedWallet = wData
