@@ -8,6 +8,10 @@ const STATUS_COLORS: Record<string, string> = {
   confirmed: 'bg-blue-100 text-blue-700',
   pending: 'bg-gray-100 text-gray-700',
   completed: 'bg-emerald-100 text-emerald-700',
+  dispensed: 'bg-purple-100 text-purple-700',
+  fulfilled: 'bg-teal-100 text-teal-700',
+  cancelled: 'bg-rose-100 text-rose-700',
+  canceled: 'bg-rose-100 text-rose-700',
 };
 
 interface StatusPillProps {

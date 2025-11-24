@@ -1,4 +1,5 @@
 import { apiClient } from '@/lib/apiClient';
+import { isAxiosError } from 'axios';
 import type {
   ApiSuccess,
   AppointmentListParams,
@@ -16,6 +17,12 @@ import type {
   UpdateMedicinePayload,
   PaginatedPrescriptions,
   PrescriptionListParams,
+  Prescription,
+  CreatePrescriptionPayload,
+  UpdatePrescriptionPayload,
+  PaginatedDoctors,
+  DoctorListParams,
+  CreateAppointmentPayload,
 } from '@/features/_healthcare/types';
 
 const sanitizeParams = (
@@ -102,6 +109,45 @@ export const fetchAppointments = async (params: AppointmentListParams = {}) => {
   return data.data;
 };
 
+export const fetchDoctors = async (params: DoctorListParams = {}) => {
+  const query = sanitizeParams({
+    page: 1,
+    limit: 50,
+    sortBy: 'specialization',
+    sortOrder: 'asc',
+    ...params,
+  });
+
+  const { data } = await apiClient.get<ApiSuccess<PaginatedDoctors>>(
+    '/doctors',
+    {
+      params: query,
+    }
+  );
+
+  return data.data;
+};
+
+export const createAppointment = async (payload: CreateAppointmentPayload) => {
+  try {
+    const { data } = await apiClient.post<
+      ApiSuccess<{ appointment: PaginatedAppointments['appointments'][number] }>
+    >('/appointments', payload);
+
+    return data.data.appointment;
+  } catch (error) {
+    if (isAxiosError(error)) {
+      const message =
+        (error.response?.data as { message?: string } | undefined)?.message ??
+        error.message ??
+        'Unable to book appointment.';
+      throw new Error(message);
+    }
+
+    throw error;
+  }
+};
+
 export const fetchMedicineInventory = async (
   params: MedicineInventoryListParams = {}
 ) => {
@@ -163,6 +209,29 @@ export const fetchPrescriptions = async (
   );
 
   return data.data;
+};
+
+export const createPrescription = async (
+  payload: CreatePrescriptionPayload
+) => {
+  const { data } = await apiClient.post<
+    ApiSuccess<{ prescription: Prescription }>
+  >('/prescriptions', payload);
+  return data.data.prescription;
+};
+
+export const updatePrescription = async (
+  id: number,
+  payload: UpdatePrescriptionPayload
+) => {
+  const { data } = await apiClient.put<
+    ApiSuccess<{ prescription: Prescription }>
+  >(`/prescriptions/${id}`, payload);
+  return data.data.prescription;
+};
+
+export const deletePrescription = async (id: number) => {
+  await apiClient.delete(`/prescriptions/${id}`);
 };
 
 export const createBed = async (payload: BedPayload) => {

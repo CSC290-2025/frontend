@@ -102,10 +102,11 @@ export interface Appointment {
   id: number;
   patientId: Nullable<number>;
   facilityId: Nullable<number>;
-  staffUserId: Nullable<number>;
+  doctorId: Nullable<number>;
   appointmentAt: Nullable<string>;
   type: Nullable<string>;
   status: Nullable<string>;
+  consultationFee: Nullable<number>;
   createdAt: string;
 }
 
@@ -123,10 +124,18 @@ export interface AppointmentListParams {
   sortOrder?: 'asc' | 'desc';
   patientId?: number;
   facilityId?: number;
-  staffUserId?: number;
-  status?: string;
+  doctorId?: number;
   type?: string;
   search?: string;
+}
+
+export interface CreateAppointmentPayload {
+  patientId?: number;
+  facilityId?: number;
+  appointmentAt?: string;
+  type?: string;
+  doctorId?: number;
+  consultationFee?: number;
 }
 
 export interface MedicineInventory {
@@ -166,12 +175,19 @@ export interface CreateMedicinePayload {
 
 export type UpdateMedicinePayload = CreateMedicinePayload;
 
+export interface MedicineListItem {
+  medicineId?: number;
+  name: string;
+  quantity: number;
+  dosage?: string | null;
+}
+
 export interface Prescription {
   id: number;
   patientId: Nullable<number>;
   facilityId: Nullable<number>;
   status: Nullable<string>;
-  medicinesList: unknown;
+  medicinesList: MedicineListItem[] | null;
   totalAmount: Nullable<number>;
   createdAt: string;
 }
@@ -191,5 +207,46 @@ export interface PrescriptionListParams {
   patientId?: number;
   facilityId?: number;
   status?: string;
+  search?: string;
+}
+
+export interface CreatePrescriptionPayload {
+  patientId?: number;
+  facilityId?: number;
+  status?: string;
+  medicinesList?: MedicineListItem[];
+  totalAmount?: number;
+}
+
+export type UpdatePrescriptionPayload = {
+  patientId?: number | null;
+  facilityId?: number | null;
+  status?: string | null;
+  medicinesList?: MedicineListItem[] | null;
+  totalAmount?: number | null;
+};
+
+export interface Doctor {
+  id: number;
+  specialization: Nullable<string>;
+  currentStatus: Nullable<string>;
+  consultationFee: Nullable<number>;
+  createdAt: string;
+}
+
+export interface PaginatedDoctors {
+  doctors: Doctor[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
+
+export interface DoctorListParams {
+  page?: number;
+  limit?: number;
+  sortBy?: 'id' | 'createdAt' | 'specialization';
+  sortOrder?: 'asc' | 'desc';
+  specialization?: string;
+  currentStatus?: string;
   search?: string;
 }
