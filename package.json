@@ -13,7 +13,6 @@
     "check": "eslint . && prettier --check .",
     "preview": "vite preview",
     "prepare": "husky",
-    "api:generate:local": "curl -s http://localhost:3000/doc > ../openapi.json && orval",
     "api:generate": "curl -s https://smartcity-api.sit.kmutt.ac.th/doc > ../openapi.json && orval",
     "api:types": "orval"
   },
