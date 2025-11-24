@@ -3,7 +3,7 @@ import { BarChart3, MapPin, Trash2, Navigation } from 'lucide-react';
 import Dashboard from '@/features/waste-management/pages/Dashboard.tsx';
 import BinsManagement from '@/features/waste-management/pages/BinsManagement';
 import WasteLogging from '@/features/waste-management/pages/WasteLogging';
-import NearestBins from '@/features/waste-management/pages/NearestBins';
+import { BinLocator } from '@/features/waste-management/pages/NearestBins';
 
 export default function WasteManagementPage() {
   const [currentPage, setCurrentPage] = useState('dashboard');
@@ -17,7 +17,7 @@ export default function WasteManagementPage() {
       case 'waste':
         return <WasteLogging />;
       case 'nearest':
-        return <NearestBins />;
+        return <BinLocator />;
       default:
         return <Dashboard />;
     }
