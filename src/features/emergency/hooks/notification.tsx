@@ -29,6 +29,8 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   const [fcmToken, setFcmToken] = useState('');
   const [notificationAccess, setNotificationAccess] = useState(false);
 
+  const expireTime = 8 * 60 * 60 * 1000;
+
   const keyMsg = 'Message';
   const [msgLocal, setMsgLocal] = useState<Message[]>(() => {
     if (typeof window === 'undefined' || !window.localStorage) {
@@ -74,16 +76,11 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     requestNotificationAccess();
-    const timeNow = new Date().getTime();
-    const expireTime = 8 * 60 * 60 * 1000;
-
-    const unsubcribe = onMessage(message, (payload) => {
-      console.log('Received Foreground message ', payload);
-
+    const unsubscribe = onMessage(message, (payload) => {
       const newMsg: Message = {
         title: payload.notification?.title || '',
         body: payload.notification?.body || '',
-        timestamp: timeNow,
+        timestamp: Date.now(),
       };
       toast(`${newMsg.title}`, {
         description: newMsg.body,
@@ -92,7 +89,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 
       setMsgLocal((prev) => {
         let existItem = false;
-        prev.map((p) => {
+        prev.forEach((p) => {
           if (p.title === newMsg.title && p.body === newMsg.body) {
             existItem = true;
           }
@@ -104,26 +101,19 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
         return prev;
       });
     });
-
-    const store = localStorage.getItem(keyMsg);
-    console.log(JSON.stringify(store));
-    if (store) {
-      const arr: Message[] = JSON.parse(store);
-
-      arr.map((a, index) => {
-        if (a.timestamp !== undefined) {
-          if (a.timestamp > expireTime) {
-            arr.splice(index, 1);
-          }
-        }
-      });
-      localStorage.setItem(keyMsg, JSON.stringify(arr));
-    }
-    return () => unsubcribe();
+    return () => unsubscribe();
   }, []);
 
   useEffect(() => {
-    window.localStorage.setItem(keyMsg, JSON.stringify(msgLocal));
+    const now = Date.now();
+    const arr = msgLocal.filter((a) => {
+      return a.timestamp !== undefined && a.timestamp >= now - expireTime;
+    });
+
+    if (arr.length !== msgLocal.length) {
+      setMsgLocal(arr);
+    }
+    localStorage.setItem(keyMsg, JSON.stringify(arr));
   }, [msgLocal]);
 
   return (
