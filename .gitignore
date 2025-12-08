@@ -1,0 +1,85 @@
+# Dependencies
+node_modules
+
+# Package Manager Files
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+bun.lockb
+.yarn/
+
+# Build & Output
+/dist
+/dist-ssr
+/coverage
+.eslintcache
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Environment Variables & Secrets
+.env
+.env.local
+.env.*.local
+*.local
+
+# Editor & OS Specific
+.idea
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.DS_Store
+Thumbs.db
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Open API one
+/src/api/generated/
+
+# Claude Code
+.claude/
+CLAUDE.md
+
+# Cursor AI
+.cursor/
+.cursorignore
+.cursorban
+
+# Codeium AI
+.codeium/
+.codeiumignore
+
+# GitHub Copilot
+.copilotignore
+
+# Tabnine
+.tabnine/
+
+# AWS CodeWhisperer
+**/CodeWhisperer/
+
+# AI tools' temporary & metadata files
+*.ai.log
+*.agent.json
+*.history.json
+*.prompt.log
+*.chatcache
+.ai_temp/
+.ai_cache/
+
+# VSCode AI integrations cache
+.vscode/.ai/
+.vscode-ai/
+
+#open API one
+/src/api/generated/
+/src/features/Financial/src/api
+src/features/openapi.json

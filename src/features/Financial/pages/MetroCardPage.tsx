@@ -1,0 +1,104 @@
+import {
+  useGetMetroCardsMe,
+  useGetMetroCardsUserUserId,
+  usePostMetroCards,
+} from '@/api/generated/metro-cards';
+import { useParams } from '@/router';
+import AmountBox from '../components/metro-cards/AmountBox';
+import { ArrowLeft, Plus } from 'lucide-react';
+import Loading from '../components/metro-cards/Loading';
+import ReuseableButton from '../components/metro-cards/ReuseableButton';
+import EmptyCard from '../components/metro-cards/EmptyCard';
+import MetroCard from '../components/metro-cards/MetroCard';
+import { toast } from 'sonner';
+import type {
+  PostMetroCards400Error,
+  PostMetroCards409Error,
+} from '@/api/generated/model';
+import type { AxiosError } from 'axios';
+import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router';
+
+export default function MetroCardPage() {
+  const navigate = useNavigate();
+
+  const { data: metroCardResponse, refetch, isLoading } = useGetMetroCardsMe();
+
+  const { mutate, isPending } = usePostMetroCards({
+    mutation: {
+      onSuccess: (data) => {
+        refetch();
+        toast.success(data.message);
+      },
+      onError: (
+        error: AxiosError<PostMetroCards400Error | PostMetroCards409Error>
+      ) => {
+        const err = error.response?.data?.message;
+        toast.error(err);
+      },
+    },
+  });
+
+  const metroCards = metroCardResponse?.data?.metroCards;
+
+  if (isLoading) return <Loading />;
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="flex justify-between">
+          <div className="mb-8">
+            <h1 className="text-3xl font-bold text-gray-900">
+              Metro Card Wallet
+            </h1>
+            <p className="mt-1 text-gray-600">
+              Manage your metro cards and check balances
+            </p>
+          </div>
+          <Button
+            variant="ghost"
+            onClick={() => navigate('/financial')}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Dashboard
+          </Button>
+        </div>
+        <AmountBox
+          balance={
+            metroCards
+              ?.filter((card) => card.status === 'active')
+              .reduce((acc, card) => acc + card.balance!, 0) ?? 0
+          }
+          onRefetch={refetch}
+          isLoading={isLoading}
+        />
+        <div className="mb-6 flex items-center justify-between">
+          <h2 className="text-xl font-semibold text-gray-900">
+            Your Metro Cards
+          </h2>
+          <ReuseableButton
+            text="Add New Card"
+            icon={<Plus />}
+            isPending={isPending}
+            spinner
+            className="h-10 cursor-pointer"
+            color="cyan"
+            onClick={() => mutate({ data: {} })}
+          />
+        </div>
+        {metroCards?.length === 0 ? (
+          <EmptyCard isPending={isPending} mutate={mutate} />
+        ) : (
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {metroCards?.map((card) => (
+              <div key={card.id} className="cursor-pointer">
+                <MetroCard card={card} />
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

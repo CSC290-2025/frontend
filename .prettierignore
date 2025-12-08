@@ -1,0 +1,75 @@
+# Dependencies
+node_modules
+
+# Build & Output
+dist
+dist-ssr
+coverage
+
+# Cache
+.eslintcache
+.vite
+.turbo
+.parcel-cache
+
+# Git / Hooks / Config
+.husky
+.prettierignore
+.gitignore
+
+# Package manager lock files
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# Logs and environment
+*.log
+.env*
+!/.env.example
+
+# Assets (binary files don’t need formatting)
+*.svg
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.ico
+*.webp
+*.mp4
+*.woff
+*.woff2
+
+# Claude Code
+.claude/
+CLAUDE.md
+
+# Cursor AI
+.cursor/
+.cursorignore
+.cursorban
+
+# Codeium AI
+.codeium/
+.codeiumignore
+
+# GitHub Copilot
+.copilotignore
+
+# Tabnine
+.tabnine/
+
+# AWS CodeWhisperer
+**/CodeWhisperer/
+
+# AI tools' temporary & metadata files
+*.ai.log
+*.agent.json
+*.history.json
+*.prompt.log
+*.chatcache
+.ai_temp/
+.ai_cache/
+
+# VSCode AI integrations cache
+.vscode/.ai/
+.vscode-ai/
