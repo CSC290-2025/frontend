@@ -18,9 +18,6 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
     total_seats: 0,
     start_at: '',
     end_at: '',
-    address_id: null as number | null,
-    organization_id: null as number | null,
-    event_tag_id: null as number | null,
     // Volunteer Fields (optional)
     volunteer_required: false,
     created_by_user_id: 1,
@@ -65,9 +62,6 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
       total_seats: 0, // Regular events don't have volunteer seats
       start_at: formatDatetime(formData.start_at),
       end_at: formatDatetime(formData.end_at),
-      address_id: formData.address_id,
-      organization_id: formData.organization_id,
-      event_tag_id: formData.event_tag_id,
     };
 
     // Volunteer event payload (if volunteer is required)
@@ -80,7 +74,6 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
           start_at: formatDatetime(formData.start_at),
           end_at: formatDatetime(formData.end_at),
           created_by_user_id: formData.created_by_user_id || 1,
-          address_id: formData.address_id || 1,
           registration_deadline: formData.registration_deadline
             ? formatDatetime(formData.registration_deadline)
             : null,
@@ -88,19 +81,16 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
       : null;
 
     try {
-      // Create promises array - always create regular event
       const promises = [createEvent(eventPayload)];
 
-      // Add volunteer event creation if needed
       if (volunteerEventPayload) {
-        console.log(
-          'Submitting volunteer event with payload:',
-          volunteerEventPayload
-        );
         promises.push(createVolunteerEvent(volunteerEventPayload));
       }
 
-      await Promise.all(promises);
+      const results = await Promise.all(promises);
+
+      console.log('All API results:', results);
+
       alert(
         formData.volunteer_required
           ? 'Event and Volunteer Event created successfully!'
@@ -163,7 +153,7 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
             onChange={(e) =>
               setFormData({ ...formData, title: e.target.value })
             }
-            placeholder="Event title (Type 'fail' to test error)"
+            placeholder="Event title (e.g., Freecycle Community Giveaway)"
             className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
           />
         </div>
@@ -198,72 +188,21 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
           </div>
         </div>
 
-        {/* Address, Organization, Event Tag IDs */}
-        <div className="grid grid-cols-3 gap-4">
-          <div>
-            <label className="mb-2 block text-sm font-medium text-gray-900">
-              Address ID
-            </label>
-            <input
-              type="number"
-              value={formData.address_id ?? ''}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  address_id: e.target.value ? parseInt(e.target.value) : null,
-                })
-              }
-              className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
-            />
-          </div>
-          <div>
-            <label className="mb-2 block text-sm font-medium text-gray-900">
-              Organization ID
-            </label>
-            <input
-              type="number"
-              value={formData.organization_id ?? ''}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  organization_id: e.target.value
-                    ? parseInt(e.target.value)
-                    : null,
-                })
-              }
-              className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
-            />
-          </div>
-          <div>
-            <label className="mb-2 block text-sm font-medium text-gray-900">
-              Event Tag ID
-            </label>
-            <input
-              type="number"
-              value={formData.event_tag_id ?? ''}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  event_tag_id: e.target.value
-                    ? parseInt(e.target.value)
-                    : null,
-                })
-              }
-              className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
-            />
-          </div>
-        </div>
-
         {/* Event Description */}
         <div>
           <label className="mb-2 block text-sm font-medium text-gray-900">
             Description
           </label>
+          <p className="mb-3 text-sm text-gray-600">
+            Include the event location, time, what to bring, planned activities,
+            and any important information attendees should know.
+          </p>
           <textarea
             value={formData.description}
             onChange={(e) =>
               setFormData({ ...formData, description: e.target.value })
             }
+            placeholder="E.g., Central Park, Bangkok. Join our secondhand exchange from 9:00 AM–12:00 PM. Bring gently used items to swap or share. Free refreshments provided."
             rows={4}
             className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
           />
