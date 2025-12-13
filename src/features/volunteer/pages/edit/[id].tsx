@@ -12,6 +12,8 @@ interface VolunteerEvent {
   registration_deadline: string | null;
   total_seats: number;
   image_url: string | null;
+
+  tag: string | undefined;
 }
 
 interface UpdateEventData {
@@ -22,6 +24,7 @@ interface UpdateEventData {
   registration_deadline?: string; // This will hold 'YYYY-MM-DD' string from the form
   total_seats?: number;
   image_url?: string;
+  tag?: string;
 }
 
 interface ApiResponse<T> {
@@ -58,7 +61,19 @@ const formatISODateForInput = (
 export default function EditVolunteerPage() {
   const navigate = useNavigate();
   const { id } = useParams('/volunteer/edit/:id');
-
+  const [selectedCategory, setSelectedCategory] = useState<string | undefined>(
+    undefined
+  );
+  const postTag = [
+    'Environment',
+    'Freecycle',
+    'Weather',
+    'Education',
+    'Funding',
+    'Disability/Elderly Support',
+    'Community & Social',
+  ];
+  const [tags] = useState(postTag);
   const [formData, setFormData] = useState<Partial<UpdateEventData>>({
     title: '',
     description: '',
@@ -67,6 +82,7 @@ export default function EditVolunteerPage() {
     registration_deadline: '', // Will store YYYY-MM-DD
     total_seats: 10,
     image_url: '',
+    tag: '',
   });
 
   const [isLoading, setIsLoading] = useState(true);
@@ -98,7 +114,9 @@ export default function EditVolunteerPage() {
             ),
             total_seats: event.total_seats,
             image_url: event.image_url || '',
+            tag: event.tag,
           });
+          setSelectedCategory(event.tag);
         } else {
           throw new Error('API did not return success');
         }
@@ -156,6 +174,7 @@ export default function EditVolunteerPage() {
       total_seats: formData.total_seats
         ? Number(formData.total_seats)
         : undefined,
+      tag: selectedCategory,
     };
 
     // Remove undefined values from payload before sending
@@ -341,7 +360,41 @@ export default function EditVolunteerPage() {
               />
             </div>
           </div>
+          <div className="grid grid-cols-3 gap-3">
+            {tags.map((category) => {
+              const isSelected = selectedCategory === category;
 
+              return (
+                <button
+                  key={category}
+                  type="button"
+                  onClick={() => {
+                    setSelectedCategory(category);
+                    setFormData((prev) => ({ ...prev, category }));
+                  }}
+                  className={`flex items-center gap-2 rounded-lg border px-4 py-2 text-sm ${
+                    isSelected
+                      ? 'border-cyan-500 bg-cyan-50 text-cyan-700'
+                      : 'border-gray-300 bg-gray-50 text-gray-700'
+                  }`}
+                >
+                  <div
+                    className={`flex h-4 w-4 items-center justify-center rounded-full border-2 ${
+                      isSelected
+                        ? 'border-cyan-500 bg-cyan-500'
+                        : 'border-gray-400'
+                    }`}
+                  >
+                    {isSelected && (
+                      <div className="h-2 w-2 rounded-full bg-white" />
+                    )}
+                  </div>
+
+                  {category}
+                </button>
+              );
+            })}
+          </div>
           {/* Error Message */}
           {error && (
             <div className="rounded-lg border border-red-300 bg-red-100 p-3 text-red-800">

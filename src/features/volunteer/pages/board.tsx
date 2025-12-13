@@ -7,6 +7,8 @@ import {
 } from 'lucide-react';
 import { useNavigate } from '@/router';
 import { apiClient } from '@/lib/apiClient';
+import { Filter } from 'lucide-react';
+import TagFilter from '@/features/volunteer/components/TagFilter';
 
 // --- Interfaces (No Change) ---
 interface VolunteerEvent {
@@ -17,6 +19,7 @@ interface VolunteerEvent {
   current_participants: number;
   total_seats: number;
   image_url: string | null;
+  tag: string | undefined;
 }
 
 interface ApiResponse {
@@ -133,6 +136,10 @@ const PaginationControls: React.FC<PaginationProps> = ({
 export default function CityVolunteerHomepage() {
   const navigate = useNavigate();
 
+  const [selectedCategory, setSelectedCategory] = useState<string | undefined>(
+    undefined
+  );
+  const [showFilters, setShowFilters] = useState(false);
   const [volunteerJobs, setVolunteerJobs] = useState<VolunteerEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -144,7 +151,15 @@ export default function CityVolunteerHomepage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const EVENTS_PER_PAGE = 9;
-
+  const tags = [
+    'Environment',
+    'Freecycle',
+    'Weather',
+    'Education',
+    'Funding',
+    'Disability/Elderly Support',
+    'Community & Social',
+  ];
   useEffect(() => {
     const fetchEvents = async () => {
       setIsLoading(true);
@@ -154,6 +169,7 @@ export default function CityVolunteerHomepage() {
           page: currentPage,
           limit: EVENTS_PER_PAGE,
           search: debouncedSearch || undefined,
+          tag: selectedCategory || undefined, // ✅ ADD THIS
         };
 
         const response = await apiClient.get<ApiResponse>(
@@ -175,7 +191,7 @@ export default function CityVolunteerHomepage() {
     };
 
     fetchEvents();
-  }, [debouncedSearch, currentPage]);
+  }, [debouncedSearch, currentPage, selectedCategory]);
 
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= totalPages) {
@@ -222,10 +238,28 @@ export default function CityVolunteerHomepage() {
           </div>
 
           {/* Volunteer Jobs Section */}
-          <h2 className="mb-6 text-3xl font-bold text-gray-800">
-            Current Volunteer Opportunities 🌟
-          </h2>
-
+          <div className="flex">
+            <h2 className="mb-6 text-3xl font-bold text-gray-800">
+              Current Volunteer Opportunities 🌟
+            </h2>
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className="flex h-10 items-center gap-1 rounded-full border border-gray-300 bg-white px-3 py-1 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:border-cyan-500"
+            >
+              <Filter className="h-4 w-4" />
+              Filter
+            </button>
+          </div>
+          {showFilters && (
+            <div className="rounded-2xl bg-white p-6 shadow-md">
+              <h3 className="mb-4 font-semibold text-gray-900">Categories</h3>
+              <TagFilter
+                categories={tags}
+                selectedCategory={selectedCategory}
+                onChange={setSelectedCategory}
+              />
+            </div>
+          )}
           {isLoading && (
             <div className="text-center text-gray-500">Loading jobs...</div>
           )}

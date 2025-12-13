@@ -25,12 +25,30 @@ interface ApiPayload {
   created_by_user_id: number;
   department_id: number;
   address_id: number;
+  tag?: string;
   image_url?: string;
 }
 
 export default function CreateVolunteerPost() {
   const navigate = useNavigate(); // Hook for navigation
   const userId = useGetAuthMe().data?.data?.userId.toString() ?? '';
+  const postTag = [
+    'Environment',
+    'Freecycle',
+    'Weather',
+    'Education',
+    'Funding',
+    'Disability/Elderly Support',
+    'Community & Social',
+  ];
+  const [tags] = useState(postTag);
+  const [selectedCategory, setSelectedCategory] = useState<string | undefined>(
+    undefined
+  );
+  const toggleCategory = (category: string) => {
+    setSelectedCategory((prev) => (prev === category ? undefined : category));
+    handleInputChange('tag', category);
+  };
   const [formData, setFormData] = useState({
     title: '',
     organization: '',
@@ -44,6 +62,7 @@ export default function CreateVolunteerPost() {
     description: '',
     activities: [''],
     requirements: [''],
+    tag: '',
   });
   const [uploadedImage, setUploadedImage] = useState<
     string | ArrayBuffer | null
@@ -190,6 +209,7 @@ ${requirements
       created_by_user_id: Number(userId),
       department_id: 1,
       address_id: 1,
+      tag: selectedCategory,
     };
 
     try {
@@ -508,6 +528,7 @@ ${requirements
                 Add Requirement
               </button>
             </div>
+
             <div className="space-y-3">
               {formData.requirements.map((requirement, index) => (
                 <div key={index} className="flex items-start gap-3">
@@ -534,7 +555,44 @@ ${requirements
               ))}
             </div>
           </div>
+          <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-6">
+            <div className="mb-4 flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
+              <h2 className="text-lg font-bold text-gray-800">Tags</h2>
+            </div>
+            {/* Tag */}
+            <div className="grid grid-cols-3 gap-3">
+              {tags.map((category) => {
+                const isSelected = selectedCategory === category;
 
+                return (
+                  <button
+                    key={category}
+                    type="button"
+                    onClick={() => toggleCategory(category)}
+                    className={`flex items-center gap-2 rounded-lg border px-4 py-2 text-sm ${
+                      isSelected
+                        ? 'border-cyan-500 bg-cyan-50 text-cyan-700'
+                        : 'border-gray-300 bg-gray-50 text-gray-700'
+                    }`}
+                  >
+                    <div
+                      className={`flex h-4 w-4 items-center justify-center rounded-full border-2 ${
+                        isSelected
+                          ? 'border-cyan-500 bg-cyan-500'
+                          : 'border-gray-400'
+                      }`}
+                    >
+                      {isSelected && (
+                        <div className="h-2 w-2 rounded-full bg-white" />
+                      )}
+                    </div>
+
+                    {category}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
           {/* Error Message */}
           {error && (
             <div className="rounded-lg border border-red-300 bg-red-100 p-3 text-red-800">

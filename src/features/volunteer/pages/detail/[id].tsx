@@ -19,6 +19,7 @@ interface VolunteerEvent {
   created_by_user_id: number | null;
   organization_name?: string | null;
   duration?: string | null;
+  tag: string | undefined;
 }
 
 interface ApiResponse<T> {
@@ -64,6 +65,7 @@ export default function VolunteerDetailPage() {
           setEvent(fetchedEvent);
           setIsJoined(userJoinedStatus);
           setCreatorId(fetchedEvent.created_by_user_id);
+          console.log(fetchedEvent);
         } else {
           throw new Error('API did not return success');
         }
@@ -255,12 +257,15 @@ export default function VolunteerDetailPage() {
       <div className="mx-auto max-w-3xl px-4 py-8 md:px-8">
         <div className="space-y-6">
           {/* Donation */}
-          <DonateModal
-            wallet={wallet}
-            userId={userId}
-            transferToUserId={creatorId ? creatorId.toString() : ''}
-            onSuccess={refetch}
-          />
+
+          {event.tag === 'Funding' && (
+            <DonateModal
+              wallet={wallet}
+              userId={userId}
+              transferToUserId={creatorId ? creatorId.toString() : ''}
+              onSuccess={refetch}
+            />
+          )}
           {event.image_url && (
             <img
               src={event.image_url}
