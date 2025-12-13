@@ -3,7 +3,9 @@ import { initializeApp } from 'firebase/app';
 import {
   getDatabase,
   ref,
+  query,
   push,
+  child,
   set,
   update,
   onValue,
@@ -12,6 +14,7 @@ import {
 } from 'firebase/database';
 import type { FirebaseApp } from 'firebase/app';
 import type { Database, DataSnapshot } from 'firebase/database';
+import { getBaseAPIURL } from '@/lib/apiClient.ts';
 
 // กำหนดค่า Firebase (แทนที่ด้วยค่าโปรเจกต์ของคุณ!)
 /*const firebaseConfig = {
@@ -55,6 +58,8 @@ interface TrafficData {
   roadid: number;
   lat: number;
   lng: string;
+  marker_id: number;
+  status: number;
   autoON: boolean;
   color: number;
   remaintime: number;
@@ -76,13 +81,15 @@ const TrafficDataForm: React.FC = () => {
   const [roadid, setRoadid] = useState<string>('');
   const [lat, setLat] = useState<string>('');
   const [lng, setLng] = useState<string>('');
+  const [marker_id, setMarker_id] = useState<string>('');
+  const [status, setStatus] = useState<string>('');
   const [autoON, setAutoON] = useState<boolean>(true);
   const [color, setColor] = useState<string>('');
   const [remaintime, setRemaintime] = useState<string>('');
 
   // State สำหรับการอัปเดต
-  const [updateKey, setUpdateKey] = useState<string>('');
-  const [updateRemainTime, setUpdateRemainTime] = useState<string>('');
+  const [lightID, setlightID] = useState<string>('');
+  const [lightkey, setlightkey] = useState<string>('');
 
   const [Trafficlist, setTrafficList] = useState<TrafficRecord[]>([]);
 
@@ -113,6 +120,8 @@ const TrafficDataForm: React.FC = () => {
                 roadid: Number(data[key].roadid) || 0,
                 lat: Number(data[key].lat) || 0,
                 lng: String(data[key].lng) || '',
+                status: Number(data[key].status) || 0,
+                marker_id: Number(data[key].marker_id) || 0,
                 autoON: Boolean(data[key].autoON),
                 color: Number(data[key].color) || 0,
                 remaintime: Number(data[key].remaintime) || 0,
@@ -128,7 +137,7 @@ const TrafficDataForm: React.FC = () => {
       (error) => {
         console.error('Error fetching traffic data:', error);
         setMessage({
-          text: `❌ ข้อผิดพลาดในการดึงข้อมูล Traffic: ${error.message}`,
+          text: `❌ Have problem with fetch data Traffic: ${error.message}`,
           isError: true,
         });
       }
@@ -151,38 +160,41 @@ const TrafficDataForm: React.FC = () => {
   const addNewTrafficLight = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // **[ปรับปรุง]** ตรวจสอบ Custom Key
-    if (
-      !newTrafficKey.trim() ||
-      !interid ||
-      !roadid ||
-      !lat ||
-      !lng ||
-      color === '' ||
-      remaintime === ''
-    ) {
+    if (!newTrafficKey.trim()) {
       setMessage({
-        text: 'กรุณากรอก **Key ที่ต้องการ** และข้อมูลไฟจราจรให้ครบ',
+        text: 'Please fill in all required fields including a valid Key naaa!',
         isError: true,
       });
+      console.log('Missing required fields or invalid Key');
+      console.log(
+        'data :',
+        interid,
+        roadid,
+        lat,
+        lng,
+        status,
+        color,
+        remaintime
+      );
       return;
     }
 
     setIsLoading(true);
     setMessage({
-      text: `⏳ กำลังบันทึกข้อมูลไฟจราจรใหม่ Key: ${newTrafficKey} ...`,
+      text: `⏳ saving new data Key: ${newTrafficKey} ...`,
       isError: false,
     });
 
     try {
-      // **[ปรับปรุง]** สร้าง Reference ไปยัง Path ที่กำหนด Key เอง
       const newTrafficRef = ref(db, `${selectref}/${newTrafficKey.trim()}`);
 
       const trafficData: TrafficData = {
         interid: Number(interid),
         roadid: Number(roadid),
         lat: Number(lat),
-        lng: lng.trim(),
+        lng: Number(lng),
+        marker_id: Number(newTrafficKey),
+        status: Number(status),
         autoON: autoON,
         color: Number(color),
         remaintime: Number(remaintime),
@@ -193,7 +205,7 @@ const TrafficDataForm: React.FC = () => {
       await set(newTrafficRef, trafficData);
 
       setMessage({
-        text: `✅ บันทึกข้อมูลไฟจราจรใหม่สำเร็จ! Key: ${newTrafficKey}`,
+        text: `✅ Successfully send data to firebase! Key: ${newTrafficKey}`,
         isError: false,
       });
       // ล้าง State
@@ -202,12 +214,14 @@ const TrafficDataForm: React.FC = () => {
       setRoadid('');
       setLat('');
       setLng('');
+      setMarker_id('');
+      setStatus('');
       setColor('');
       setRemaintime('');
     } catch (error: any) {
-      console.error('Error writing new data:', error);
+      console.error('Error writing new data to firebase ;-; :', error);
       setMessage({
-        text: `❌ เกิดข้อผิดพลาดในการบันทึกข้อมูลใหม่ : ${error.message}`,
+        text: `X  failed to save data to firebase ahhhhh : ${error.message}`,
         isError: true,
       });
     } finally {
@@ -217,70 +231,122 @@ const TrafficDataForm: React.FC = () => {
 
   // --- ฟังก์ชัน 2: อัปเดตข้อมูลที่มีอยู่ (Update) ---
 
-  const updateTrafficLight = async (e: React.FormEvent) => {
+  const searchFromBackend = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (!updateKey.trim() || updateRemainTime === '') {
+    if (!lightID.trim()) {
       setMessage({
-        text: 'กรุณากรอก Key และเวลาคงเหลือใหม่ให้ครบ',
+        text: 'Please provide a valid Key to search',
         isError: true,
       });
       return;
     }
 
-    setIsLoading(true);
-    setMessage({ text: '⏳ กำลังอัปเดตข้อมูล...', isError: false });
-
     try {
-      const trafficItemRef = ref(db, `${selectref}/` + updateKey.trim());
+      setIsLoading(true);
+      const url = getBaseAPIURL + `/traffic-lights/${lightID.trim()}`;
+      const res = await fetch(url);
 
-      const data = {
-        remaintime: Number(updateRemainTime),
-        lastUpdated: new Date().toISOString(),
-      };
+      if (!res.ok) {
+        throw new Error(`Failed to fetch traffic light. Status: ${res.status}`);
+      }
+      const response: any = await res.json();
+      console.log('Fetched traffic light details:', response);
 
-      await update(trafficItemRef, data);
-
+      setNewTrafficKey(lightID.trim());
+      setMarker_id(lightID.trim());
+      setInterid(response.data.trafficLight.intersection_id);
+      setRoadid(response.data.trafficLight.road_id);
+      setLat(response.data.trafficLight.location.coordinates[1]);
+      setLng(response.data.trafficLight.location.coordinates[0]);
+      setStatus(response.data.trafficLight.status);
+    } catch (err) {
+      console.error('Error loading traffic light details', err);
       setMessage({
-        text: `✅ อัปเดตเวลาคงเหลือ Key(id): ${updateKey} สำเร็จ!`,
-        isError: false,
-      });
-      setUpdateKey('');
-      setUpdateRemainTime('');
-    } catch (error: any) {
-      console.error('Error updating data:', error);
-      setMessage({
-        text: `❌ เกิดข้อผิดพลาดในการอัปเดต: ${error.message}`,
+        text: 'Wrong ID or cannot fetch data from backend',
         isError: true,
       });
     } finally {
       setIsLoading(false);
+      setlightID('');
+    }
+  };
+
+  const searchfromfirebase = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const searchTerm = lightkey.trim();
+
+    if (!lightkey.trim()) {
+      setMessage({
+        text: 'Please provide a valid Key to search',
+        isError: true,
+      });
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      const trafficRef = child(ref(db), `${selectref}/${searchTerm}`);
+
+      // 2. Use 'get' for a one-time fetch (returns a Promise)
+      const snapshot: DataSnapshot = await get(trafficRef);
+
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+
+        // Assuming your structure is simple: /selectref/lightkey -> { object data }
+        // If the key itself is nested further (e.g., /selectref/lightkey/actual_data_key)
+        // you might need to iterate through 'data' as in your original attempt.
+
+        if (data) {
+          console.log('✅ Found traffic light details from firebase:', data);
+
+          setNewTrafficKey(searchTerm);
+          setMarker_id(searchTerm);
+          setInterid(data.interid);
+          setRoadid(data.roadid);
+          setLat(data.lat);
+          setLng(data.lng);
+          setStatus(data.status || 0);
+          setRemaintime(data.remaintime);
+
+          setMessage({
+            text: `✅ Successfully loaded data for Key: ${searchTerm}`,
+            isError: false,
+          });
+        }
+      } else {
+        console.log(
+          `Traffic Light with Key "${searchTerm}" not found at path: ${trafficRef.toString()}`
+        );
+        setMessage({
+          text: `❌ Traffic Light with Key "${searchTerm}" not found.`,
+          isError: true,
+        });
+        // setTrafficLightData(null);
+      }
+    } catch (err) {
+      console.error('Error loading traffic light details', err);
+      setMessage({
+        text: 'Wrong ID or cannot fetch data from firebase',
+        isError: true,
+      });
+    } finally {
+      setIsLoading(false);
+      setlightkey('');
     }
   };
 
   // --- ส่วน Render ของ Component ---
   return (
-    <div
-      style={{
-        padding: '20px',
-        maxWidth: '1000px',
-        margin: '20px auto',
-        border: '1px solid #ccc',
-        borderRadius: '8px',
-      }}
-    >
-      <h1 style={{ textAlign: 'center' }}>
-        🚦 จัดการข้อมูล Traffic Light (Firebase Realtime DB)
+    <div className="m-2 mt-5 justify-self-center rounded-md border-1 border-gray-300 p-5 lg:w-250">
+      <h1 className="mb-6 rounded-md bg-gradient-to-r from-green-400 to-blue-500 p-3 text-center font-bold text-white">
+        🚦 Traffic Light management (Firebase Realtime DB)
       </h1>
 
       {message.text && (
         <div
-          style={{
-            marginBottom: '15px',
-            padding: '10px',
-            backgroundColor: message.isError ? '#fdd' : '#dfd',
-            border: `1px solid ${message.isError ? 'red' : 'green'}`,
-          }}
+          className={`${message.isError ? 'mb-3 rounded-md bg-red-200 p-3' : 'mb-3 rounded-md bg-green-200 p-3'}`}
         >
           {message.text}
         </div>
@@ -288,42 +354,30 @@ const TrafficDataForm: React.FC = () => {
 
       <hr />
 
-      <div style={{ display: 'flex', gap: '40px' }}>
+      <div className="flex flex-row justify-between space-x-5">
         {/* -------------------- ภาค 1: เพิ่มข้อมูลใหม่ (กำหนด Key เอง) -------------------- */}
-        <div
-          style={{
-            flex: 1,
-            padding: '15px',
-            border: '1px solid #eee',
-            borderRadius: '4px',
-          }}
-        >
-          <h2>🆕 เพิ่ม Traffic Light ใหม่ (Custom Key)</h2>
+        <div className="rounded-md border p-5">
+          <h2 className="mb-3 font-bold">Traffic Light Input</h2>
+          <p className="mb-2 text-sm text-gray-400">
+            Input Trafficlight data to add new light or update light with same
+            id on firebase
+          </p>
           <form onSubmit={addNewTrafficLight}>
             {/* **[เพิ่มใหม่]** Input สำหรับ Custom Key */}
             <div style={{ marginBottom: '15px' }}>
               <label
                 htmlFor="newTrafficKey"
-                style={{
-                  display: 'block',
-                  marginBottom: '5px',
-                  fontWeight: 'bold',
-                }}
+                className="font-bold text-green-500"
               >
-                🔑 Traffic Key (ID ที่กำหนดเอง):
+                Traffic Key (Traffic_id):
               </label>
               <input
                 id="newTrafficKey"
                 type="text"
                 value={newTrafficKey}
                 onChange={(e) => setNewTrafficKey(e.target.value)}
-                placeholder="เช่น I101 (ต้องไม่ซ้ำใคร)"
-                style={{
-                  width: '100%',
-                  padding: '8px',
-                  boxSizing: 'border-box',
-                  border: '2px solid #ffc107',
-                }}
+                placeholder="Traffic_id"
+                className="mt-1 w-full rounded-sm border-2 border-green-500 p-2"
                 disabled={isLoading}
                 required
               />
@@ -332,92 +386,72 @@ const TrafficDataForm: React.FC = () => {
             <hr style={{ margin: '15px 0' }} />
 
             <div style={{ marginBottom: '10px' }}>
-              <label
-                htmlFor="interid"
-                style={{ display: 'block', marginBottom: '5px' }}
-              >
-                Intersection ID (interid):
-              </label>
+              <label htmlFor="interid">Intersection ID (interid):</label>
               <input
                 id="interid"
                 type="number"
                 value={interid}
                 onChange={(e) => setInterid(e.target.value)}
-                placeholder="เช่น 101"
-                style={{
-                  width: '100%',
-                  padding: '8px',
-                  boxSizing: 'border-box',
-                }}
+                placeholder="intersection_id"
+                className="mt-1 w-full rounded-sm border border-gray-300 p-2"
                 disabled={isLoading}
                 required
               />
             </div>
 
             <div style={{ marginBottom: '10px' }}>
-              <label
-                htmlFor="roadid"
-                style={{ display: 'block', marginBottom: '5px' }}
-              >
-                Road ID (roadid):
-              </label>
+              <label htmlFor="roadid">Road ID (roadid):</label>
               <input
                 id="roadid"
                 type="number"
                 value={roadid}
                 onChange={(e) => setRoadid(e.target.value)}
-                placeholder="เช่น 5"
-                style={{
-                  width: '100%',
-                  padding: '8px',
-                  boxSizing: 'border-box',
-                }}
+                placeholder="Road_id"
+                className="mt-1 w-full rounded-sm border border-gray-300 p-2"
                 disabled={isLoading}
                 required
               />
             </div>
 
             <div style={{ marginBottom: '10px' }}>
-              <label
-                htmlFor="lat"
-                style={{ display: 'block', marginBottom: '5px' }}
-              >
-                Latitude (lat):
-              </label>
+              <label htmlFor="lat">Latitude (lat):</label>
               <input
                 id="lat"
                 type="number"
                 value={lat}
                 onChange={(e) => setLat(e.target.value)}
-                placeholder="เช่น 13.7563"
-                style={{
-                  width: '100%',
-                  padding: '8px',
-                  boxSizing: 'border-box',
-                }}
+                placeholder="Example : 13.7563"
+                className="mt-1 w-full rounded-sm border border-gray-300 p-2"
                 disabled={isLoading}
                 required
               />
             </div>
 
             <div style={{ marginBottom: '10px' }}>
-              <label
-                htmlFor="lng"
-                style={{ display: 'block', marginBottom: '5px' }}
-              >
-                Longitude (lng):
-              </label>
+              <label htmlFor="lng">Longitude (lng):</label>
               <input
                 id="lng"
                 type="text"
                 value={lng}
                 onChange={(e) => setLng(e.target.value)}
-                placeholder="เช่น 100.5018"
-                style={{
-                  width: '100%',
-                  padding: '8px',
-                  boxSizing: 'border-box',
-                }}
+                placeholder="Example : 100.5018"
+                className="mt-1 w-full rounded-sm border border-gray-300 p-2"
+                disabled={isLoading}
+                required
+              />
+            </div>
+
+            <div style={{ marginBottom: '10px' }}>
+              <label htmlFor="status">
+                Status (0 = Normal, 1 = Broken, 2 = Maintenance) :
+              </label>
+              <input
+                id="status"
+                type="number"
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+                placeholder="0,1,2"
+                className="mt-1 w-full rounded-sm border border-gray-300 p-2"
                 disabled={isLoading}
                 required
               />
@@ -428,21 +462,17 @@ const TrafficDataForm: React.FC = () => {
                 htmlFor="color"
                 style={{ display: 'block', marginBottom: '5px' }}
               >
-                Current Color (color):
+                Current Color (number):
               </label>
               <select
                 id="color"
                 value={color}
                 onChange={(e) => setColor(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '8px',
-                  boxSizing: 'border-box',
-                }}
+                className="mt-1 w-full rounded-sm border border-gray-300 p-2"
                 disabled={isLoading}
                 required
               >
-                <option value="">--- เลือกสี ---</option>
+                <option value="">--- select color ---</option>
                 <option value="1">1 (Red)</option>
                 <option value="2">2 (Yellow)</option>
                 <option value="3">3 (Green)</option>
@@ -461,12 +491,8 @@ const TrafficDataForm: React.FC = () => {
                 type="number"
                 value={remaintime}
                 onChange={(e) => setRemaintime(e.target.value)}
-                placeholder="เวลาคงเหลือ (วินาที)"
-                style={{
-                  width: '100%',
-                  padding: '8px',
-                  boxSizing: 'border-box',
-                }}
+                placeholder="in seconds"
+                className="mt-1 w-full rounded-sm border border-gray-300 p-2"
                 disabled={isLoading}
                 required
               />
@@ -475,75 +501,32 @@ const TrafficDataForm: React.FC = () => {
             <button
               type="submit"
               disabled={isLoading}
-              style={{
-                padding: '10px 15px',
-                backgroundColor: isLoading ? '#aaa' : '#28a745',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: isLoading ? 'not-allowed' : 'pointer',
-              }}
+              className="w-full rounded-lg bg-green-500 p-3 text-center font-bold text-white transition-colors duration-300 hover:bg-green-600"
             >
-              {isLoading ? 'กำลังบันทึก...' : 'บันทึก Traffic Light ใหม่ (Set)'}
+              {isLoading ? 'saving...' : 'Save Traffic Light to DB'}
             </button>
           </form>
         </div>
 
         {/* -------------------- ภาค 2: อัปเดตข้อมูลที่มีอยู่ -------------------- */}
-        <div
-          style={{
-            flex: 1,
-            padding: '15px',
-            border: '1px solid #eee',
-            borderRadius: '4px',
-          }}
-        >
-          <h2>อัปเดตข้อมูล (Update Path)</h2>
-          <p style={{ fontSize: '0.9em', color: '#666' }}>
-            อัปเดตฟิลด์ `remaintime` ใน Key ที่มีอยู่
+        <div className="rounded-md border p-5">
+          <h2 className="mb-3 font-bold">Search Traffic light</h2>
+          <p className="mb-2 text-sm text-gray-400">
+            Search Traffic light and fetch data into input field from backend or
+            firebase
           </p>
-          <form onSubmit={updateTrafficLight}>
+          <form onSubmit={(e) => searchFromBackend(e)}>
             <div style={{ marginBottom: '10px' }}>
-              <label
-                htmlFor="updateKey"
-                style={{ display: 'block', marginBottom: '5px' }}
-              >
-                Traffic Light Key (Key ที่สร้างหรือกำหนดเอง):
+              <label htmlFor="lightID" className="font-bold text-blue-600">
+                Traffic Light ID :
               </label>
               <input
-                id="updateKey"
+                id="lightID"
                 type="text"
-                value={updateKey}
-                onChange={(e) => setUpdateKey(e.target.value)}
-                placeholder="Key (เช่น I101 หรือ -Mw_ABCD...)"
-                style={{
-                  width: '100%',
-                  padding: '8px',
-                  boxSizing: 'border-box',
-                }}
-                disabled={isLoading}
-                required
-              />
-            </div>
-
-            <div style={{ marginBottom: '20px' }}>
-              <label
-                htmlFor="updateRemainTime"
-                style={{ display: 'block', marginBottom: '5px' }}
-              >
-                เวลาคงเหลือใหม่ (วินาที):
-              </label>
-              <input
-                id="updateRemainTime"
-                type="number"
-                value={updateRemainTime}
-                onChange={(e) => setUpdateRemainTime(e.target.value)}
-                placeholder="เช่น 30"
-                style={{
-                  width: '100%',
-                  padding: '8px',
-                  boxSizing: 'border-box',
-                }}
+                value={lightID}
+                onChange={(e) => setlightID(e.target.value)}
+                placeholder="Traffic Light ID in backend"
+                className="mt-1 w-full rounded-sm border-2 border-blue-600 p-2"
                 disabled={isLoading}
                 required
               />
@@ -552,63 +535,87 @@ const TrafficDataForm: React.FC = () => {
             <button
               type="submit"
               disabled={isLoading}
-              style={{
-                padding: '10px 15px',
-                backgroundColor: isLoading ? '#aaa' : '#007bff',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: isLoading ? 'not-allowed' : 'pointer',
-              }}
+              className="w-full rounded-md bg-blue-600 p-3 text-center font-bold text-white transition-colors duration-300 hover:bg-blue-700"
             >
-              {isLoading ? 'กำลังอัปเดต...' : 'อัปเดตเวลาคงเหลือ'}
+              {isLoading ? 'Searching...' : 'Search on backend'}
             </button>
           </form>
+
+          <form className="mt-5" onSubmit={(e) => searchfromfirebase(e)}>
+            <div className="mb-3">
+              <label htmlFor="lightkey" className="font-bold text-orange-600">
+                Traffic Light KEY :
+              </label>
+              <input
+                id="lightkey"
+                type="text"
+                value={lightkey}
+                onChange={(e) => setlightkey(e.target.value)}
+                placeholder="Traffic Light key in firebase"
+                className="mt-1 w-full rounded-sm border-2 border-orange-600 p-2"
+                disabled={isLoading}
+                required
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="w-full rounded-md bg-orange-600 p-3 text-center font-bold text-white transition-colors duration-300 hover:bg-orange-700"
+            >
+              {isLoading ? 'Searching...' : 'Search on firebase'}
+            </button>
+          </form>
+          <div className="my-5 h-100 rounded-md bg-gray-200">
+            <div className="text-center text-sm">
+              <div className="py-45">
+                <p>สนใจติดต่อโฆษณา</p>
+                <p>Tel : 064-824-1987</p>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
       <hr style={{ marginTop: '20px' }} />
 
       {/* -------------------- ภาค 3: ตารางแสดงข้อมูล Traffic Realtime -------------------- */}
-      <h2 style={{ textAlign: 'center' }}>
-        📊 ข้อมูล Traffic Light ใน Realtime Database ({selectref})
+      <h2 className="mb-6 rounded-md bg-gradient-to-r from-green-400 to-blue-500 p-3 text-center font-bold text-white">
+        📊 Traffic Light data in Realtime Database ({selectref})
       </h2>
 
       {Trafficlist.length === 0 ? (
-        <p>ยังไม่มีข้อมูล Traffic Light ในฐานข้อมูล</p>
+        <p>no Traffic Light in firebase</p>
       ) : (
-        <div style={{ overflowX: 'auto' }}>
-          <table
-            style={{
-              width: '100%',
-              borderCollapse: 'collapse',
-              marginTop: '10px',
-            }}
-          >
+        <div className="max-h-120 overflow-x-auto overflow-y-scroll">
+          <table className="w-full">
             <thead>
-              <tr style={{ backgroundColor: '#f4f4f4' }}>
-                <th style={{ padding: '10px', border: '1px solid #ddd' }}>
+              <tr className="bg-gradient-to-t from-gray-300 to-gray-100">
+                <th style={{ padding: '10px', border: '1px solid #000000ff' }}>
                   Key
                 </th>
-                <th style={{ padding: '10px', border: '1px solid #ddd' }}>
+                <th style={{ padding: '10px', border: '1px solid #000000ff' }}>
                   Inter ID
                 </th>
-                <th style={{ padding: '10px', border: '1px solid #ddd' }}>
+                <th style={{ padding: '10px', border: '1px solid #000000ff' }}>
                   Road ID
                 </th>
-                <th style={{ padding: '10px', border: '1px solid #ddd' }}>
+                <th style={{ padding: '10px', border: '1px solid #000000ff' }}>
                   Lat/Lng
                 </th>
-                <th style={{ padding: '10px', border: '1px solid #ddd' }}>
+                <th style={{ padding: '10px', border: '1px solid #000000ff' }}>
                   Auto ON
                 </th>
-                <th style={{ padding: '10px', border: '1px solid #ddd' }}>
+                <th style={{ padding: '10px', border: '1px solid #000000ff' }}>
                   Color
                 </th>
-                <th style={{ padding: '10px', border: '1px solid #ddd' }}>
+                <th style={{ padding: '10px', border: '1px solid #000000ff' }}>
                   Remain Time
                 </th>
-                <th style={{ padding: '10px', border: '1px solid #ddd' }}>
+                <th style={{ padding: '10px', border: '1px solid #000000ff' }}>
+                  status
+                </th>
+                <th style={{ padding: '10px', border: '1px solid #000000ff' }}>
                   Timestamp
                 </th>
               </tr>
@@ -617,33 +624,52 @@ const TrafficDataForm: React.FC = () => {
               {Trafficlist.map((traffic) => (
                 <tr
                   key={traffic.key}
-                  style={{ borderBottom: '1px solid #eee' }}
+                  style={{ borderBottom: '1px solid #000000ff' }}
                 >
-                  <td style={{ padding: '10px', border: '1px solid #ddd' }}>
+                  <td
+                    style={{ padding: '10px', border: '1px solid #000000ff' }}
+                  >
                     {traffic.key}
                   </td>
-                  <td style={{ padding: '10px', border: '1px solid #ddd' }}>
+                  <td
+                    style={{ padding: '10px', border: '1px solid #000000ff' }}
+                  >
                     {traffic.interid}
                   </td>
-                  <td style={{ padding: '10px', border: '1px solid #ddd' }}>
+                  <td
+                    style={{ padding: '10px', border: '1px solid #000000ff' }}
+                  >
                     {traffic.roadid}
                   </td>
-                  <td style={{ padding: '10px', border: '1px solid #ddd' }}>
+                  <td
+                    style={{ padding: '10px', border: '1px solid #000000ff' }}
+                  >
                     {traffic.lat}, {traffic.lng}
                   </td>
-                  <td style={{ padding: '10px', border: '1px solid #ddd' }}>
+                  <td
+                    style={{ padding: '10px', border: '1px solid #000000ff' }}
+                  >
                     {traffic.autoON ? 'True' : 'False'}
                   </td>
-                  <td style={{ padding: '10px', border: '1px solid #ddd' }}>
+                  <td
+                    style={{ padding: '10px', border: '1px solid #000000ff' }}
+                  >
                     {traffic.color}
                   </td>
-                  <td style={{ padding: '10px', border: '1px solid #ddd' }}>
+                  <td
+                    style={{ padding: '10px', border: '1px solid #000000ff' }}
+                  >
                     {traffic.remaintime}s
+                  </td>
+                  <td
+                    style={{ padding: '10px', border: '1px solid #000000ff' }}
+                  >
+                    {traffic.status}
                   </td>
                   <td
                     style={{
                       padding: '10px',
-                      border: '1px solid #ddd',
+                      border: '1px solid #000000ff',
                       fontSize: '0.8em',
                     }}
                   >
