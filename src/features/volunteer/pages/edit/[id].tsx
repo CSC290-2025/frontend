@@ -11,8 +11,8 @@ interface VolunteerEvent {
   end_at: string | null;
   registration_deadline: string | null;
   total_seats: number;
+  current_participants: number;
   image_url: string | null;
-
   tag: string | undefined;
 }
 
@@ -20,8 +20,8 @@ interface UpdateEventData {
   title?: string;
   description?: string;
   start_at?: string;
-  end_at?: string; // This will hold 'HH:MM' string from the form
-  registration_deadline?: string; // This will hold 'YYYY-MM-DD' string from the form
+  end_at?: string;
+  registration_deadline?: string;
   total_seats?: number;
   image_url?: string;
   tag?: string;
@@ -33,15 +33,12 @@ interface ApiResponse<T> {
   message?: string;
 }
 
-// 1. UPDATED: Function now accepts a 'type' to format the ISO string correctly
 const formatISODateForInput = (
   isoString: string | null | undefined,
   type: 'datetime-local' | 'date' | 'time'
 ) => {
   if (!isoString) return '';
   const date = new Date(isoString);
-  // Date objects created from ISO strings are often in UTC,
-  // so we format them to avoid timezone issues with input values.
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
@@ -49,13 +46,12 @@ const formatISODateForInput = (
   const minutes = String(date.getMinutes()).padStart(2, '0');
 
   if (type === 'date') {
-    return `${year}-${month}-${day}`; // YYYY-MM-DD
+    return `${year}-${month}-${day}`;
   }
   if (type === 'time') {
-    return `${hours}:${minutes}`; // HH:MM
+    return `${hours}:${minutes}`;
   }
-  // Default (for start_at)
-  return `${year}-${month}-${day}T${hours}:${minutes}`; // YYYY-MM-DDTHH:MM
+  return `${year}-${month}-${day}T${hours}:${minutes}`;
 };
 
 export default function EditVolunteerPage() {
@@ -74,12 +70,13 @@ export default function EditVolunteerPage() {
     'Community & Social',
   ];
   const [tags] = useState(postTag);
+  const [currentParticipants, setCurrentParticipants] = useState(0);
   const [formData, setFormData] = useState<Partial<UpdateEventData>>({
     title: '',
     description: '',
     start_at: '',
-    end_at: '', // Will store HH:MM
-    registration_deadline: '', // Will store YYYY-MM-DD
+    end_at: '',
+    registration_deadline: '',
     total_seats: 10,
     image_url: '',
     tag: '',
@@ -101,13 +98,12 @@ export default function EditVolunteerPage() {
         >(`/api/v1/volunteer/${id}`);
         if (response.data.success) {
           const event = response.data.data.event;
+          setCurrentParticipants(event.current_participants);
           setFormData({
             title: event.title,
             description: event.description || '',
             start_at: formatISODateForInput(event.start_at, 'datetime-local'),
-            // Use 'time' format for end_at
             end_at: formatISODateForInput(event.end_at, 'time'),
-            // Use 'date' format for registration_deadline
             registration_deadline: formatISODateForInput(
               event.registration_deadline,
               'date'
@@ -140,44 +136,42 @@ export default function EditVolunteerPage() {
     }));
   };
 
-  // Helper function to get the base date part of the start_at field
   const getStartDatePart = () => {
     if (!formData.start_at) return '';
-    // Assumes start_at is in 'YYYY-MM-DDTHH:MM' format
-    return formData.start_at.substring(0, 10); // YYYY-MM-DD
+    return formData.start_at.substring(0, 10);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Validate total_seats
+    if (formData.total_seats && formData.total_seats < currentParticipants) {
+      setError(
+        `Total seats cannot be less than current participants (${currentParticipants})`
+      );
+      return;
+    }
+
     setIsSubmitting(true);
     setError(null);
 
-    // 2. UPDATED: Reconstruct ISO strings for submission
     const startDatePart = getStartDatePart();
     const payload = {
       ...formData,
       start_at: formData.start_at ? `${formData.start_at}` : undefined,
-
-      // If end_at is only time ('HH:MM'), we need to combine it with a date
-      // For simplicity, we'll use the date from 'start_at'
       end_at:
         formData.end_at && startDatePart
           ? `${startDatePart}T${formData.end_at}`
           : undefined,
-
-      // If registration_deadline is only date ('YYYY-MM-DD'), we'll set the time to midnight (00:00)
       registration_deadline: formData.registration_deadline
         ? `${formData.registration_deadline}`
         : undefined,
-
-      // Ensure total_seats is a number if it exists
       total_seats: formData.total_seats
         ? Number(formData.total_seats)
         : undefined,
       tag: selectedCategory,
     };
 
-    // Remove undefined values from payload before sending
     Object.keys(payload).forEach(
       (key) =>
         payload[key as keyof typeof payload] === undefined &&
@@ -280,7 +274,6 @@ export default function EditVolunteerPage() {
               Schedule & Capacity
             </h2>
             <div className="grid grid-cols-2 gap-4">
-              {/* Start Time remains datetime-local */}
               <div>
                 <label className="mb-2 block text-sm font-medium text-gray-700">
                   Start Time (Date & Time) *
@@ -295,7 +288,6 @@ export default function EditVolunteerPage() {
                 />
               </div>
 
-              {/* 3. UPDATED: End Time is now 'time' */}
               <div>
                 <label className="mb-2 block text-sm font-medium text-gray-700">
                   End Time (Time Only) *
@@ -310,7 +302,6 @@ export default function EditVolunteerPage() {
                 />
               </div>
 
-              {/* 3. UPDATED: Registration Deadline is now 'date' */}
               <div>
                 <label className="mb-2 block text-sm font-medium text-gray-700">
                   Registration Deadline (Date Only) *
@@ -331,12 +322,15 @@ export default function EditVolunteerPage() {
                 <input
                   type="number"
                   name="total_seats"
-                  value={formData.total_seats || 1} // Ensure value is not null/undefined for type="number"
+                  value={formData.total_seats || 1}
                   onChange={handleChange}
-                  min="1"
+                  min={currentParticipants}
                   required
                   className="w-full rounded-xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:outline-none"
                 />
+                <p className="mt-1 text-xs text-gray-500">
+                  Minimum: {currentParticipants} (current participants)
+                </p>
               </div>
             </div>
           </div>
