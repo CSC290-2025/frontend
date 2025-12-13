@@ -242,6 +242,7 @@ import {
   useMarkPostAsGiven,
   useMarkPostAsNotGiven,
   useCurrentUser,
+  useMyPosts,
 } from '@/features/freecycle/hooks/useFreecycle';
 
 export default function MyItemsPage() {
@@ -250,14 +251,18 @@ export default function MyItemsPage() {
   const { data: currentUser, isLoading: isUserLoading } = useCurrentUser();
   const userId = currentUser?.id;
 
-  const {
-    data: posts,
-    isLoading: isPostsLoading,
-    isError,
-    error,
-  } = usePostsByUserId(userId);
+  const { data: posts, isLoading, isError, error } = useMyPosts();
 
-  const isLoading = isUserLoading || isPostsLoading;
+  console.log('--- DEBUG START ---');
+  console.log('Loading Status:', { isUserLoading, finalIsLoading: isLoading });
+  console.log('Current User:', currentUser);
+  console.log('Posts Data:', posts);
+  console.log(
+    'User ID check:',
+    currentUser?.id,
+    currentUser?._id,
+    currentUser?.userId
+  );
 
   const deletePostMutation = useDeletePost();
   const markAsGivenMutation = useMarkPostAsGiven();
