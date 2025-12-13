@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Link } from '@/router';
-import { APT, Upload } from '@/features/G9-ApartmentListing/hooks/index';
+import { APT, Upload, Room } from '@/features/G9-ApartmentListing/hooks/index';
+import '@/features/G9-ApartmentListing/styles/animations.css';
 import type {
   apartmentTypes,
   roomTypes,
@@ -109,27 +110,6 @@ const ApartmentImage: React.FC<{
           onError={handleImageError}
         />
       )}
-
-      <style
-        dangerouslySetInnerHTML={{
-          __html: `
-          .shimmer-animation, .shimmer-skeleton {
-            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-            background-size: 200% 100%;
-            animation: shimmer 1.5s infinite;
-          }
-          
-          @keyframes shimmer {
-            0% {
-              background-position: -200% 0;
-            }
-            100% {
-              background-position: 200% 0;
-            }
-          }
-        `,
-        }}
-      />
     </div>
   );
 };
@@ -140,6 +120,29 @@ interface ExtendedApartment extends apartmentTypes.Apartment {
   room: roomTypes.Room[];
   addresses?: addressTypes.Address;
 }
+
+// Separate component to track room availability for each apartment
+const ApartmentRoomTracker: React.FC<{
+  apartmentId: number;
+  onUpdate: (id: number, count: number) => void;
+}> = React.memo(({ apartmentId, onUpdate }) => {
+  const { data: availableRooms } = Room.useRoomsByStatus(
+    apartmentId,
+    'available'
+  );
+
+  const roomCount = React.useMemo(() => {
+    return Array.isArray(availableRooms) ? availableRooms.length : 0;
+  }, [availableRooms]);
+
+  React.useEffect(() => {
+    onUpdate(apartmentId, roomCount);
+  }, [apartmentId, roomCount, onUpdate]);
+
+  return null;
+});
+
+ApartmentRoomTracker.displayName = 'ApartmentRoomTracker';
 
 export default function ApartmentHomepage() {
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -152,8 +155,34 @@ export default function ApartmentHomepage() {
 
   const [isDropdownOpen, setIsDropdownOpen] = useState<boolean>(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const [roomAvailability, setRoomAvailability] = useState<
+    Record<number, number>
+  >({});
 
   const { data: apartments, isLoading, error: _error } = APT.useApartments();
+
+  // Callback to update room availability (wrapped in useCallback to prevent re-renders)
+  const updateRoomAvailability = React.useCallback(
+    (apartmentId: number, count: number) => {
+      setRoomAvailability((prev) => {
+        if (prev[apartmentId] !== count) {
+          return { ...prev, [apartmentId]: count };
+        }
+        return prev;
+      });
+    },
+    []
+  );
+
+  // Combined availability map: use API data if available, fallback to static room count
+  const apartmentAvailabilityMap = React.useMemo(() => {
+    const map: Record<number, number> = {};
+    apartments?.forEach((apt: ExtendedApartment) => {
+      // Use API data if available, otherwise fallback to static room count
+      map[apt.id] = roomAvailability[apt.id] ?? (apt.room?.length || 0);
+    });
+    return map;
+  }, [apartments, roomAvailability]);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -172,48 +201,69 @@ export default function ApartmentHomepage() {
     };
   }, [isDropdownOpen]);
 
-  const filteredApartments =
-    apartments?.filter((apt: ExtendedApartment) => {
-      const matchesSearch = apt.name
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase());
-      if (!matchesSearch) return false;
+  const filteredApartments = React.useMemo(() => {
+    const filtered =
+      apartments?.filter((apt: ExtendedApartment) => {
+        const matchesSearch = apt.name
+          .toLowerCase()
+          .includes(searchTerm.toLowerCase());
+        if (!matchesSearch) return false;
 
-      if (
-        selectedLocations.length > 0 &&
-        !selectedLocations.includes(apt.apartment_location)
-      ) {
-        return false;
-      }
+        if (
+          selectedLocations.length > 0 &&
+          !selectedLocations.includes(apt.apartment_location)
+        ) {
+          return false;
+        }
 
-      if (selectedRatings.length > 0) {
-        const avgRating =
-          apt.rating && apt.rating.length > 0
-            ? apt.rating.reduce(
-                (sum: number, r: RatingType) => sum + r.rating,
-                0
-              ) / apt.rating.length
+        if (selectedRatings.length > 0) {
+          const avgRating =
+            apt.rating && apt.rating.length > 0
+              ? apt.rating.reduce(
+                  (sum: number, r: RatingType) => sum + r.rating,
+                  0
+                ) / apt.rating.length
+              : 0;
+          const matchesRating = selectedRatings.some(
+            (rating) => Math.floor(avgRating) === rating
+          );
+          if (!matchesRating) return false;
+        }
+
+        const minRoomPrice =
+          apt.room && apt.room.length > 0
+            ? Math.min(...apt.room.map((r: roomTypes.Room) => r.price_start))
             : 0;
-        const matchesRating = selectedRatings.some(
-          (rating) => Math.floor(avgRating) === rating
-        );
-        if (!matchesRating) return false;
-      }
+        const maxRoomPrice =
+          apt.room && apt.room.length > 0
+            ? Math.max(...apt.room.map((r: roomTypes.Room) => r.price_end))
+            : 0;
+        if (maxRoomPrice < minPrice || minRoomPrice > maxPrice) {
+          return false;
+        }
 
-      const minRoomPrice =
-        apt.room && apt.room.length > 0
-          ? Math.min(...apt.room.map((r: roomTypes.Room) => r.price_start))
-          : 0;
-      const maxRoomPrice =
-        apt.room && apt.room.length > 0
-          ? Math.max(...apt.room.map((r: roomTypes.Room) => r.price_end))
-          : 0;
-      if (maxRoomPrice < minPrice || minRoomPrice > maxPrice) {
-        return false;
-      }
+        return true;
+      }) || [];
 
-      return true;
-    }) || [];
+    // Sort apartments: those with available rooms first, then those without
+    return filtered.sort((a: ExtendedApartment, b: ExtendedApartment) => {
+      const aHasAvailableRooms = (apartmentAvailabilityMap[a.id] || 0) > 0;
+      const bHasAvailableRooms = (apartmentAvailabilityMap[b.id] || 0) > 0;
+
+      if (aHasAvailableRooms === bHasAvailableRooms) {
+        return 0; // Keep original order for apartments with same room availability
+      }
+      return bHasAvailableRooms ? 1 : -1; // Apartments with available rooms first
+    });
+  }, [
+    apartments,
+    searchTerm,
+    selectedLocations,
+    selectedRatings,
+    minPrice,
+    maxPrice,
+    apartmentAvailabilityMap,
+  ]);
 
   const totalPages = Math.ceil(filteredApartments.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -265,12 +315,21 @@ export default function ApartmentHomepage() {
   };
 
   return (
-    <div className="font-poppins min-h-screen bg-[#F9FAFB]">
-      <div className="flex items-center justify-between px-12 py-5">
+    <div className="font-poppins animate-fade-in min-h-screen bg-[#F9FAFB]">
+      {/* Room availability trackers */}
+      {apartments?.map((apt: ExtendedApartment) => (
+        <ApartmentRoomTracker
+          key={`room-tracker-${apt.id}`}
+          apartmentId={apt.id}
+          onUpdate={updateRoomAvailability}
+        />
+      ))}
+
+      <div className="animate-slide-down flex items-center justify-between px-12 py-5">
         <div>
           <div className="flex items-center gap-3">
             <img
-              className="h-12 w-12"
+              className="h-12 w-12 transition-transform duration-300 hover:scale-110 hover:rotate-12"
               src={ApartmentIcon}
               alt="ApartmentIcon"
             />
@@ -292,20 +351,20 @@ export default function ApartmentHomepage() {
               value={searchTerm}
               onChange={handleSearchChange}
               placeholder="Search by name"
-              className="w-full rounded-lg border border-gray-400 py-3 pr-16 pl-12 focus:border-[#2B5991] focus:outline-none"
+              className="w-full rounded-lg border border-gray-400 py-3 pr-16 pl-12 transition-all duration-300 hover:border-[#2B5991]/50 focus:border-[#2B5991] focus:ring-2 focus:ring-[#2B5991]/20 focus:outline-none"
             />
           </div>
 
           <div className="relative" ref={dropdownRef}>
             <img
-              className="h-16 w-16 cursor-pointer"
+              className="h-16 w-16 cursor-pointer transition-all duration-300 hover:scale-110 hover:rotate-12"
               src={UserIcon}
               alt="UserIcon"
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
             />
 
             {isDropdownOpen && (
-              <div className="ring-opacity-5 absolute right-0 z-10 mt-2 w-50 origin-top-right rounded-lg border border-gray-400 bg-white shadow-lg focus:outline-none">
+              <div className="ring-opacity-5 animate-fade-in-up absolute right-0 z-10 mt-2 w-50 origin-top-right rounded-lg border border-gray-400 bg-white shadow-lg focus:outline-none">
                 <div className="py-1" role="none">
                   <Link
                     to="/MyRentedAPT"
@@ -332,8 +391,8 @@ export default function ApartmentHomepage() {
       </div>
 
       <main className="mx-auto max-w-7xl px-10 py-1">
-        <div className="mb-5 flex gap-8">
-          <div className="flex-1 rounded-xl bg-white p-8 shadow">
+        <div className="animate-fade-in-up mb-5 flex gap-8">
+          <div className="flex-1 rounded-xl bg-white p-8 shadow transition-all duration-300 hover:shadow-lg">
             <h3 className="mb-4 text-xl font-semibold text-[#2B5991]">
               Location
             </h3>
@@ -372,7 +431,7 @@ export default function ApartmentHomepage() {
             </div>
           </div>
 
-          <div className="flex-1 rounded-xl bg-white p-8 shadow">
+          <div className="flex-1 rounded-xl bg-white p-8 shadow transition-all duration-300 hover:shadow-lg">
             <h3 className="mb-4 text-xl font-semibold text-[#2B5991]">
               Rating
             </h3>
@@ -395,7 +454,7 @@ export default function ApartmentHomepage() {
             </div>
           </div>
 
-          <div className="flex-1 rounded-xl bg-white p-8 shadow">
+          <div className="flex-1 rounded-xl bg-white p-8 shadow transition-all duration-300 hover:shadow-lg">
             <h3 className="mb-6 text-center text-xl font-semibold text-[#2B5991]">
               Price Range
             </h3>
@@ -514,7 +573,7 @@ export default function ApartmentHomepage() {
             : `${filteredApartments.length} Listing found`}
         </p>
 
-        <div className="space-y-5">
+        <div className="animate-fade-in-up space-y-5">
           {isLoading
             ? // Enhanced loading skeleton
               Array.from({ length: itemsPerPage }).map((_, index) => (
@@ -566,114 +625,120 @@ export default function ApartmentHomepage() {
                   </div>
                 </div>
               ))
-            : currentApartments.map((apartment: ExtendedApartment) => (
-                <Link
-                  key={apartment.id}
-                  to="/ApartmentHomepage/:id"
-                  params={{ id: apartment.id.toString() }}
-                  className="flex gap-6 rounded-lg bg-white p-6 shadow-sm transition-shadow hover:shadow-md"
-                >
-                  <ApartmentImage
-                    apartment_id={apartment.id}
-                    name={apartment.name}
-                  />
-                  <div className="flex flex-1 flex-col justify-between">
-                    <div className="flex justify-between">
-                      <div>
-                        <h3 className="text-xl font-bold text-gray-800">
-                          {apartment.name}
-                        </h3>
-                        <div className="mt-2 flex items-center gap-2">
-                          <span className="font-md text-black">
-                            {apartment.rating && apartment.rating.length > 0
-                              ? (
-                                  apartment.rating.reduce(
-                                    (sum: number, r: RatingType) =>
-                                      sum + r.rating,
-                                    0
-                                  ) / apartment.rating.length
-                                ).toFixed(1)
-                              : '0.0'}
-                          </span>
-                          <div className="flex gap-0.5">
-                            {[...Array(5)].map((_, i) => {
-                              const avgRating =
-                                apartment.rating && apartment.rating.length > 0
-                                  ? apartment.rating.reduce(
+            : currentApartments.map(
+                (apartment: ExtendedApartment, index: number) => (
+                  <Link
+                    key={apartment.id}
+                    to="/ApartmentHomepage/:id"
+                    params={{ id: apartment.id.toString() }}
+                    className="animate-stagger flex gap-6 rounded-lg bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:scale-[1.02] hover:shadow-xl"
+                    style={{ animationDelay: `${index * 100}ms` }}
+                  >
+                    <ApartmentImage
+                      apartment_id={apartment.id}
+                      name={apartment.name}
+                    />
+                    <div className="flex flex-1 flex-col justify-between">
+                      <div className="flex justify-between">
+                        <div>
+                          <h3 className="text-xl font-bold text-gray-800">
+                            {apartment.name}
+                          </h3>
+                          <div className="mt-2 flex items-center gap-2">
+                            <span className="font-md text-black">
+                              {apartment.rating && apartment.rating.length > 0
+                                ? (
+                                    apartment.rating.reduce(
                                       (sum: number, r: RatingType) =>
                                         sum + r.rating,
                                       0
                                     ) / apartment.rating.length
-                                  : 0;
-                              return (
-                                <img
-                                  key={i}
-                                  src={
-                                    i < Math.floor(avgRating)
-                                      ? StarIcon
-                                      : GrayStarIcon
-                                  }
-                                />
-                              );
-                            })}
+                                  ).toFixed(1)
+                                : '0.0'}
+                            </span>
+                            <div className="flex gap-0.5">
+                              {[...Array(5)].map((_, i) => {
+                                const avgRating =
+                                  apartment.rating &&
+                                  apartment.rating.length > 0
+                                    ? apartment.rating.reduce(
+                                        (sum: number, r: RatingType) =>
+                                          sum + r.rating,
+                                        0
+                                      ) / apartment.rating.length
+                                    : 0;
+                                return (
+                                  <img
+                                    key={i}
+                                    src={
+                                      i < Math.floor(avgRating)
+                                        ? StarIcon
+                                        : GrayStarIcon
+                                    }
+                                  />
+                                );
+                              })}
+                            </div>
+                            <span className="text-sm text-gray-600">
+                              ({apartment.rating ? apartment.rating.length : 0})
+                            </span>
                           </div>
-                          <span className="text-sm text-gray-600">
-                            ({apartment.rating ? apartment.rating.length : 0})
-                          </span>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-xl font-bold text-[#2B5991]">
+                            {apartment.room && apartment.room.length > 0
+                              ? (() => {
+                                  const minPrice = Math.min(
+                                    ...apartment.room.map(
+                                      (r: roomTypes.Room) => r.price_start
+                                    )
+                                  );
+                                  const maxPrice = Math.max(
+                                    ...apartment.room.map(
+                                      (r: roomTypes.Room) => r.price_end
+                                    )
+                                  );
+                                  return minPrice === maxPrice
+                                    ? minPrice.toLocaleString()
+                                    : `${minPrice.toLocaleString()} - ${maxPrice.toLocaleString()}`;
+                                })()
+                              : 'N/A'}{' '}
+                            <span className="text-sm font-normal text-gray-600">
+                              Baht / Month
+                            </span>
+                          </p>
+                          <p
+                            className={`mt-1 text-sm ${(apartmentAvailabilityMap[apartment.id] || 0) > 0 ? 'text-green-600' : 'text-red-600'}`}
+                          >
+                            Room available:{' '}
+                            {apartmentAvailabilityMap[apartment.id] || 0}
+                          </p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-xl font-bold text-[#2B5991]">
-                          {apartment.room && apartment.room.length > 0
-                            ? (() => {
-                                const minPrice = Math.min(
-                                  ...apartment.room.map(
-                                    (r: roomTypes.Room) => r.price_start
-                                  )
-                                );
-                                const maxPrice = Math.max(
-                                  ...apartment.room.map(
-                                    (r: roomTypes.Room) => r.price_end
-                                  )
-                                );
-                                return minPrice === maxPrice
-                                  ? minPrice.toLocaleString()
-                                  : `${minPrice.toLocaleString()} - ${maxPrice.toLocaleString()}`;
-                              })()
-                            : 'N/A'}{' '}
-                          <span className="text-sm font-normal text-gray-600">
-                            Baht / Month
+                      <div className="mt-3 space-y-2 text-sm text-gray-600">
+                        <div className="mb-2 flex items-center gap-3">
+                          <span className="inline-block h-6 w-6 text-gray-800">
+                            <img src={LocationIcon} alt="LocationIcon" />
                           </span>
-                        </p>
-                        <p className="mt-1 text-sm text-gray-600">
-                          Room available:{' '}
-                          {apartment.room ? apartment.room.length : 0}
-                        </p>
+                          <span>
+                            {apartment.addresses
+                              ? `${apartment.addresses.address_line || ''}, ${apartment.addresses.subdistrict || ''}, ${apartment.addresses.district || ''}, ${apartment.addresses.province || ''} ${apartment.addresses.postal_code || ''}`
+                                  .replace(/,\s*,/g, ',')
+                                  .replace(/^,\s*|,\s*$/g, '')
+                              : 'Address not available'}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="ml-1 inline-block h-4 w-4 text-gray-800">
+                            <img src={PhoneIcon} alt="PhoneIcon" />
+                          </span>
+                          <span>{apartment.phone}</span>
+                        </div>
                       </div>
                     </div>
-                    <div className="mt-3 space-y-2 text-sm text-gray-600">
-                      <div className="mb-2 flex items-center gap-3">
-                        <span className="inline-block h-6 w-6 text-gray-800">
-                          <img src={LocationIcon} alt="LocationIcon" />
-                        </span>
-                        <span>
-                          {apartment.addresses
-                            ? `${apartment.addresses.address_line || ''}, ${apartment.addresses.subdistrict || ''}, ${apartment.addresses.district || ''}, ${apartment.addresses.province || ''} ${apartment.addresses.postal_code || ''}`
-                                .replace(/,\s*,/g, ',')
-                                .replace(/^,\s*|,\s*$/g, '')
-                            : 'Address not available'}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className="ml-1 inline-block h-4 w-4 text-gray-800">
-                          <img src={PhoneIcon} alt="PhoneIcon" />
-                        </span>
-                        <span>{apartment.phone}</span>
-                      </div>
-                    </div>
-                  </div>
-                </Link>
-              ))}
+                  </Link>
+                )
+              )}
         </div>
 
         {totalPages > 0 && (
@@ -681,7 +746,7 @@ export default function ApartmentHomepage() {
             <button
               onClick={() => handlePageChange(currentPage - 1)}
               disabled={currentPage === 1}
-              className="flex h-10 items-center justify-center rounded-full border border-gray-300 bg-white px-4 hover:bg-gray-100 disabled:opacity-50"
+              className="flex h-10 items-center justify-center rounded-full border border-gray-300 bg-white px-4 transition-all duration-300 hover:scale-105 hover:bg-gray-100 disabled:opacity-50"
             >
               ‹ prev
             </button>
@@ -696,7 +761,7 @@ export default function ApartmentHomepage() {
                   <button
                     key={pageNum}
                     onClick={() => handlePageChange(pageNum)}
-                    className={`flex h-10 w-10 items-center justify-center rounded-full border ${
+                    className={`flex h-10 w-10 items-center justify-center rounded-full border transition-all duration-300 hover:scale-105 ${
                       currentPage === pageNum
                         ? 'border-cyan-400 bg-[#01CCFF] text-white'
                         : 'border-gray-300 bg-white hover:bg-gray-100'
@@ -711,7 +776,7 @@ export default function ApartmentHomepage() {
             <button
               onClick={() => handlePageChange(currentPage + 1)}
               disabled={currentPage === totalPages}
-              className="flex h-10 items-center justify-center rounded-full border border-gray-300 bg-white px-4 hover:bg-gray-100 disabled:opacity-50"
+              className="flex h-10 items-center justify-center rounded-full border border-gray-300 bg-white px-4 transition-all duration-300 hover:scale-105 hover:bg-gray-100 disabled:opacity-50"
             >
               next ›
             </button>
@@ -719,7 +784,7 @@ export default function ApartmentHomepage() {
             <button
               onClick={() => handlePageChange(totalPages)}
               disabled={currentPage === totalPages}
-              className="flex h-10 items-center justify-center rounded-full border border-gray-300 bg-white px-4 hover:bg-gray-100 disabled:opacity-50"
+              className="flex h-10 items-center justify-center rounded-full border border-gray-300 bg-white px-4 transition-all duration-300 hover:scale-105 hover:bg-gray-100 disabled:opacity-50"
             >
               last »
             </button>
@@ -729,9 +794,13 @@ export default function ApartmentHomepage() {
 
       <button
         onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-        className="fixed right-8 bottom-8 flex h-12 w-12 items-center justify-center rounded-full border border-gray-300 bg-white text-xl shadow-lg transition-colors hover:bg-gray-50"
+        className="fixed right-8 bottom-8 flex h-12 w-12 items-center justify-center rounded-full border border-gray-300 bg-white text-xl shadow-lg transition-all duration-300 hover:scale-110 hover:bg-gray-50 hover:shadow-xl"
       >
-        <img src={UppageIcon} alt="Uppage" />
+        <img
+          src={UppageIcon}
+          alt="Uppage"
+          className="transition-transform duration-300 hover:scale-110"
+        />
       </button>
     </div>
   );

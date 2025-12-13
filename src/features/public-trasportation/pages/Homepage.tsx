@@ -19,6 +19,7 @@ interface RouteSummary {
     vehicle_type?: string;
   }>;
   fare: { value: number; currency: string; text: string } | null;
+  overview_polyline: { points: string };
 }
 
 interface Coords {
@@ -26,8 +27,10 @@ interface Coords {
   lng: string;
   name?: string;
 }
-
 const API_BASE_URL = getBaseAPIURL + '/api/routes/all';
+const TRANSACTION_API_URL = getBaseAPIURL + '/api/transactions/tap';
+const METRO_CARD_API_URL = getBaseAPIURL + '/metro-cards/me';
+
 const geocodeAddress = async (query: string): Promise<Coords | null> => {
   if (!query) return null;
 
@@ -70,6 +73,18 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [selectedRouteIndex, setSelectedRouteIndex] = useState(0);
+
+  const [tappedInRouteIndex, setTappedInRouteIndex] = useState<number | null>(
+    null
+  );
+
+  const [isTapProcessing, setIsTapProcessing] = useState(false);
+
+  // 🟢 State สำหรับเก็บ Card ID และ Error
+  const [activeCardId, setActiveCardId] = useState<number | null>(null);
+  const [cardError, setCardError] = useState<string | null>(null);
+
   const [originQuery, setOriginQuery] = useState(
     "King Mongkut's University of Technology Thonburi"
   );
@@ -91,6 +106,41 @@ export default function Home() {
     'origin' | 'destination' | null
   >(null);
 
+  useEffect(() => {
+    const fetchActiveCard = async () => {
+      try {
+        setCardError(null);
+        const response = await axios.get(METRO_CARD_API_URL, {
+          withCredentials: true,
+        });
+        const responseData = response.data.data;
+
+        if (
+          responseData &&
+          responseData.metroCards &&
+          responseData.metroCards.length > 0
+        ) {
+          const card = responseData.metroCards[0];
+
+          setActiveCardId(card.id);
+        } else if (response.data.success && response.data.id) {
+          setActiveCardId(response.data.id);
+        } else {
+          setCardError('No active Metro Card found for this user.');
+        }
+      } catch (err: any) {
+        const status = err.response?.status;
+        const msg =
+          status === 401
+            ? 'Unauthorized. Please log in (Failed to fetch Card data with Cookie).'
+            : 'Failed to fetch Metro Card data. Check Finance Service.';
+        setCardError(msg);
+        console.error('Metro Card Fetch Error:', err);
+      }
+    };
+    fetchActiveCard();
+  }, []);
+
   const fetchRoutes = async (
     origCoords: { lat: string; lng: string; name: string },
     destCoords: { lat: string; lng: string; name: string }
@@ -98,6 +148,7 @@ export default function Home() {
     setLoading(true);
     setError(null);
     setRoutes([]);
+    setTappedInRouteIndex(null);
 
     try {
       const response = await axios.get(API_BASE_URL, {
@@ -112,13 +163,13 @@ export default function Home() {
       });
 
       if (response.data.success && response.data.allRoutes) {
-        // 🟢 การจัดเรียงตาม duration.value (เร็วสุดไปช้าสุด)
         const sortedRoutes: RouteSummary[] = response.data.allRoutes.sort(
           (a: RouteSummary, b: RouteSummary) =>
             a.duration.value - b.duration.value
         );
 
         setRoutes(sortedRoutes);
+        setSelectedRouteIndex(0);
       } else {
         setError(response.data.message || 'No routes found.');
       }
@@ -227,6 +278,105 @@ export default function Home() {
     };
   }, [destinationCoords]);
 
+  const selectedRoute = routes[selectedRouteIndex];
+
+  const handleTapTransaction = async (
+    routeIndex: number,
+    isTappingIn: boolean
+  ): Promise<{ success: boolean; message: string }> => {
+    if (activeCardId === null) {
+      return {
+        success: false,
+        message: cardError || 'No valid Metro Card available. Cannot proceed.',
+      };
+    }
+
+    if (isTapProcessing) {
+      return {
+        success: false,
+        message: 'Another transaction is already processing. Please wait.',
+      };
+    }
+
+    // 💡 การป้องกัน Logic Error: ป้องกันการ Tap In ซ้ำซ้อน
+    if (
+      isTappingIn &&
+      tappedInRouteIndex !== null &&
+      tappedInRouteIndex !== routeIndex
+    ) {
+      return {
+        success: false,
+        message: 'Please TAP OUT from your current trip first.',
+      };
+    }
+
+    const routeToTap = routes[routeIndex];
+    if (!routeToTap) {
+      return { success: false, message: 'Invalid route selected.' };
+    }
+
+    const transitStep = routeToTap.detailedSteps.find(
+      (s) => s.travel_mode === 'TRANSIT'
+    );
+    const vehicleType = transitStep?.vehicle_type || 'AC_BUS';
+
+    let locationData: { lat: string; lng: string } = { lat: '', lng: '' };
+
+    if (isTappingIn) {
+      locationData = {
+        lat: originLocation.origLat,
+        lng: originLocation.origLng,
+      };
+    } else {
+      if (!destinationCoords)
+        return {
+          success: false,
+          message: 'Destination location not set for Tap Out.',
+        };
+      locationData = destinationCoords;
+    }
+    setIsTapProcessing(true);
+    try {
+      const response = await axios.post(
+        TRANSACTION_API_URL,
+        {
+          cardId: activeCardId,
+          location: locationData,
+          vehicleType: vehicleType,
+        },
+        { withCredentials: true }
+      );
+
+      if (response.data.success) {
+        if (isTappingIn) {
+          setTappedInRouteIndex(routeIndex);
+        } else {
+          setTappedInRouteIndex(null);
+        }
+
+        const result = response.data.data;
+        const chargedAmount = result.charged || result.maxFareReserved;
+        return {
+          success: true,
+          message: `${isTappingIn ? 'TAP IN' : 'TAP OUT'} Successful. Charged/Reserved: ${chargedAmount} THB.`,
+        };
+      } else {
+        return {
+          success: false,
+          message: response.data.message || 'Transaction failed (API error).',
+        };
+      }
+    } catch (err: any) {
+      const message =
+        err.response?.data?.message ||
+        err.message ||
+        'Connection or Finance Service Error.';
+      return { success: false, message: message };
+    } finally {
+      setIsTapProcessing(false);
+    }
+  };
+
   return (
     <div className="flex min-h-screen bg-white text-gray-800">
       <Sidebar active="Transport" />
@@ -248,6 +398,17 @@ export default function Home() {
         </div>
 
         <div className="mb-6 flex flex-col space-y-3">
+          {cardError && (
+            <div className="relative rounded border border-red-400 bg-red-100 px-4 py-2 text-sm text-red-700">
+              🚨 **Card Error:** {cardError}
+            </div>
+          )}
+          {!activeCardId && !cardError && (
+            <div className="relative rounded border border-yellow-400 bg-yellow-100 px-4 py-2 text-sm text-yellow-700">
+              Loading active Metro Card...
+            </div>
+          )}
+
           {selectionMode && (
             <div className="relative rounded border border-yellow-400 bg-yellow-100 px-4 py-2 text-sm text-yellow-700">
               Please click on the map to set your **
@@ -322,6 +483,7 @@ export default function Home() {
                 lng: parseFloat(originLocation.origLng),
               }}
               destination={destinationMarker}
+              routePolyline={selectedRoute?.overview_polyline?.points}
             />
             <select className="absolute top-4 right-4 rounded-md border border-gray-300 bg-white px-3 py-1 text-sm">
               <option>Bus Station</option>
@@ -342,7 +504,6 @@ export default function Home() {
               </p>
             )}
 
-            {/* 🟢 ส่วนนี้จะแสดงผลลัพธ์ที่ถูกจัดเรียงแล้ว */}
             {routes.map((route, index) => {
               const mainTransport = route.detailedSteps.find(
                 (s) => s.travel_mode === 'TRANSIT'
@@ -358,17 +519,30 @@ export default function Home() {
                   (step.line_name ? ` (${step.line_name})` : '')
               );
 
+              const isRouteTappedIn = tappedInRouteIndex === index;
+
               return (
-                <BusInfo
+                <div
                   key={index}
-                  route={routeName}
-                  from={route.start_address.split(',')[0]}
-                  to={route.end_address.split(',')[0]}
-                  duration={route.duration.text}
-                  fare={fareText}
-                  gpsAvailable={!!mainTransport}
-                  stops={stopsList}
-                />
+                  onClick={() => setSelectedRouteIndex(index)}
+                  className={`cursor-pointer rounded-lg p-1 ${index === selectedRouteIndex ? 'border-2 border-yellow-300' : ''}`}
+                >
+                  <BusInfo
+                    key={index}
+                    route={routeName}
+                    from={route.start_address.split(',')[0]}
+                    to={route.end_address.split(',')[0]}
+                    duration={route.duration.text}
+                    fare={fareText}
+                    gpsAvailable={!!mainTransport}
+                    stops={stopsList}
+                    isTappedIn={isRouteTappedIn}
+                    isGlobalProcessing={isTapProcessing}
+                    onTapConfirmed={(isTappingIn) =>
+                      handleTapTransaction(index, isTappingIn)
+                    }
+                  />
+                </div>
               );
             })}
           </div>

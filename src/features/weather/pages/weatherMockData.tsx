@@ -10,6 +10,8 @@ import WarningModel from '../components/WarningModel';
 import { useWeatherData } from '../hooks/useWeatherData';
 import { useWeatherModel } from '../hooks/useWeatherModel';
 
+import DayRating from '../components/DayRating'; // add import
+
 //fetch ข้อมูลสภาพอากาศและแสดงผลในหน้าเว็บ // fetch data and display on web page
 export default function WeatherMockData() {
   const { data, isLoading, isError, refetch, isForecastLoading } =
@@ -40,13 +42,21 @@ export default function WeatherMockData() {
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-3xl font-bold">Weather</h1>{' '}
         {/*ฟังชั่น back ไปหาหน้าเลือก city*/}
-        <button
-          type="button"
-          onClick={() => window.history.back()}
-          className="text-m ml-4 cursor-pointer rounded px-4 py-1 transition-opacity duration-150 select-none active:opacity-75"
-        >
-          ← back
-        </button>
+        <div className="ml-4 flex items-center gap-4">
+          <button
+            type="button"
+            onClick={() => window.history.back()}
+            className="text-m cursor-pointer rounded px-4 py-1 transition-opacity duration-150 select-none active:opacity-75"
+          >
+            ← back
+          </button>
+          {/* DayRating: pass a likely location id from data; adjust key if your data uses a different prop */}
+          <DayRating
+            locationId={
+              data.location_id ?? (data.locationId as number | undefined) ?? 1
+            }
+          />
+        </div>
       </div>
       {/* TOP ROW */}
       <div className="flex items-stretch gap-5">

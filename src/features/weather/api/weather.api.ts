@@ -67,6 +67,19 @@ export type WeatherDailyResponse = {
   daily_forecast: WeatherDailyItem[];
 };
 
+export type WeatherRatingRecord = {
+  id: number;
+  location_id: number | null;
+  date: string;
+  rating: number;
+  district: string | null;
+};
+
+export type CreateWeatherRatingPayload = {
+  location_id: number;
+  rating: number;
+};
+
 const basePath = '/weather/external';
 
 const buildParams = (locationId: number) => ({
@@ -95,4 +108,14 @@ export const fetchWeatherDaily = async (locationId: number) => {
     buildParams(locationId)
   );
   return unwrapResponse(response.data);
+};
+
+export const createWeatherRating = async (
+  payload: CreateWeatherRatingPayload
+) => {
+  const response = await apiClient.post<
+    ApiResponse<{ data: WeatherRatingRecord }>
+  >('/weather/ratings', payload);
+  const wrapped = unwrapResponse(response.data);
+  return wrapped.data;
 };

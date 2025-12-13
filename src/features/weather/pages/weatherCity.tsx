@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 
 const CITIES = [
-  { id: 1, name: 'ThungKhru', time: '12.00' },
-  { id: 2, name: 'Ratburana', time: '12.00' },
-  { id: 3, name: 'Thonburi', time: '12.00' },
-  { id: 4, name: 'ChomThong', time: '12.00' },
+  { id: 1, name: 'ThungKhru' },
+  { id: 2, name: 'Ratburana' },
+  { id: 3, name: 'Thonburi' },
+  { id: 4, name: 'ChomThong' },
 ];
 
 export default function WeatherCityPage() {

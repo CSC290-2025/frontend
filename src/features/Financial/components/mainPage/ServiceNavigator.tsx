@@ -3,13 +3,11 @@ import { Card, CardContent } from '@/components/ui/card';
 import ServiceGrid, { type ServiceType } from './ServiceGrid';
 
 interface ServiceNavigatorProps {
-  userId: string;
   label?: string;
   className?: string;
 }
 
 export default function ServiceNavigator({
-  userId,
   label = 'Connected Services',
   className = '',
 }: ServiceNavigatorProps) {
@@ -21,10 +19,10 @@ export default function ServiceNavigator({
         navigate('/financial/topup');
         break;
       case 'metro':
-        navigate(`/financial/metro/${userId}`);
+        navigate(`/financial/metro`);
         break;
       case 'insurance':
-        navigate(`/financial/insurance/${userId}`);
+        navigate(`/financial/insurance`);
         break;
     }
   };
