@@ -112,7 +112,6 @@ const UserJoinPage: React.FC = () => {
                   alt={job.title}
                   className="h-40 w-full object-cover"
                 />
-                .tsx
                 <div className="p-5">
                   <h3 className="mb-2 truncate text-lg font-semibold text-gray-800">
                     {job.title}
@@ -126,7 +125,6 @@ const UserJoinPage: React.FC = () => {
                   <p className="mb-4 flex items-center text-sm text-gray-600">
                     <Users className="mr-2 h-4 w-4 flex-shrink-0" />
                     {job.current_participants}/{job.total_seats} Participants
-                    ------------------
                   </p>
                   <div className="w-full rounded-full bg-gray-200 py-2 text-center font-medium text-gray-800">
                     You&apos;ve Joined

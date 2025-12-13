@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import {
   Search,
-  ArrowLeft, // NEW for Pagination
-  ArrowRight, // NEW for Pagination
+  ArrowLeft,
+  ArrowRight,
+  Users, // Import the Users icon
 } from 'lucide-react';
 import { useNavigate } from '@/router';
 import { apiClient } from '@/lib/apiClient';
@@ -11,6 +12,7 @@ import { Filter } from 'lucide-react';
 import TagFilter from '@/features/volunteer/components/TagFilter';
 import Layout from '@/components/main/Layout';
 
+// ... (Interfaces, useDebounce, and PaginationControls remain unchanged) ...
 // --- Interfaces (No Change) ---
 interface VolunteerEvent {
   id: number;
@@ -29,11 +31,10 @@ interface ApiResponse {
     events: VolunteerEvent[];
     total: number;
     page: number;
-    totalPages: number; // CRITICAL: The API must return this
+    totalPages: number;
   };
 }
 
-// --- useDebounce Hook (No Change) ---
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
   useEffect(() => {
@@ -47,7 +48,6 @@ function useDebounce<T>(value: T, delay: number): T {
   return debouncedValue;
 }
 
-// --- PaginationControls Component (No Change) ---
 interface PaginationProps {
   currentPage: number;
   totalPages: number;
@@ -78,8 +78,6 @@ const PaginationControls: React.FC<PaginationProps> = ({
       >
         <ArrowLeft className="h-5 w-5" />
       </button>
-
-      {/* Show first page if not already in the visible range */}
       {startPage > 1 && (
         <>
           <button
@@ -91,8 +89,6 @@ const PaginationControls: React.FC<PaginationProps> = ({
           {startPage > 2 && <span className="text-gray-500">...</span>}
         </>
       )}
-
-      {/* Visible page buttons */}
       {pageNumbers.map((page) => (
         <button
           key={page}
@@ -106,8 +102,6 @@ const PaginationControls: React.FC<PaginationProps> = ({
           {page}
         </button>
       ))}
-
-      {/* Show last page if not already in the visible range */}
       {endPage < totalPages && (
         <>
           {endPage < totalPages - 1 && (
@@ -121,7 +115,6 @@ const PaginationControls: React.FC<PaginationProps> = ({
           </button>
         </>
       )}
-
       <button
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage === totalPages}
@@ -132,7 +125,6 @@ const PaginationControls: React.FC<PaginationProps> = ({
     </div>
   );
 };
-// --- END PaginationControls ---
 
 export default function CityVolunteerHomepage() {
   const navigate = useNavigate();
@@ -148,7 +140,6 @@ export default function CityVolunteerHomepage() {
   const [searchTerm, setSearchTerm] = useState('');
   const debouncedSearch = useDebounce(searchTerm, 500);
 
-  // --- Pagination State ---
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const EVENTS_PER_PAGE = 9;
@@ -161,6 +152,7 @@ export default function CityVolunteerHomepage() {
     'Disability/Elderly Support',
     'Community & Social',
   ];
+
   useEffect(() => {
     const fetchEvents = async () => {
       setIsLoading(true);
@@ -170,7 +162,7 @@ export default function CityVolunteerHomepage() {
           page: currentPage,
           limit: EVENTS_PER_PAGE,
           search: debouncedSearch || undefined,
-          tag: selectedCategory || undefined, // ✅ ADD THIS
+          tag: selectedCategory || undefined,
         };
 
         const response = await apiClient.get<ApiResponse>(
@@ -212,13 +204,16 @@ export default function CityVolunteerHomepage() {
     navigate('/volunteer/createpost');
   };
 
+  const handleMyEventsClick = () => {
+    navigate('/volunteer/userjoin');
+  };
+
   return (
     <Layout>
       <div className="flex min-h-screen flex-col bg-gray-50">
-        {/* Main Content (now starts at the top of the page) */}
         <main className="flex-1 overflow-auto">
           <div className="p-4 md:p-8">
-            {/* Search and Create Button */}
+            {/* Search and Action Buttons */}
             <div className="mb-8 flex flex-col gap-3 md:flex-row">
               <div className="relative flex-1">
                 <Search className="absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 transform text-gray-400" />
@@ -231,17 +226,29 @@ export default function CityVolunteerHomepage() {
                 />
               </div>
 
-              <button
-                onClick={handleCreateClick}
-                className="flex w-full items-center justify-center gap-2 rounded-full bg-blue-500 px-6 py-3 text-white hover:bg-blue-600 md:w-auto"
-              >
-                <span>Create Event</span>
-              </button>
+              <div className="flex gap-2">
+                {/* My Joined Events */}
+                <button
+                  onClick={handleMyEventsClick}
+                  className="flex w-full items-center justify-center gap-2 rounded-full border bg-green-200 px-6 py-3 text-gray-700 hover:bg-gray-50 md:w-auto"
+                >
+                  <Users className="h-5 w-5" />
+                  <span className="whitespace-nowrap">My Joined Events</span>
+                </button>
+
+                {/* Create Event Button */}
+                <button
+                  onClick={handleCreateClick}
+                  className="flex w-full items-center justify-center gap-2 rounded-full bg-blue-500 px-6 py-3 text-white hover:bg-blue-600 md:w-auto"
+                >
+                  <span>Create Event</span>
+                </button>
+              </div>
             </div>
 
             {/* Volunteer Jobs Section */}
-            <div className="flex">
-              <h2 className="mb-6 text-3xl font-bold text-gray-800">
+            <div className="mb-6 flex items-center justify-between">
+              <h2 className="text-3xl font-bold text-gray-800">
                 Current Volunteer Opportunities 🌟
               </h2>
               <button
@@ -252,8 +259,9 @@ export default function CityVolunteerHomepage() {
                 Filter
               </button>
             </div>
+
             {showFilters && (
-              <div className="rounded-2xl bg-white p-6 shadow-md">
+              <div className="mb-6 rounded-2xl bg-white p-6 shadow-md">
                 <h3 className="mb-4 font-semibold text-gray-900">Categories</h3>
                 <TagFilter
                   categories={tags}
@@ -262,6 +270,7 @@ export default function CityVolunteerHomepage() {
                 />
               </div>
             )}
+
             {isLoading && (
               <div className="text-center text-gray-500">Loading jobs...</div>
             )}
@@ -315,7 +324,6 @@ export default function CityVolunteerHomepage() {
                   )}
                 </div>
 
-                {/* --- Pagination Controls --- */}
                 <PaginationControls
                   currentPage={currentPage}
                   totalPages={totalPages}

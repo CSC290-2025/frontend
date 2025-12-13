@@ -1,11 +1,20 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate, useParams } from '@/router';
-import { ArrowLeft, Calendar, Clock, Edit, Trash2, Users } from 'lucide-react';
+import {
+  ArrowLeft,
+  Calendar,
+  Clock,
+  Edit,
+  Trash2,
+  Users,
+  X,
+} from 'lucide-react';
 import { apiClient } from '@/lib/apiClient';
 import { DonateModal } from '@/features/volunteer/components/DonateModal';
 import { useGetWalletsUserUserId } from '@/api/generated/wallets';
 import { useGetAuthMe } from '@/api/generated/authentication';
+
 interface VolunteerEvent {
   id: number;
   title: string;
@@ -22,6 +31,12 @@ interface VolunteerEvent {
   tag: string | undefined;
 }
 
+interface Participant {
+  id: number;
+  username: string;
+  email: string;
+}
+
 interface ApiResponse<T> {
   success: boolean;
   data: T;
@@ -31,6 +46,11 @@ interface ApiResponse<T> {
 interface EventDetailResponse {
   event: VolunteerEvent;
   is_joined: boolean;
+}
+
+interface ParticipantsResponse {
+  count: number;
+  participants: Participant[];
 }
 
 export default function VolunteerDetailPage() {
@@ -48,6 +68,15 @@ export default function VolunteerDetailPage() {
   const wallet = wallets?.data?.wallet;
   const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [creatorId, setCreatorId] = useState<number | null>(null);
+
+  // Participants modal state
+  const [showParticipants, setShowParticipants] = useState(false);
+  const [participants, setParticipants] = useState<Participant[]>([]);
+  const [loadingParticipants, setLoadingParticipants] = useState(false);
+  const [participantsError, setParticipantsError] = useState<string | null>(
+    null
+  );
+
   useEffect(() => {
     if (!id) return;
 
@@ -79,6 +108,31 @@ export default function VolunteerDetailPage() {
 
     fetchEvent();
   }, [id]);
+
+  const fetchParticipants = async () => {
+    setLoadingParticipants(true);
+    setParticipantsError(null);
+    try {
+      const response = await apiClient.get<ApiResponse<ParticipantsResponse>>(
+        `/api/v1/volunteer/${id}/participants?requesterId=${userId}`
+      );
+
+      if (response.data.success) {
+        setParticipants(response.data.data.participants);
+      } else {
+        throw new Error('Failed to fetch participants');
+      }
+    } catch (err: any) {
+      setParticipantsError(err.response?.data?.message || err.message);
+    } finally {
+      setLoadingParticipants(false);
+    }
+  };
+
+  const handleShowParticipants = () => {
+    setShowParticipants(true);
+    fetchParticipants();
+  };
 
   const handleJoinEvent = async () => {
     if (!userId) {
@@ -215,6 +269,7 @@ export default function VolunteerDetailPage() {
       </button>
     );
   };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -259,7 +314,6 @@ export default function VolunteerDetailPage() {
       <div className="mx-auto max-w-3xl px-4 py-8 md:px-8">
         <div className="space-y-6">
           {/* Donation */}
-
           {event.tag === 'Funding' && (
             <DonateModal
               wallet={wallet}
@@ -268,6 +322,7 @@ export default function VolunteerDetailPage() {
               onSuccess={refetch}
             />
           )}
+
           {event.image_url && (
             <img
               src={event.image_url}
@@ -316,7 +371,11 @@ export default function VolunteerDetailPage() {
                 {getFormattedTime(event.start_at, event.end_at)}
               </div>
             </div>
-            <div className="rounded-xl border border-gray-200 bg-white p-4">
+            <div
+              className="cursor-pointer rounded-xl border border-gray-200 bg-white p-4 transition-colors hover:bg-gray-50"
+              onClick={handleShowParticipants}
+              title="Click to view participants"
+            >
               <Users className="mb-2 h-5 w-5 text-blue-500" />
               <div className="text-xs text-gray-600 md:text-sm">Volunteers</div>
               <div className="text-sm font-semibold text-gray-800 md:text-base">
@@ -361,6 +420,70 @@ export default function VolunteerDetailPage() {
           }
         </div>
       </div>
+
+      {/* Participants Modal */}
+      {showParticipants && (
+        <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="relative w-full max-w-md rounded-2xl bg-white shadow-xl">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between border-b border-gray-200 p-6">
+              <div>
+                <h2 className="text-2xl font-bold text-gray-800">
+                  Participants
+                </h2>
+                <p className="mt-1 text-sm text-gray-600">
+                  {event.current_participants} volunteer
+                  {event.current_participants !== 1 ? 's' : ''}
+                </p>
+              </div>
+              <button
+                onClick={() => setShowParticipants(false)}
+                className="rounded-full p-2 transition-colors hover:bg-gray-100"
+              >
+                <X className="h-5 w-5 text-gray-600" />
+              </button>
+            </div>
+
+            {/* Modal Content */}
+            <div className="max-h-96 overflow-y-auto p-6">
+              {loadingParticipants ? (
+                <div className="py-8 text-center text-gray-500">
+                  Loading participants...
+                </div>
+              ) : participantsError ? (
+                <div className="py-8 text-center text-red-500">
+                  {participantsError}
+                </div>
+              ) : participants.length === 0 ? (
+                <div className="py-8 text-center text-gray-500">
+                  No participants yet
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {participants.map((participant, index) => (
+                    <div
+                      key={participant.id}
+                      className="flex items-center gap-4 rounded-lg border border-gray-200 bg-gray-50 p-4 transition-colors hover:bg-gray-100"
+                    >
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-500 font-semibold text-white">
+                        {participant.username.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-semibold text-gray-800">
+                          {participant.username}
+                        </p>
+                        <p className="truncate text-sm text-gray-600">
+                          {participant.email}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
