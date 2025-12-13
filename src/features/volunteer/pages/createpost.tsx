@@ -13,7 +13,7 @@ import {
   Plus,
   Image,
 } from 'lucide-react';
-
+import { useGetAuthMe } from '@/api/generated/authentication';
 // This is the shape of the data the API *expects*
 interface ApiPayload {
   title: string;
@@ -30,6 +30,7 @@ interface ApiPayload {
 
 export default function CreateVolunteerPost() {
   const navigate = useNavigate(); // Hook for navigation
+  const userId = useGetAuthMe().data?.data?.userId.toString() ?? '';
   const [formData, setFormData] = useState({
     title: '',
     organization: '',
@@ -186,7 +187,7 @@ ${requirements
       image_url: typeof uploadedImage === 'string' ? uploadedImage : undefined, // Send base64 string or undefined
 
       // testing with static IDs - replace with actual dynamic values (e.g., from auth context)
-      created_by_user_id: 1,
+      created_by_user_id: Number(userId),
       department_id: 1,
       address_id: 1,
     };
