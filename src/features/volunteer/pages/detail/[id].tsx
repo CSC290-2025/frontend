@@ -65,6 +65,7 @@ export default function VolunteerDetailPage() {
           setEvent(fetchedEvent);
           setIsJoined(userJoinedStatus);
           setCreatorId(fetchedEvent.created_by_user_id);
+
           console.log(response.data.data);
         } else {
           throw new Error('API did not return success');

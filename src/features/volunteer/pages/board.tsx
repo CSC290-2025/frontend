@@ -9,6 +9,7 @@ import { useNavigate } from '@/router';
 import { apiClient } from '@/lib/apiClient';
 import { Filter } from 'lucide-react';
 import TagFilter from '@/features/volunteer/components/TagFilter';
+import Layout from '@/components/main/Layout';
 
 // --- Interfaces (No Change) ---
 interface VolunteerEvent {
@@ -212,115 +213,119 @@ export default function CityVolunteerHomepage() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col bg-gray-50">
-      {/* Main Content (now starts at the top of the page) */}
-      <main className="flex-1 overflow-auto">
-        <div className="p-4 md:p-8">
-          {/* Search and Create Button */}
-          <div className="mb-8 flex flex-col gap-3 md:flex-row">
-            <div className="relative flex-1">
-              <Search className="absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 transform text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search for volunteer works"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full rounded-full border border-gray-200 py-3 pr-4 pl-12 focus:ring-2 focus:ring-blue-400 focus:outline-none"
-              />
-            </div>
-
-            <button
-              onClick={handleCreateClick}
-              className="flex w-full items-center justify-center gap-2 rounded-full bg-blue-500 px-6 py-3 text-white hover:bg-blue-600 md:w-auto"
-            >
-              <span>Create Event</span>
-            </button>
-          </div>
-
-          {/* Volunteer Jobs Section */}
-          <div className="flex">
-            <h2 className="mb-6 text-3xl font-bold text-gray-800">
-              Current Volunteer Opportunities 🌟
-            </h2>
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className="flex h-10 items-center gap-1 rounded-full border border-gray-300 bg-white px-3 py-1 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:border-cyan-500"
-            >
-              <Filter className="h-4 w-4" />
-              Filter
-            </button>
-          </div>
-          {showFilters && (
-            <div className="rounded-2xl bg-white p-6 shadow-md">
-              <h3 className="mb-4 font-semibold text-gray-900">Categories</h3>
-              <TagFilter
-                categories={tags}
-                selectedCategory={selectedCategory}
-                onChange={setSelectedCategory}
-              />
-            </div>
-          )}
-          {isLoading && (
-            <div className="text-center text-gray-500">Loading jobs...</div>
-          )}
-
-          {error && (
-            <div className="text-center text-red-500">
-              <strong>Error:</strong> {error}
-            </div>
-          )}
-
-          {!isLoading && !error && (
-            <>
-              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                {volunteerJobs.length > 0 ? (
-                  volunteerJobs.map((job) => (
-                    <div
-                      key={job.id}
-                      onClick={() => handleCardClick(job.id)}
-                      className="cursor-pointer overflow-hidden rounded-2xl border border-gray-200 bg-white transition-shadow hover:shadow-lg"
-                    >
-                      <img
-                        src={
-                          job.image_url || 'https://via.placeholder.com/300x160'
-                        }
-                        alt={job.title}
-                        className="h-40 w-full object-cover"
-                      />
-                      <div className="p-5">
-                        <h3 className="mb-2 truncate text-lg font-semibold text-gray-800">
-                          {job.title}
-                        </h3>
-                        <p className="mb-1 text-sm text-gray-600">
-                          <span className="font-medium">Date:</span>{' '}
-                          {job.start_at
-                            ? new Date(job.start_at).toLocaleDateString()
-                            : 'Date TBD'}
-                        </p>
-                        <p className="mb-4 text-sm text-gray-600">
-                          <span className="font-medium">Slots:</span>{' '}
-                          {job.current_participants} / {job.total_seats} filled
-                        </p>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="col-span-1 text-center text-gray-500 sm:col-span-2 lg:col-span-3">
-                    No events found matching your search.
-                  </div>
-                )}
+    <Layout>
+      <div className="flex min-h-screen flex-col bg-gray-50">
+        {/* Main Content (now starts at the top of the page) */}
+        <main className="flex-1 overflow-auto">
+          <div className="p-4 md:p-8">
+            {/* Search and Create Button */}
+            <div className="mb-8 flex flex-col gap-3 md:flex-row">
+              <div className="relative flex-1">
+                <Search className="absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 transform text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search for volunteer works"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full rounded-full border border-gray-200 py-3 pr-4 pl-12 focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                />
               </div>
 
-              {/* --- Pagination Controls --- */}
-              <PaginationControls
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={handlePageChange}
-              />
-            </>
-          )}
-        </div>
-      </main>
-    </div>
+              <button
+                onClick={handleCreateClick}
+                className="flex w-full items-center justify-center gap-2 rounded-full bg-blue-500 px-6 py-3 text-white hover:bg-blue-600 md:w-auto"
+              >
+                <span>Create Event</span>
+              </button>
+            </div>
+
+            {/* Volunteer Jobs Section */}
+            <div className="flex">
+              <h2 className="mb-6 text-3xl font-bold text-gray-800">
+                Current Volunteer Opportunities 🌟
+              </h2>
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className="flex h-10 items-center gap-1 rounded-full border border-gray-300 bg-white px-3 py-1 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:border-cyan-500"
+              >
+                <Filter className="h-4 w-4" />
+                Filter
+              </button>
+            </div>
+            {showFilters && (
+              <div className="rounded-2xl bg-white p-6 shadow-md">
+                <h3 className="mb-4 font-semibold text-gray-900">Categories</h3>
+                <TagFilter
+                  categories={tags}
+                  selectedCategory={selectedCategory}
+                  onChange={setSelectedCategory}
+                />
+              </div>
+            )}
+            {isLoading && (
+              <div className="text-center text-gray-500">Loading jobs...</div>
+            )}
+
+            {error && (
+              <div className="text-center text-red-500">
+                <strong>Error:</strong> {error}
+              </div>
+            )}
+
+            {!isLoading && !error && (
+              <>
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                  {volunteerJobs.length > 0 ? (
+                    volunteerJobs.map((job) => (
+                      <div
+                        key={job.id}
+                        onClick={() => handleCardClick(job.id)}
+                        className="cursor-pointer overflow-hidden rounded-2xl border border-gray-200 bg-white transition-shadow hover:shadow-lg"
+                      >
+                        <img
+                          src={
+                            job.image_url ||
+                            'https://via.placeholder.com/300x160'
+                          }
+                          alt={job.title}
+                          className="h-40 w-full object-cover"
+                        />
+                        <div className="p-5">
+                          <h3 className="mb-2 truncate text-lg font-semibold text-gray-800">
+                            {job.title}
+                          </h3>
+                          <p className="mb-1 text-sm text-gray-600">
+                            <span className="font-medium">Date:</span>{' '}
+                            {job.start_at
+                              ? new Date(job.start_at).toLocaleDateString()
+                              : 'Date TBD'}
+                          </p>
+                          <p className="mb-4 text-sm text-gray-600">
+                            <span className="font-medium">Slots:</span>{' '}
+                            {job.current_participants} / {job.total_seats}{' '}
+                            filled
+                          </p>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="col-span-1 text-center text-gray-500 sm:col-span-2 lg:col-span-3">
+                      No events found matching your search.
+                    </div>
+                  )}
+                </div>
+
+                {/* --- Pagination Controls --- */}
+                <PaginationControls
+                  currentPage={currentPage}
+                  totalPages={totalPages}
+                  onPageChange={handlePageChange}
+                />
+              </>
+            )}
+          </div>
+        </main>
+      </div>
+    </Layout>
   );
 }
