@@ -1,9 +1,11 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { useNavigate, useParams } from '@/router';
 import { ArrowLeft, Calendar, Clock, Edit, Trash2, Users } from 'lucide-react';
 import { apiClient } from '@/lib/apiClient';
-
+import { DonateModal } from '@/features/volunteer/components/DonateModal';
+import { useGetWalletsUserUserId } from '@/api/generated/wallets';
+import { useGetAuthMe } from '@/api/generated/authentication';
 interface VolunteerEvent {
   id: number;
   title: string;
@@ -28,60 +30,55 @@ interface ApiResponse<T> {
 interface EventDetailResponse {
   event: VolunteerEvent;
   is_joined: boolean;
-  is_registration_open: boolean;
 }
 
 export default function VolunteerDetailPage() {
   const navigate = useNavigate();
+  const userId = useGetAuthMe().data?.data?.userId.toString() ?? '';
   const { id } = useParams('/volunteer/detail/:id');
 
+  const { data: wallets, refetch } = useGetWalletsUserUserId(Number(userId));
   const [event, setEvent] = useState<VolunteerEvent | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isJoined, setIsJoined] = useState(false);
-  // We still store this, but we will largely ignore it in the UI logic below
-  // to fix your specific issue where the backend sends false prematurely.
-  const [isRegistrationOpen, setIsRegistrationOpen] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
-
-  // Placeholder for the current user ID (must be replaced by actual auth context)
+  const wallet = wallets?.data?.wallet;
   const [currentUserId, setCurrentUserId] = useState<number>(1);
-
-  const fetchEvent = useCallback(async (eventId: string, userId: number) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const response = await apiClient.get<ApiResponse<EventDetailResponse>>(
-        `/api/v1/volunteer/${eventId}?userId=${userId}`
-      );
-
-      if (response.data.success) {
-        const {
-          event: fetchedEvent,
-          is_joined: userJoinedStatus,
-          is_registration_open: registrationStatus,
-        } = response.data.data;
-        setEvent(fetchedEvent);
-        setIsJoined(userJoinedStatus);
-        setIsRegistrationOpen(registrationStatus);
-      } else {
-        throw new Error('API did not return success');
-      }
-    } catch (err: any) {
-      setError(err.response?.data?.message || err.message);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
+  const [creatorId, setCreatorId] = useState<number | null>(null);
   useEffect(() => {
-    if (!id || !currentUserId) return;
-    fetchEvent(id, currentUserId);
-  }, [id, currentUserId, fetchEvent]);
+    if (!id) return;
+
+    const fetchEvent = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const response = await apiClient.get<ApiResponse<EventDetailResponse>>(
+          `/api/v1/volunteer/${id}`
+        );
+
+        if (response.data.success) {
+          const { event: fetchedEvent, is_joined: userJoinedStatus } =
+            response.data.data;
+          setEvent(fetchedEvent);
+          setIsJoined(userJoinedStatus);
+          setCreatorId(fetchedEvent.created_by_user_id);
+        } else {
+          throw new Error('API did not return success');
+        }
+      } catch (err: any) {
+        setError(err.response?.data?.message || err.message);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchEvent();
+  }, [id]);
 
   const handleJoinEvent = async () => {
-    if (!currentUserId || !id) return;
+    if (!currentUserId) return;
     setIsSubmitting(true);
     setActionError(null);
 
@@ -89,9 +86,9 @@ export default function VolunteerDetailPage() {
       const response = await apiClient.post<
         ApiResponse<{ event: VolunteerEvent }>
       >(`/api/v1/volunteer/${id}/join`, { userId: currentUserId });
-
       if (response.data.success) {
-        await fetchEvent(id, currentUserId);
+        setEvent(response.data.data.event);
+        setIsJoined(true);
       } else {
         throw new Error(response.data.message || 'Failed to join event');
       }
@@ -103,7 +100,7 @@ export default function VolunteerDetailPage() {
   };
 
   const handleLeaveEvent = async () => {
-    if (!currentUserId || !id) return;
+    if (!currentUserId) return;
     setIsSubmitting(true);
     setActionError(null);
 
@@ -113,9 +110,9 @@ export default function VolunteerDetailPage() {
       >(`/api/v1/volunteer/${id}/join`, {
         data: { userId: currentUserId },
       });
-
       if (response.data.success) {
-        await fetchEvent(id, currentUserId);
+        setEvent(response.data.data.event);
+        setIsJoined(false);
       } else {
         throw new Error(response.data.message || 'Failed to leave event');
       }
@@ -187,42 +184,15 @@ export default function VolunteerDetailPage() {
   const isEventFull = event.current_participants >= event.total_seats;
   const isOwner = event.created_by_user_id === currentUserId;
 
-  // ------------------------------------------------------------------
-  // ⚡️ FIXED LOGIC: Ignores API "closed" flag if date is valid
-  // ------------------------------------------------------------------
   const renderActionButton = () => {
-    // 1. Manually check if the deadline has passed locally
-    const deadlineDate = event.registration_deadline
-      ? new Date(event.registration_deadline)
-      : null;
-
-    // Check if NOW is greater than deadline
-    const hasDeadlinePassed = deadlineDate ? new Date() > deadlineDate : false;
-
-    // 2. BLOCKER: Only stop if the DATE is actually past.
-    // We ignore the backend `isRegistrationOpen` for the error message
-    // because your backend seems to return false even when valid.
-    if (hasDeadlinePassed && !isJoined) {
-      return (
-        <div className="w-full rounded-full bg-gray-200 py-2 text-center font-medium text-gray-600">
-          Registration deadline has passed.
-        </div>
-      );
-    }
-
-    // 3. Button State Logic
-    // We REMOVED `!isRegistrationOpen` from the disabled check so the button stays clickable
-    // as long as there is space and time left.
     const disabled = isSubmitting || (isEventFull && !isJoined);
-
     const className = `w-full rounded-full py-2 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
       isJoined
         ? 'bg-gray-200 text-gray-800 hover:bg-gray-300'
         : isEventFull
-          ? 'bg-gray-200 text-gray-500' // Gray if full
-          : 'bg-lime-400 text-gray-800 hover:bg-lime-500' // Green if available
+          ? 'bg-gray-200 text-gray-500'
+          : 'bg-lime-400 text-gray-800 hover:bg-lime-500'
     }`;
-
     const text = isSubmitting
       ? isJoined
         ? 'Leaving...'
@@ -241,8 +211,6 @@ export default function VolunteerDetailPage() {
       </button>
     );
   };
-  // ------------------------------------------------------------------
-
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
@@ -258,7 +226,7 @@ export default function VolunteerDetailPage() {
             </span>
           </button>
 
-          {isOwner && (
+          {
             <div className="flex gap-3">
               <button
                 onClick={() =>
@@ -269,6 +237,7 @@ export default function VolunteerDetailPage() {
               >
                 <Edit className="h-5 w-5 text-gray-600" />
               </button>
+
               <button
                 onClick={handleDeleteEvent}
                 disabled={isSubmitting}
@@ -278,13 +247,20 @@ export default function VolunteerDetailPage() {
                 <Trash2 className="h-5 w-5 text-red-500" />
               </button>
             </div>
-          )}
+          }
         </div>
       </div>
 
       {/* Content */}
       <div className="mx-auto max-w-3xl px-4 py-8 md:px-8">
         <div className="space-y-6">
+          {/* Donation */}
+          <DonateModal
+            wallet={wallet}
+            userId={userId}
+            transferToUserId={creatorId ? creatorId.toString() : ''}
+            onSuccess={refetch}
+          />
           {event.image_url && (
             <img
               src={event.image_url}
