@@ -35,7 +35,7 @@ interface EventDetailResponse {
 
 export default function VolunteerDetailPage() {
   const navigate = useNavigate();
-  const userId = useGetAuthMe().data?.data?.userId.toString() ?? '';
+  const userId = useGetAuthMe().data?.data?.userId ?? '';
   const { id } = useParams('/volunteer/detail/:id');
 
   const { data: wallets, refetch } = useGetWalletsUserUserId(Number(userId));
@@ -46,7 +46,7 @@ export default function VolunteerDetailPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const wallet = wallets?.data?.wallet;
-  const [currentUserId, setCurrentUserId] = useState<number>(1);
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [creatorId, setCreatorId] = useState<number | null>(null);
   useEffect(() => {
     if (!id) return;
@@ -65,7 +65,7 @@ export default function VolunteerDetailPage() {
           setEvent(fetchedEvent);
           setIsJoined(userJoinedStatus);
           setCreatorId(fetchedEvent.created_by_user_id);
-          console.log(fetchedEvent);
+          console.log(response.data.data);
         } else {
           throw new Error('API did not return success');
         }
@@ -80,14 +80,15 @@ export default function VolunteerDetailPage() {
   }, [id]);
 
   const handleJoinEvent = async () => {
-    if (!currentUserId) return;
+    if (!userId) {
+    }
     setIsSubmitting(true);
     setActionError(null);
 
     try {
       const response = await apiClient.post<
         ApiResponse<{ event: VolunteerEvent }>
-      >(`/api/v1/volunteer/${id}/join`, { userId: currentUserId });
+      >(`/api/v1/volunteer/${id}/join`, { userId: userId });
       if (response.data.success) {
         setEvent(response.data.data.event);
         setIsJoined(true);
@@ -102,7 +103,7 @@ export default function VolunteerDetailPage() {
   };
 
   const handleLeaveEvent = async () => {
-    if (!currentUserId) return;
+    if (!userId) return;
     setIsSubmitting(true);
     setActionError(null);
 
@@ -110,7 +111,7 @@ export default function VolunteerDetailPage() {
       const response = await apiClient.delete<
         ApiResponse<{ event: VolunteerEvent }>
       >(`/api/v1/volunteer/${id}/join`, {
-        data: { userId: currentUserId },
+        data: { userId: userId },
       });
       if (response.data.success) {
         setEvent(response.data.data.event);
@@ -184,7 +185,7 @@ export default function VolunteerDetailPage() {
     );
 
   const isEventFull = event.current_participants >= event.total_seats;
-  const isOwner = event.created_by_user_id === currentUserId;
+  const isOwner = Number(event.created_by_user_id) === Number(userId);
 
   const renderActionButton = () => {
     const disabled = isSubmitting || (isEventFull && !isJoined);
@@ -261,7 +262,7 @@ export default function VolunteerDetailPage() {
           {event.tag === 'Funding' && (
             <DonateModal
               wallet={wallet}
-              userId={userId}
+              userId={userId.toString()}
               transferToUserId={creatorId ? creatorId.toString() : ''}
               onSuccess={refetch}
             />

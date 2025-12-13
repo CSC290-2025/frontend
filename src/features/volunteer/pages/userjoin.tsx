@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from '@/router';
 import { ArrowLeft, Calendar, Users } from 'lucide-react';
 import { apiClient } from '@/lib/apiClient';
-
+import { useGetAuthMe } from '@/api/generated/authentication';
 interface VolunteerEvent {
   id: number;
   title: string;
@@ -25,14 +25,14 @@ const UserJoinPage: React.FC = () => {
   const [joinedEvents, setJoinedEvents] = useState<VolunteerEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null); // testing with static user ID
-
-  const currentUserId = 1;
+  const userId = useGetAuthMe().data?.data?.userId ?? null;
 
   useEffect(() => {
+    if (!userId) return;
     const fetchMyEvents = async () => {
       try {
         const response = await apiClient.get<MyEventsApiResponse>(
-          `/api/v1/volunteer/my-events?userId=${currentUserId}`
+          `/api/v1/volunteer/my-events?userId=${userId}`
         );
         if (response.data.success) {
           setJoinedEvents(response.data.data.events);
@@ -51,8 +51,10 @@ const UserJoinPage: React.FC = () => {
     };
 
     fetchMyEvents();
-  }, [currentUserId]);
-
+  }, [userId]);
+  if (!userId) {
+    return null;
+  }
   const handleCardClick = (id: number) => {
     navigate('/volunteer/detail/:id', { params: { id: String(id) } });
   };
