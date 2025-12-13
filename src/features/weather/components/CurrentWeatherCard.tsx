@@ -23,7 +23,7 @@ export default function CurrentWeatherCard({ data, onClick }: Props) {
 
           <p className="mt-2 text-sm text-gray-500">
             Feels like {data.feelLike}° • Humidity {data.humidity}% • Wind{' '}
-            {data.windSpeed} km/h
+            {data.windSpeed} km/h •
           </p>
         </div>
 

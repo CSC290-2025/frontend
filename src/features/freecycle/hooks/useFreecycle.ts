@@ -17,8 +17,10 @@ import {
   fetchPostById,
   fetchPostRequests,
   type ReceiverRequest,
+  fetchMyPosts,
 } from '@/features/freecycle/api/freecycle.api';
 import type { ApiPost, Category } from '@/types/postItem';
+import { useAuthenticated } from '@/hooks/useAuthenticated';
 
 // --- Posts and Basic Actions Hooks ---
 
@@ -213,10 +215,26 @@ export function useUserRequests() {
   });
 }
 
+// export function useCreateRequest() {
+//   const queryClient = useQueryClient();
+//   return useMutation({
+//     mutationFn: createRequest,
+//     onSuccess: () => {
+//       queryClient.invalidateQueries({ queryKey: ['requests', 'user'] });
+//     },
+//   });
+// }
+
 export function useCreateRequest() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: createRequest,
+    mutationFn: ({
+      postId,
+      receiverId,
+    }: {
+      postId: number;
+      receiverId: number;
+    }) => createRequest(postId, receiverId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['requests', 'user'] });
     },
@@ -254,28 +272,37 @@ export function useUpdateRequestStatus() {
 
 // --- Other Hooks ---
 
-export function usePostsByUserId(userId?: number) {
-  return useQuery({
-    queryKey: ['posts', 'user', userId],
-    queryFn: () => fetchPostsByUserId(userId!),
-    enabled: Number.isFinite(userId),
-    retry: 2,
-    meta: {
-      errorMessage: 'Failed to load user posts',
-    },
-  });
-}
+// export function usePostsByUserId(userId?: number) {
+//   return useQuery({
+//     queryKey: ['posts', 'user', userId],
+//     queryFn: () => fetchPostsByUserId(userId!),
+//     enabled: Number.isFinite(userId),
+//     retry: 2,
+//     meta: {
+//       errorMessage: 'Failed to load user posts',
+//     },
+//   });
+// }
 
-/**
- * Hook Mock User ID = 23
- */
-export function useCurrentUser() {
-  const MOCK_CURRENT_USER_ID = 23; // mock User ID
-  return {
-    data: { id: MOCK_CURRENT_USER_ID, name: 'CurrentUser' },
-    isLoading: false,
-  };
-}
+// /**
+//  * Hook Mock User ID = 23
+//  */
+// export function useCurrentUser() {
+//   const MOCK_CURRENT_USER_ID = 23; // mock User ID
+//   return {
+//     data: { id: MOCK_CURRENT_USER_ID, name: 'CurrentUser' },
+//     isLoading: false,
+//   };
+// }
+
+// export function useCurrentUser() {
+//   const { data, isLoading, isSuccess, isFetching } = useAuthenticated();
+//   return {
+//     data: data?.user || null,
+//     isLoading: isLoading || isFetching,
+//     isAuthenticated: isSuccess && !!data?.user,
+//   };
+// }
 
 export function usePostById(postId: number) {
   return useQuery({
@@ -285,6 +312,66 @@ export function usePostById(postId: number) {
     retry: 2,
     meta: {
       errorMessage: 'Failed to load item details',
+    },
+  });
+}
+
+export function usePostsByUserId(userId?: number) {
+  return useQuery({
+    queryKey: ['posts', 'user', userId],
+    queryFn: () => fetchPostsByUserId(userId!),
+    enabled: Number.isFinite(userId) && userId! > 0,
+    retry: 2,
+    meta: {
+      errorMessage: 'Failed to load user posts',
+    },
+  });
+}
+
+// export function useMyPosts() {
+//   return useQuery({
+//     queryKey: ['posts', 'me'],
+//     queryFn: fetchUserPosts, // ใช้ฟังก์ชันที่มีอยู่แล้ว
+//     retry: 2,
+//     meta: {
+//       errorMessage: 'Failed to load your posts',
+//     },
+//   });
+// }
+
+// export function useMyPosts() {
+//   return useQuery({
+//     queryKey: ['posts', 'me'],
+//     queryFn: fetchMyPosts,
+//     retry: 2,
+//   });
+// }
+
+export function useCurrentUser() {
+  const { data, isLoading, isSuccess, isFetching } = useAuthenticated();
+
+  return {
+    data: data?.user || null,
+    isLoading: isLoading || isFetching,
+    isAuthenticated: isSuccess && !!data?.user,
+  };
+}
+
+export function useMyPosts() {
+  const {
+    data: currentUser,
+    isLoading: isUserLoading,
+    isAuthenticated,
+  } = useCurrentUser();
+  const userId = currentUser?.id;
+
+  return useQuery({
+    queryKey: ['posts', 'user', userId],
+    queryFn: () => fetchPostsByUserId(userId!),
+    enabled: isAuthenticated && Number.isFinite(userId) && userId! > 0,
+    retry: 0,
+    meta: {
+      errorMessage: 'Failed to load your posts',
     },
   });
 }

@@ -124,7 +124,9 @@ const NavButton: React.FC<{
   <button
     onClick={onClick}
     className={`rounded-lg px-4 py-2 text-sm font-medium transition ${
-      active ? 'bg-cyan-500 text-white' : 'text-gray-600 hover:bg-gray-100'
+      active
+        ? 'bg-[#01CCFF] text-white'
+        : 'text-gray-600 hover:bg-[#0091B5] hover:text-white'
     }`}
   >
     {children}
@@ -139,7 +141,9 @@ const MobileNavButton: React.FC<{
   <button
     onClick={onClick}
     className={`w-full rounded-lg px-4 py-3 text-left text-sm font-semibold transition ${
-      active ? 'bg-cyan-500 text-white' : 'text-gray-600 hover:bg-gray-100'
+      active
+        ? 'bg-[#01CCFF] text-white'
+        : 'text-gray-600 hover:bg-[#0091B5] hover:text-white'
     }`}
   >
     {children}

@@ -54,6 +54,17 @@ interface RequestData {
   request: ReceiverRequest;
 }
 
+interface PostsResponse {
+  data: {
+    posts: ApiPost[];
+  };
+}
+
+export const fetchMyPosts = async (): Promise<ApiPost[]> => {
+  const response = await apiClient.get<PostsResponse>('/posts/me');
+  return response.data.data.posts;
+};
+
 export const fetchAllPosts = async (): Promise<ApiPost[]> => {
   const response = await apiClient.get<ApiResponseWrapper<PostsData>>('/posts');
   return response.data.data.posts;
@@ -226,11 +237,12 @@ export const fetchRequestById = async (
 };
 
 export const createRequest = async (
-  postId: number
+  postId: number,
+  receiverId: number
 ): Promise<ReceiverRequest> => {
   const response = await apiClient.post<ApiResponseWrapper<RequestData>>(
     '/requests',
-    { post_id: postId }
+    { post_id: postId, receiver_id: receiverId }
   );
   return response.data.data.request;
 };
