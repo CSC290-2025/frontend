@@ -1,1 +1,1 @@
-export { default } from '@/features/traffic-management/pages/TrafficControlSystem';
+export { default } from '@/features/traffic-management/pages/TrafficControlPage';
