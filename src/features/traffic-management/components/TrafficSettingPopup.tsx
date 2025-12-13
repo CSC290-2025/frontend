@@ -18,6 +18,7 @@ import { getDatabase, ref, onValue, update } from 'firebase/database';
 import type { DatabaseReference } from 'firebase/database';
 import { calculateTraffic } from '../components/calculateTrafficFunction';
 import { getBaseAPIURL } from '@/lib/apiClient.ts';
+import { set } from 'zod';
 
 interface TrafficData {
   interid: number;
@@ -81,6 +82,7 @@ export default function TrafficSettingPopup({
   const [duration, setDuration] = useState(0);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [pendingUpdate, setPendingUpdate] = useState<trafficLight | null>(null);
+  const [currentAutomode, setcurrentAutomode] = useState(false);
   const [Automode, setAutomode] = useState(false);
   const [greenduration, setGreenduration] = useState(0);
   const [redduration, setRedduration] = useState(0);
@@ -112,6 +114,7 @@ export default function TrafficSettingPopup({
           setRoadid(response.data.trafficLight.road_id);
           setGreenduration(response.data.trafficLight.green_duration);
           setRedduration(response.data.trafficLight.red_duration);
+          setcurrentAutomode(response.data.trafficLight.auto_mode);
           setAutomode(response.data.trafficLight.auto_mode);
           setLat(response.data.trafficLight.location.coordinates[1]);
           setLng(response.data.trafficLight.location.coordinates[0]);
@@ -227,7 +230,7 @@ export default function TrafficSettingPopup({
                     Location : {roadname}
                   </div>*/}
                   <div className="ml-2 text-xs font-bold">
-                    Auto-mode : {Automode ? 'on' : 'off'}
+                    Auto-mode : {currentAutomode ? 'on' : 'off'}
                   </div>
                 </div>
               </div>

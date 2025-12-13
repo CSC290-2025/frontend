@@ -560,7 +560,6 @@ export default function TrafficAdminpage() {
   useEffect(() => {
     (async () => {
       try {
-        //const base = import.meta.env.VITE_API_BASE_URL ?? '';
         const url = getBaseAPIURL + `/api/light-requests`;
         const res = await fetch(url);
         if (!res.ok) throw new Error('Failed to get request details');
@@ -582,10 +581,6 @@ export default function TrafficAdminpage() {
 
   const handleMapSettingsClick = () => {
     setShowSettings(true);
-  };
-
-  const handleEmergencyClick = () => {
-    alert('Emergency request sent to traffic control center');
   };
 
   const handleCloseSettings = () => {
