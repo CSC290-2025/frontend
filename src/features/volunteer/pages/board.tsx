@@ -1,19 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import {
   Search,
   ArrowLeft,
   ArrowRight,
-  Users, // Import the Users icon
+  Users,
+  Filter,
+  Calendar,
+  Sparkles,
+  Plus,
 } from 'lucide-react';
 import { useNavigate } from '@/router';
 import { apiClient } from '@/lib/apiClient';
-import { Filter } from 'lucide-react';
 import TagFilter from '@/features/volunteer/components/TagFilter';
 import Layout from '@/components/main/Layout';
 
-// ... (Interfaces, useDebounce, and PaginationControls remain unchanged) ...
-// --- Interfaces (No Change) ---
+// --- Interfaces ---
 interface VolunteerEvent {
   id: number;
   title: string;
@@ -35,25 +36,40 @@ interface ApiResponse {
   };
 }
 
-function useDebounce<T>(value: T, delay: number): T {
-  const [debouncedValue, setDebouncedValue] = useState<T>(value);
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [value, delay]);
-  return debouncedValue;
-}
-
 interface PaginationProps {
   currentPage: number;
   totalPages: number;
   onPageChange: (page: number) => void;
 }
 
+// --- Utility Hooks ---
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+  useEffect(() => {
+    const handler = setTimeout(() => setDebouncedValue(value), delay);
+    return () => clearTimeout(handler);
+  }, [value, delay]);
+  return debouncedValue;
+}
+
+// --- Components ---
+
+const EventCardSkeleton = () => (
+  <div className="flex flex-col overflow-hidden rounded-2xl bg-white shadow-sm">
+    <div className="h-48 w-full animate-pulse bg-gray-200" />
+    <div className="flex flex-1 flex-col space-y-3 p-5">
+      <div className="h-6 w-3/4 animate-pulse rounded bg-gray-200" />
+      <div className="h-4 w-1/2 animate-pulse rounded bg-gray-200" />
+      <div className="mt-4 h-2 w-full animate-pulse rounded-full bg-gray-200" />
+      <div className="flex justify-between pt-2">
+        <div className="h-4 w-1/4 animate-pulse rounded bg-gray-200" />
+        <div className="h-4 w-1/4 animate-pulse rounded bg-gray-200" />
+      </div>
+    </div>
+  </div>
+);
+
+// --- RESTORED ORIGINAL PAGINATION ---
 const PaginationControls: React.FC<PaginationProps> = ({
   currentPage,
   totalPages,
@@ -129,6 +145,7 @@ const PaginationControls: React.FC<PaginationProps> = ({
 export default function CityVolunteerHomepage() {
   const navigate = useNavigate();
 
+  // State
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>(
     undefined
   );
@@ -143,6 +160,7 @@ export default function CityVolunteerHomepage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const EVENTS_PER_PAGE = 9;
+
   const tags = [
     'Environment',
     'Freecycle',
@@ -153,6 +171,7 @@ export default function CityVolunteerHomepage() {
     'Community & Social',
   ];
 
+  // Logic
   useEffect(() => {
     const fetchEvents = async () => {
       setIsLoading(true);
@@ -189,148 +208,237 @@ export default function CityVolunteerHomepage() {
   const handlePageChange = (page: number) => {
     if (page >= 1 && page <= totalPages) {
       setCurrentPage(page);
-      window.scrollTo(0, 0);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [debouncedSearch]);
+  }, [debouncedSearch, selectedCategory]);
 
   const handleCardClick = (id: number) => {
     navigate('/volunteer/detail/:id', { params: { id: String(id) } });
   };
-  const handleCreateClick = () => {
-    navigate('/volunteer/createpost');
-  };
-
-  const handleMyEventsClick = () => {
-    navigate('/volunteer/userjoin');
-  };
 
   return (
     <Layout>
-      <div className="flex min-h-screen flex-col bg-gray-50">
-        <main className="flex-1 overflow-auto">
-          <div className="p-4 md:p-8">
-            {/* Search and Action Buttons */}
-            <div className="mb-8 flex flex-col gap-3 md:flex-row">
-              <div className="relative flex-1">
-                <Search className="absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 transform text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search for volunteer works"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full rounded-full border border-gray-200 py-3 pr-4 pl-12 focus:ring-2 focus:ring-blue-400 focus:outline-none"
-                />
+      <div className="flex min-h-screen flex-col bg-slate-50 font-sans text-slate-900">
+        {/* --- Hero Section --- */}
+        <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 to-indigo-800 pt-16 pb-32 text-white shadow-lg">
+          <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
+          <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+            <div className="md:flex md:items-center md:justify-between">
+              <div className="mb-6 md:mb-0">
+                <h1 className="flex items-center gap-3 text-4xl font-extrabold tracking-tight md:text-5xl">
+                  Make a Difference{' '}
+                  <Sparkles className="h-8 w-8 text-yellow-300" />
+                </h1>
+                <p className="mt-4 max-w-xl text-lg text-blue-100">
+                  Join thousands of volunteers transforming our city. Find your
+                  cause, connect with others, and create impact today.
+                </p>
               </div>
-
-              <div className="flex gap-2">
-                {/* My Joined Events */}
+              <div className="flex flex-col gap-3 sm:flex-row">
                 <button
-                  onClick={handleMyEventsClick}
-                  className="flex w-full items-center justify-center gap-2 rounded-full border bg-green-200 px-6 py-3 text-gray-700 hover:bg-gray-50 md:w-auto"
+                  onClick={() => navigate('/volunteer/userjoin')}
+                  className="group flex items-center justify-center gap-2 rounded-full bg-white/10 px-6 py-3 font-medium text-white backdrop-blur-sm transition-all hover:bg-white/20"
                 >
                   <Users className="h-5 w-5" />
-                  <span className="whitespace-nowrap">My Joined Events</span>
+                  My Joined Events
                 </button>
-
-                {/* Create Event Button */}
                 <button
-                  onClick={handleCreateClick}
-                  className="flex w-full items-center justify-center gap-2 rounded-full bg-blue-500 px-6 py-3 text-white hover:bg-blue-600 md:w-auto"
+                  onClick={() => navigate('/volunteer/createpost')}
+                  className="flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3 font-bold text-blue-700 shadow-lg transition-transform hover:scale-105 active:scale-95"
                 >
-                  <span>Create Event</span>
+                  <Plus className="h-5 w-5" />
+                  Create Event
                 </button>
               </div>
             </div>
+          </div>
+        </div>
 
-            {/* Volunteer Jobs Section */}
-            <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-3xl font-bold text-gray-800">
-                Current Volunteer Opportunities 🌟
-              </h2>
+        <main className="relative mx-auto -mt-24 max-w-7xl flex-1 px-4 pb-12 sm:px-6 lg:px-8">
+          {/* --- Search & Filter Bar --- */}
+          <div className="rounded-2xl bg-white p-4 shadow-xl shadow-blue-900/5">
+            <div className="flex flex-col gap-4 md:flex-row md:items-center">
+              <div className="relative flex-1">
+                <Search className="absolute top-1/2 left-4 h-5 w-5 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search opportunities..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 py-3 pr-4 pl-12 text-slate-700 transition-all outline-none focus:border-blue-500 focus:bg-white focus:ring-4 focus:ring-blue-500/10"
+                />
+              </div>
               <button
                 onClick={() => setShowFilters(!showFilters)}
-                className="flex h-10 items-center gap-1 rounded-full border border-gray-300 bg-white px-3 py-1 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:border-cyan-500"
+                className={`flex items-center gap-2 rounded-xl border px-6 py-3 font-medium transition-all ${
+                  showFilters || selectedCategory
+                    ? 'border-blue-500 bg-blue-50 text-blue-700'
+                    : 'border-slate-200 bg-white text-slate-600 hover:border-blue-300 hover:bg-slate-50'
+                }`}
               >
                 <Filter className="h-4 w-4" />
-                Filter
+                <span>Filters</span>
+                {selectedCategory && (
+                  <span className="ml-1 flex h-5 w-5 items-center justify-center rounded-full bg-blue-200 text-xs text-blue-800">
+                    1
+                  </span>
+                )}
               </button>
             </div>
 
-            {showFilters && (
-              <div className="mb-6 rounded-2xl bg-white p-6 shadow-md">
-                <h3 className="mb-4 font-semibold text-gray-900">Categories</h3>
+            {/* Filter Drawer */}
+            <div
+              className={`grid transition-all duration-300 ease-in-out ${showFilters ? 'mt-6 grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}
+            >
+              <div className="overflow-hidden">
+                <h3 className="mb-3 text-sm font-semibold tracking-wider text-slate-400 uppercase">
+                  Categories
+                </h3>
                 <TagFilter
                   categories={tags}
                   selectedCategory={selectedCategory}
                   onChange={setSelectedCategory}
                 />
               </div>
-            )}
+            </div>
+          </div>
 
-            {isLoading && (
-              <div className="text-center text-gray-500">Loading jobs...</div>
-            )}
+          {/* --- Content Area --- */}
+          <div className="mt-10">
+            <div className="mb-6 flex items-baseline justify-between">
+              <h2 className="text-2xl font-bold text-slate-800">
+                {selectedCategory
+                  ? `${selectedCategory} Opportunities`
+                  : 'Recent Opportunities'}
+              </h2>
+              <span className="text-sm text-slate-500">
+                {!isLoading && `${volunteerJobs.length} events found`}
+              </span>
+            </div>
 
             {error && (
-              <div className="text-center text-red-500">
-                <strong>Error:</strong> {error}
+              <div className="rounded-xl border border-red-100 bg-red-50 p-6 text-center text-red-600">
+                <p>Unable to load events. {error}</p>
               </div>
             )}
 
-            {!isLoading && !error && (
-              <>
-                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                  {volunteerJobs.length > 0 ? (
-                    volunteerJobs.map((job) => (
-                      <div
-                        key={job.id}
-                        onClick={() => handleCardClick(job.id)}
-                        className="cursor-pointer overflow-hidden rounded-2xl border border-gray-200 bg-white transition-shadow hover:shadow-lg"
-                      >
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {isLoading ? (
+                // Skeleton Loaders
+                [...Array(6)].map((_, i) => <EventCardSkeleton key={i} />)
+              ) : volunteerJobs.length > 0 ? (
+                // Event Cards
+                volunteerJobs.map((job) => {
+                  const percentFilled = Math.min(
+                    (job.current_participants / job.total_seats) * 100,
+                    100
+                  );
+                  const isFull = job.current_participants >= job.total_seats;
+
+                  return (
+                    <div
+                      key={job.id}
+                      onClick={() => handleCardClick(job.id)}
+                      className="group relative flex cursor-pointer flex-col overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200/50 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:ring-blue-500/20"
+                    >
+                      {/* Image Container */}
+                      <div className="relative h-48 w-full overflow-hidden bg-gray-100">
                         <img
                           src={
                             job.image_url ||
-                            'https://via.placeholder.com/300x160'
+                            'https://images.unsplash.com/photo-1559027615-cd4628902d4a?auto=format&fit=crop&q=80&w=800'
                           }
                           alt={job.title}
-                          className="h-40 w-full object-cover"
+                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
                         />
-                        <div className="p-5">
-                          <h3 className="mb-2 truncate text-lg font-semibold text-gray-800">
-                            {job.title}
-                          </h3>
-                          <p className="mb-1 text-sm text-gray-600">
-                            <span className="font-medium">Date:</span>{' '}
-                            {job.start_at
-                              ? new Date(job.start_at).toLocaleDateString()
-                              : 'Date TBD'}
-                          </p>
-                          <p className="mb-4 text-sm text-gray-600">
-                            <span className="font-medium">Slots:</span>{' '}
-                            {job.current_participants} / {job.total_seats}{' '}
-                            filled
-                          </p>
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent opacity-60" />
+
+                        {/* Tag Badge */}
+                        {job.tag && (
+                          <span className="absolute top-4 left-4 rounded-lg bg-white/90 px-3 py-1 text-xs font-bold tracking-wider text-blue-700 uppercase backdrop-blur-sm">
+                            {job.tag}
+                          </span>
+                        )}
+
+                        {/* Date Badge */}
+                        {job.start_at && (
+                          <div className="absolute bottom-4 left-4 flex items-center gap-1 text-sm font-medium text-white">
+                            <Calendar className="h-4 w-4 text-yellow-300" />
+                            {new Date(job.start_at).toLocaleDateString(
+                              undefined,
+                              {
+                                month: 'short',
+                                day: 'numeric',
+                              }
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Content */}
+                      <div className="flex flex-1 flex-col p-5">
+                        <h3 className="mb-2 line-clamp-1 text-lg font-bold text-slate-800 group-hover:text-blue-600">
+                          {job.title}
+                        </h3>
+
+                        {/* Progress Bar Section */}
+                        <div className="mt-auto pt-4">
+                          <div className="mb-1 flex items-end justify-between text-sm">
+                            <span className="font-medium text-slate-600">
+                              {isFull ? 'Full' : 'Spots filled'}
+                            </span>
+                            <span
+                              className={`font-bold ${isFull ? 'text-red-500' : 'text-blue-600'}`}
+                            >
+                              {job.current_participants}/{job.total_seats}
+                            </span>
+                          </div>
+
+                          <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
+                            <div
+                              className={`h-full rounded-full transition-all duration-500 ${isFull ? 'bg-red-500' : 'bg-blue-500'}`}
+                              style={{ width: `${percentFilled}%` }}
+                            />
+                          </div>
                         </div>
                       </div>
-                    ))
-                  ) : (
-                    <div className="col-span-1 text-center text-gray-500 sm:col-span-2 lg:col-span-3">
-                      No events found matching your search.
                     </div>
-                  )}
+                  );
+                })
+              ) : (
+                // Empty State
+                <div className="col-span-1 flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-slate-50 py-16 text-center sm:col-span-2 lg:col-span-3">
+                  <div className="mb-4 rounded-full bg-white p-4 shadow-sm">
+                    <Search className="h-8 w-8 text-slate-400" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-slate-700">
+                    No events found
+                  </h3>
+                  <p className="text-slate-500">
+                    Try adjusting your search or filters.
+                  </p>
+                  <button
+                    onClick={() => {
+                      setSearchTerm('');
+                      setSelectedCategory(undefined);
+                    }}
+                    className="mt-4 font-medium text-blue-600 hover:text-blue-700"
+                  >
+                    Clear all filters
+                  </button>
                 </div>
+              )}
+            </div>
 
-                <PaginationControls
-                  currentPage={currentPage}
-                  totalPages={totalPages}
-                  onPageChange={handlePageChange}
-                />
-              </>
-            )}
+            <PaginationControls
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+            />
           </div>
         </main>
       </div>
