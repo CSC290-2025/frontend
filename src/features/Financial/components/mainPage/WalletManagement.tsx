@@ -7,15 +7,26 @@ import {
   useGetWalletsUserUserId,
   usePutWalletsWalletId,
 } from '@/api/generated/wallets';
+import { useGetUserWalletId } from '@/api/generated/user';
+import { useDebounce } from '@/features/Financial/hooks/useDebounce';
+import { Loader2, RefreshCw } from 'lucide-react';
 
 export default function WalletManagement() {
   const [userId, setUserId] = useState('');
-  const [loadedUserId, setLoadedUserId] = useState<string | null>(null);
+  const debouncedUserId = useDebounce(userId, 500);
 
-  const { data: walletData, refetch: refetchWallet } = useGetWalletsUserUserId(
-    Number(loadedUserId),
+  const {
+    data: walletData,
+    refetch: refetchWallet,
+    isFetching: isFetchingWallet,
+  } = useGetWalletsUserUserId(Number(debouncedUserId), {
+    query: { enabled: !!debouncedUserId },
+  });
+
+  const { data: userData, isFetching: isFetchingUser } = useGetUserWalletId(
+    Number(debouncedUserId),
     {
-      query: { enabled: !!loadedUserId },
+      query: { enabled: !!debouncedUserId },
     }
   );
 
@@ -32,6 +43,9 @@ export default function WalletManagement() {
   });
 
   const wallet = walletData?.data?.wallet;
+  const username = (userData?.data as any)?.user?.username;
+
+  const isFetching = isFetchingWallet || isFetchingUser;
 
   const [editingOrgType, setEditingOrgType] = useState(false);
   const [newOrgType, setNewOrgType] = useState('');
@@ -55,14 +69,27 @@ export default function WalletManagement() {
               onChange={(e) => setUserId(e.target.value)}
               placeholder="Enter user ID"
             />
-            <Button onClick={() => setLoadedUserId(userId)} size="sm">
-              Load Wallet
+            <Button
+              onClick={() => refetchWallet()}
+              size="sm"
+              disabled={isFetching || !debouncedUserId}
+            >
+              {isFetching ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4" />
+              )}
             </Button>
           </div>
         </div>
         {wallet && (
           <>
             <div className="mb-4 space-y-2 border-t pt-4">
+              {username && (
+                <div className="text-sm">
+                  <span className="font-semibold">Owner:</span> {username}
+                </div>
+              )}
               <div className="text-sm">
                 <span className="font-semibold">Balance:</span> $
                 {wallet.balance ?? 0}
