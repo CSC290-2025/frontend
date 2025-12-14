@@ -261,6 +261,11 @@ export default function VolunteerDetailPage() {
     );
 
   const isEventFull = event.current_participants >= event.total_seats;
+
+  const isDeadlinePassed = event.registration_deadline
+    ? new Date(event.registration_deadline) < new Date()
+    : false;
+
   const progressPercent = Math.min(
     (event.current_participants / event.total_seats) * 100,
     100
@@ -371,10 +376,20 @@ export default function VolunteerDetailPage() {
                       Availability
                     </span>
                     <span className="flex items-center gap-1 text-sm font-bold text-slate-700">
-                      <Users className="h-4 w-4" />
-                      {getFormattedDate(event.registration_deadline) !== '-'
-                        ? 'Reg closes soon'
-                        : 'Open'}
+                      {/* UPDATED: Show Red status if deadline passed */}
+                      {isDeadlinePassed ? (
+                        <span className="flex items-center gap-1 text-red-600">
+                          <AlertCircle className="h-4 w-4" />
+                          Registration Closed
+                        </span>
+                      ) : (
+                        <>
+                          <Users className="h-4 w-4" />
+                          {getFormattedDate(event.registration_deadline) !== '-'
+                            ? 'Registration is still open.'
+                            : 'Open'}
+                        </>
+                      )}
                     </span>
                   </div>
 
@@ -392,8 +407,8 @@ export default function VolunteerDetailPage() {
                       className={`h-full rounded-full transition-all duration-500 ease-out ${
                         isFunding
                           ? 'bg-emerald-500'
-                          : isEventFull
-                            ? 'bg-red-500'
+                          : isEventFull || isDeadlinePassed
+                            ? 'bg-gray-400'
                             : 'bg-blue-600'
                       }`}
                       style={{ width: `${progressPercent}%` }}
@@ -417,7 +432,6 @@ export default function VolunteerDetailPage() {
                       />
                     </div>
                   ) : (
-                    // Standard -> Join/Leave Buttons
                     <>
                       {isJoined ? (
                         <button
@@ -431,21 +445,29 @@ export default function VolunteerDetailPage() {
                       ) : (
                         <button
                           onClick={handleJoinEvent}
-                          disabled={isSubmitting || isEventFull}
+                          disabled={
+                            isSubmitting || isEventFull || isDeadlinePassed
+                          }
                           className={`group flex w-full items-center justify-center gap-2 rounded-xl py-4 font-bold text-white shadow-lg transition-all active:scale-95 disabled:opacity-70 disabled:shadow-none ${
-                            isEventFull
+                            isEventFull || isDeadlinePassed
                               ? 'cursor-not-allowed bg-slate-400'
                               : 'bg-blue-600 hover:bg-blue-700 hover:shadow-blue-200'
                           }`}
                         >
+                          {/* UPDATED: Text Logic */}
                           {isSubmitting
                             ? 'Joining...'
-                            : isEventFull
-                              ? 'Waitlist Full'
-                              : 'Join Now'}
-                          {!isSubmitting && !isEventFull && (
-                            <CheckCircle className="h-5 w-5" />
-                          )}
+                            : isDeadlinePassed
+                              ? 'Registration Closed'
+                              : isEventFull
+                                ? 'Waitlist Full'
+                                : 'Join Now'}
+
+                          {!isSubmitting &&
+                            !isEventFull &&
+                            !isDeadlinePassed && (
+                              <CheckCircle className="h-5 w-5" />
+                            )}
                         </button>
                       )}
                     </>
@@ -505,7 +527,9 @@ export default function VolunteerDetailPage() {
                       <p className="text-sm font-medium text-slate-500">
                         Deadline
                       </p>
-                      <p className="font-semibold text-slate-900">
+                      <p
+                        className={`font-semibold ${isDeadlinePassed ? 'text-red-500' : 'text-slate-900'}`}
+                      >
                         {getFormattedDate(event.registration_deadline)}
                       </p>
                     </div>
