@@ -6,6 +6,7 @@ import {
   fetchAllCategories,
   addCategoriesToPost,
 } from '@/features/freecycle/api/freecycle.api';
+import { useCurrentUser } from '@/features/freecycle/hooks/useFreecycle';
 
 interface PostItem {
   item_name: string;
@@ -16,12 +17,19 @@ interface PostItem {
 }
 
 interface PostItemFormProps {
-  onSuccess: () => void;
+  onSuccess?: () => void;
 }
 
 export default function PostItemForm({ onSuccess }: PostItemFormProps) {
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Get current user from authentication
+  const { data: currentUser, isLoading: isUserLoading } = useCurrentUser();
+  const userId = currentUser?.id;
+
   const [formData, setFormData] = useState<PostItem>({
     item_name: '',
     item_weight: null,
@@ -29,8 +37,6 @@ export default function PostItemForm({ onSuccess }: PostItemFormProps) {
     description: '',
     donate_to_department_id: null,
   });
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   // Load categories on component mount
   useEffect(() => {
@@ -53,21 +59,31 @@ export default function PostItemForm({ onSuccess }: PostItemFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // Check if user data is still loading
+    if (isUserLoading) {
+      setError('Loading user information, please wait...');
+      return;
+    }
+
+    // Check if user is logged in
+    if (!userId) {
+      setError('Please log in to post an item.');
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     try {
-      // Temporary user ID for demo (replace with actual auth later)
-      const demoUserId = 23;
-
-      // Step 1: Create the post with donater_id
+      // Step 1: Create the post with actual user ID
       const createdPost = await createPost({
         item_name: formData.item_name,
         item_weight: formData.item_weight,
         photo_url: formData.photo_url || null,
         description: formData.description,
         donate_to_department_id: formData.donate_to_department_id,
-        donater_id: demoUserId,
+        donater_id: userId,
       });
 
       console.log('Post created successfully:', createdPost);
@@ -75,16 +91,18 @@ export default function PostItemForm({ onSuccess }: PostItemFormProps) {
       // Step 2: Add categories to the post if any are selected
       if (selectedCategories.length > 0) {
         console.log('Adding categories:', selectedCategories);
-        await addCategoriesToPost(
-          createdPost.id,
-          selectedCategories,
-          demoUserId
-        );
+        await addCategoriesToPost(createdPost.id, selectedCategories, userId);
         console.log('Categories added successfully');
       }
 
       setLoading(false);
-      onSuccess();
+
+      // Check if onSuccess is a function before calling
+      if (typeof onSuccess === 'function') {
+        onSuccess();
+      } else {
+        console.warn('onSuccess is not a function:', onSuccess);
+      }
     } catch (err) {
       console.error('Full error:', err);
       if (err instanceof Error && 'response' in err) {
@@ -253,10 +271,10 @@ export default function PostItemForm({ onSuccess }: PostItemFormProps) {
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || isUserLoading}
           className="w-full rounded-lg bg-gray-300 py-3 font-medium text-gray-700 transition-colors hover:bg-gray-400 disabled:opacity-50"
         >
-          {loading ? 'Posting...' : 'Post'}
+          {isUserLoading ? 'Loading...' : loading ? 'Posting...' : 'Post'}
         </button>
       </form>
     </div>
