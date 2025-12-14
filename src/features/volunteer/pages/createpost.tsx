@@ -165,7 +165,21 @@ export default function CreateVolunteerPost() {
     }
 
     const start_at = `${date}T${startTime}:00`;
-    const end_at = `${date}T${endTime}:00`;
+    let end_at = `${date}T${endTime}:00`;
+
+    if (endTime < startTime) {
+      const [year, month, day] = date.split('-').map(Number);
+
+      const nextDate = new Date(year, month - 1, day + 1);
+
+      const nextY = nextDate.getFullYear();
+      const nextM = String(nextDate.getMonth() + 1).padStart(2, '0');
+      const nextD = String(nextDate.getDate()).padStart(2, '0');
+      const nextDateStr = `${nextY}-${nextM}-${nextD}`;
+
+      end_at = `${nextDateStr}T${endTime}:00`;
+    }
+
     const registration_deadline_at = registration_deadline
       ? `${registration_deadline}T23:59:59`
       : undefined;
@@ -213,7 +227,6 @@ ${requirements
       );
 
       if (response.data.success) {
-        // Success! Show the modal instead of alerting
         setShowSuccessModal(true);
       } else {
         throw new Error(response.data.message || 'API returned an error');
@@ -230,8 +243,6 @@ ${requirements
       setIsLoading(false);
     }
   };
-
-  // --- Render Helpers ---
 
   const renderSectionHeader = (icon: React.ReactNode, title: string) => (
     <h2 className="mb-6 flex items-center gap-2 text-lg font-bold text-gray-800">
