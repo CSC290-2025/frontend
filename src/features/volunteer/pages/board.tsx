@@ -13,6 +13,7 @@ import { useNavigate } from '@/router';
 import { apiClient } from '@/lib/apiClient';
 import TagFilter from '@/features/volunteer/components/TagFilter';
 import Layout from '@/components/main/Layout';
+import { useGetAuthMe } from '@/api/generated/authentication';
 
 // --- Interfaces ---
 interface VolunteerEvent {
@@ -171,6 +172,9 @@ export default function CityVolunteerHomepage() {
     'Community & Social',
   ];
 
+  // Get Role
+  const role = useGetAuthMe().data?.data?.role;
+
   // Logic
   useEffect(() => {
     const fetchEvents = async () => {
@@ -183,7 +187,7 @@ export default function CityVolunteerHomepage() {
           search: debouncedSearch || undefined,
           tag: selectedCategory || undefined,
         };
-
+        console.log(role);
         const response = await apiClient.get<ApiResponse>(
           '/api/v1/volunteer/getAll',
           { params }
@@ -246,13 +250,18 @@ export default function CityVolunteerHomepage() {
                   <Users className="h-5 w-5" />
                   My Joined Events
                 </button>
-                <button
-                  onClick={() => navigate('/volunteer/createpost')}
-                  className="flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3 font-bold text-blue-700 shadow-lg transition-transform hover:scale-105 active:scale-95"
-                >
-                  <Plus className="h-5 w-5" />
-                  Create Event
-                </button>
+
+                {/* --- CONDITIONAL RENDER START --- */}
+                {(role === 'Volunteer Coordinator' || role === 'Admin') && (
+                  <button
+                    onClick={() => navigate('/volunteer/createpost')}
+                    className="flex items-center justify-center gap-2 rounded-full bg-white px-6 py-3 font-bold text-blue-700 shadow-lg transition-transform hover:scale-105 active:scale-95"
+                  >
+                    <Plus className="h-5 w-5" />
+                    Create Event
+                  </button>
+                )}
+                {/* --- CONDITIONAL RENDER END --- */}
               </div>
             </div>
           </div>
@@ -292,7 +301,11 @@ export default function CityVolunteerHomepage() {
 
             {/* Filter Drawer */}
             <div
-              className={`grid transition-all duration-300 ease-in-out ${showFilters ? 'mt-6 grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'}`}
+              className={`grid transition-all duration-300 ease-in-out ${
+                showFilters
+                  ? 'mt-6 grid-rows-[1fr] opacity-100'
+                  : 'grid-rows-[0fr] opacity-0'
+              }`}
             >
               <div className="overflow-hidden">
                 <h3 className="mb-3 text-sm font-semibold tracking-wider text-slate-400 uppercase">
