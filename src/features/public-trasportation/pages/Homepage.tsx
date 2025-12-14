@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import Sidebar from '../components/Sidebar';
+// Import Component ที่จำเป็น
 import BusInfo from '../components/BusInfo';
 import MapView from '../components/MapView';
 import axios from 'axios';
@@ -7,6 +7,7 @@ import { getBaseAPIURL } from '@/lib/apiClient.ts';
 
 const GOOGLE_API_KEY = 'AIzaSyAPNBcfQDaVuSGaC4LiSLTWMSvk3Xz3iNQ';
 
+// Interfaces เดิม
 interface RouteSummary {
   start_address: string;
   end_address: string;
@@ -27,10 +28,13 @@ interface Coords {
   lng: string;
   name?: string;
 }
+
+// APIs
 const API_BASE_URL = getBaseAPIURL + '/api/routes/all';
 const TRANSACTION_API_URL = getBaseAPIURL + '/api/transactions/tap';
 const METRO_CARD_API_URL = getBaseAPIURL + '/metro-cards/me';
 
+// Geocoding Function
 const geocodeAddress = async (query: string): Promise<Coords | null> => {
   if (!query) return null;
 
@@ -81,31 +85,81 @@ export default function Home() {
 
   const [isTapProcessing, setIsTapProcessing] = useState(false);
 
-  // 🟢 State สำหรับเก็บ Card ID และ Error
+  // States เดิม: Card ID
   const [activeCardId, setActiveCardId] = useState<number | null>(null);
   const [cardError, setCardError] = useState<string | null>(null);
 
+  // States เดิม: Query/Location
   const [originQuery, setOriginQuery] = useState(
     "King Mongkut's University of Technology Thonburi"
   );
-
   const [originLocation, setOriginLocation] = useState({
     origLat: '13.6515',
     origLng: '100.4940',
     originName: "King Mongkut's University of Technology Thonburi",
   });
-
   const [destinationQuery, setDestinationQuery] = useState('');
-
   const [destinationCoords, setDestinationCoords] = useState<{
     lat: string;
     lng: string;
+    name?: string;
   } | null>(null);
-
   const [selectionMode, setSelectionMode] = useState<
     'origin' | 'destination' | null
   >(null);
 
+  // 🟢 State ใหม่: จัดการแท็บที่เลือก
+  const [activeTab, setActiveTab] = useState<
+    'Transportation' | 'Recent Routes' | 'Tap History'
+  >('Transportation');
+
+  // 🟢 State ใหม่: ประวัติการค้นหา 3 ครั้งล่าสุด (Mock Data)
+  const [recentRoutes, setRecentRoutes] = useState<
+    { origin: string; destination: string; id: number }[]
+  >([
+    {
+      id: 3,
+      origin: "King Mongkut's University of Technology Thonburi",
+      destination: 'Central World (Ratchaprasong)',
+    },
+    {
+      id: 2,
+      origin: 'Siam Paragon',
+      destination: 'Chatuchak Market',
+    },
+    {
+      id: 1,
+      origin: 'Ekkamai Bus Terminal',
+      destination: 'Thonglor Pier',
+    },
+  ]);
+
+  // 🟢 State ใหม่: ประวัติ Tap In/Out 3 รายการล่าสุด (Mock Data)
+  const [tapHistory, setTapHistory] = useState<
+    { type: 'IN' | 'OUT'; location: string; time: string; charge?: number }[]
+  >([
+    {
+      type: 'OUT',
+      location: 'Siam Center (BTS)',
+      time: '10:45 AM',
+      charge: 28,
+    },
+    {
+      type: 'IN',
+      location: 'Chong Nonsi (BTS)',
+      time: '10:30 AM',
+    },
+    {
+      type: 'OUT',
+      location: 'Minburi Terminal',
+      time: '08:15 AM',
+      charge: 15,
+    },
+  ]);
+
+  // ------------------------------------
+  // Fetch Card Data (เดิม)
+  // ------------------------------------
   useEffect(() => {
     const fetchActiveCard = async () => {
       try {
@@ -141,6 +195,9 @@ export default function Home() {
     fetchActiveCard();
   }, []);
 
+  // ------------------------------------
+  // Route Fetching (เดิม)
+  // ------------------------------------
   const fetchRoutes = async (
     origCoords: { lat: string; lng: string; name: string },
     destCoords: { lat: string; lng: string; name: string }
@@ -185,6 +242,9 @@ export default function Home() {
     }
   };
 
+  // ------------------------------------
+  // Search Logic (เดิม + อัปเดต Recent Routes)
+  // ------------------------------------
   const handleInitialSearch = async () => {
     if (!originQuery || !destinationQuery) {
       setError('Please enter both Origin and Destination.');
@@ -226,6 +286,17 @@ export default function Home() {
     setDestinationQuery(newDestCoords.name);
 
     fetchRoutes(newOriginCoords, newDestCoords);
+
+    // 🟢 อัปเดต: เพิ่มเส้นทางใหม่ลงในประวัติการค้นหา (Recent Routes)
+    setRecentRoutes((prev) => {
+      const newRoute = {
+        id: Date.now(),
+        origin: newOriginCoords.name,
+        destination: newDestCoords.name,
+      };
+      // เก็บ 3 รายการล่าสุด
+      return [newRoute, ...prev].slice(0, 3);
+    });
   };
 
   const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -280,6 +351,9 @@ export default function Home() {
 
   const selectedRoute = routes[selectedRouteIndex];
 
+  // ------------------------------------
+  // Tap Transaction Logic (เดิม + อัปเดต Tap History)
+  // ------------------------------------
   const handleTapTransaction = async (
     routeIndex: number,
     isTappingIn: boolean
@@ -298,7 +372,6 @@ export default function Home() {
       };
     }
 
-    // 💡 การป้องกัน Logic Error: ป้องกันการ Tap In ซ้ำซ้อน
     if (
       isTappingIn &&
       tappedInRouteIndex !== null &&
@@ -356,6 +429,28 @@ export default function Home() {
 
         const result = response.data.data;
         const chargedAmount = result.charged || result.maxFareReserved;
+
+        // 🟢 อัปเดต: เพิ่มธุรกรรมลงใน Tap History
+        const locationName = isTappingIn
+          ? originLocation.originName
+          : destinationCoords?.name || 'Unknown Destination';
+
+        setTapHistory((prev) => {
+          const newTap: any = {
+            type: isTappingIn ? 'IN' : 'OUT',
+            location: locationName.split(',')[0].trim(), // ใช้แค่ชื่อหลัก
+            time: new Date().toLocaleTimeString('en-US', {
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: true,
+            }),
+          };
+          if (!isTappingIn) {
+            newTap.charge = chargedAmount;
+          }
+          return [newTap, ...prev].slice(0, 3); // เก็บ 3 รายการล่าสุด
+        });
+
         return {
           success: true,
           message: `${isTappingIn ? 'TAP IN' : 'TAP OUT'} Successful. Charged/Reserved: ${chargedAmount} THB.`,
@@ -377,19 +472,27 @@ export default function Home() {
     }
   };
 
+  // ------------------------------------
+  // JSX Render (รวม Tab Menu)
+  // ------------------------------------
   return (
-    <div className="flex min-h-screen bg-white text-gray-800">
-      <Sidebar active="Transport" />
-
-      <main className="flex-1 p-8">
-        <div className="mb-6 flex items-center space-x-4">
-          {['Transport', 'Traffics', 'Nearby', 'Support Map'].map((tab, i) => (
+    // 🟢 โครงสร้างหลัก (เต็มจอ)
+    <div className="min-h-screen bg-white text-gray-800">
+      <main className="p-8">
+        {/* 🟢 แท็บเมนูใหม่ */}
+        <div className="mb-6 flex items-center space-x-6 border-b border-gray-200">
+          {['Transportation', 'Recent Routes', 'Tap History'].map((tab) => (
             <button
-              key={i}
-              className={`rounded-xl border px-6 py-2 text-sm font-medium ${
-                i === 0
-                  ? 'border-sky-500 bg-sky-500 text-white'
-                  : 'border-gray-200 hover:bg-gray-100'
+              key={tab}
+              onClick={() =>
+                setActiveTab(
+                  tab as 'Transportation' | 'Recent Routes' | 'Tap History'
+                )
+              }
+              className={`px-1 py-2 text-sm font-medium transition-colors duration-200 ${
+                activeTab === tab
+                  ? 'border-b-2 border-sky-500 text-sky-600'
+                  : 'text-gray-600 hover:text-gray-900'
               }`}
             >
               {tab}
@@ -397,156 +500,256 @@ export default function Home() {
           ))}
         </div>
 
-        <div className="mb-6 flex flex-col space-y-3">
-          {cardError && (
-            <div className="relative rounded border border-red-400 bg-red-100 px-4 py-2 text-sm text-red-700">
-              🚨 **Card Error:** {cardError}
+        {/* ------------------------------------------- */}
+        {/* 1. Transportation Tab (ช่องค้นหาและแผนที่) */}
+        {/* ------------------------------------------- */}
+        {activeTab === 'Transportation' && (
+          <>
+            <div className="mb-6 flex flex-col space-y-3">
+              {/* Alerts */}
+              {cardError && (
+                <div className="relative rounded border border-red-400 bg-red-100 px-4 py-2 text-sm text-red-700">
+                  🚨 **Card Error:** {cardError}
+                </div>
+              )}
+              {!activeCardId && !cardError && (
+                <div className="relative rounded border border-yellow-400 bg-yellow-100 px-4 py-2 text-sm text-yellow-700">
+                  Loading active Metro Card...
+                </div>
+              )}
+              {selectionMode && (
+                <div className="relative rounded border border-yellow-400 bg-yellow-100 px-4 py-2 text-sm text-yellow-700">
+                  Please click on the map to set your **
+                  {selectionMode.toUpperCase()}** location.
+                </div>
+              )}
+
+              {/* ช่องค้นหา Origin */}
+              <div className="flex items-center space-x-3">
+                <input
+                  type="text"
+                  placeholder="Search for your Origin (e.g., Central World)"
+                  value={originQuery}
+                  onChange={(e) => setOriginQuery(e.target.value)}
+                  onKeyDown={handleSearchKeyDown}
+                  className="w-1/2 rounded-xl border border-gray-300 px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-green-400"
+                />
+                <button
+                  className={`rounded-xl px-4 py-2 text-sm font-medium ${selectionMode === 'origin' ? 'bg-red-500 text-white' : 'bg-green-500 text-white hover:bg-green-600'}`}
+                  onClick={() =>
+                    setSelectionMode(
+                      selectionMode === 'origin' ? null : 'origin'
+                    )
+                  }
+                  disabled={loading}
+                >
+                  {selectionMode === 'origin'
+                    ? 'Cancel Selection'
+                    : 'Select Origin on Map'}
+                </button>
+              </div>
+
+              {/* ช่องค้นหา Destination และปุ่ม Search */}
+              <div className="flex items-center space-x-3">
+                <input
+                  type="text"
+                  placeholder="Search for your destination (e.g., KMUTT)"
+                  value={destinationQuery}
+                  onChange={(e) => setDestinationQuery(e.target.value)}
+                  onKeyDown={handleSearchKeyDown}
+                  className="w-1/2 rounded-xl border border-gray-300 px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-sky-400"
+                />
+                <button
+                  onClick={() =>
+                    setSelectionMode(
+                      selectionMode === 'destination' ? null : 'destination'
+                    )
+                  }
+                  disabled={loading}
+                  className={`rounded-xl px-4 py-2 text-sm font-medium ${selectionMode === 'destination' ? 'bg-red-500 text-white' : 'bg-yellow-500 text-white hover:bg-yellow-600'}`}
+                >
+                  {selectionMode === 'destination'
+                    ? 'Cancel Selection'
+                    : 'Select Destination on Map'}
+                </button>
+                <button
+                  onClick={handleInitialSearch}
+                  disabled={
+                    loading ||
+                    originQuery.length === 0 ||
+                    destinationQuery.length === 0
+                  }
+                  className="rounded-xl bg-sky-500 px-4 py-2 text-sm font-medium text-white disabled:bg-gray-400"
+                >
+                  {loading ? 'Searching...' : 'Search Route'}
+                </button>
+              </div>
             </div>
-          )}
-          {!activeCardId && !cardError && (
-            <div className="relative rounded border border-yellow-400 bg-yellow-100 px-4 py-2 text-sm text-yellow-700">
-              Loading active Metro Card...
+
+            <div className="flex gap-6">
+              {/* MapView */}
+              <div className="relative flex-1 overflow-hidden rounded-xl border border-gray-200">
+                <MapView
+                  onMapClick={selectionMode ? handleMapSelection : undefined}
+                  origin={{
+                    lat: parseFloat(originLocation.origLat),
+                    lng: parseFloat(originLocation.origLng),
+                  }}
+                  destination={destinationMarker}
+                  routePolyline={selectedRoute?.overview_polyline?.points}
+                />
+                <select className="absolute top-4 right-4 rounded-md border border-gray-300 bg-white px-3 py-1 text-sm">
+                  <option>Bus Station</option>
+                  <option>BTS Station</option>
+                  <option>MRT Station</option>
+                </select>
+              </div>
+
+              {/* รายการ Routes (BusInfo List) */}
+              <div className="max-h-[500px] w-80 space-y-3 overflow-y-auto rounded-2xl bg-blue-700 p-4 text-white">
+                {loading && (
+                  <p className="p-4 text-center">Loading routes...</p>
+                )}
+                {error && (
+                  <p className="p-4 text-center text-red-300">Error: {error}</p>
+                )}
+
+                {routes.length === 0 && !loading && !error && (
+                  <p className="p-4 text-center text-gray-300">
+                    Enter your destination or select a point on the map.
+                  </p>
+                )}
+
+                {routes.map((route, index) => {
+                  const mainTransport = route.detailedSteps.find(
+                    (s) => s.travel_mode === 'TRANSIT'
+                  );
+                  const routeName =
+                    mainTransport?.line_name ||
+                    mainTransport?.vehicle_type ||
+                    'Walking Route';
+                  const fareText = route.fare?.text || 'Tap In/Out';
+                  const stopsList = route.detailedSteps.map(
+                    (step) =>
+                      step.instruction +
+                      (step.line_name ? ` (${step.line_name})` : '')
+                  );
+
+                  const isRouteTappedIn = tappedInRouteIndex === index;
+
+                  return (
+                    <div
+                      key={index}
+                      onClick={() => setSelectedRouteIndex(index)}
+                      className={`cursor-pointer rounded-lg p-1 ${index === selectedRouteIndex ? 'border-2 border-yellow-300' : ''}`}
+                    >
+                      <BusInfo
+                        key={index}
+                        route={routeName}
+                        from={route.start_address.split(',')[0]}
+                        to={route.end_address.split(',')[0]}
+                        duration={route.duration.text}
+                        fare={fareText}
+                        gpsAvailable={!!mainTransport}
+                        stops={stopsList}
+                        isTappedIn={isRouteTappedIn}
+                        isGlobalProcessing={isTapProcessing}
+                        onTapConfirmed={(isTappingIn) =>
+                          handleTapTransaction(index, isTappingIn)
+                        }
+                      />
+                    </div>
+                  );
+                })}
+              </div>
             </div>
-          )}
+          </>
+        )}
 
-          {selectionMode && (
-            <div className="relative rounded border border-yellow-400 bg-yellow-100 px-4 py-2 text-sm text-yellow-700">
-              Please click on the map to set your **
-              {selectionMode.toUpperCase()}** location.
-            </div>
-          )}
-
-          <div className="flex items-center space-x-3">
-            <input
-              type="text"
-              placeholder="Search for your Origin (e.g., Central World)"
-              value={originQuery}
-              onChange={(e) => setOriginQuery(e.target.value)}
-              onKeyDown={handleSearchKeyDown}
-              className="w-1/2 rounded-xl border border-gray-300 px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-green-400"
-            />
-            <button
-              className={`rounded-xl px-4 py-2 text-sm font-medium ${selectionMode === 'origin' ? 'bg-red-500 text-white' : 'bg-green-500 text-white hover:bg-green-600'}`}
-              onClick={() =>
-                setSelectionMode(selectionMode === 'origin' ? null : 'origin')
-              }
-              disabled={loading}
-            >
-              {selectionMode === 'origin'
-                ? 'Cancel Selection'
-                : 'Select Origin on Map'}
-            </button>
-          </div>
-
-          <div className="flex items-center space-x-3">
-            <input
-              type="text"
-              placeholder="Search for your destination (e.g., KMUTT)"
-              value={destinationQuery}
-              onChange={(e) => setDestinationQuery(e.target.value)}
-              onKeyDown={handleSearchKeyDown}
-              className="w-1/2 rounded-xl border border-gray-300 px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-sky-400"
-            />
-            <button
-              onClick={() =>
-                setSelectionMode(
-                  selectionMode === 'destination' ? null : 'destination'
-                )
-              }
-              disabled={loading}
-              className={`rounded-xl px-4 py-2 text-sm font-medium ${selectionMode === 'destination' ? 'bg-red-500 text-white' : 'bg-yellow-500 text-white hover:bg-yellow-600'}`}
-            >
-              {selectionMode === 'destination'
-                ? 'Cancel Selection'
-                : 'Select Destination on Map'}
-            </button>
-            <button
-              onClick={handleInitialSearch}
-              disabled={
-                loading ||
-                originQuery.length === 0 ||
-                destinationQuery.length === 0
-              }
-              className="rounded-xl bg-sky-500 px-4 py-2 text-sm font-medium text-white disabled:bg-gray-400"
-            >
-              {loading ? 'Searching...' : 'Search Route'}
-            </button>
-          </div>
-        </div>
-
-        <div className="flex gap-6">
-          <div className="relative flex-1 overflow-hidden rounded-xl border border-gray-200">
-            <MapView
-              onMapClick={selectionMode ? handleMapSelection : undefined}
-              origin={{
-                lat: parseFloat(originLocation.origLat),
-                lng: parseFloat(originLocation.origLng),
-              }}
-              destination={destinationMarker}
-              routePolyline={selectedRoute?.overview_polyline?.points}
-            />
-            <select className="absolute top-4 right-4 rounded-md border border-gray-300 bg-white px-3 py-1 text-sm">
-              <option>Bus Station</option>
-              <option>BTS Station</option>
-              <option>MRT Station</option>
-            </select>
-          </div>
-
-          <div className="max-h-[500px] w-80 space-y-3 overflow-y-auto rounded-2xl bg-blue-700 p-4 text-white">
-            {loading && <p className="p-4 text-center">Loading routes...</p>}
-            {error && (
-              <p className="p-4 text-center text-red-300">Error: {error}</p>
+        {/* ------------------------------------------- */}
+        {/* 2. Recent Routes Tab (แสดงประวัติการค้นหา) */}
+        {/* ------------------------------------------- */}
+        {activeTab === 'Recent Routes' && (
+          <div className="space-y-4 pt-4">
+            <h3 className="text-xl font-semibold text-gray-800">
+              Latest 3 Routes
+            </h3>
+            {recentRoutes.length > 0 ? (
+              recentRoutes.map((route) => (
+                <div
+                  key={route.id}
+                  className="cursor-pointer rounded-xl border border-gray-200 p-4 shadow-sm transition-shadow hover:shadow-md"
+                  // เมื่อคลิกจะกลับไปที่หน้า Transportation และอัปเดตช่องค้นหา (Optional)
+                  onClick={() => {
+                    setOriginQuery(route.origin);
+                    setDestinationQuery(route.destination);
+                    setActiveTab('Transportation');
+                  }}
+                >
+                  <p className="text-sm text-gray-500">From:</p>
+                  <p className="text-lg font-medium text-gray-800">
+                    {route.origin.split(',')[0].trim()}
+                  </p>
+                  <p className="mt-2 mb-1 text-lg font-bold text-sky-600">
+                    &darr;
+                  </p>
+                  <p className="text-sm text-gray-500">To:</p>
+                  <p className="text-lg font-medium text-gray-800">
+                    {route.destination.split(',')[0].trim()}
+                  </p>
+                </div>
+              ))
+            ) : (
+              <p className="text-gray-500">No recent searches.</p>
             )}
+          </div>
+        )}
 
-            {routes.length === 0 && !loading && !error && (
-              <p className="p-4 text-center text-gray-300">
-                Enter your destination or select a point on the map.
-              </p>
-            )}
-
-            {routes.map((route, index) => {
-              const mainTransport = route.detailedSteps.find(
-                (s) => s.travel_mode === 'TRANSIT'
-              );
-              const routeName =
-                mainTransport?.line_name ||
-                mainTransport?.vehicle_type ||
-                'Walking Route';
-              const fareText = route.fare?.text || 'Tap In/Out';
-              const stopsList = route.detailedSteps.map(
-                (step) =>
-                  step.instruction +
-                  (step.line_name ? ` (${step.line_name})` : '')
-              );
-
-              const isRouteTappedIn = tappedInRouteIndex === index;
-
-              return (
+        {/* ------------------------------------------- */}
+        {/* 3. Tap History Tab (แสดงประวัติธุรกรรม) */}
+        {/* ------------------------------------------- */}
+        {activeTab === 'Tap History' && (
+          <div className="space-y-4 pt-4">
+            <h3 className="text-xl font-semibold text-gray-800">
+              Latest 3 Transactions
+            </h3>
+            {tapHistory.length > 0 ? (
+              tapHistory.map((tap, index) => (
                 <div
                   key={index}
-                  onClick={() => setSelectedRouteIndex(index)}
-                  className={`cursor-pointer rounded-lg p-1 ${index === selectedRouteIndex ? 'border-2 border-yellow-300' : ''}`}
+                  className={`rounded-xl border p-4 shadow-sm ${
+                    tap.type === 'IN'
+                      ? 'border-blue-300 bg-blue-50'
+                      : 'border-green-300 bg-green-50'
+                  }`}
                 >
-                  <BusInfo
-                    key={index}
-                    route={routeName}
-                    from={route.start_address.split(',')[0]}
-                    to={route.end_address.split(',')[0]}
-                    duration={route.duration.text}
-                    fare={fareText}
-                    gpsAvailable={!!mainTransport}
-                    stops={stopsList}
-                    isTappedIn={isRouteTappedIn}
-                    isGlobalProcessing={isTapProcessing}
-                    onTapConfirmed={(isTappingIn) =>
-                      handleTapTransaction(index, isTappingIn)
-                    }
-                  />
+                  <div className="flex items-center justify-between">
+                    <p
+                      className={`text-lg font-bold ${tap.type === 'IN' ? 'text-blue-700' : 'text-green-700'}`}
+                    >
+                      {tap.type === 'IN' ? 'TAP IN' : 'TAP OUT'}
+                    </p>
+                    <p className="text-sm text-gray-500">{tap.time}</p>
+                  </div>
+                  <p className="mt-1 text-sm text-gray-600">
+                    Location:{' '}
+                    <span className="font-medium">{tap.location}</span>
+                  </p>
+                  {tap.charge && (
+                    <p className="text-sm text-gray-600">
+                      Charge:{' '}
+                      <span className="font-bold text-red-600">
+                        {tap.charge.toFixed(2)} THB
+                      </span>
+                    </p>
+                  )}
                 </div>
-              );
-            })}
+              ))
+            ) : (
+              <p className="text-gray-500">No tap history found.</p>
+            )}
           </div>
-        </div>
+        )}
       </main>
     </div>
   );
