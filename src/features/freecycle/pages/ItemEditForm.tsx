@@ -13,6 +13,7 @@ import {
   usePostById,
   useCurrentUser,
 } from '@/features/freecycle/hooks/useFreecycle';
+import { useGetAuthMe } from '@/api/generated/authentication';
 
 interface PostItemFormData {
   item_name: string;
@@ -27,9 +28,10 @@ export default function ItemEditForm() {
   const { id: itemId } = useParams<{ id: string }>();
   const postId = Number(itemId);
 
-  const { data: currentUser } = useCurrentUser();
-  const currentUserId = currentUser?.id;
-
+  // const { data: currentUser } = useCurrentUser();
+  // const currentUserId = currentUser?.id;
+  const { data: currentUser, isLoading: isUserLoading } = useCurrentUser();
+  const userId = useGetAuthMe().data?.data?.userId ?? null;
   const {
     data: originalPost,
     isLoading: isPostLoading,
@@ -91,7 +93,7 @@ export default function ItemEditForm() {
     }
   }, [originalPost, isFormInitialized]);
 
-  const isOwner = currentUserId === originalPost?.donater_id;
+  const isOwner = userId === originalPost?.donater_id;
 
   if (isPostLoading || !isFormInitialized) {
     return (

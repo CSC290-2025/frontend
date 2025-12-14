@@ -44,6 +44,12 @@ export interface ReceiverRequest {
   status: 'pending' | 'accepted' | 'rejected';
   created_at: string;
   updated_at: string;
+
+  users: {
+    username: string;
+    email: string;
+    phone: string | null;
+  };
 }
 
 interface RequestsData {
@@ -247,10 +253,10 @@ export const createRequest = async (
   return response.data.data.request;
 };
 
-export const cancelRequest = async (id: number): Promise<void> => {
-  await apiClient.delete(`/requests/${id}`);
+export const cancelRequest = async (requestId: number) => {
+  const { data } = await apiClient.delete(`/requests/${requestId}`);
+  return data;
 };
-
 export const updateRequestStatus = async (
   id: number,
   status: 'pending' | 'accepted' | 'rejected'

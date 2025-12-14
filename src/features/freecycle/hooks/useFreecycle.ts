@@ -247,6 +247,7 @@ export function useCancelRequest() {
     mutationFn: cancelRequest,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['requests', 'user'] });
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
     },
   });
 }
@@ -262,27 +263,12 @@ export function useUpdateRequestStatus() {
       status: 'pending' | 'accepted' | 'rejected';
     }) => updateRequestStatus(id, status),
     onSuccess: () => {
-      // Invalidate both user requests and post requests to refresh UI globally
       queryClient.invalidateQueries({ queryKey: ['requests', 'user'] });
-      // Note: We should ideally also invalidate the specific ['posts', postId, 'requests'] query
-      // but that requires passing postId to the mutation hook call, which is handled in ItemDetailPage.tsx's onSuccess callback.
     },
   });
 }
 
 // --- Other Hooks ---
-
-// export function usePostsByUserId(userId?: number) {
-//   return useQuery({
-//     queryKey: ['posts', 'user', userId],
-//     queryFn: () => fetchPostsByUserId(userId!),
-//     enabled: Number.isFinite(userId),
-//     retry: 2,
-//     meta: {
-//       errorMessage: 'Failed to load user posts',
-//     },
-//   });
-// }
 
 export function useCurrentUser() {
   const { data, isLoading, isSuccess, isFetching } = useAuthenticated();
@@ -324,25 +310,6 @@ export function usePostsByUserId(userId?: number) {
     },
   });
 }
-
-// export function useMyPosts() {
-//   const {
-//     data: currentUser,
-//     isLoading: isUserLoading,
-//     isAuthenticated,
-//   } = useCurrentUser();
-//   const userId = currentUser?.id;
-
-//   return useQuery({
-//     queryKey: ['posts', 'user', userId],
-//     queryFn: () => fetchPostsByUserId(userId!),
-//     enabled: isAuthenticated && Number.isFinite(userId) && userId! > 0,
-//     retry: 0,
-//     meta: {
-//       errorMessage: 'Failed to load your posts',
-//     },
-//   });
-// }
 
 export function useMyPosts() {
   return useQuery({
