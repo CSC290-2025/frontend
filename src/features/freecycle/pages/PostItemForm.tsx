@@ -7,6 +7,7 @@ import {
   addCategoriesToPost,
 } from '@/features/freecycle/api/freecycle.api';
 import { useCurrentUser } from '@/features/freecycle/hooks/useFreecycle';
+import { useGetAuthMe } from '@/api/generated/authentication';
 
 interface PostItem {
   item_name: string;
@@ -28,7 +29,7 @@ export default function PostItemForm({ onSuccess }: PostItemFormProps) {
 
   // Get current user from authentication
   const { data: currentUser, isLoading: isUserLoading } = useCurrentUser();
-  const userId = currentUser?.id;
+  const userId = useGetAuthMe().data?.data?.userId ?? null;
 
   const [formData, setFormData] = useState<PostItem>({
     item_name: '',
