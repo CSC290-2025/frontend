@@ -22,6 +22,7 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
     volunteer_required: false,
     created_by_user_id: 1,
     registration_deadline: '',
+    volunteer_tag: '',
   });
 
   const [loading, setLoading] = useState(false);
@@ -47,12 +48,15 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
       return;
     }
 
-    // Convert datetime-local to ISO format
-    const formatDatetime = (datetimeLocal: string): string => {
-      if (!datetimeLocal) return '';
-      const date = new Date(datetimeLocal);
-      return date.toISOString();
+    // Convert datetime-local to date and time strings
+    const formatDateAndTime = (datetimeLocal: string) => {
+      if (!datetimeLocal) return { date: '', time: '' };
+      const [date, time] = datetimeLocal.split('T');
+      return { date, time };
     };
+
+    const startDateTime = formatDateAndTime(formData.start_at);
+    const endDateTime = formatDateAndTime(formData.end_at);
 
     // Regular event payload - always create
     const eventPayload = {
@@ -60,8 +64,20 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
       title: formData.title,
       description: formData.description,
       total_seats: 0, // Regular events don't have volunteer seats
-      start_at: formatDatetime(formData.start_at),
-      end_at: formatDatetime(formData.end_at),
+      start_date: startDateTime.date,
+      start_time: startDateTime.time,
+      end_date: endDateTime.date,
+      end_time: endDateTime.time,
+      organization: {
+        id: 1,
+        name: 'Freecycle',
+        email: 'info@freecycle.org',
+        phone_number: '+1-800-FREECYCLE',
+      },
+      address: {
+        id: 1,
+        name: formData.description, // Using description as address since we don't have a separate field
+      },
     };
 
     // Volunteer event payload (if volunteer is required)
@@ -71,12 +87,23 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
           description: formData.description,
           image_url: formData.image_url || '',
           total_seats: formData.total_seats || 0,
-          start_at: formatDatetime(formData.start_at),
-          end_at: formatDatetime(formData.end_at),
+          start_at: `${startDateTime.date}T${startDateTime.time}`,
+          end_at: `${endDateTime.date}T${endDateTime.time}`,
           created_by_user_id: formData.created_by_user_id || 1,
           registration_deadline: formData.registration_deadline
-            ? formatDatetime(formData.registration_deadline)
+            ? formatDateAndTime(formData.registration_deadline).date
             : null,
+          tag: formData.volunteer_tag || 'Freecycle',
+          organization: {
+            id: 1,
+            name: 'Freecycle',
+            email: 'info@freecycle.org',
+            phone_number: '+1-800-FREECYCLE',
+          },
+          address: {
+            id: 1,
+            name: formData.description,
+          },
         }
       : null;
 
@@ -247,11 +274,10 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
             </button>
           </div>
         </div>
-
         {/* Volunteer Event Fields */}
         {formData.volunteer_required && (
           <>
-            <div>
+            {/* <div>
               <label className="mb-2 block text-sm font-medium text-gray-900">
                 Created By User ID
               </label>
@@ -266,7 +292,7 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
                 }
                 className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
               />
-            </div>
+            </div> */}
 
             <div>
               <label className="mb-2 block text-sm font-medium text-gray-900">
@@ -300,6 +326,13 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
                 }
                 className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
               />
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-medium text-gray-900">
+                Volunteer Event Tag
+              </label>
+              <p className="text-sm text-gray-700">Freecycle</p>
             </div>
           </>
         )}
