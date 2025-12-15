@@ -1,5 +1,5 @@
 // Generouted, changes to this file will be overridden
-/* eslint-disable */
+ 
 
 import { components, hooks, utils } from '@generouted/react-router/client';
 
@@ -64,11 +64,9 @@ export type Path =
   | `/sos/report/:id`
   | `/traffic`
   | `/traffic/AddLight`
-  | `/traffic/Manual-Manage`
   | `/traffic/admin`
   | `/traffic/control`
   | `/traffic/mock`
-  | `/traffic/test`
   | `/users`
   | `/volunteer/board`
   | `/volunteer/createpost`

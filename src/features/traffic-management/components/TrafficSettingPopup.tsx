@@ -16,7 +16,6 @@ import { initializeApp } from 'firebase/app';
 import type { FirebaseApp } from 'firebase/app';
 import type { DatabaseReference } from 'firebase/database';
 import type { Database, DataSnapshot } from 'firebase/database';
-import { calculateTraffic } from '../components/calculateTrafficFunction';
 import { getBaseAPIURL } from '@/lib/apiClient.ts';
 import {
   getDatabase,
@@ -149,7 +148,7 @@ export default function TrafficSettingPopup({
 
       await set(ref(db, `${selectref}/${Traffickey}`), updatePayload);
       onOpenChange(false);
-      calculateTraffic(Number(interid));
+      //calculateTraffic(Number(interid));
       setConfirmOpen(false);
     } catch (err) {
       console.error('Error updating traffic light', err);
