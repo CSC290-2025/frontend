@@ -64,9 +64,11 @@ export type Path =
   | `/sos/report/:id`
   | `/traffic`
   | `/traffic/AddLight`
+  | `/traffic/Manual-Manage`
   | `/traffic/admin`
   | `/traffic/control`
   | `/traffic/mock`
+  | `/traffic/test`
   | `/users`
   | `/volunteer/board`
   | `/volunteer/createpost`

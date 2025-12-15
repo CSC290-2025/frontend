@@ -11,12 +11,9 @@ import {
 import { Button } from '@/components/ui/button';
 import ConfirmPopup from './Comfirmpopup';
 import type { trafficLight } from '../types/traffic.types';
-import { putTrafficLight } from '../api/signal.api';
 import { initializeApp } from 'firebase/app';
 import type { FirebaseApp } from 'firebase/app';
-import type { DatabaseReference } from 'firebase/database';
 import type { Database, DataSnapshot } from 'firebase/database';
-import { getBaseAPIURL } from '@/lib/apiClient.ts';
 import {
   getDatabase,
   ref,
@@ -37,7 +34,6 @@ interface TrafficSettingPopupProps {
   onSave?: (trafficLight: trafficLight) => void;
 }
 
-// **โปรดแทนที่ด้วย Firebase Config ของคุณ**
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,

@@ -7,6 +7,7 @@ import {
   push,
   child,
   set,
+  remove,
   update,
   onValue,
   off,
@@ -15,6 +16,7 @@ import {
 import type { FirebaseApp } from 'firebase/app';
 import type { Database, DataSnapshot } from 'firebase/database';
 import { getBaseAPIURL } from '@/lib/apiClient.ts';
+import ConfirmPopup from '../components/Comfirmpopup';
 
 // กำหนดค่า Firebase (แทนที่ด้วยค่าโปรเจกต์ของคุณ!)
 /*const firebaseConfig = {
@@ -104,6 +106,7 @@ const TrafficDataForm: React.FC = () => {
   const [selectref, setSelectref] = useState<string>('teams/10/traffic_lights');
   const [updatemode, setUpdatemode] = useState<boolean>(false);
   const [backendmode, setBackendmode] = useState<boolean>(true);
+  const [confirmOpen, setConfirmOpen] = useState<boolean>(false);
 
   // **[เพิ่มใหม่]** State สำหรับ Custom Key
   const [newTrafficKey, setNewTrafficKey] = useState<string>('');
@@ -121,6 +124,7 @@ const TrafficDataForm: React.FC = () => {
   const [greenduration, setGreenduration] = useState<string>('');
   const [redduration, setRedduration] = useState<string>('');
   const [densitylevel, setDensitylevel] = useState<string>('');
+  const [confirmKey, setConfirmKey] = useState<string>('');
 
   // State สำหรับการอัปเดต
   const [lightID, setlightID] = useState<string>('');
@@ -369,6 +373,7 @@ const TrafficDataForm: React.FC = () => {
           setRemaintime(data.remaintime);
           setGreenduration(data.green_duration || 0);
           setRedduration(data.red_duration || 0);
+          setDensitylevel(data.density_level || 0);
 
           setMessage({
             text: `✅ Successfully loaded data for Key: ${searchTerm}`,
@@ -456,6 +461,28 @@ const TrafficDataForm: React.FC = () => {
   const changeMode = () => {
     setBackendmode(!backendmode);
   };
+
+  function handleDelete() {
+    if (!confirmKey) return;
+    setConfirmOpen(true);
+  }
+
+  async function handleConfirm() {
+    try {
+      setIsLoading(true);
+      const trafficRef = ref(db, `${selectref}/${confirmKey}`);
+      await remove(trafficRef);
+
+      console.log(
+        `✅ Traffic light with key "${confirmKey}" deleted successfully.`
+      );
+    } catch (err) {
+      console.error('Error Delete traffic light', err);
+      alert('Error Delete traffic light. See console for details.');
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
   // --- ส่วน Render ของ Component ---
   return (
@@ -754,6 +781,36 @@ const TrafficDataForm: React.FC = () => {
                   {isLoading ? 'Searching...' : 'Search on firebase'}
                 </button>
               </form>
+
+              <form className="mt-5" onSubmit={handleDelete}>
+                <div className="mb-3">
+                  <label
+                    htmlFor="confirmKey"
+                    className="font-bold text-red-600"
+                  >
+                    Delete Traffic Light KEY ❌ :
+                  </label>
+                  <input
+                    id="confirmKey"
+                    type="text"
+                    value={confirmKey}
+                    onChange={(e) => setConfirmKey(e.target.value)}
+                    placeholder="Traffic Light key in firebase"
+                    className="mt-1 w-full rounded-sm border-2 border-red-600 p-2"
+                    disabled={isLoading}
+                    required
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full rounded-md bg-red-600 p-3 text-center font-bold text-white transition-colors duration-300 hover:bg-red-700"
+                >
+                  {isLoading ? 'Deleting...' : 'Delete traffic light'}
+                </button>
+              </form>
+
               <div className="my-5 h-100 rounded-md bg-gray-200">
                 <div className="text-center text-sm">
                   <div className="py-45">
@@ -1038,6 +1095,15 @@ const TrafficDataForm: React.FC = () => {
           </form>
         </div>
       )}
+      <ConfirmPopup
+        open={confirmOpen}
+        onOpenChange={setConfirmOpen}
+        title="Confirm Delete Traffic Light"
+        description={`Are you sure you want to delete the traffic light NO.${lightkey} at intersection ${interid}? This process will impact the system`}
+        confirmText="Confirm"
+        cancelText="Cancel"
+        onConfirm={handleConfirm}
+      />
     </div>
   );
 };
