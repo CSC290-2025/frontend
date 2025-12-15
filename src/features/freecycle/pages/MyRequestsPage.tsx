@@ -8,21 +8,27 @@ import RequestCard from '@/features/freecycle/components/RequestCard';
 import type { ReceiverRequest } from '@/features/freecycle/api/freecycle.api';
 import type { ApiPost, PostItem } from '@/types/postItem';
 import { useNavigate } from '@/router';
+import { useGetAuthMe } from '@/api/generated/authentication';
 
 export default function MyRequestsPage() {
   const navigate = useNavigate();
   const { data: requests, isLoading, isError, error } = useUserRequests();
+  const userId = useGetAuthMe().data?.data?.userId ?? null;
   const cancelRequestMutation = useCancelRequest();
   const [localRequests, setLocalRequests] = useState<ReceiverRequest[]>([]);
   const [postsMap, setPostsMap] = useState<Record<number, ApiPost | null>>({});
 
   useEffect(() => {
     if (Array.isArray(requests)) {
-      setLocalRequests(requests);
+      // Map receiver_id = current user id
+      const filteredRequests = requests.filter(
+        (request) => request.receiver_id === userId
+      );
+      setLocalRequests(filteredRequests);
       // Fetch post details for each request
       const fetchPosts = async () => {
         const newPostsMap: Record<number, ApiPost | null> = {};
-        const postIds = requests.map((r) => r.post_id);
+        const postIds = filteredRequests.map((r) => r.post_id);
         const uniquePostIds = [...new Set(postIds)];
 
         for (const postId of uniquePostIds) {
@@ -43,7 +49,7 @@ export default function MyRequestsPage() {
       setLocalRequests([]);
       setPostsMap({});
     }
-  }, [requests]);
+  }, [requests, userId]);
 
   const handleCancelRequest = async (requestId: number) => {
     if (!confirm('Are you sure you want to cancel this request?')) {
