@@ -1,99 +1,140 @@
-import { useState } from 'react';
-import { Upload } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { Upload, X } from 'lucide-react';
 import {
   useCreateEvent,
   useCreateVolunteerEvent,
 } from '@/features/freecycle/hooks/useEvent';
+import { uploadImage } from '@/features/freecycle/api/freecycle.api';
+import { useCurrentUser } from '@/features/freecycle/hooks/useFreecycle';
+import { useGetAuthMe } from '@/api/generated/authentication';
 
 interface PostEventFormProps {
   _onSuccess?: () => void;
 }
 
 export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
+  const { isLoading: isUserLoading } = useCurrentUser();
+  const userId = useGetAuthMe().data?.data?.userId ?? null;
+
   const [formData, setFormData] = useState({
-    host_user_id: 1,
     title: '',
     description: '',
     image_url: '',
     total_seats: 0,
     start_at: '',
     end_at: '',
-    // Volunteer Fields (optional)
     volunteer_required: false,
-    created_by_user_id: 1,
     registration_deadline: '',
-    volunteer_tag: '',
   });
 
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const { mutateAsync: createEvent, isPending } = useCreateEvent();
-  const { mutateAsync: createVolunteerEvent, isPending: isVolunteerPending } =
-    useCreateVolunteerEvent();
+  const { mutateAsync: createEvent } = useCreateEvent();
+  const { mutateAsync: createVolunteerEvent } = useCreateVolunteerEvent();
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      setPreviewUrl(URL.createObjectURL(file));
+    }
+  };
+
+  const handleRemoveImage = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+    if (isUserLoading) return;
+    if (!userId) {
+      alert('Please log in to post an event.');
+      return;
+    }
 
-    // Validate required fields
+    setLoading(true);
+    setError(null);
+
     if (!formData.title.trim()) {
       alert('Please enter an event title');
       setLoading(false);
       return;
     }
-
     if (!formData.start_at || !formData.end_at) {
       alert('Please select both start and end dates');
       setLoading(false);
       return;
     }
 
-    // Convert datetime-local to date and time strings
-    const formatDateAndTime = (datetimeLocal: string) => {
-      if (!datetimeLocal) return { date: '', time: '' };
-      const [date, time] = datetimeLocal.split('T');
-      return { date, time };
-    };
+    try {
+      let finalImageUrl = formData.image_url;
+      if (selectedFile) {
+        try {
+          const uploadResult = await uploadImage(selectedFile);
+          finalImageUrl = uploadResult.url;
+        } catch (uploadErr) {
+          console.error('Upload failed:', uploadErr);
+          alert('Failed to upload image.');
+          setLoading(false);
+          return;
+        }
+      }
 
-    const startDateTime = formatDateAndTime(formData.start_at);
-    const endDateTime = formatDateAndTime(formData.end_at);
+      const formatDateAndTime = (datetimeLocal: string) => {
+        if (!datetimeLocal) return { date: '', time: '' };
+        const [date, time] = datetimeLocal.split('T');
+        return { date, time };
+      };
+      const startDateTime = formatDateAndTime(formData.start_at);
+      const endDateTime = formatDateAndTime(formData.end_at);
 
-    // Regular event payload - always create
-    const eventPayload = {
-      host_user_id: formData.host_user_id,
-      title: formData.title,
-      description: formData.description,
-      total_seats: 0, // Regular events don't have volunteer seats
-      start_date: startDateTime.date,
-      start_time: startDateTime.time,
-      end_date: endDateTime.date,
-      end_time: endDateTime.time,
-      organization: {
-        id: 1,
-        name: 'Freecycle',
-        email: 'info@freecycle.org',
-        phone_number: '+1-800-FREECYCLE',
-      },
-      address: {
-        id: 1,
-        name: formData.description, // Using description as address since we don't have a separate field
-      },
-    };
+      const eventPayload = {
+        host_user_id: userId,
+        title: formData.title,
+        description: formData.description,
+        total_seats: 0,
+        start_date: startDateTime.date,
+        start_time: startDateTime.time,
+        end_date: endDateTime.date,
+        end_time: endDateTime.time,
+        image_url: finalImageUrl || '',
+        organization: {
+          id: 1,
+          name: 'Freecycle',
+          email: 'info@freecycle.org',
+          phone_number: '+1-800-FREECYCLE',
+        },
+        address: {
+          id: 1,
+          name: formData.description,
+        },
+      };
 
-    // Volunteer event payload (if volunteer is required)
-    const volunteerEventPayload = formData.volunteer_required
-      ? {
+      await createEvent(eventPayload);
+
+      if (formData.volunteer_required) {
+        const volunteerEventPayload = {
           title: formData.title,
           description: formData.description,
-          image_url: formData.image_url || '',
+          image_url: finalImageUrl || '',
           total_seats: formData.total_seats || 0,
-          start_at: `${startDateTime.date}T${startDateTime.time}`,
-          end_at: `${endDateTime.date}T${endDateTime.time}`,
-          created_by_user_id: formData.created_by_user_id || 1,
+          start_at: `${startDateTime.date}T${startDateTime.time}:00Z`,
+          end_at: `${endDateTime.date}T${endDateTime.time}:00Z`,
+          created_by_user_id: userId,
+          host_user_id: userId,
+          user_id: userId,
+          owner_id: userId,
           registration_deadline: formData.registration_deadline
-            ? formatDateAndTime(formData.registration_deadline).date
+            ? new Date(formData.registration_deadline).toISOString()
             : null,
-          tag: formData.volunteer_tag || 'Freecycle',
+          tag: 'Freecycle',
           organization: {
             id: 1,
             name: 'Freecycle',
@@ -104,46 +145,22 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
             id: 1,
             name: formData.description,
           },
-        }
-      : null;
+        };
 
-    try {
-      const promises = [createEvent(eventPayload)];
-
-      if (volunteerEventPayload) {
-        promises.push(createVolunteerEvent(volunteerEventPayload));
+        await createVolunteerEvent(volunteerEventPayload);
       }
 
-      const results = await Promise.all(promises);
-
-      console.log('All API results:', results);
-
-      alert(
-        formData.volunteer_required
-          ? 'Event and Volunteer Event created successfully!'
-          : 'Event created successfully!'
-      );
+      alert('Event created successfully!');
       _onSuccess?.();
     } catch (err: any) {
-      console.log('Regular Event Payload:', eventPayload);
-      if (volunteerEventPayload) {
-        console.log('Volunteer Event Payload:', volunteerEventPayload);
-      }
-      console.error('Event creation error:', err);
-      console.error('Error response:', err?.response?.data);
-      console.error('Error status:', err?.response?.status);
-      const errorMessage =
-        err?.response?.data?.message ||
-        err?.response?.data?.error ||
-        err?.message ||
-        'Failed to create event';
-      alert(`Failed to create event: ${errorMessage}`);
+      console.error('Process Error:', err);
+      const msg =
+        err?.response?.data?.message || err?.message || 'Something went wrong';
+      setError(`Failed: ${msg}`);
     } finally {
       setLoading(false);
     }
   };
-
-  const isSubmitting = loading || isPending || isVolunteerPending;
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -153,22 +170,44 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
         onSubmit={handleSubmit}
         className="space-y-6 rounded-2xl bg-white p-8 shadow-md"
       >
-        {/* Image URL */}
-        <div className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-300 bg-gray-50 p-8 transition-colors hover:bg-gray-100">
-          <Upload className="mb-2 h-12 w-12 text-gray-400" />
-          <p className="text-sm text-gray-600">Upload photo</p>
+        {/* Image Upload */}
+        <div
+          onClick={() => fileInputRef.current?.click()}
+          className="relative flex min-h-[200px] cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-gray-300 bg-gray-50 p-8 transition-colors hover:bg-gray-100"
+        >
+          {previewUrl ? (
+            <div className="relative flex h-full w-full justify-center">
+              <img
+                src={previewUrl}
+                alt="Preview"
+                className="max-h-[300px] w-auto rounded-lg object-contain"
+              />
+              <button
+                type="button"
+                onClick={handleRemoveImage}
+                className="absolute top-2 right-2 rounded-full bg-red-500 p-1 text-white shadow-md hover:bg-red-600"
+              >
+                <X size={20} />
+              </button>
+            </div>
+          ) : (
+            <>
+              <Upload className="mb-2 h-12 w-12 text-gray-400" />
+              <p className="text-sm text-gray-600">Upload photo</p>
+              <input type="text" className="hidden" />{' '}
+              {/* Dummy text for visual match if needed */}
+            </>
+          )}
           <input
-            type="text"
-            placeholder="Image URL"
-            value={formData.image_url}
-            onChange={(e) =>
-              setFormData({ ...formData, image_url: e.target.value })
-            }
-            className="mt-4 w-full max-w-md rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleFileChange}
           />
         </div>
 
-        {/* Event Title */}
+        {/* Title */}
         <div>
           <label className="mb-2 block text-sm font-medium text-gray-900">
             Event Title
@@ -215,7 +254,7 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
           </div>
         </div>
 
-        {/* Event Description */}
+        {/* Description */}
         <div>
           <label className="mb-2 block text-sm font-medium text-gray-900">
             Description
@@ -235,7 +274,6 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
           />
         </div>
 
-        {/* Volunteer Event Option */}
         <div>
           <label className="mb-2 block text-sm font-medium text-gray-900">
             Also Create Volunteer Event?
@@ -274,26 +312,10 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
             </button>
           </div>
         </div>
+
         {/* Volunteer Event Fields */}
         {formData.volunteer_required && (
           <>
-            {/* <div>
-              <label className="mb-2 block text-sm font-medium text-gray-900">
-                Created By User ID
-              </label>
-              <input
-                type="number"
-                value={formData.created_by_user_id}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    created_by_user_id: parseInt(e.target.value) || 1,
-                  })
-                }
-                className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
-              />
-            </div> */}
-
             <div>
               <label className="mb-2 block text-sm font-medium text-gray-900">
                 Total Volunteers Needed
@@ -337,12 +359,16 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
           </>
         )}
 
+        {error && (
+          <div className="rounded-lg bg-red-50 p-4 text-red-700">{error}</div>
+        )}
+
         <button
           type="submit"
-          disabled={isSubmitting}
+          disabled={loading || isUserLoading}
           className="w-full rounded-lg bg-cyan-500 py-3 font-medium text-white transition-colors hover:bg-cyan-600 disabled:opacity-50"
         >
-          {isSubmitting ? 'Posting...' : 'Post'}
+          {loading ? 'Processing...' : 'Post'}
         </button>
       </form>
     </div>
