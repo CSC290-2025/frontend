@@ -17,6 +17,7 @@ export type Path =
   | `/ApartmentPayment`
   | `/Know-AI/:course`
   | `/Know-AI/:course/:id`
+  | `/Know-AI/adminAi`
   | `/Know-AI/createCourse`
   | `/Know-AI/exercises`
   | `/Know-AI/exercises/:level/:question`
