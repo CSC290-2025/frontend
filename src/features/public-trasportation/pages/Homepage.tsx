@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo } from 'react';
-// Import Component ที่จำเป็น
 import BusInfo from '../components/BusInfo';
 import MapView from '../components/MapView';
 import axios from 'axios';
@@ -7,7 +6,6 @@ import { getBaseAPIURL } from '@/lib/apiClient.ts';
 
 const GOOGLE_API_KEY = 'AIzaSyAPNBcfQDaVuSGaC4LiSLTWMSvk3Xz3iNQ';
 
-// Interfaces เดิม
 interface RouteSummary {
   start_address: string;
   end_address: string;
@@ -29,12 +27,19 @@ interface Coords {
   name?: string;
 }
 
-// APIs
+interface APITapTransaction {
+  id: number;
+  type: 'IN' | 'OUT';
+  locationName: string;
+  timestamp: string;
+  chargedAmount?: number;
+}
+
 const API_BASE_URL = getBaseAPIURL + '/api/routes/all';
 const TRANSACTION_API_URL = getBaseAPIURL + '/api/transactions/tap';
 const METRO_CARD_API_URL = getBaseAPIURL + '/metro-cards/me';
+const HISTORY_API_URL = getBaseAPIURL + '/api/transactions/history';
 
-// Geocoding Function
 const geocodeAddress = async (query: string): Promise<Coords | null> => {
   if (!query) return null;
 
@@ -43,7 +48,26 @@ const geocodeAddress = async (query: string): Promise<Coords | null> => {
     const lat = mapSelectionMatch[1].trim();
     const lng = mapSelectionMatch[2].trim();
     if (!isNaN(parseFloat(lat)) && !isNaN(parseFloat(lng))) {
-      return Promise.resolve({ lat, lng, name: query });
+      try {
+        const REVERSE_GEOCODE_URL = `https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key=${GOOGLE_API_KEY}`;
+        const response = await axios.get(REVERSE_GEOCODE_URL);
+        const data = response.data;
+
+        if (data.status === 'OK' && data.results.length > 0) {
+          const name =
+            data.results[0].formatted_address ||
+            `Map Selected (${lat}, ${lng})`;
+          return { lat, lng, name };
+        }
+      } catch (error) {
+        console.error('Reverse Geocoding Error:', error);
+      }
+
+      return Promise.resolve({
+        lat,
+        lng,
+        name: `Lat: ${parseFloat(lat).toFixed(4)}, Lng: ${parseFloat(lng).toFixed(4)}`,
+      });
     }
   }
 
@@ -85,11 +109,9 @@ export default function Home() {
 
   const [isTapProcessing, setIsTapProcessing] = useState(false);
 
-  // States เดิม: Card ID
   const [activeCardId, setActiveCardId] = useState<number | null>(null);
   const [cardError, setCardError] = useState<string | null>(null);
 
-  // States เดิม: Query/Location
   const [originQuery, setOriginQuery] = useState(
     "King Mongkut's University of Technology Thonburi"
   );
@@ -108,15 +130,23 @@ export default function Home() {
     'origin' | 'destination' | null
   >(null);
 
-  // 🟢 State ใหม่: จัดการแท็บที่เลือก
   const [activeTab, setActiveTab] = useState<
     'Transportation' | 'Recent Routes' | 'Tap History'
   >('Transportation');
 
-  // 🟢 State ใหม่: ประวัติการค้นหา 3 ครั้งล่าสุด (Mock Data)
   const [recentRoutes, setRecentRoutes] = useState<
     { origin: string; destination: string; id: number }[]
   >([
+    {
+      id: 5,
+      origin: 'KMUTT',
+      destination: 'Siam Paragon',
+    },
+    {
+      id: 4,
+      origin: 'BTS Phaya Thai',
+      destination: 'Chatuchak Market',
+    },
     {
       id: 3,
       origin: "King Mongkut's University of Technology Thonburi",
@@ -134,31 +164,16 @@ export default function Home() {
     },
   ]);
 
-  // 🟢 State ใหม่: ประวัติ Tap In/Out 3 รายการล่าสุด (Mock Data)
   const [tapHistory, setTapHistory] = useState<
     { type: 'IN' | 'OUT'; location: string; time: string; charge?: number }[]
-  >([
-    {
-      type: 'OUT',
-      location: 'Siam Center (BTS)',
-      time: '10:45 AM',
-      charge: 28,
-    },
-    {
-      type: 'IN',
-      location: 'Chong Nonsi (BTS)',
-      time: '10:30 AM',
-    },
-    {
-      type: 'OUT',
-      location: 'Minburi Terminal',
-      time: '08:15 AM',
-      charge: 15,
-    },
-  ]);
+  >([]);
+
+  const [tapHistoryLoading, setTapHistoryLoading] = useState(false);
+  const [tapHistoryError, setTapHistoryError] = useState<string | null>(null);
+  const [tapHistoryStatus, setTapHistoryStatus] = useState<string | null>(null);
 
   // ------------------------------------
-  // Fetch Card Data (เดิม)
+  // Fetch Card Data
   // ------------------------------------
   useEffect(() => {
     const fetchActiveCard = async () => {
@@ -196,7 +211,132 @@ export default function Home() {
   }, []);
 
   // ------------------------------------
-  // Route Fetching (เดิม)
+  // Tap History Fetching
+  // ------------------------------------
+  const fetchTapHistory = async (cardId: number) => {
+    if (isNaN(cardId) || cardId === null || cardId === 0) {
+      setTapHistoryStatus(
+        'Cannot fetch history: Active Card ID is invalid or not yet loaded.'
+      );
+      setTapHistoryError(null);
+      return;
+    }
+
+    setTapHistoryLoading(true);
+    setTapHistoryError(null);
+    setTapHistoryStatus(null);
+    setTapHistory([]);
+
+    try {
+      const response = await axios.get(HISTORY_API_URL, {
+        params: { cardId: cardId },
+        withCredentials: true,
+      });
+
+      let historyDataContainer = response.data.data;
+
+      if (historyDataContainer && historyDataContainer.data) {
+        historyDataContainer = historyDataContainer.data;
+      }
+
+      if (response.data.success) {
+        if (
+          Array.isArray(historyDataContainer) &&
+          historyDataContainer.length > 0
+        ) {
+          const historyData: APITapTransaction[] = historyDataContainer;
+
+          const formattedHistory = historyData.reduce(
+            (acc, data) => {
+              try {
+                const date = new Date(data.timestamp);
+
+                if (isNaN(date.getTime())) {
+                  return acc;
+                }
+
+                const locationName =
+                  data.locationName || 'Location Data Missing';
+                let displayLocation = locationName.split(',')[0].trim();
+
+                if (displayLocation.length > 30) {
+                  const words = displayLocation.split(/\s+/);
+                  displayLocation = words.slice(0, 3).join(' ');
+                  if (words.length > 3) {
+                    displayLocation += '...';
+                  }
+                }
+
+                acc.push({
+                  type: data.type,
+                  location: displayLocation,
+                  time: date.toLocaleTimeString('en-US', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true,
+                  }),
+                  charge: data.chargedAmount,
+                });
+                return acc;
+              } catch (e) {
+                return acc;
+              }
+            },
+            [] as {
+              type: 'IN' | 'OUT';
+              location: string;
+              time: string;
+              charge?: number;
+            }[]
+          );
+
+          if (formattedHistory.length === 0) {
+            setTapHistoryStatus(
+              'All fetched transactions appear corrupted and cannot be displayed.'
+            );
+          } else {
+            setTapHistory(formattedHistory.slice(0, 5));
+            setTapHistoryStatus(null);
+          }
+          setTapHistoryError(null);
+        } else {
+          setTapHistoryStatus('No recent tap history found.');
+        }
+      } else {
+        setTapHistoryError(response.data.message || 'API reported failure.');
+      }
+    } catch (err: any) {
+      const status = err.response?.status;
+      let msg =
+        err.response?.data?.message ||
+        err.message ||
+        'Failed to fetch tap history.';
+
+      if (status === 401) {
+        msg = 'Unauthorized. Please check your session and card status.';
+      }
+
+      setTapHistoryError('History Error: ' + msg);
+      setTapHistoryStatus(null);
+      console.error('Tap History Fetch Error:', err);
+    } finally {
+      setTapHistoryLoading(false);
+    }
+  };
+
+  // ------------------------------------
+  // useEffect: Trigger History Fetch เมื่อได้ Card ID
+  // ------------------------------------
+  useEffect(() => {
+    if (activeCardId !== null && !cardError) {
+      fetchTapHistory(activeCardId);
+    } else if (cardError) {
+      setTapHistoryError(cardError);
+    }
+  }, [activeCardId, cardError]);
+
+  // ------------------------------------
+  // Route Fetching
   // ------------------------------------
   const fetchRoutes = async (
     origCoords: { lat: string; lng: string; name: string },
@@ -243,13 +383,16 @@ export default function Home() {
   };
 
   // ------------------------------------
-  // Search Logic (เดิม + อัปเดต Recent Routes)
+  // Search Logic (ถูกใช้เมื่อกดปุ่ม Search)
   // ------------------------------------
   const handleInitialSearch = async () => {
     if (!originQuery || !destinationQuery) {
       setError('Please enter both Origin and Destination.');
       return;
     }
+
+    const originalOriginQuery = originQuery;
+    const originalDestinationQuery = destinationQuery;
 
     const originCoordsResult = await geocodeAddress(originQuery);
     if (!originCoordsResult) {
@@ -261,14 +404,14 @@ export default function Home() {
     const newOriginCoords = {
       lat: originCoordsResult.lat,
       lng: originCoordsResult.lng,
-      name: originCoordsResult.name || originQuery,
+      name: originalOriginQuery,
     };
     setOriginLocation({
       origLat: newOriginCoords.lat,
       origLng: newOriginCoords.lng,
-      originName: newOriginCoords.name,
+      originName: originCoordsResult.name || originalOriginQuery,
     });
-    setOriginQuery(newOriginCoords.name);
+    setOriginQuery(originCoordsResult.name || originalOriginQuery);
 
     const destCoordsResult = await geocodeAddress(destinationQuery);
     if (!destCoordsResult) {
@@ -280,23 +423,67 @@ export default function Home() {
     const newDestCoords = {
       lat: destCoordsResult.lat,
       lng: destCoordsResult.lng,
-      name: destCoordsResult.name || destinationQuery,
+      name: originalDestinationQuery,
     };
     setDestinationCoords({ lat: newDestCoords.lat, lng: newDestCoords.lng });
-    setDestinationQuery(newDestCoords.name);
+    setDestinationQuery(destCoordsResult.name || originalDestinationQuery);
 
-    fetchRoutes(newOriginCoords, newDestCoords);
-
-    // 🟢 อัปเดต: เพิ่มเส้นทางใหม่ลงในประวัติการค้นหา (Recent Routes)
     setRecentRoutes((prev) => {
       const newRoute = {
         id: Date.now(),
-        origin: newOriginCoords.name,
-        destination: newDestCoords.name,
+        origin: originalOriginQuery,
+        destination: originalDestinationQuery,
       };
-      // เก็บ 3 รายการล่าสุด
-      return [newRoute, ...prev].slice(0, 3);
+      return [newRoute, ...prev].slice(0, 5);
     });
+
+    fetchRoutes(
+      { ...newOriginCoords, name: originalOriginQuery },
+      { ...newDestCoords, name: originalDestinationQuery }
+    );
+  };
+
+  // ------------------------------------
+  // Search Logic (ถูกใช้เมื่อคลิก Recent Route)
+  // ------------------------------------
+  const handleRecentRouteClick = async (route: {
+    origin: string;
+    destination: string;
+    id: number;
+  }) => {
+    setOriginQuery(route.origin);
+    setDestinationQuery(route.destination);
+
+    const originCoordsResult = await geocodeAddress(route.origin);
+    const destCoordsResult = await geocodeAddress(route.destination);
+
+    if (!originCoordsResult || !destCoordsResult) {
+      setError('Failed to re-fetch coordinates for this recent route.');
+      setActiveTab('Transportation');
+      return;
+    }
+
+    const newOriginCoords = {
+      lat: originCoordsResult.lat,
+      lng: originCoordsResult.lng,
+      name: route.origin,
+    };
+    setOriginLocation({
+      origLat: newOriginCoords.lat,
+      origLng: newOriginCoords.lng,
+      originName: originCoordsResult.name || route.origin,
+    });
+
+    const newDestCoords = {
+      lat: destCoordsResult.lat,
+      lng: destCoordsResult.lng,
+      name: route.destination,
+    };
+    setDestinationCoords({ lat: newDestCoords.lat, lng: newDestCoords.lng });
+
+    fetchRoutes(newOriginCoords, newDestCoords);
+
+    setActiveTab('Transportation');
   };
 
   const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -305,10 +492,13 @@ export default function Home() {
     }
   };
 
-  const handleMapSelection = (lat: number, lng: number) => {
+  const handleMapSelection = async (lat: number, lng: number) => {
     if (!selectionMode) return;
 
-    const newName = `Map Selected (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
+    const newCoordsResult = await geocodeAddress(`(${lat}, ${lng})`);
+
+    const newName =
+      newCoordsResult?.name || `Lat: ${lat.toFixed(4)}, Lng: ${lng.toFixed(4)}`;
     const newCoords = { lat: lat.toString(), lng: lng.toString() };
 
     if (selectionMode === 'origin') {
@@ -321,7 +511,11 @@ export default function Home() {
       setDestinationCoords(null);
     } else if (selectionMode === 'destination') {
       setDestinationQuery(newName);
-      setDestinationCoords({ lat: newCoords.lat, lng: newCoords.lng });
+      setDestinationCoords({
+        lat: newCoords.lat,
+        lng: newCoords.lng,
+        name: newName,
+      });
 
       const currentOriginCoords = {
         lat: originLocation.origLat,
@@ -352,7 +546,7 @@ export default function Home() {
   const selectedRoute = routes[selectedRouteIndex];
 
   // ------------------------------------
-  // Tap Transaction Logic (เดิม + อัปเดต Tap History)
+  // Tap Transaction Logic
   // ------------------------------------
   const handleTapTransaction = async (
     routeIndex: number,
@@ -393,12 +587,16 @@ export default function Home() {
     );
     const vehicleType = transitStep?.vehicle_type || 'AC_BUS';
 
-    let locationData: { lat: string; lng: string } = { lat: '', lng: '' };
+    let locationData: { lat: string; lng: string; name?: string } = {
+      lat: '',
+      lng: '',
+    };
 
     if (isTappingIn) {
       locationData = {
         lat: originLocation.origLat,
         lng: originLocation.origLng,
+        name: originLocation.originName,
       };
     } else {
       if (!destinationCoords)
@@ -430,26 +628,9 @@ export default function Home() {
         const result = response.data.data;
         const chargedAmount = result.charged || result.maxFareReserved;
 
-        // 🟢 อัปเดต: เพิ่มธุรกรรมลงใน Tap History
-        const locationName = isTappingIn
-          ? originLocation.originName
-          : destinationCoords?.name || 'Unknown Destination';
-
-        setTapHistory((prev) => {
-          const newTap: any = {
-            type: isTappingIn ? 'IN' : 'OUT',
-            location: locationName.split(',')[0].trim(), // ใช้แค่ชื่อหลัก
-            time: new Date().toLocaleTimeString('en-US', {
-              hour: '2-digit',
-              minute: '2-digit',
-              hour12: true,
-            }),
-          };
-          if (!isTappingIn) {
-            newTap.charge = chargedAmount;
-          }
-          return [newTap, ...prev].slice(0, 3); // เก็บ 3 รายการล่าสุด
-        });
+        if (activeCardId !== null) {
+          fetchTapHistory(activeCardId);
+        }
 
         return {
           success: true,
@@ -476,10 +657,8 @@ export default function Home() {
   // JSX Render (รวม Tab Menu)
   // ------------------------------------
   return (
-    // 🟢 โครงสร้างหลัก (เต็มจอ)
     <div className="min-h-screen bg-white text-gray-800">
       <main className="p-8">
-        {/* 🟢 แท็บเมนูใหม่ */}
         <div className="mb-6 flex items-center space-x-6 border-b border-gray-200">
           {['Transportation', 'Recent Routes', 'Tap History'].map((tab) => (
             <button
@@ -500,9 +679,6 @@ export default function Home() {
           ))}
         </div>
 
-        {/* ------------------------------------------- */}
-        {/* 1. Transportation Tab (ช่องค้นหาและแผนที่) */}
-        {/* ------------------------------------------- */}
         {activeTab === 'Transportation' && (
           <>
             <div className="mb-6 flex flex-col space-y-3">
@@ -666,36 +842,28 @@ export default function Home() {
           </>
         )}
 
-        {/* ------------------------------------------- */}
-        {/* 2. Recent Routes Tab (แสดงประวัติการค้นหา) */}
-        {/* ------------------------------------------- */}
         {activeTab === 'Recent Routes' && (
           <div className="space-y-4 pt-4">
             <h3 className="text-xl font-semibold text-gray-800">
-              Latest 3 Routes
+              Latest 5 Routes
             </h3>
             {recentRoutes.length > 0 ? (
               recentRoutes.map((route) => (
                 <div
                   key={route.id}
                   className="cursor-pointer rounded-xl border border-gray-200 p-4 shadow-sm transition-shadow hover:shadow-md"
-                  // เมื่อคลิกจะกลับไปที่หน้า Transportation และอัปเดตช่องค้นหา (Optional)
-                  onClick={() => {
-                    setOriginQuery(route.origin);
-                    setDestinationQuery(route.destination);
-                    setActiveTab('Transportation');
-                  }}
+                  onClick={() => handleRecentRouteClick(route)}
                 >
                   <p className="text-sm text-gray-500">From:</p>
                   <p className="text-lg font-medium text-gray-800">
-                    {route.origin.split(',')[0].trim()}
+                    {route.origin.trim()}
                   </p>
                   <p className="mt-2 mb-1 text-lg font-bold text-sky-600">
                     &darr;
                   </p>
                   <p className="text-sm text-gray-500">To:</p>
                   <p className="text-lg font-medium text-gray-800">
-                    {route.destination.split(',')[0].trim()}
+                    {route.destination.trim()}
                   </p>
                 </div>
               ))
@@ -705,49 +873,63 @@ export default function Home() {
           </div>
         )}
 
-        {/* ------------------------------------------- */}
-        {/* 3. Tap History Tab (แสดงประวัติธุรกรรม) */}
-        {/* ------------------------------------------- */}
         {activeTab === 'Tap History' && (
           <div className="space-y-4 pt-4">
             <h3 className="text-xl font-semibold text-gray-800">
-              Latest 3 Transactions
+              Latest 5 Transactions
             </h3>
-            {tapHistory.length > 0 ? (
-              tapHistory.map((tap, index) => (
-                <div
-                  key={index}
-                  className={`rounded-xl border p-4 shadow-sm ${
-                    tap.type === 'IN'
-                      ? 'border-blue-300 bg-blue-50'
-                      : 'border-green-300 bg-green-50'
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <p
-                      className={`text-lg font-bold ${tap.type === 'IN' ? 'text-blue-700' : 'text-green-700'}`}
-                    >
-                      {tap.type === 'IN' ? 'TAP IN' : 'TAP OUT'}
-                    </p>
-                    <p className="text-sm text-gray-500">{tap.time}</p>
-                  </div>
-                  <p className="mt-1 text-sm text-gray-600">
-                    Location:{' '}
-                    <span className="font-medium">{tap.location}</span>
-                  </p>
-                  {tap.charge && (
-                    <p className="text-sm text-gray-600">
-                      Charge:{' '}
-                      <span className="font-bold text-red-600">
-                        {tap.charge.toFixed(2)} THB
-                      </span>
-                    </p>
-                  )}
-                </div>
-              ))
-            ) : (
-              <p className="text-gray-500">No tap history found.</p>
+
+            {tapHistoryLoading && (
+              <p className="text-gray-500">Loading tap history from API...</p>
             )}
+
+            {tapHistoryError && !tapHistoryLoading && (
+              <p className="text-red-500">🚨 API Error: {tapHistoryError}</p>
+            )}
+
+            {!tapHistoryLoading && tapHistory.length > 0
+              ? tapHistory.map((tap, index) => (
+                  <div
+                    key={index}
+                    className={`rounded-xl border p-4 shadow-sm ${
+                      tap.type === 'IN'
+                        ? 'border-blue-300 bg-blue-50'
+                        : 'border-green-300 bg-green-50'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <p
+                        className={`text-lg font-bold ${tap.type === 'IN' ? 'text-blue-700' : 'text-green-700'}`}
+                      >
+                        {tap.type === 'IN' ? 'TAP IN' : 'TAP OUT'}
+                      </p>
+                      <p className="text-sm text-gray-500">{tap.time}</p>
+                    </div>
+                    <p className="mt-1 text-sm text-gray-600">
+                      Location:{' '}
+                      <span className="font-medium">{tap.location}</span>
+                    </p>
+                    {tap.charge !== undefined && (
+                      <p className="text-sm text-gray-600">
+                        Charge:{' '}
+                        <span className="font-bold text-red-600">
+                          {tap.charge.toFixed(2)} THB
+                        </span>
+                      </p>
+                    )}
+                  </div>
+                ))
+              : !tapHistoryLoading &&
+                !tapHistoryError &&
+                tapHistoryStatus && (
+                  <p className="text-gray-500">{tapHistoryStatus}</p>
+                )}
+            {!tapHistoryLoading &&
+              !tapHistoryError &&
+              tapHistory.length === 0 &&
+              !tapHistoryStatus && (
+                <p className="text-gray-500">No tap history found.</p>
+              )}
           </div>
         )}
       </main>
