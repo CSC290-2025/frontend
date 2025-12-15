@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
-import { Upload } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { Upload, X } from 'lucide-react';
 import type { Category } from '@/types/postItem';
 import {
   createPost,
   fetchAllCategories,
   addCategoriesToPost,
+  uploadImage,
 } from '@/features/freecycle/api/freecycle.api';
 import { useCurrentUser } from '@/features/freecycle/hooks/useFreecycle';
 import { useGetAuthMe } from '@/api/generated/authentication';
@@ -27,8 +28,11 @@ export default function PostItemForm({ onSuccess }: PostItemFormProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Get current user from authentication
-  const { data: currentUser, isLoading: isUserLoading } = useCurrentUser();
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const { isLoading: isUserLoading } = useCurrentUser();
   const userId = useGetAuthMe().data?.data?.userId ?? null;
 
   const [formData, setFormData] = useState<PostItem>({
@@ -39,35 +43,31 @@ export default function PostItemForm({ onSuccess }: PostItemFormProps) {
     donate_to_department_id: null,
   });
 
-  // Load categories on component mount
   useEffect(() => {
-    const loadCategories = async () => {
-      try {
-        const data = await fetchAllCategories();
-        setCategories(data);
-      } catch (err) {
-        console.error('Failed to load categories:', err);
-        setError('Failed to load categories');
-      }
-    };
-    loadCategories();
+    fetchAllCategories()
+      .then(setCategories)
+      .catch(() => setError('Failed to load categories'));
   }, []);
 
-  // const handleSubmit = async (e: React.FormEvent) => {
-  //   e.preventDefault();
-  //   console.log('Form submitted with data:', formData);
-  // };
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
+      setPreviewUrl(URL.createObjectURL(file));
+    }
+  };
+
+  const handleRemoveImage = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setSelectedFile(null);
+    setPreviewUrl(null);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Check if user data is still loading
-    if (isUserLoading) {
-      setError('Loading user information, please wait...');
-      return;
-    }
-
-    // Check if user is logged in
+    if (isUserLoading) return;
     if (!userId) {
       setError('Please log in to post an item.');
       return;
@@ -77,39 +77,35 @@ export default function PostItemForm({ onSuccess }: PostItemFormProps) {
     setError(null);
 
     try {
-      // Step 1: Create the post with actual user ID
+      let finalPhotoUrl = null;
+
+      if (selectedFile) {
+        try {
+          console.log('Uploading image...');
+          const uploadResult = await uploadImage(selectedFile);
+          finalPhotoUrl = uploadResult.url;
+        } catch (uploadErr) {
+          console.error('Upload failed:', uploadErr);
+          setError('Failed to upload image.');
+          setLoading(false);
+          return;
+        }
+      }
+
       const createdPost = await createPost({
-        item_name: formData.item_name,
-        item_weight: formData.item_weight,
-        photo_url: formData.photo_url || null,
-        description: formData.description,
-        donate_to_department_id: formData.donate_to_department_id,
+        ...formData,
+        photo_url: finalPhotoUrl,
         donater_id: userId,
       });
 
-      console.log('Post created successfully:', createdPost);
-
-      // Step 2: Add categories to the post if any are selected
       if (selectedCategories.length > 0) {
-        console.log('Adding categories:', selectedCategories);
         await addCategoriesToPost(createdPost.id, selectedCategories, userId);
-        console.log('Categories added successfully');
       }
 
       setLoading(false);
-
-      // Check if onSuccess is a function before calling
-      if (typeof onSuccess === 'function') {
-        onSuccess();
-      } else {
-        console.warn('onSuccess is not a function:', onSuccess);
-      }
+      if (typeof onSuccess === 'function') onSuccess();
     } catch (err) {
-      console.error('Full error:', err);
-      if (err instanceof Error && 'response' in err) {
-        const error = err as { response?: { data: unknown } };
-        console.error('Error response:', error.response?.data);
-      }
+      console.error('Error creating post:', err);
       setError('Failed to create post. Please try again.');
       setLoading(false);
     }
@@ -131,47 +127,63 @@ export default function PostItemForm({ onSuccess }: PostItemFormProps) {
         onSubmit={handleSubmit}
         className="space-y-6 rounded-2xl bg-white p-8 shadow-md"
       >
-        <div className="flex cursor-pointer flex-col items-center justify-center rounded-2xl border-2 border-dashed border-gray-300 bg-gray-50 p-8 transition-colors hover:bg-gray-100">
-          <Upload className="mb-2 h-12 w-12 text-gray-400" />
-          <p className="text-sm text-gray-600">upload photo</p>
+        {/* Upload Area */}
+        <div
+          onClick={() => fileInputRef.current?.click()}
+          className="relative flex min-h-[200px] cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-gray-300 bg-gray-50 p-8 transition-colors hover:bg-gray-100"
+        >
+          {previewUrl ? (
+            <div className="relative flex h-full w-full justify-center">
+              <img
+                src={previewUrl}
+                alt="Preview"
+                className="max-h-[300px] w-auto rounded-lg object-contain"
+              />
+              <button
+                type="button"
+                onClick={handleRemoveImage}
+                className="absolute top-2 right-2 rounded-full bg-red-500 p-1 text-white shadow-md hover:bg-red-600"
+              >
+                <X size={20} />
+              </button>
+            </div>
+          ) : (
+            <>
+              <Upload className="mb-2 h-12 w-12 text-gray-400" />
+              <p className="text-sm text-gray-600">Click to upload photo</p>
+              <p className="mt-1 text-xs text-gray-400">Supports: JPG, PNG</p>
+            </>
+          )}
           <input
-            id="photo-url"
-            name="photo_url"
-            type="text"
-            placeholder="Photo URL (Pexels link)"
-            value={formData.photo_url || ''}
-            onChange={(e) =>
-              setFormData({ ...formData, photo_url: e.target.value })
-            }
-            className="mt-4 w-full max-w-md rounded-lg border border-gray-300 px-4 py-2 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleFileChange}
           />
         </div>
 
+        {/* Inputs */}
         <div>
           <label className="mb-2 block text-sm font-medium text-gray-900">
             Item name
           </label>
           <input
-            id="item-name"
-            name="item_name"
             type="text"
             required
             value={formData.item_name}
             onChange={(e) =>
               setFormData({ ...formData, item_name: e.target.value })
             }
-            placeholder="item name"
             className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
           />
         </div>
-        {/* Weight */}
+
         <div>
           <label className="mb-2 block text-sm font-medium text-gray-900">
             Weight (kg)
           </label>
           <input
-            id="item-weight"
-            name="item_weight"
             type="number"
             step="0.01"
             value={formData.item_weight || ''}
@@ -181,11 +193,11 @@ export default function PostItemForm({ onSuccess }: PostItemFormProps) {
                 item_weight: e.target.value ? Number(e.target.value) : null,
               })
             }
-            placeholder="e.g. 2.5"
             className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
           />
         </div>
 
+        {/* Categories */}
         <div>
           <label className="mb-2 block text-sm font-medium text-gray-900">
             Category
@@ -205,11 +217,7 @@ export default function PostItemForm({ onSuccess }: PostItemFormProps) {
                   }`}
                 >
                   <div
-                    className={`flex h-4 w-4 items-center justify-center rounded-full border-2 ${
-                      isSelected
-                        ? 'border-cyan-500 bg-cyan-500'
-                        : 'border-gray-400'
-                    }`}
+                    className={`flex h-4 w-4 items-center justify-center rounded-full border-2 ${isSelected ? 'border-cyan-500 bg-cyan-500' : 'border-gray-400'}`}
                   >
                     {isSelected && (
                       <div className="h-2 w-2 rounded-full bg-white" />
@@ -220,34 +228,6 @@ export default function PostItemForm({ onSuccess }: PostItemFormProps) {
               );
             })}
           </div>
-
-          {/* Selected Categories Display */}
-          {selectedCategories.length > 0 && (
-            <div className="mt-4 rounded-lg bg-cyan-50 p-4">
-              <p className="mb-2 text-sm font-medium text-cyan-900">
-                Selected Categories ({selectedCategories.length}):
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {categories
-                  .filter((cat) => selectedCategories.includes(cat.id))
-                  .map((category) => (
-                    <span
-                      key={category.id}
-                      className="inline-flex items-center gap-2 rounded-full bg-cyan-200 px-3 py-1 text-sm text-cyan-800"
-                    >
-                      {category.category_name}
-                      <button
-                        type="button"
-                        onClick={() => toggleCategory(category.id)}
-                        className="font-bold hover:text-cyan-600"
-                      >
-                        ×
-                      </button>
-                    </span>
-                  ))}
-              </div>
-            </div>
-          )}
         </div>
 
         <div>
@@ -255,8 +235,6 @@ export default function PostItemForm({ onSuccess }: PostItemFormProps) {
             Description
           </label>
           <textarea
-            id="description"
-            name="description"
             value={formData.description}
             onChange={(e) =>
               setFormData({ ...formData, description: e.target.value })
@@ -273,9 +251,9 @@ export default function PostItemForm({ onSuccess }: PostItemFormProps) {
         <button
           type="submit"
           disabled={loading || isUserLoading}
-          className="w-full rounded-lg bg-gray-300 py-3 font-medium text-gray-700 transition-colors hover:bg-gray-400 disabled:opacity-50"
+          className="w-full rounded-lg bg-cyan-500 py-3 font-medium text-white transition-colors hover:bg-cyan-600 disabled:opacity-50"
         >
-          {isUserLoading ? 'Loading...' : loading ? 'Posting...' : 'Post'}
+          {loading ? 'Posting...' : 'Post Item'}
         </button>
       </form>
     </div>

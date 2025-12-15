@@ -257,6 +257,7 @@ export const cancelRequest = async (requestId: number) => {
   const { data } = await apiClient.delete(`/requests/${requestId}`);
   return data;
 };
+
 export const updateRequestStatus = async (
   id: number,
   status: 'pending' | 'accepted' | 'rejected'
@@ -266,4 +267,15 @@ export const updateRequestStatus = async (
     { status }
   );
   return response.data.data.request;
+};
+
+export const uploadImage = async (file: File) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  const response = await apiClient.post('/upload', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  return response.data;
 };
