@@ -13,13 +13,25 @@ export default function ItemCard({ item, onClick }: ItemCardProps) {
     >
       <div className="flex aspect-square items-center justify-center overflow-hidden bg-gray-200">
         {item.photo_url ? (
-          <img
-            src={item.photo_url}
-            alt={item.item_name}
-            className="h-full w-full object-cover"
-          />
+          <>
+            <img
+              src={item.photo_url}
+              alt={item.item_name}
+              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
+            />
+            {item.is_given && (
+              <div className="absolute inset-0 flex items-center justify-center bg-black/40 backdrop-blur-sm">
+                <span className="rounded-full bg-white/90 px-3 py-1 text-sm font-semibold text-gray-800">
+                  Given Away
+                </span>
+              </div>
+            )}
+          </>
         ) : (
-          <span className="text-sm text-gray-400">No photo</span>
+          <div className="flex flex-col items-center gap-2">
+            {/* <Zap className="h-12 w-12 text-gray-300" /> */}
+            <span className="text-sm text-gray-400">No photo</span>
+          </div>
         )}
       </div>
       <div className="p-4">

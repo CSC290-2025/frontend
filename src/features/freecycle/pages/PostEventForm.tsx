@@ -163,214 +163,233 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
   };
 
   return (
-    <div className="mx-auto max-w-3xl">
-      <h1 className="mb-6 text-3xl font-bold text-gray-900">Post an Event</h1>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-cyan-50 to-blue-50 px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-2xl">
+        <div className="mb-8">
+          <h1 className="bg-gradient-to-r from-cyan-600 to-blue-600 bg-clip-text text-4xl font-bold text-transparent">
+            Post an Event
+          </h1>
+          <p className="mt-2 text-gray-600">
+            Share your community event with everyone
+          </p>
+        </div>
 
-      <form
-        onSubmit={handleSubmit}
-        className="space-y-6 rounded-2xl bg-white p-8 shadow-md"
-      >
-        {/* Image Upload */}
-        <div
-          onClick={() => fileInputRef.current?.click()}
-          className="relative flex min-h-[200px] cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-gray-300 bg-gray-50 p-8 transition-colors hover:bg-gray-100"
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-6 rounded-3xl border border-gray-100 bg-white p-8 shadow-xl"
         >
-          {previewUrl ? (
-            <div className="relative flex h-full w-full justify-center">
-              <img
-                src={previewUrl}
-                alt="Preview"
-                className="max-h-[300px] w-auto rounded-lg object-contain"
-              />
-              <button
-                type="button"
-                onClick={handleRemoveImage}
-                className="absolute top-2 right-2 rounded-full bg-red-500 p-1 text-white shadow-md hover:bg-red-600"
-              >
-                <X size={20} />
-              </button>
-            </div>
-          ) : (
-            <>
-              <Upload className="mb-2 h-12 w-12 text-gray-400" />
-              <p className="text-sm text-gray-600">Upload photo</p>
-              <input type="text" className="hidden" />{' '}
-              {/* Dummy text for visual match if needed */}
-            </>
-          )}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/*"
-            className="hidden"
-            onChange={handleFileChange}
-          />
-        </div>
-
-        {/* Title */}
-        <div>
-          <label className="mb-2 block text-sm font-medium text-gray-900">
-            Event Title
-          </label>
-          <input
-            type="text"
-            required
-            value={formData.title}
-            onChange={(e) =>
-              setFormData({ ...formData, title: e.target.value })
-            }
-            placeholder="Event title (e.g., Freecycle Community Giveaway)"
-            className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
-          />
-        </div>
-
-        {/* Dates */}
-        <div className="grid grid-cols-2 gap-4">
+          {/* Image Upload */}
           <div>
-            <label className="mb-2 block text-sm font-medium text-gray-900">
-              Start At
+            <label className="mb-3 block text-sm font-semibold text-gray-900">
+              Photo
             </label>
-            <input
-              type="datetime-local"
-              value={formData.start_at}
-              onChange={(e) =>
-                setFormData({ ...formData, start_at: e.target.value })
-              }
-              className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
-            />
-          </div>
-          <div>
-            <label className="mb-2 block text-sm font-medium text-gray-900">
-              End At
-            </label>
-            <input
-              type="datetime-local"
-              value={formData.end_at}
-              onChange={(e) =>
-                setFormData({ ...formData, end_at: e.target.value })
-              }
-              className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
-            />
-          </div>
-        </div>
-
-        {/* Description */}
-        <div>
-          <label className="mb-2 block text-sm font-medium text-gray-900">
-            Description
-          </label>
-          <p className="mb-3 text-sm text-gray-600">
-            Include the event location, time, what to bring, planned activities,
-            and any important information attendees should know.
-          </p>
-          <textarea
-            value={formData.description}
-            onChange={(e) =>
-              setFormData({ ...formData, description: e.target.value })
-            }
-            placeholder="E.g., Central Park, Bangkok. Join our secondhand exchange from 9:00 AM–12:00 PM. Bring gently used items to swap or share. Free refreshments provided."
-            rows={4}
-            className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
-          />
-        </div>
-
-        <div>
-          <label className="mb-2 block text-sm font-medium text-gray-900">
-            Also Create Volunteer Event?
-          </label>
-          <p className="mb-3 text-sm text-gray-600">
-            Do you want to also create a volunteer event for this?
-          </p>
-
-          <div className="flex gap-4">
-            <button
-              type="button"
-              onClick={() =>
-                setFormData({ ...formData, volunteer_required: true })
-              }
-              className={`flex items-center gap-2 rounded-lg border px-6 py-3 ${
-                formData.volunteer_required
-                  ? 'border-cyan-500 bg-cyan-50 text-cyan-700'
-                  : 'border-gray-300 bg-gray-50 text-gray-700'
-              }`}
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              className="relative flex min-h-[240px] cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-cyan-300 bg-gradient-to-br from-cyan-50 to-blue-50 p-8 transition-all duration-300 hover:border-cyan-500 hover:bg-cyan-100/50"
             >
-              Yes
-            </button>
-
-            <button
-              type="button"
-              onClick={() =>
-                setFormData({ ...formData, volunteer_required: false })
-              }
-              className={`flex items-center gap-2 rounded-lg border px-6 py-3 ${
-                !formData.volunteer_required
-                  ? 'border-gray-400 bg-gray-100 text-gray-700'
-                  : 'border-gray-300 bg-gray-50 text-gray-700'
-              }`}
-            >
-              No
-            </button>
-          </div>
-        </div>
-
-        {/* Volunteer Event Fields */}
-        {formData.volunteer_required && (
-          <>
-            <div>
-              <label className="mb-2 block text-sm font-medium text-gray-900">
-                Total Volunteers Needed
-              </label>
+              {previewUrl ? (
+                <div className="relative flex h-full w-full justify-center">
+                  <img
+                    src={previewUrl}
+                    alt="Preview"
+                    className="max-h-[300px] w-auto rounded-lg object-contain"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleRemoveImage}
+                    className="absolute top-2 right-2 rounded-full bg-red-500 p-2 text-white shadow-lg transition-all duration-200 hover:scale-110 hover:bg-red-600"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <div className="mb-3 rounded-full bg-cyan-100 p-4">
+                    <Upload className="h-8 w-8 text-cyan-600" />
+                  </div>
+                  <p className="text-base font-semibold text-gray-900">
+                    Click to upload photo
+                  </p>
+                  <p className="mt-1 text-sm text-gray-600">
+                    JPG, PNG • Max 5MB
+                  </p>
+                </>
+              )}
               <input
-                type="number"
-                value={formData.total_seats}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    total_seats: parseInt(e.target.value) || 0,
-                  })
-                }
-                className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleFileChange}
               />
             </div>
+          </div>
 
+          {/* Title */}
+          <div>
+            <label className="mb-3 block text-sm font-semibold text-gray-900">
+              Event Title
+            </label>
+            <input
+              type="text"
+              required
+              value={formData.title}
+              onChange={(e) =>
+                setFormData({ ...formData, title: e.target.value })
+              }
+              placeholder="Event title (e.g., Freecycle Community Giveaway)"
+              className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+            />
+          </div>
+
+          {/* Dates */}
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
             <div>
-              <label className="mb-2 block text-sm font-medium text-gray-900">
-                Registration Deadline (Optional)
+              <label className="mb-3 block text-sm font-semibold text-gray-900">
+                Start At
               </label>
               <input
                 type="datetime-local"
-                value={formData.registration_deadline}
+                value={formData.start_at}
                 onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    registration_deadline: e.target.value,
-                  })
+                  setFormData({ ...formData, start_at: e.target.value })
                 }
-                className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
               />
             </div>
-
             <div>
-              <label className="mb-2 block text-sm font-medium text-gray-900">
-                Volunteer Event Tag
+              <label className="mb-3 block text-sm font-semibold text-gray-900">
+                End At
               </label>
-              <p className="text-sm text-gray-700">Freecycle</p>
+              <input
+                type="datetime-local"
+                value={formData.end_at}
+                onChange={(e) =>
+                  setFormData({ ...formData, end_at: e.target.value })
+                }
+                className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+              />
             </div>
-          </>
-        )}
+          </div>
 
-        {error && (
-          <div className="rounded-lg bg-red-50 p-4 text-red-700">{error}</div>
-        )}
+          {/* Description */}
+          <div>
+            <label className="mb-3 block text-sm font-semibold text-gray-900">
+              Description
+            </label>
+            <p className="mb-3 text-sm text-gray-600">
+              Describe your event: include location, time, required items,
+              planned activities, and any important notes.
+            </p>
+            <textarea
+              value={formData.description}
+              onChange={(e) =>
+                setFormData({ ...formData, description: e.target.value })
+              }
+              placeholder="E.g., Central Park, Bangkok. Join our secondhand exchange from 9:00 AM–12:00 PM. Bring gently used items to swap or share. Free refreshments provided."
+              rows={4}
+              className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+            />
+          </div>
 
-        <button
-          type="submit"
-          disabled={loading || isUserLoading}
-          className="w-full rounded-lg bg-cyan-500 py-3 font-medium text-white transition-colors hover:bg-cyan-600 disabled:opacity-50"
-        >
-          {loading ? 'Processing...' : 'Post'}
-        </button>
-      </form>
+          <div>
+            <label className="mb-3 block text-sm font-semibold text-gray-900">
+              Also Create Volunteer Event?
+            </label>
+            <p className="mb-3 text-sm text-gray-600">
+              Do you want to also create a volunteer event for this?
+            </p>
+
+            <div className="flex gap-4">
+              <button
+                type="button"
+                onClick={() =>
+                  setFormData({ ...formData, volunteer_required: true })
+                }
+                className={`flex items-center gap-2 rounded-lg border px-6 py-3 ${
+                  formData.volunteer_required
+                    ? 'border-cyan-500 bg-cyan-50 text-cyan-700'
+                    : 'border-gray-300 bg-gray-50 text-gray-700'
+                }`}
+              >
+                Yes
+              </button>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setFormData({ ...formData, volunteer_required: false })
+                }
+                className={`flex items-center gap-2 rounded-lg border px-6 py-3 ${
+                  !formData.volunteer_required
+                    ? 'border-gray-400 bg-gray-100 text-gray-700'
+                    : 'border-gray-300 bg-gray-50 text-gray-700'
+                }`}
+              >
+                No
+              </button>
+            </div>
+          </div>
+
+          {/* Volunteer Event Fields */}
+          {formData.volunteer_required && (
+            <>
+              <div>
+                <label className="mb-2 block text-sm font-medium text-gray-900">
+                  Total Volunteers Needed
+                </label>
+                <input
+                  type="number"
+                  value={formData.total_seats}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      total_seats: parseInt(e.target.value) || 0,
+                    })
+                  }
+                  className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-gray-900">
+                  Registration Deadline (Optional)
+                </label>
+                <input
+                  type="datetime-local"
+                  value={formData.registration_deadline}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      registration_deadline: e.target.value,
+                    })
+                  }
+                  className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="mb-2 block text-sm font-medium text-gray-900">
+                  Volunteer Event Tag
+                </label>
+                <p className="text-sm text-gray-700">Freecycle</p>
+              </div>
+            </>
+          )}
+
+          {error && (
+            <div className="rounded-lg bg-red-50 p-4 text-red-700">{error}</div>
+          )}
+
+          <button
+            type="submit"
+            disabled={loading || isUserLoading}
+            className="w-full rounded-lg bg-cyan-500 py-3 font-medium text-white transition-colors hover:bg-cyan-600 disabled:opacity-50"
+          >
+            {loading ? 'Processing...' : 'Post'}
+          </button>
+        </form>
+      </div>
     </div>
   );
 }

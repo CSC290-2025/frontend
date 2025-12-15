@@ -93,9 +93,9 @@ export default function MyItemsPage() {
             onClick={() => navigate('/freecycle')}
             className="mb-4 flex items-center gap-2 font-medium text-cyan-600 transition-colors hover:text-cyan-700 sm:mb-6"
           >
-            <ArrowLeft className="h-5 w-5" />
+            {/* <ArrowLeft className="h-5 w-5" />
             <span className="hidden sm:inline">Back to Home</span>
-            <span className="sm:hidden">Back</span>
+            <span className="sm:hidden">Back</span> */}
           </button>
 
           {/* Title and Count - Responsive Layout */}

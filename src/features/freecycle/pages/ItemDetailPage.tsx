@@ -365,25 +365,25 @@ export default function ItemDetailPage() {
           onClick={() => navigate('/freecycle')}
           className="mt-4 flex items-center gap-2 font-medium text-cyan-600 hover:text-cyan-700"
         >
-          <ArrowLeft className="h-5 w-5" /> Back to Home
+          {/* <ArrowLeft className="h-5 w-5" /> Back to Home */}
         </button>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto mt-12 max-w-4xl p-4 sm:p-0">
+    <div className="mx-auto max-w-6xl p-4">
       <button
-        onClick={() => navigate('/freecycle/my-items')}
+        onClick={() => navigate('/freecycle')}
         className="mb-6 flex items-center gap-2 font-medium text-cyan-600 hover:text-cyan-700"
       >
-        <ArrowLeft className="h-5 w-5" /> Back
+        {/* <ArrowLeft className="h-5 w-5" /> Back */}
       </button>
 
       <div className="overflow-hidden rounded-2xl bg-white shadow-lg">
         <div className="grid gap-8 md:grid-cols-2">
           {/* Left: Image */}
-          <div className="flex aspect-square items-center justify-center bg-gray-200">
+          <div className="m-6 flex aspect-square items-center justify-center overflow-hidden rounded-2xl bg-gray-100">
             {item.photo_url ? (
               <img
                 src={item.photo_url}
@@ -433,19 +433,9 @@ export default function ItemDetailPage() {
                       }
                     >
                       {item.is_given ? (
-                        <div className="flex items-center justify-center gap-2">
-                          <div className="flex flex-row items-center justify-center gap-2">
-                            <RotateCw className="h-5 w-5" />
-                            mark as not given
-                          </div>
-                        </div>
+                        <RotateCw className="h-5 w-5" />
                       ) : (
-                        <div className="flex items-center justify-center gap-2">
-                          <div className="flex flex-row items-center justify-center gap-2">
-                            <CheckCircle className="h-5 w-5" />
-                            mark as given
-                          </div>
-                        </div>
+                        <CheckCircle className="h-5 w-5" />
                       )}
                     </button>
                   </div>
