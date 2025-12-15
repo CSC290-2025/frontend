@@ -1,3 +1,5 @@
+//Adminpage
+
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
   APIProvider,
@@ -11,9 +13,7 @@ import { database } from '@/lib/firebase';
 import { MarkerClusterer } from '@googlemaps/markerclusterer';
 import ConfirmPopup from '../components/Comfirmpopup';
 import MapSettingsDialog from '../components/MapSettingsDialog';
-import TrafficDashboard from '../components/TrafficLightListAdmin';
 import type { lightRequest } from '../types/traffic.types';
-import { da } from 'zod/v4/locales';
 import { getBaseAPIURL } from '@/lib/apiClient.ts';
 
 interface TrafficData {
@@ -479,15 +479,7 @@ function MapContent({
         open={popupOpen}
         onOpenChange={(v) => setPopupOpen(v)}
         Traffickey={String(selectedSignal?.key)}
-        onSave={(updated) => {
-          setSelectedlight((prev) => {
-            if (!prev) return prev; // or throw error
-            return { ...prev, status: 1 };
-          });
-          setPopupOpen(false);
-        }}
       />
-         {' '}
     </>
   );
 }

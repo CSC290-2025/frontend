@@ -1,3 +1,5 @@
+//settingpopup
+
 import { useEffect, useState } from 'react';
 import {
   Dialog,
@@ -14,18 +16,8 @@ import type { trafficLight } from '../types/traffic.types';
 import { initializeApp } from 'firebase/app';
 import type { FirebaseApp } from 'firebase/app';
 import type { Database, DataSnapshot } from 'firebase/database';
-import {
-  getDatabase,
-  ref,
-  query,
-  push,
-  child,
-  set,
-  update,
-  onValue,
-  off,
-  get,
-} from 'firebase/database';
+import { getDatabase, ref, child, update, get } from 'firebase/database';
+import { calculateRedDuration } from './calculateRedDuration';
 
 interface TrafficSettingPopupProps {
   open: boolean;
@@ -63,7 +55,6 @@ export default function TrafficSettingPopup({
   open,
   Traffickey,
   onOpenChange,
-  onSave,
 }: TrafficSettingPopupProps) {
   const [selectref, setSelectref] = useState<string>('teams/10/traffic_lights');
 
@@ -142,7 +133,9 @@ export default function TrafficSettingPopup({
         timestamp: new Date().toISOString(),
       };
 
-      await set(ref(db, `${selectref}/${Traffickey}`), updatePayload);
+      await update(ref(db, `${selectref}/${Traffickey}`), updatePayload);
+      await calculateRedDuration(Number(interid), db);
+
       onOpenChange(false);
       //calculateTraffic(Number(interid));
       setConfirmOpen(false);

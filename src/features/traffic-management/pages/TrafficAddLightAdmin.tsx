@@ -1,14 +1,12 @@
+//addlight
+
 import React, { useState, useEffect } from 'react';
 import { initializeApp } from 'firebase/app';
 import {
   getDatabase,
   ref,
-  query,
-  push,
   child,
   set,
-  remove,
-  update,
   onValue,
   off,
   get,
@@ -16,7 +14,8 @@ import {
 import type { FirebaseApp } from 'firebase/app';
 import type { Database, DataSnapshot } from 'firebase/database';
 import { getBaseAPIURL } from '@/lib/apiClient.ts';
-import ConfirmPopup from '../components/Comfirmpopup';
+import { calculateGreenDuration } from '../components/calculateGreenDuration';
+import { calculateRedDuration } from '../components/calculateRedDuration';
 
 // กำหนดค่า Firebase (แทนที่ด้วยค่าโปรเจกต์ของคุณ!)
 /*const firebaseConfig = {
@@ -129,6 +128,10 @@ const TrafficDataForm: React.FC = () => {
   // State สำหรับการอัปเดต
   const [lightID, setlightID] = useState<string>('');
   const [lightkey, setlightkey] = useState<string>('');
+
+  const [calcukey, setCalcukey] = useState<string>('');
+  const [calcuinterid, setCalcuinterid] = useState<string>('');
+  const [calcuRoadid, setCalcuroadid] = useState<string>('');
 
   const [Trafficlist, setTrafficList] = useState<TrafficRecord[]>([]);
 
@@ -401,88 +404,94 @@ const TrafficDataForm: React.FC = () => {
     }
   };
 
-  const updatetobackend = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handlefetch = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const searchTerm = calcukey.trim();
 
-    if (!lightID.trim()) {
+    if (!calcukey.trim()) {
       setMessage({
-        text: 'Please provide a valid Key to update',
+        text: 'Please provide a valid Key to search',
         isError: true,
       });
       return;
     }
 
-    const url = getBaseAPIURL + `/traffic-lights/${lightID.trim()}`;
-
     try {
-      const response = await fetch(url, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        // แปลง Payload Object เป็น JSON String
-        body: JSON.stringify(formData),
-      });
+      setIsLoading(true);
+      const trafficRef = child(ref(db), `${selectref}/${searchTerm}`);
 
-      // ตรวจสอบ HTTP Status
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(
-          `HTTP Error: ${response.status} - ${errorData.message || 'Unknown error'}`
+      const snapshot: DataSnapshot = await get(trafficRef);
+
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        if (data) {
+          console.log('✅ Found traffic light details from firebase:', data);
+
+          setCalcuinterid(data.interid);
+          setCalcuroadid(data.roadid);
+
+          setMessage({
+            text: `✅ Successfully loaded data for Key: ${searchTerm}`,
+            isError: false,
+          });
+        }
+      } else {
+        console.log(
+          `Traffic Light with Key "${searchTerm}" not found at path: ${trafficRef.toString()}`
         );
+        setMessage({
+          text: `❌ Traffic Light with Key "${searchTerm}" not found.`,
+          isError: true,
+        });
       }
-
-      const data: TrafficLightResponse = await response.json();
-      console.log('Response Data:', data);
     } catch (err) {
-      console.error('Fetch Error:', err);
+      console.error('Error loading traffic light details', err);
+      setMessage({
+        text: 'Wrong ID or cannot fetch data from firebase',
+        isError: true,
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
-  ) => {
-    const { name, value, type } = e.target;
+  const handleCalculate = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const searchTerm = calcukey.trim();
 
-    setFormData((prevData) => ({
-      ...prevData,
-      // แปลงค่าให้ถูกต้องตาม Type (เช่น string เป็น number/boolean)
-      [name]:
-        type === 'checkbox'
-          ? (e.target as HTMLInputElement).checked
-          : type === 'number'
-            ? Number(value)
-            : value,
-    }));
+    if (!calcukey.trim()) {
+      setMessage({
+        text: 'Please provide a valid Key to search',
+        isError: true,
+      });
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+
+      await calculateGreenDuration(
+        Number(calcukey),
+        Number(calcuinterid),
+        Number(calcuRoadid)
+      );
+
+      await calculateRedDuration(Number(calcuinterid), db);
+
+      setMessage({
+        text: 'Complete calculate',
+        isError: false,
+      });
+    } catch (err) {
+      console.error('Error loading traffic light details', err);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const changeMode = () => {
     setBackendmode(!backendmode);
   };
-
-  function handleDelete() {
-    if (!confirmKey) return;
-    setConfirmOpen(true);
-  }
-
-  async function handleConfirm() {
-    try {
-      setIsLoading(true);
-      const trafficRef = ref(db, `${selectref}/${confirmKey}`);
-      await remove(trafficRef);
-
-      console.log(
-        `✅ Traffic light with key "${confirmKey}" deleted successfully.`
-      );
-    } catch (err) {
-      console.error('Error Delete traffic light', err);
-      alert('Error Delete traffic light. See console for details.');
-    } finally {
-      setIsLoading(false);
-    }
-  }
 
   // --- ส่วน Render ของ Component ---
   return (
@@ -782,35 +791,6 @@ const TrafficDataForm: React.FC = () => {
                 </button>
               </form>
 
-              <form className="mt-5" onSubmit={handleDelete}>
-                <div className="mb-3">
-                  <label
-                    htmlFor="confirmKey"
-                    className="font-bold text-red-600"
-                  >
-                    Delete Traffic Light KEY ❌ :
-                  </label>
-                  <input
-                    id="confirmKey"
-                    type="text"
-                    value={confirmKey}
-                    onChange={(e) => setConfirmKey(e.target.value)}
-                    placeholder="Traffic Light key in firebase"
-                    className="mt-1 w-full rounded-sm border-2 border-red-600 p-2"
-                    disabled={isLoading}
-                    required
-                  />
-                </div>
-
-                <button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full rounded-md bg-red-600 p-3 text-center font-bold text-white transition-colors duration-300 hover:bg-red-700"
-                >
-                  {isLoading ? 'Deleting...' : 'Delete traffic light'}
-                </button>
-              </form>
-
               <div className="my-5 h-100 rounded-md bg-gray-200">
                 <div className="text-center text-sm">
                   <div className="py-45">
@@ -1022,59 +1002,24 @@ const TrafficDataForm: React.FC = () => {
               switch
             </button>
           </div>
-
-          <h1 className="text-3xl font-bold">เดี๋ยวมาทำต่อ</h1>
-
-          <form onSubmit={updatetobackend}>
+          {message.text && (
+            <div
+              className={`${message.isError ? 'mb-3 rounded-md bg-red-200 p-3' : 'mb-3 rounded-md bg-green-200 p-3'}`}
+            >
+              {message.text}
+            </div>
+          )}
+          <form onSubmit={handlefetch}>
             {/* Status Input */}
             <div style={{ marginBottom: '10px' }}>
-              <label>Status (0=Offline, 1=Online): </label>
+              <label className="font-bold text-purple-600">Traffic Key :</label>
               <input
                 type="number"
-                name="status"
-                value={formData.status}
-                onChange={handleInputChange}
+                name="calcukey"
+                value={calcukey}
+                onChange={(e) => setCalcukey(e.target.value)}
                 required
-                style={{ width: '100%', padding: '8px' }}
-              />
-            </div>
-
-            {/* IP Address Input */}
-            <div style={{ marginBottom: '10px' }}>
-              <label>IP Address:</label>
-              <input
-                type="text"
-                name="ip_address"
-                value={formData.ip_address}
-                onChange={handleInputChange}
-                required
-                style={{ width: '100%', padding: '8px' }}
-              />
-            </div>
-
-            {/* Green Duration Input */}
-            <div style={{ marginBottom: '10px' }}>
-              <label>Green Duration (Sec):</label>
-              <input
-                type="number"
-                name="green_duration"
-                value={formData.green_duration}
-                onChange={handleInputChange}
-                required
-                style={{ width: '100%', padding: '8px' }}
-              />
-            </div>
-
-            {/* Red Duration Input */}
-            <div style={{ marginBottom: '10px' }}>
-              <label>Red Duration (Sec):</label>
-              <input
-                type="number"
-                name="red_duration"
-                value={formData.red_duration}
-                onChange={handleInputChange}
-                required
-                style={{ width: '100%', padding: '8px' }}
+                className="mt-1 w-full rounded-sm border-2 border-purple-600 p-2"
               />
             </div>
 
@@ -1082,28 +1027,46 @@ const TrafficDataForm: React.FC = () => {
             <button
               type="submit"
               disabled={isLoading}
-              style={{
-                padding: '10px 15px',
-                backgroundColor: isLoading ? '#ccc' : '#007bff',
-                color: 'white',
-                border: 'none',
-                cursor: isLoading ? 'not-allowed' : 'pointer',
-              }}
+              className="w-full rounded-md bg-purple-500 p-3 text-center font-bold text-white transition-colors duration-300 hover:bg-purple-600"
             >
-              {isLoading ? 'กำลังอัปเดต...' : 'PUT Update Data'}
+              {isLoading ? 'fetching...' : 'Fetch Data'}
+            </button>
+          </form>
+
+          <form onSubmit={handleCalculate}>
+            <div className="mt-5">
+              <label className="">Intersection ID :</label>
+              <input
+                type="number"
+                name="calcuinterid"
+                value={calcuinterid}
+                onChange={(e) => setCalcuinterid(e.target.value)}
+                required
+                className="mt-1 w-full rounded-sm border-2 border-gray-300 p-2"
+              />
+            </div>
+            <div>
+              <label className="">Road ID :</label>
+              <input
+                type="number"
+                name="calcuRoadid"
+                value={calcuRoadid}
+                onChange={(e) => setCalcuroadid(e.target.value)}
+                required
+                className="mt-1 w-full rounded-sm border-2 border-gray-300 p-2"
+              />
+            </div>
+
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="mt-5 w-full rounded-md bg-gradient-to-b from-purple-500 to-blue-500 p-3 text-center font-bold text-white transition-colors duration-300 hover:bg-orange-700 hover:from-purple-600 hover:to-blue-600"
+            >
+              {isLoading ? 'Calculating...' : 'Calculate'}
             </button>
           </form>
         </div>
       )}
-      <ConfirmPopup
-        open={confirmOpen}
-        onOpenChange={setConfirmOpen}
-        title="Confirm Delete Traffic Light"
-        description={`Are you sure you want to delete the traffic light NO.${lightkey} at intersection ${interid}? This process will impact the system`}
-        confirmText="Confirm"
-        cancelText="Cancel"
-        onConfirm={handleConfirm}
-      />
     </div>
   );
 };
