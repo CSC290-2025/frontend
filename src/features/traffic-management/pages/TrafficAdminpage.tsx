@@ -478,9 +478,7 @@ function MapContent({
       <TrafficSettingPopup
         open={popupOpen}
         onOpenChange={(v) => setPopupOpen(v)}
-        Lkey={String(selectedSignal?.key)}
-        currentColor={Number(selectedSignal?.color)}
-        remaintime={Number(selectedSignal?.remaintime)}
+        Traffickey={String(selectedSignal?.key)}
         onSave={(updated) => {
           setSelectedlight((prev) => {
             if (!prev) return prev; // or throw error
