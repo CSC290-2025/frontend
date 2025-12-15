@@ -20,12 +20,12 @@ import { Textarea } from '@/features/emergency/components/ui/textarea';
 import { Spinner } from '@/features/emergency/components/ui/spinner';
 import MapInit from '@/features/emergency/components/modules/google-map/init-map';
 import { AlertTriangle, Camera, Car, CircleAlert, Waves } from 'lucide-react';
-import { useGeoLocation } from '@/features/emergency/hooks/geo-location';
-import { useReportFrom } from '@/features/emergency/hooks/report-from';
+import { useGeoLocation } from '@/features/emergency/contexts/geo-location';
+import { useReportFrom } from '@/features/emergency/contexts/report-from';
 import {
   ReportOmit,
   type ReportRequestFrom,
-} from '@/features/emergency/interfaces/report';
+} from '@/features/emergency/types/report';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';

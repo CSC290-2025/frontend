@@ -1,7 +1,7 @@
 import { Outlet } from 'react-router';
 import MainLayout from '@/features/emergency/components/modules/layout/main-layout.tsx';
-import { GeoLocationProvider } from '@/features/emergency/hooks/geo-location.tsx';
-import { ReportFromProvider } from '@/features/emergency/hooks/report-from.tsx';
+import { GeoLocationProvider } from '@/features/emergency/contexts/geo-location.tsx';
+import { ReportFromProvider } from '@/features/emergency/contexts/report-from.tsx';
 
 export default function SosLayout() {
   return (

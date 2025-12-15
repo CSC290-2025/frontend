@@ -26,7 +26,7 @@ export default function AdminTenantInfo() {
   const params = new URLSearchParams(window.location.search);
   const apartmentId = Number(params.get('id') || 0);
 
-  // Use existing hooks to fetch bookings for this apartment
+  // Use existing contexts to fetch bookings for this apartment
   const { data: bookingsResp, error } = useBookingsByApartment(apartmentId);
   // Mutation hook to update booking status (end contract)
   const updateBookingStatus = useUpdateBookingStatus();

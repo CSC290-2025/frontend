@@ -13,7 +13,7 @@ import {
   CardTitle,
   CardDescription,
 } from '@/components/ui/card';
-import { useNotification } from '@/features/emergency/hooks/notification.tsx';
+import { useNotification } from '@/features/emergency/contexts/notification.tsx';
 
 export function AppSidebar() {
   const { msgLocal } = useNotification();

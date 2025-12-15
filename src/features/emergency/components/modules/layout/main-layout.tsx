@@ -2,7 +2,7 @@ import { type FC, type ReactNode, useEffect } from 'react';
 import MenuBar from '@/features/emergency/components/animatedmenu.tsx';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import Header from '@/features/emergency/components/modules/navbar/header.tsx';
-import { useNotification } from '@/features/emergency/hooks/notification.tsx';
+import { useNotification } from '@/features/emergency/contexts/notification.tsx';
 import { cn } from '@/lib/utils.ts';
 import { AppSidebar } from '@/features/emergency/components/modules/sidebar/app-sidebar.tsx';
 
@@ -17,11 +17,6 @@ const MainLayout: FC<MainLayoutProps> = ({
   children,
   classname,
 }) => {
-  const { sendAllNotification } = useNotification();
-
-  // useEffect(() => {
-  //   sendAllNotification('Test4', 'Hi Reactes!!!');
-  // }, []);
   return (
     <SidebarProvider defaultOpen={false}>
       <AppSidebar />

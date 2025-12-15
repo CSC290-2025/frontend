@@ -1,4 +1,4 @@
-// Room types and interfaces
+// Room types and types
 export type RoomStatus = 'occupied' | 'pending' | 'available';
 
 export interface Room {

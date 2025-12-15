@@ -1,7 +1,7 @@
 import type {
   ReportRequestFrom,
   ReportResponseFrom,
-} from '@/features/emergency/interfaces/report.ts';
+} from '@/features/emergency/types/report.ts';
 import ReportApi from '@/features/emergency/api/report.api.ts';
 import {
   createContext,
@@ -25,7 +25,7 @@ type ReportFromState = {
     status: string,
     page: string,
     limit: string
-  ) => Promise<ReportResponseFrom[]>;
+  ) => Promise<void>;
   isLoading: boolean;
   totalPage: number;
 };
@@ -47,24 +47,22 @@ export function ReportFromProvider({
     status: string,
     page: string,
     limit: string
-  ): Promise<ReportResponseFrom[]> => {
+  ): Promise<void> => {
     setIsLoading(true);
-
     try {
       const res = await ReportApi.getReportByStatusPag(status, page, limit);
-      const total = Number(res.headers['x-total-count']) || 1;
+      const totalCount = Number(res.headers['x-total-count']) || 1;
 
-      setTotalPage(total);
-      return res.data.report;
+      setTotalPage(totalCount);
+      setReport(res.data.report);
     } catch (error) {
       console.error(error);
-      return [];
     } finally {
       setIsLoading(false);
     }
   };
 
-  const createReport = async (data: ReportRequestFrom) => {
+  const createReport = async (data: ReportRequestFrom): Promise<void> => {
     setIsLoading(true);
     try {
       await ReportApi.postReport(data);
@@ -76,22 +74,9 @@ export function ReportFromProvider({
   };
 
   useEffect(() => {
-    try {
-      if (pathname !== '/activity') return;
+    if (pathname !== '/activity') return;
 
-      const fetchReport = async () => {
-        const res = await findReportByStatusPag(
-          'pending',
-          initialPage,
-          initialLimit
-        );
-        setReport(res);
-      };
-
-      fetchReport();
-    } catch (error) {
-      console.error(error);
-    }
+    findReportByStatusPag('pending', initialPage, initialLimit);
   }, [pathname, initialPage, initialLimit]);
 
   return (

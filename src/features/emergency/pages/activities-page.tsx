@@ -9,7 +9,7 @@ import {
 import { Card, CardContent } from '@/features/emergency/components/ui/card';
 import { Badge } from '@/features/emergency/components/ui/badge.tsx';
 import { PaginationWithLinks } from '@/features/emergency/components/ui/pagination-with-link.tsx';
-import { useReportFrom } from '@/features/emergency/hooks/report-from.tsx';
+import { useReportFrom } from '@/features/emergency/contexts/report-from.tsx';
 import { useNavigate } from 'react-router';
 import { useEffect } from 'react';
 

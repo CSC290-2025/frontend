@@ -4,7 +4,7 @@ import axios from 'axios';
 import type {
   ErrorsValidationInterface,
   SuccessResponseInterface,
-} from '../interfaces/api';
+} from '@/features/emergency/types/api';
 
 class Api {
   baseURL!: string;

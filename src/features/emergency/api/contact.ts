@@ -1,10 +1,10 @@
-import type { SuccessResponseInterface } from '@/features/emergency/interfaces/api.ts';
+import type { SuccessResponseInterface } from '@/features/emergency/types/api.ts';
 import { Get, Patch, Post, Delete } from '.';
 import type {
   ContactRequestFrom,
   ContactResponseFrom,
   ContactUpdateFrom,
-} from '@/features/emergency/interfaces/contact.ts';
+} from '@/features/emergency/types/contact.ts';
 
 export default class ContactApi {
   static async postContact(data: ContactRequestFrom) {

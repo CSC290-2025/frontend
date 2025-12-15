@@ -75,7 +75,7 @@ export interface UpdateApartmentPayload {
   };
 }
 
-// Parameter interfaces for API endpoints
+// Parameter types for API endpoints
 export interface ApartmentIdParam {
   id: number;
 }

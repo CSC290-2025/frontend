@@ -267,7 +267,7 @@ export const Badge = React.forwardRef<HTMLElement, BadgeProps>(
       .filter(Boolean)
       .join(' ');
 
-    // Add positioning styles if needed
+    // Add positioning chat if needed
     const positioningStyles: React.CSSProperties = {
       ...style,
       ...(top !== undefined && { top }),

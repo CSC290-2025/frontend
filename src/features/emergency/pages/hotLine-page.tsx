@@ -17,13 +17,13 @@ import {
 } from '@/features/emergency/components/ui/tabs';
 import { Button } from '@/features/emergency/components/ui/button';
 import ContactCard from '@/features/emergency/components/modules/card/contact-card.tsx';
-import { useContactForm } from '@/features/emergency/hooks/contact-from.tsx';
+import { useContactForm } from '@/features/emergency/contexts/contact-from.tsx';
 import { CardContent } from '@/features/emergency/components/ui/card.tsx';
 import { useForm } from 'react-hook-form';
 import {
   ContactOmit,
   type ContactRequestFrom,
-} from '@/features/emergency/interfaces/contact.ts';
+} from '@/features/emergency/types/contact.ts';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Spinner } from '@/features/emergency/components/ui/spinner.tsx';
 import { toast } from 'sonner';

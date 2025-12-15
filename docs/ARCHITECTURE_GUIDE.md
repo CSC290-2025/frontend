@@ -73,7 +73,7 @@ export const fetchUserById = (id: number) => {
 #### COMPONENTS PATTERN
 
 ```typescript
-import { useUser } from '../hooks/useUser';
+import { useUser } from '../contexts/useUser';
 import type { User } from '@/types/user';
 
 interface UserCardProps {
@@ -147,7 +147,7 @@ export default function UserPage() {
 ```typescript
 export { default as UserCard } from './components/UserCard';
 export { default as UserPage } from './pages/UserPage';
-export { useUser } from './hooks/useUser';
+export { useUser } from './contexts/useUser';
 ```
 
 #### **2.2 `/src/pages`** Code Pattern

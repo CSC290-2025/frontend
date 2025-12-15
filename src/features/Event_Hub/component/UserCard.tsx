@@ -1,5 +1,5 @@
 // component of a page
-import { useUser } from '../../_example/hooks/useUser';
+import { useUser } from '../../_example/contexts/useUser';
 import type { User } from '@/types/user';
 
 interface UserCardProps {

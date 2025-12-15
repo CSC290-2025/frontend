@@ -40,7 +40,7 @@ Follow this order when building a new feature:
 
 - [ ] **Create component file** - Add comment header
 - [ ] **Define props interface** - Type all props
-- [ ] **Use Tailwind** - No inline styles
+- [ ] **Use Tailwind** - No inline chat
 - [ ] **Handle states** - Loading, error, empty
 - [ ] **Export default** - Default export only
 
@@ -189,7 +189,7 @@ export default function WalletCard({ wallet }: WalletCardProps) {
 
 ```typescript
 // main page for Financial feature
-import { useUserWallets } from '@/features/Financial/hooks/useUserWallets';
+import { useUserWallets } from '@/features/Financial/contexts/useUserWallets';
 import WalletCard from '@/features/Financial/components/WalletCard';
 import type { Wallet } from '@/features/Financial/types/wallet';
 
@@ -245,7 +245,7 @@ export { default } from '@/features/Financial/pages/FinancialPage';
 // re-exporting parts that other features might use
 export { default as FinancialPage } from './pages/FinancialPage';
 export { default as WalletCard } from './components/WalletCard';
-export { useUserWallets } from './hooks/useUserWallets';
+export { useUserWallets } from './contexts/useUserWallets';
 ```
 
 ---

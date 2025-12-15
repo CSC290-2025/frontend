@@ -1,9 +1,9 @@
-import type { SuccessResponseInterface } from '@/features/emergency/interfaces/api.ts';
+import type { SuccessResponseInterface } from '@/features/emergency/types/api.ts';
 import type {
   ReportRequestFrom,
   ReportResponseFrom,
   ReportUpdateForm,
-} from '@/features/emergency/interfaces/report.ts';
+} from '@/features/emergency/types/report.ts';
 import { Delete, Get, Patch, Post } from '.';
 
 export default class ReportApi {

@@ -1,4 +1,4 @@
-// Booking types and interfaces
+// Booking types and types
 export type BookingStatus = 'pending' | 'confirmed' | 'cancelled';
 
 export interface Booking {

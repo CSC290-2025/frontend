@@ -2,7 +2,7 @@ import type {
   ContactRequestFrom,
   ContactResponseFrom,
   ContactUpdateFrom,
-} from '@/features/emergency/interfaces/contact.ts';
+} from '@/features/emergency/types/contact.ts';
 import ContactApi from '@/features/emergency/api/contact.ts';
 
 import {
@@ -32,15 +32,8 @@ export function ContactFormProvider({ children }: ContactFormProviderProps) {
   const [isLoading, setIsLoading] = useState(false);
 
   const findContactByUserId = async (userId: string) => {
-    setIsLoading(true);
-    try {
-      const res = await ContactApi.getContactByUserId(userId);
-      setContact(res.contact);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setIsLoading(false);
-    }
+    const res = await ContactApi.getContactByUserId(userId);
+    setContact(res.contact);
   };
 
   const createContact = async (data: ContactRequestFrom) => {
@@ -71,13 +64,13 @@ export function ContactFormProvider({ children }: ContactFormProviderProps) {
   };
 
   useEffect(() => {
+    setIsLoading(true);
     try {
-      const fetchData = async () => {
-        await findContactByUserId('1'); //mock cuz it not have auth
-      };
-      fetchData();
+      findContactByUserId('1');
     } catch (error) {
       console.error(error);
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 

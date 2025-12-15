@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider } from '@/features/auth';
 import App from './App';
 import { Toaster } from './components/ui/sonner';
-import { NotificationProvider } from '@/features/emergency/hooks/notification.tsx';
+import { NotificationProvider } from '@/features/emergency/contexts/notification.tsx';
 
 const queryClient = new QueryClient();
 

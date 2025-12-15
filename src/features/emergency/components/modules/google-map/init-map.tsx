@@ -2,7 +2,7 @@ import React, { type FC, type ReactNode } from 'react';
 import { cn } from '@/lib/utils.ts';
 import { GoogleMap, useJsApiLoader, MarkerF } from '@react-google-maps/api';
 import config from '@/features/emergency/config/env';
-import { useGeoLocation } from '@/features/emergency/hooks/geo-location.tsx';
+import { useGeoLocation } from '@/features/emergency/contexts/geo-location.tsx';
 import { Button } from '@/features/emergency/components/ui/button.tsx';
 import { Crosshair } from 'lucide-react';
 

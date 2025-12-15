@@ -1,6 +1,6 @@
 import { Outlet } from 'react-router';
 import { useSearchParams } from 'react-router';
-import { ReportFromProvider } from '@/features/emergency/hooks/report-from.tsx';
+import { ReportFromProvider } from '@/features/emergency/contexts/report-from.tsx';
 import MainLayout from '@/features/emergency/components/modules/layout/main-layout.tsx';
 
 export default function ActivityLayout() {
