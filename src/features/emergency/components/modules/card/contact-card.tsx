@@ -14,7 +14,7 @@ type ContactCardProps = {
 
 const ContactCard: FC<ContactCardProps> = ({ phoneNumber, contactName }) => {
   return (
-    <Card className="w-full">
+    <Card className="mb-6 w-full">
       <CardContent>
         <div className="m-4 flex items-center justify-between">
           <CardTitle>{contactName}</CardTitle>

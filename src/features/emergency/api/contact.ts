@@ -1,5 +1,5 @@
 import type { SuccessResponseInterface } from '@/features/emergency/interfaces/api.ts';
-import { get, patch, post } from '.';
+import { Get, Patch, Post, Delete } from '.';
 import type {
   ContactRequestFrom,
   ContactResponseFrom,
@@ -8,7 +8,7 @@ import type {
 
 export default class ContactApi {
   static async postContact(data: ContactRequestFrom) {
-    const response: SuccessResponseInterface<ContactResponseFrom> = await post(
+    const response: SuccessResponseInterface<ContactResponseFrom> = await Post(
       'emergency/contacts',
       data
     );
@@ -16,13 +16,17 @@ export default class ContactApi {
   }
 
   static async getContactByUserId(userId: string) {
-    const response = await get(`emergency/contacts/${userId}`, {});
+    const response = await Get(`emergency/contacts/${userId}`, {});
     return response.data.data;
   }
 
   static async updateContactById(data: ContactUpdateFrom) {
-    return await patch('emergency/contacts', {
+    return await Patch('emergency/contacts', {
       data,
     });
+  }
+
+  static async deleteContactById(id: string) {
+    return await Delete(`emergency/contacts/${id}`);
   }
 }

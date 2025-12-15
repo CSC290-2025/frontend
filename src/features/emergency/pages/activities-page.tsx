@@ -51,7 +51,7 @@ export default function ActivitiesPage() {
                   <CardContent>
                     <div className="grid grid-cols-6">
                       <Card
-                        className="col-span-2 overflow-hidden py-0 sm:col-span-1"
+                        className="col-span-2 w-[100px] overflow-hidden py-0 sm:col-span-1"
                         onClick={() => {
                           navigate(`${r.image_url}`);
                         }}
@@ -64,6 +64,7 @@ export default function ActivitiesPage() {
                                 ? URL.createObjectURL(r.image_url)
                                 : r.image_url
                             }
+                            loading={'eager'}
                             className="aspect-square object-cover"
                           />
                         ) : (

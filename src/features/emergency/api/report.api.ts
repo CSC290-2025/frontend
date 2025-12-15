@@ -2,16 +2,16 @@ import type { SuccessResponseInterface } from '@/features/emergency/interfaces/a
 import type {
   ReportRequestFrom,
   ReportResponseFrom,
+  ReportUpdateForm,
 } from '@/features/emergency/interfaces/report.ts';
-import { get, post } from '.';
+import { Delete, Get, Patch, Post } from '.';
 
 export default class ReportApi {
   static async postReport(data: ReportRequestFrom) {
-    const response: SuccessResponseInterface<ReportResponseFrom> = await post(
+    const response: SuccessResponseInterface<ReportResponseFrom> = await Post(
       'emergency/reports',
       data
     );
-    console.log(response);
     return response;
   }
 
@@ -20,7 +20,7 @@ export default class ReportApi {
     page: string,
     limit: string
   ) {
-    const response = await get(`emergency/reports/${status}`, {
+    const response = await Get(`emergency/reports/${status}`, {
       params: {
         _page: page,
         _limit: limit,
@@ -34,5 +34,17 @@ export default class ReportApi {
       data: response.data.data,
       headers: response.headers,
     };
+  }
+
+  static async patchReportById(id: string, data: ReportUpdateForm) {
+    const response: SuccessResponseInterface<ReportUpdateForm> = await Patch(
+      `/emergency/reports/${id}`,
+      data
+    );
+    return response;
+  }
+
+  static async deleteReportById(id: string) {
+    return await Delete(`emergency/reports/${id}`);
   }
 }

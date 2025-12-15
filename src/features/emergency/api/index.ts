@@ -38,7 +38,10 @@ class Api {
     return axiosInstance;
   }
 
-  _get = async (url: string, config?: AxiosRequestConfig<any>) => {
+  _get = async (
+    url: string,
+    config?: AxiosRequestConfig<any>
+  ): Promise<SuccessResponseInterface> => {
     const axiosInstance = this._getAxiosInstance(this.baseURL);
     return await axiosInstance.get(url, config);
   };
@@ -62,10 +65,21 @@ class Api {
     const response = await axiosInstance.patch(url, data, config);
     return response.data;
   };
+
+  _delete = async (
+    url: string,
+    config?: AxiosRequestConfig<any>
+  ): Promise<SuccessResponseInterface> => {
+    const axiosInstance = this._getAxiosInstance(this.baseURL);
+    const response = await axiosInstance.delete(url, config);
+    return response.data;
+  };
 }
 
 const api = new Api();
-const get = api._get;
-const post = api._post;
-const patch = api._patch;
-export { get, post, patch };
+const Get = api._get;
+const Post = api._post;
+const Patch = api._patch;
+const Delete = api._delete;
+
+export { Get, Post, Patch, Delete };
