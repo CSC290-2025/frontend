@@ -31,37 +31,6 @@ import {
   get,
 } from 'firebase/database';
 
-interface TrafficData {
-  interid: number;
-  roadid: number;
-  lat: number;
-  lng: number;
-  marker_id: number;
-  status: number;
-  autoON: boolean;
-  color: number;
-  remaintime: number;
-  green_duration: number;
-  red_duration: number;
-  timestamp: string;
-}
-
-interface TrafficLightResponse {
-  success: boolean;
-  data: {
-    trafficLight: {
-      id: number;
-      ip_address: string;
-      // ... อื่นๆ ตาม Response เต็ม
-    };
-  };
-  message: string;
-}
-
-interface TrafficRecord extends TrafficData {
-  key: string;
-}
-
 interface TrafficSettingPopupProps {
   open: boolean;
   Traffickey: string;
@@ -83,7 +52,6 @@ const firebaseConfig = {
 let app: FirebaseApp;
 let db: Database;
 
-// การจัดการ Initialization
 try {
   app = initializeApp(firebaseConfig);
   db = getDatabase(app);
@@ -92,7 +60,6 @@ try {
     'Firebase initialization failed or was already initialized:',
     error
   );
-  // ใช้ชื่ออื่นเพื่อเลี่ยง error (ใน production ควรจัดการด้วย getApp())
   app = initializeApp(firebaseConfig, 'secondaryAppForSafety');
   db = getDatabase(app);
 }
@@ -117,7 +84,6 @@ export default function TrafficSettingPopup({
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [Automode, setAutomode] = useState<boolean>(true);
   const [confirmOpen, setConfirmOpen] = useState<boolean>(false);
-  const [currentAutomode, setCurrentAutomode] = useState<boolean>(true);
 
   const [pendingUpdate, setPendingUpdate] = useState<trafficLight | null>(null);
 
@@ -144,6 +110,7 @@ export default function TrafficSettingPopup({
         if (data) {
           console.log('✅ Found traffic light details from firebase:', data);
           setInterid(data.interid);
+          setColor(data.color || 2);
           setRoadid(data.roadid);
           setAutoON(data.autoON);
           setStatus(data.status || 0);
@@ -174,14 +141,10 @@ export default function TrafficSettingPopup({
 
     try {
       const updatePayload = {
-        interid: Number(interid),
-        roadid: Number(roadid),
-        status: Number(status),
         autoON: Automode,
-        color: color,
-        remaintime: Number(remaintime),
         green_duration: Number(greenduration),
         red_duration: Number(redduration),
+        timestamp: new Date().toISOString(),
       };
 
       await set(ref(db, `${selectref}/${Traffickey}`), updatePayload);

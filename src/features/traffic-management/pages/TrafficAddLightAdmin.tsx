@@ -65,6 +65,7 @@ interface TrafficData {
   remaintime: number;
   green_duration: number;
   red_duration: number;
+  density_level: number;
   timestamp: string;
 }
 
@@ -119,6 +120,7 @@ const TrafficDataForm: React.FC = () => {
   const [remaintime, setRemaintime] = useState<string>('');
   const [greenduration, setGreenduration] = useState<string>('');
   const [redduration, setRedduration] = useState<string>('');
+  const [densitylevel, setDensitylevel] = useState<string>('');
 
   // State สำหรับการอัปเดต
   const [lightID, setlightID] = useState<string>('');
@@ -171,7 +173,7 @@ const TrafficDataForm: React.FC = () => {
                 interid: Number(data[key].interid) || 0,
                 roadid: Number(data[key].roadid) || 0,
                 lat: Number(data[key].lat) || 0,
-                lng: Number(data[key].lng) || '',
+                lng: Number(data[key].lng) || 0,
                 status: Number(data[key].status) || 0,
                 marker_id: Number(data[key].marker_id) || 0,
                 autoON: Boolean(data[key].autoON),
@@ -179,6 +181,7 @@ const TrafficDataForm: React.FC = () => {
                 remaintime: Number(data[key].remaintime) || 0,
                 green_duration: Number(data[key].green_duration) || 0,
                 red_duration: Number(data[key].red_duration) || 0,
+                density_level: Number(data[key].density_level) || 0,
                 timestamp: String(data[key].timestamp) || '',
               });
             }
@@ -228,7 +231,8 @@ const TrafficDataForm: React.FC = () => {
         color,
         remaintime,
         greenduration,
-        redduration
+        redduration,
+        densitylevel
       );
       return;
     }
@@ -254,6 +258,7 @@ const TrafficDataForm: React.FC = () => {
         remaintime: Number(remaintime),
         green_duration: Number(greenduration),
         red_duration: Number(redduration),
+        density_level: Number(densitylevel),
         timestamp: new Date().toISOString(),
       };
 
@@ -274,6 +279,7 @@ const TrafficDataForm: React.FC = () => {
       setRemaintime('');
       setGreenduration('');
       setRedduration('');
+      setDensitylevel('');
     } catch (error: any) {
       console.error('Error writing new data to firebase ;-; :', error);
       setMessage({
@@ -317,6 +323,7 @@ const TrafficDataForm: React.FC = () => {
       setRemaintime(response.data.trafficLight.green_duration);
       setGreenduration(response.data.trafficLight.green_duration);
       setRedduration(response.data.trafficLight.red_duration);
+      setDensitylevel(response.data.trafficLight.density_level || 0);
     } catch (err) {
       console.error('Error loading traffic light details', err);
       setMessage({
@@ -657,6 +664,25 @@ const TrafficDataForm: React.FC = () => {
                   />
                 </div>
 
+                <div style={{ marginBottom: '20px' }}>
+                  <label
+                    htmlFor="density_level"
+                    style={{ display: 'block', marginBottom: '5px' }}
+                  >
+                    density_level (in number):
+                  </label>
+                  <input
+                    id="density_level"
+                    type="number"
+                    value={densitylevel}
+                    onChange={(e) => setDensitylevel(e.target.value)}
+                    placeholder="in seconds"
+                    className="mt-1 w-full rounded-sm border border-gray-300 p-2"
+                    disabled={isLoading}
+                    required
+                  />
+                </div>
+
                 <button
                   type="submit"
                   disabled={isLoading}
@@ -801,6 +827,11 @@ const TrafficDataForm: React.FC = () => {
                     <th
                       style={{ padding: '10px', border: '1px solid #000000ff' }}
                     >
+                      Density
+                    </th>
+                    <th
+                      style={{ padding: '10px', border: '1px solid #000000ff' }}
+                    >
                       status
                     </th>
                     <th
@@ -887,6 +918,14 @@ const TrafficDataForm: React.FC = () => {
                         }}
                       >
                         {traffic.red_duration}s
+                      </td>
+                      <td
+                        style={{
+                          padding: '10px',
+                          border: '1px solid #000000ff',
+                        }}
+                      >
+                        {traffic.density_level}
                       </td>
                       <td
                         style={{
