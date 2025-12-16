@@ -38,6 +38,29 @@ const formatCategoryLabel = (category: string) => {
   return category.replace(/_/g, ' ');
 };
 
+const getLatestRecordPerDate = (records: any[]) => {
+  if (!records) return [];
+
+  const recordsByDate = new Map();
+
+  records.forEach((record) => {
+    const dateKey = formatDate(record.measured_at);
+    const currentRecord = recordsByDate.get(dateKey);
+
+    if (
+      !currentRecord ||
+      new Date(record.measured_at) > new Date(currentRecord.measured_at)
+    ) {
+      recordsByDate.set(dateKey, record);
+    }
+  });
+
+  return Array.from(recordsByDate.values()).sort(
+    (a, b) =>
+      new Date(b.measured_at).getTime() - new Date(a.measured_at).getTime()
+  );
+};
+
 export default function HistoricalTable() {
   const { district } = useParams('/clean-air/district-detail/:district');
   const { data: history, isLoading, error } = useHistoryQuery(district);
@@ -89,7 +112,7 @@ export default function HistoricalTable() {
       </div>
     );
   }
-
+  const uniqueRecords = getLatestRecordPerDate(history.history);
   return (
     <div className="overflow-x-auto rounded-xl border border-gray-900 bg-white p-6 text-gray-900 shadow-2xl shadow-gray-400">
       <h2 className="mb-4 text-lg font-semibold">
@@ -110,7 +133,7 @@ export default function HistoricalTable() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 bg-white">
-            {history.history.map((record, index) => (
+            {uniqueRecords.map((record, index) => (
               <tr key={index} className="transition-colors hover:bg-gray-50">
                 <td className="px-4 py-3 text-sm font-medium whitespace-nowrap">
                   {formatDate(record.measured_at)}
