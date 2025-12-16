@@ -13,27 +13,6 @@ type Props = Partial<
   Pick<DistrictType, 'district' | 'aqi' | 'pm25' | 'category' | 'measured_at'>
 >;
 
-const getCategoryColors = (category: string) => {
-  switch (category.toUpperCase()) {
-    case 'UNHEALTHY':
-    case 'BAD':
-      return { categoryBg: 'bg-red-600', categoryText: 'text-white' };
-    case 'MODERATE':
-      return { categoryBg: 'bg-yellow-500', categoryText: 'text-black' };
-    case 'GOOD':
-      return { categoryBg: 'bg-green-500', categoryText: 'text-white' };
-    case 'UNHEALTHY_FOR_SENSITIVE_GROUPS':
-    case 'USG':
-      return { categoryBg: 'bg-orange-500', categoryText: 'text-white' };
-    case 'VERY_UNHEALTHY':
-    case 'DANGEROUS':
-    case 'HAZARDOUS':
-      return { categoryBg: 'bg-red-800', categoryText: 'text-white' };
-    default:
-      return { categoryBg: 'bg-gray-400', categoryText: 'text-black' };
-  }
-};
-
 export default function DistrictItem({
   district,
   aqi,
@@ -46,10 +25,6 @@ export default function DistrictItem({
     useIsFavoriteDistrict(district);
   const addFavorite = useAddFavoriteDistrictMutation();
   const removeFavorite = useRemoveFavoriteDistrictMutation();
-
-  const categorySafe = (category ?? 'Unknown').toString();
-  const categoryUpper = categorySafe.toUpperCase().replace(/_/g, ' ');
-  const { categoryBg, categoryText } = getCategoryColors(categoryUpper);
 
   const displayAqi = aqi ?? '—';
   const displayPm25 = pm25 ? pm25.toFixed(1) : '—';
@@ -115,7 +90,7 @@ export default function DistrictItem({
     <div
       onClick={handleSelectDistrict}
       className={
-        'relative flex cursor-pointer items-center justify-between rounded-xl border border-gray-200 bg-white p-4 text-black shadow-sm transition-all duration-200 hover:border-gray-300 hover:shadow-md'
+        'relative flex cursor-pointer items-center justify-between rounded-xl border border-gray-200 bg-white p-4 text-black shadow-sm hover:border-gray-300 hover:shadow-md'
       }
     >
       <div className="flex flex-col gap-1">
@@ -151,11 +126,6 @@ export default function DistrictItem({
           <span className="ml-1 text-lg font-medium text-gray-600">AQI</span>
         </div>
         <p className="text-sm text-gray-700">PM2.5: {displayPm25} µg/m³</p>
-        <span
-          className={`mt-2 inline-block rounded-full px-3 py-1 text-xs font-semibold ${categoryText} ${categoryBg} min-w-[70px] text-center`}
-        >
-          {categoryUpper}
-        </span>
       </div>
     </div>
   );

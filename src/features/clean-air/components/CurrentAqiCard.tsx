@@ -51,18 +51,18 @@ const getStatusAndStyle = (category: string): StatusDetails => {
     case 'BAD':
       return {
         status: 'Unhealthy',
-        style: 'bg-red-600 text-white',
+        style: 'bg-orange-500 text-white',
         icon: faFaceFrown,
-        iconStyle: 'text-red-500',
+        iconStyle: 'text-orange-500',
       };
     case 'VERY_UNHEALTHY':
     case 'DANGEROUS':
     case 'HAZARDOUS':
       return {
         status: 'Very Unhealthy',
-        style: 'bg-red-800 text-white',
+        style: 'bg-red-600 text-white',
         icon: faFaceDizzy,
-        iconStyle: 'text-red-800',
+        iconStyle: 'text-red-600',
       };
     default:
       return {
@@ -73,7 +73,6 @@ const getStatusAndStyle = (category: string): StatusDetails => {
       };
   }
 };
-
 const getFormattedTime = (iso?: string) => {
   if (!iso) return 'No data';
   const d = new Date(iso);

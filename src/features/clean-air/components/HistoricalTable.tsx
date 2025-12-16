@@ -28,6 +28,7 @@ const formatDate = (dateString: string) => {
       day: '2-digit',
       month: 'short',
       year: 'numeric',
+      timeZone: 'UTC',
     }).format(date);
   } catch {
     return dateString;
@@ -41,10 +42,14 @@ const formatCategoryLabel = (category: string) => {
 const getLatestRecordPerDate = (records: any[]) => {
   if (!records) return [];
 
+  console.log('Processing records:', records);
+
   const recordsByDate = new Map();
 
   records.forEach((record) => {
     const dateKey = formatDate(record.measured_at);
+    console.log(`Processing: ${record.measured_at} -> ${dateKey}`);
+
     const currentRecord = recordsByDate.get(dateKey);
 
     if (
@@ -52,15 +57,22 @@ const getLatestRecordPerDate = (records: any[]) => {
       new Date(record.measured_at) > new Date(currentRecord.measured_at)
     ) {
       recordsByDate.set(dateKey, record);
+      console.log(`Set as latest for ${dateKey}`);
+    } else {
+      console.log(`Skipped ${dateKey} - older record`);
     }
   });
 
-  return Array.from(recordsByDate.values()).sort(
+  console.log('RecordsByDate Map:', recordsByDate);
+
+  const result = Array.from(recordsByDate.values()).sort(
     (a, b) =>
       new Date(b.measured_at).getTime() - new Date(a.measured_at).getTime()
   );
-};
 
+  console.log('Final sorted result:', result);
+  return result;
+};
 export default function HistoricalTable() {
   const { district } = useParams('/clean-air/district-detail/:district');
   const { data: history, isLoading, error } = useHistoryQuery(district);
@@ -112,7 +124,17 @@ export default function HistoricalTable() {
       </div>
     );
   }
+
+  // Debug: log all raw data
+  console.log('Raw history data:', history.history);
+  console.log('Number of raw records:', history.history.length);
+
   const uniqueRecords = getLatestRecordPerDate(history.history);
+
+  // Debug: log processed data
+  console.log('Unique records:', uniqueRecords);
+  console.log('Number of unique records:', uniqueRecords.length);
+
   return (
     <div className="overflow-x-auto rounded-xl border border-gray-900 bg-white p-6 text-gray-900 shadow-2xl shadow-gray-400">
       <h2 className="mb-4 text-lg font-semibold">
@@ -133,39 +155,46 @@ export default function HistoricalTable() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 bg-white">
-            {uniqueRecords.map((record, index) => (
-              <tr key={index} className="transition-colors hover:bg-gray-50">
-                <td className="px-4 py-3 text-sm font-medium whitespace-nowrap">
-                  {formatDate(record.measured_at)}
-                </td>
-                <td className="px-4 py-3 text-sm whitespace-nowrap">
-                  {record.aqi || '—'}
-                </td>
-                <td className="px-4 py-3 text-sm whitespace-nowrap">
-                  {record.pm25 || '—'}
-                </td>
-                <td className="px-4 py-3 text-sm whitespace-nowrap">
-                  {record.pm10 || '—'}
-                </td>
-                <td className="px-4 py-3 text-sm whitespace-nowrap">
-                  {record.o3 || '—'}
-                </td>
-                <td className="px-4 py-3 text-sm whitespace-nowrap">
-                  {record.co || '—'}
-                </td>
-                <td className="px-4 py-3 text-sm whitespace-nowrap">
-                  {record.no2 || '—'}
-                </td>
-                <td className="px-4 py-3 text-sm whitespace-nowrap">
-                  {record.so2 || '—'}
-                </td>
-                <td className="px-4 py-3 text-sm whitespace-nowrap">
-                  <span className={getStatusBadge(record.category)}>
-                    {formatCategoryLabel(record.category)}
-                  </span>
-                </td>
-              </tr>
-            ))}
+            {uniqueRecords.map((record, index) => {
+              console.log(
+                `Rendering row ${index}:`,
+                formatDate(record.measured_at),
+                record.aqi
+              );
+              return (
+                <tr key={index} className="transition-colors hover:bg-gray-50">
+                  <td className="px-4 py-3 text-sm font-medium whitespace-nowrap">
+                    {formatDate(record.measured_at)}
+                  </td>
+                  <td className="px-4 py-3 text-sm whitespace-nowrap">
+                    {record.aqi || '—'}
+                  </td>
+                  <td className="px-4 py-3 text-sm whitespace-nowrap">
+                    {record.pm25 || '—'}
+                  </td>
+                  <td className="px-4 py-3 text-sm whitespace-nowrap">
+                    {record.pm10 || '—'}
+                  </td>
+                  <td className="px-4 py-3 text-sm whitespace-nowrap">
+                    {record.o3 || '—'}
+                  </td>
+                  <td className="px-4 py-3 text-sm whitespace-nowrap">
+                    {record.co || '—'}
+                  </td>
+                  <td className="px-4 py-3 text-sm whitespace-nowrap">
+                    {record.no2 || '—'}
+                  </td>
+                  <td className="px-4 py-3 text-sm whitespace-nowrap">
+                    {record.so2 || '—'}
+                  </td>
+                  <td className="px-4 py-3 text-sm whitespace-nowrap">
+                    <span className={getStatusBadge(record.category)}>
+                      {formatCategoryLabel(record.category)}
+                    </span>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>
