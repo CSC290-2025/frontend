@@ -1,1 +1,1 @@
-export { default } from '@/features/traffic-management/pages/TrafficTestFuctionpage';
+export { default } from '@/features/traffic-management/pages/testfunction';
