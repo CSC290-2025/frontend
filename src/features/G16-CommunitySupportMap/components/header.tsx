@@ -19,7 +19,7 @@ import {
 
 function Header() {
   return (
-    <div className="font-poppins mx-auto w-full max-w-[1200px] px-4 pt-6 pb-4">
+    <div className="font-poppins mx-auto w-full max-w-[1200px] px-5 pt-6 pb-4">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4">
         <button className="flex items-center gap-3 rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-left hover:shadow-sm">
           <BusFront className="h-6 w-6" />
