@@ -8,6 +8,7 @@ import {
   Rating,
   Address,
   Owner,
+  LocationIQ,
 } from '@/features/G9-ApartmentListing/hooks/index';
 import type {
   roomTypes,
@@ -173,14 +174,29 @@ export default function ApartmentDetailPage() {
         return new Date(b.date).getTime() - new Date(a.date).getTime();
       }),
   };
-
+  const aptLat = address?.latitude || 0;
+  const aptLon = address?.longitude || 0;
+  const { data: otherNearbyAmenities } = LocationIQ.getnearbyAmenities(
+    aptLat,
+    aptLon,
+    2000,
+    4
+  );
+  const { data: nearby } = LocationIQ.getnearbyAllAmenities(
+    aptLat,
+    aptLon,
+    5000,
+    4,
+    'bank, atm, bus_station, hospital, pharmacy'
+  );
+  const otherAmenitiesArray = otherNearbyAmenities || [];
+  const nearbyArray = nearby || [];
   const totalReviewPages = Math.ceil(apartment.reviews.length / reviewsPerPage);
   const startReviewIndex = (currentReviewPage - 1) * reviewsPerPage;
   const currentReviews = apartment.reviews.slice(
     startReviewIndex,
     startReviewIndex + reviewsPerPage
   );
-
   const renderStars = (rating: number) => {
     return [...Array(5)].map((_, i) => (
       <img

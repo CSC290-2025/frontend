@@ -22,3 +22,16 @@ export const getNearbyAmenities = (
     params: { lat, lon, radius, limit, tag },
   });
 };
+
+//G11
+export const getNearbyAllAmenities = (
+  lat: number,
+  lon: number,
+  radius: number,
+  limit: number,
+  tag?: string
+) => {
+  return apiClient.get(`/nearby`, {
+    params: { lat, lon, radius, limit, tag },
+  });
+};

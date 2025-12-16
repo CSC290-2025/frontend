@@ -33,3 +33,20 @@ export function getnearbyAmenities(
     enabled: !!lat && !!lon && !!radius && !!limit,
   });
 }
+
+export function getnearbyAllAmenities(
+  lat: number,
+  lon: number,
+  radius: number,
+  limit: number,
+  tag?: string
+) {
+  return useQuery({
+    queryKey: ['nearbyAmenities', lat, lon, radius, limit, tag],
+    queryFn: () => LOCapi.getNearbyAmenities(lat, lon, radius, limit, tag),
+    select: (response) => {
+      return response.data.data;
+    },
+    enabled: !!lat && !!lon && !!radius && !!limit,
+  });
+}
