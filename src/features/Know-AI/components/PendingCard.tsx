@@ -4,11 +4,13 @@ import { Pencil, Trash2 } from 'lucide-react';
 import { useApproveCourse } from '../hooks/useAdmin';
 import ApproveConfirmModal from './ApprovePopup';
 import DeclineConfirmModal from './DeclinePopup';
+import EditCourseModal from './EditCourse';
 
 export default function PendingCard({ course }: { course: any }) {
   const navigate = useNavigate();
   const [showApproveModal, setShowApproveModal] = useState(false);
   const [showDeclineModal, setShowDeclineModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   const handleClick = () => {
     navigate('/Know-AI/:course/:id', {
@@ -50,8 +52,15 @@ export default function PendingCard({ course }: { course: any }) {
 
   const handleEdit = (e: React.MouseEvent) => {
     e.stopPropagation();
-    // Add edit logic here
+    setShowEditModal(true);
     console.log('Edit:', course.id);
+  };
+  const handleConfirmEdit = () => {
+    // Edit API call here Chokun add hereeee
+
+    console.log('Edit course:', course.id);
+    // Example: approveCourse(course.id);
+    setShowEditModal(false);
   };
 
   const getBadgeStyle = (type: string) => {
@@ -124,6 +133,14 @@ export default function PendingCard({ course }: { course: any }) {
         isOpen={showDeclineModal}
         onClose={() => setShowDeclineModal(false)}
         onConfirm={handleConfirmDecline}
+      />
+
+      {/* Edit Confirmation Modal */}
+      <EditCourseModal
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        course={course}
+        onSave={handleConfirmEdit}
       />
     </>
   );
