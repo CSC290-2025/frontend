@@ -21,7 +21,14 @@ interface Apartment {
   apartmentName?: string;
   name?: string;
   apartment_location?: string;
-  address?: string;
+  addresses?: {
+    id: number;
+    address_line?: string;
+    province?: string;
+    district?: string;
+    subdistrict?: string;
+    postal_code?: string;
+  };
   apartment_phone?: string;
   phone?: string;
   apartment_img?: string;
@@ -57,7 +64,10 @@ function ApartmentCard({
     imageArray && imageArray.length > 0 ? imageArray[0].url : defaultImage;
 
   const name = apt.apartmentName ?? apt.name;
-  const address = apt.apartment_location ?? apt.address ?? '';
+  const addressData = apt.addresses;
+  const address = addressData
+    ? `${addressData.address_line || ''} ${addressData.subdistrict || ''} ${addressData.district || ''} ${addressData.province || ''} ${addressData.postal_code || ''}`
+    : apt.apartment_location || '';
   const phone = apt.apartment_phone ?? apt.phone ?? '';
 
   // Compute rating robustly — API may return a number, an object, or an array of ratings
