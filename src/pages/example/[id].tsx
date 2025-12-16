@@ -1,1 +1,1 @@
-export { default } from '@/features/_example/pages/UserPage.tsx';
+export { default } from '@/features/public-trasportation/pages/UserPage';

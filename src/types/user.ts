@@ -34,6 +34,7 @@ export interface User {
   username: string;
   email: string;
   phone: string;
+  roles: { role_name: string };
   insurance_cards: InsuranceCard[];
   user_profiles: UserProfile[];
   emergency_contacts: EmergencyContact[];
