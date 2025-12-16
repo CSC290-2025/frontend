@@ -150,7 +150,7 @@ function UserSettingPage() {
     );
   }
   if (!userID) {
-    navigate('/');
+    navigate('/login');
   }
 
   const { personal, health, account } = user;
