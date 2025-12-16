@@ -10,13 +10,23 @@ import {
   Bookmark,
 } from 'lucide-react';
 
+interface Address {
+  address_line?: string;
+  province?: string;
+  district?: string;
+  subdistrict?: string;
+  postal_code?: string;
+}
+
 interface Event {
   id: number;
   title: string;
   date: string;
   time: string;
-  location: string;
-  status: string;
+  imageUrl?: string;
+  address: Address;
+  addressDisplay: string;
+  status: 'Ended' | 'Ongoing' | 'Available';
   category: string;
   description?: string;
   organizerName?: string;
@@ -32,6 +42,54 @@ interface EventDetailModalProps {
   onToggleBookmark: () => void;
 }
 
+const getStatusClasses = (status: Event['status']) => {
+  switch (status) {
+    case 'Available':
+      return {
+        badge: 'bg-green-50 text-green-700 border-green-200',
+        dot: 'bg-green-500',
+      };
+    case 'Ongoing':
+      return {
+        badge: 'bg-blue-50 text-blue-700 border-blue-200',
+        dot: 'bg-blue-500',
+      };
+    case 'Ended':
+      return {
+        badge: 'bg-gray-100 text-gray-500 border-gray-200',
+        dot: 'bg-gray-400',
+      };
+    default:
+      return {
+        badge: 'bg-gray-50 text-gray-700 border-gray-200',
+        dot: 'bg-gray-500',
+      };
+  }
+};
+
+interface AddressFieldProps {
+  label: string;
+  value?: string;
+  isMissing: boolean;
+}
+
+const AddressField: React.FC<AddressFieldProps> = ({
+  label,
+  value,
+  isMissing,
+}) => (
+  <div className="flex flex-col">
+    <p className="mb-1 text-xs font-semibold tracking-wide text-gray-500 uppercase">
+      {label}
+    </p>
+    <p
+      className={`text-sm font-medium ${isMissing ? 'text-gray-400' : 'text-gray-800'}`}
+    >
+      {value || 'N/A'}
+    </p>
+  </div>
+);
+
 const EventDetailModal: React.FC<EventDetailModalProps> = ({
   isOpen,
   onClose,
@@ -42,13 +100,11 @@ const EventDetailModal: React.FC<EventDetailModalProps> = ({
   const modalRef = useRef<HTMLDivElement>(null);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
 
-  // Lock body scroll when modal is open
   useEffect(() => {
     if (isOpen) {
       const originalOverflow = document.body.style.overflow;
       document.body.style.overflow = 'hidden';
 
-      // Focus on close button when modal opens
       setTimeout(() => {
         closeButtonRef.current?.focus();
       }, 100);
@@ -59,7 +115,6 @@ const EventDetailModal: React.FC<EventDetailModalProps> = ({
     }
   }, [isOpen]);
 
-  // Handle escape key
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isOpen) {
@@ -71,7 +126,6 @@ const EventDetailModal: React.FC<EventDetailModalProps> = ({
     return () => document.removeEventListener('keydown', handleEscape);
   }, [isOpen, onClose]);
 
-  // Handle focus trap
   useEffect(() => {
     if (!isOpen) return;
 
@@ -108,16 +162,18 @@ const EventDetailModal: React.FC<EventDetailModalProps> = ({
 
   if (!isOpen || !event) return null;
 
+  const statusClasses = getStatusClasses(event.status);
+  const isEnded = event.status === 'Ended';
+  const { address } = event;
+
   return (
     <>
-      {/* Backdrop */}
       <div
         className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm"
         onClick={onClose}
         aria-hidden="true"
       />
 
-      {/* Modal */}
       <div
         className="fixed inset-0 z-50 flex items-center justify-center p-4"
         role="dialog"
@@ -128,27 +184,44 @@ const EventDetailModal: React.FC<EventDetailModalProps> = ({
           ref={modalRef}
           className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white shadow-2xl"
         >
-          {/* Header */}
-          <div className="sticky top-0 flex items-center justify-between rounded-t-2xl border-b border-gray-200 bg-white p-6">
-            <div>
-              <p className="mb-1 text-sm text-gray-500">Event Information</p>
-              <h2 id="modal-title" className="text-2xl font-bold text-gray-800">
-                {event.title}
-              </h2>
-            </div>
+          <div className="relative aspect-video w-full bg-gray-200">
+            {event.imageUrl ? (
+              <img
+                src={event.imageUrl}
+                alt={`Image for ${event.title}`}
+                className="h-full w-full rounded-t-2xl object-cover"
+              />
+            ) : (
+              <div className="flex h-full items-center justify-center text-gray-400">
+                <Calendar className="h-16 w-16" />
+              </div>
+            )}
             <button
               ref={closeButtonRef}
               onClick={onClose}
-              className="rounded-lg p-2 transition-colors hover:bg-gray-100"
+              className="absolute top-4 right-4 rounded-full bg-black/50 p-2 text-white transition-colors hover:bg-black/70"
               aria-label="Close modal"
             >
-              <X className="h-6 w-6 text-gray-600" />
+              <X className="h-6 w-6" />
             </button>
           </div>
 
-          {/* Content */}
           <div className="space-y-6 p-6">
-            {/* Description */}
+            <div className="flex items-center justify-between border-b pb-4">
+              <h2 id="modal-title" className="text-3xl font-bold text-gray-800">
+                {event.title}
+              </h2>
+              <span
+                className={`inline-flex items-center gap-2 rounded-lg border ${statusClasses.badge} px-4 py-2 text-sm font-medium`}
+              >
+                <div
+                  className={`h-2 w-2 rounded-full ${statusClasses.dot}`}
+                  aria-hidden="true"
+                ></div>
+                {event.status}
+              </span>
+            </div>
+
             <div>
               <label className="mb-2 block text-sm font-semibold text-gray-700">
                 Description
@@ -161,7 +234,6 @@ const EventDetailModal: React.FC<EventDetailModalProps> = ({
               </div>
             </div>
 
-            {/* Event Details */}
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div>
                 <label className="mb-2 block text-sm font-semibold text-gray-700">
@@ -189,24 +261,46 @@ const EventDetailModal: React.FC<EventDetailModalProps> = ({
                   </span>
                 </div>
               </div>
+            </div>
 
-              <div className="md:col-span-2">
-                <label className="mb-2 block text-sm font-semibold text-gray-700">
-                  Location
-                </label>
-                <div className="flex items-center gap-3 rounded-lg border border-cyan-200 bg-cyan-50 p-3">
-                  <MapPin
-                    className="h-5 w-5 text-cyan-600"
-                    aria-hidden="true"
+            <div className="pt-2">
+              <label className="mb-3 flex items-center gap-2 text-base font-bold text-gray-800">
+                <MapPin className="h-5 w-5 text-gray-600" />
+                Location Details
+              </label>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-4 rounded-lg border border-gray-200 bg-gray-50 p-5">
+                <div className="col-span-2">
+                  <AddressField
+                    label="Address"
+                    value={address.address_line}
+                    isMissing={!address.address_line}
                   />
-                  <span className="font-medium text-gray-800">
-                    {event.location}
-                  </span>
                 </div>
+
+                <AddressField
+                  label="Subdistrict"
+                  value={address.subdistrict}
+                  isMissing={!address.subdistrict}
+                />
+                <AddressField
+                  label="District"
+                  value={address.district}
+                  isMissing={!address.district}
+                />
+
+                <AddressField
+                  label="Province"
+                  value={address.province}
+                  isMissing={!address.province}
+                />
+                <AddressField
+                  label="Postal Code"
+                  value={address.postal_code}
+                  isMissing={!address.postal_code}
+                />
               </div>
             </div>
 
-            {/* Organizer Information */}
             <div>
               <label className="mb-2 block text-sm font-semibold text-gray-700">
                 Organizer Information
@@ -249,23 +343,8 @@ const EventDetailModal: React.FC<EventDetailModalProps> = ({
                 </div>
               </div>
             </div>
-
-            {/* Status Badge */}
-            <div>
-              <label className="mb-2 block text-sm font-semibold text-gray-700">
-                Status
-              </label>
-              <span className="inline-flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-4 py-2 text-sm font-medium text-green-700">
-                <div
-                  className="h-2 w-2 rounded-full bg-green-500"
-                  aria-hidden="true"
-                ></div>
-                {event.status}
-              </span>
-            </div>
           </div>
 
-          {/* Footer */}
           <div className="sticky bottom-0 flex gap-3 rounded-b-2xl border-t border-gray-200 bg-white p-6">
             <button
               onClick={onToggleBookmark}
@@ -283,8 +362,15 @@ const EventDetailModal: React.FC<EventDetailModalProps> = ({
               {isBookmarked ? 'Bookmarked' : 'Bookmark'}
             </button>
 
-            <button className="flex-1 rounded-lg bg-cyan-500 px-6 py-3 font-medium text-white transition-colors hover:bg-cyan-600">
-              Register Now
+            <button
+              className={`flex-1 rounded-lg px-6 py-3 font-medium text-white transition-colors ${
+                isEnded
+                  ? 'cursor-not-allowed bg-gray-400'
+                  : 'bg-cyan-500 hover:bg-cyan-600'
+              }`}
+              disabled={isEnded}
+            >
+              {isEnded ? 'Registration Ended' : 'Register Now'}
             </button>
           </div>
         </div>
