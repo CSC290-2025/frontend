@@ -55,7 +55,14 @@ export const deleteEvent = (id: number) => {
   return apiClient.delete(`/events/${id}`);
 };
 
-// Get daily event count between dates
-export const fetchDayEventCount = (params: { from: string; to: string }) => {
-  return apiClient.get('/events/day-count', { params });
+export const fetchEventsByDay = async (date: string) => {
+  // ✅ send YYYY-MM-DD ONLY
+  const formattedDate = date;
+
+  const res = await apiClient.get('/events/by-day', {
+    params: { date: formattedDate },
+  });
+
+  // ✅ ALWAYS return array
+  return Array.isArray(res.data?.data) ? res.data.data : [];
 };

@@ -1,3 +1,6 @@
+// ============================================================
+// HomePage.tsx - Fixed with Pagination and Data Display
+// ============================================================
 import React, { useState, useEffect } from 'react';
 import {
   Calendar,
@@ -16,13 +19,15 @@ import {
   Tv,
   Handshake,
   Trash2,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import EventDetailModal from '@/features/Event_Hub/component/EventDetailModel';
 import Sidebar from '@/features/Event_Hub/component/Sidebar';
 import TopBar from '@/features/Event_Hub/component/Topbar';
-import HistoryPage from '@/features/Event_Hub/component/HistoryPage';
-import ContactPage from '@/features/Event_Hub/component/ContactPage';
-import MonthlyPage from '@/features/Event_Hub/component/MonthlyPage';
+import HistoryPage from '@/features/Event_Hub/pages/HistoryPage';
+import ContactPage from '@/features/Event_Hub/pages/ContactPage';
+import MonthlyPage from '@/features/Event_Hub/pages/MonthlyPage';
 import { fetchEvents } from '@/features/Event_Hub/api/Event.api';
 import {
   fetchBookmarks,
@@ -30,24 +35,21 @@ import {
   deleteBookmark,
 } from '@/features/Event_Hub/api/Bookmark.api';
 import { useNavigate } from '@/router';
+
 interface Event {
   id: number;
   title: string;
   description?: string;
-  image_url?: string;
-  total_seats?: number;
   start_at: string;
   end_at: string;
-  address_id?: number;
-  organization_id?: number;
-  date?: string;
-  time?: string;
-  location?: string;
-  status?: string;
-  category?: string;
+  date: string;
+  time: string;
+  location: string;
   organizerName?: string;
   organizerEmail?: string;
   organizerPhone?: string;
+  status: string;
+  category: string;
 }
 
 const HomePage = () => {
@@ -59,10 +61,14 @@ const HomePage = () => {
   const [bookmarkedEvents, setBookmarkedEvents] = useState(new Set<number>());
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalEvents, setTotalEvents] = useState(0);
   const navigate = useNavigate();
   const [events, setEvents] = useState<Event[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const itemsPerPage = 12;
 
   useEffect(() => {
     const loadEvents = async () => {
@@ -71,34 +77,70 @@ const HomePage = () => {
       try {
         const response = await fetchEvents({
           page: currentPage,
-          limit: 12,
+          limit: itemsPerPage,
           q: searchQuery || undefined,
         });
 
         const body = (response as any).data ?? response;
         const payload = body.data ?? body;
         const items: any[] = Array.isArray(payload.items) ? payload.items : [];
+        const total = payload.total ?? items.length;
 
-        const transformedEvents: Event[] = items.map((event: any) => ({
-          ...event,
-          date: new Date(event.start_at).toLocaleDateString('en-GB', {
-            day: '2-digit',
-            month: 'short',
-            year: 'numeric',
-          }),
-          time: `${new Date(event.start_at).toLocaleTimeString('en-US', {
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false,
-          })} - ${new Date(event.end_at).toLocaleTimeString('en-US', {
-            hour: '2-digit',
-            minute: '2-digit',
-            hour12: false,
-          })}`,
-          location: event.address?.full_address || 'Location TBD',
-          status: 'Available',
-          category: 'events',
-        }));
+        // Calculate total pages
+        setTotalEvents(total);
+        setTotalPages(Math.ceil(total / itemsPerPage));
+
+        const transformedEvents: Event[] = items.map((event: any) => {
+          // Format address
+          let locationStr = 'Location TBD';
+          if (event.address) {
+            const parts = [
+              event.address.address_line,
+              event.address.subdistrict,
+              event.address.district,
+              event.address.province,
+              event.address.postal_code,
+            ].filter(Boolean);
+            locationStr = parts.length > 0 ? parts.join(', ') : 'Location TBD';
+          }
+
+          return {
+            id: event.id,
+            title: event.title,
+            description: event.description,
+            start_at: event.start_at,
+            end_at: event.end_at,
+
+            // Date formatting
+            date: new Date(event.start_at).toLocaleDateString('en-GB', {
+              day: '2-digit',
+              month: 'short',
+              year: 'numeric',
+            }),
+
+            // Time formatting
+            time: `${new Date(event.start_at).toLocaleTimeString('en-US', {
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: false,
+            })} - ${new Date(event.end_at).toLocaleTimeString('en-US', {
+              hour: '2-digit',
+              minute: '2-digit',
+              hour12: false,
+            })}`,
+
+            // Location with full address
+            location: locationStr,
+
+            // Organization details
+            organizerName: event.organization?.name ?? 'Unknown Organizer',
+            organizerEmail: event.organization?.email ?? 'N/A',
+            organizerPhone: event.organization?.phone_number ?? 'N/A',
+
+            status: 'Available',
+            category: 'events',
+          };
+        });
 
         setEvents(transformedEvents);
       } catch (err: any) {
@@ -111,6 +153,11 @@ const HomePage = () => {
 
     loadEvents();
   }, [currentPage, searchQuery]);
+
+  // Reset to page 1 when search query changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
 
   useEffect(() => {
     const loadBookmarks = async () => {
@@ -129,17 +176,10 @@ const HomePage = () => {
   }, []);
 
   const filteredEvents = events.filter((event) => {
-    const query = searchQuery.toLowerCase();
-    const matchesSearch =
-      !query ||
-      event.title?.toLowerCase().includes(query) ||
-      event.description?.toLowerCase().includes(query);
-
     if (activeTab === 'bookmark') {
-      return bookmarkedEvents.has(event.id) && matchesSearch;
+      return bookmarkedEvents.has(event.id);
     }
-
-    return matchesSearch;
+    return true;
   });
 
   const categories = [
@@ -233,6 +273,7 @@ const HomePage = () => {
       }
     } catch (err) {
       console.error('Error toggling bookmark:', err);
+      alert('Failed to update bookmark. Please try again.');
     }
   };
 
@@ -244,6 +285,14 @@ const HomePage = () => {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setSelectedEvent(null);
+  };
+
+  const handlePageChange = (page: number) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page);
+      // Scroll to top when page changes
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   return (
@@ -301,7 +350,15 @@ const HomePage = () => {
             </div>
 
             <div className="mb-6 flex items-center justify-between">
-              <h2 className="text-3xl font-bold text-gray-800">Events</h2>
+              <div>
+                <h2 className="text-3xl font-bold text-gray-800">Events</h2>
+                {!isLoading && (
+                  <p className="mt-1 text-sm text-gray-500">
+                    Showing {filteredEvents.length} of {totalEvents} events
+                    {searchQuery && ` for "${searchQuery}"`}
+                  </p>
+                )}
+              </div>
               <div className="flex gap-2">
                 <button
                   onClick={() => navigate('/event_hub/CreatePage')}
@@ -317,66 +374,179 @@ const HomePage = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {filteredEvents.map((event) => (
-                <div
-                  key={event.id}
-                  className="rounded-2xl border border-gray-200 bg-white p-6 transition-shadow hover:shadow-lg"
-                >
-                  <div className="mb-4 flex items-start justify-between">
-                    <div>
-                      <h3 className="mb-1 text-xl font-bold text-gray-800">
-                        {event.title}
-                      </h3>
-                      <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-3 py-1 text-sm font-medium text-green-700">
-                        <div className="h-2 w-2 rounded-full bg-green-500"></div>
-                        {event.status}
-                      </span>
-                    </div>
-                    <button
-                      onClick={() => toggleBookmark(event.id)}
-                      className="rounded-lg p-2 transition-colors hover:bg-gray-100"
+            {isLoading ? (
+              <div className="py-12 text-center">
+                <div className="mx-auto mb-4 h-16 w-16 animate-spin rounded-full border-4 border-gray-200 border-t-cyan-500"></div>
+                <p className="text-lg text-gray-500">Loading events...</p>
+              </div>
+            ) : error ? (
+              <div className="py-12 text-center">
+                <Calendar className="mx-auto mb-4 h-16 w-16 text-red-300" />
+                <p className="text-lg text-red-500">{error}</p>
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+                  {filteredEvents.map((event) => (
+                    <div
+                      key={event.id}
+                      className="rounded-2xl border border-gray-200 bg-white p-6 transition-shadow hover:shadow-lg"
                     >
-                      <BookmarkMinus
-                        className={`h-5 w-5 ${
-                          bookmarkedEvents.has(event.id)
-                            ? 'fill-cyan-500 text-cyan-500'
-                            : 'text-gray-400'
+                      <div className="mb-4 flex items-start justify-between">
+                        <div>
+                          <h3 className="mb-1 text-xl font-bold text-gray-800">
+                            {event.title}
+                          </h3>
+                          <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-3 py-1 text-sm font-medium text-green-700">
+                            <div className="h-2 w-2 rounded-full bg-green-500"></div>
+                            {event.status}
+                          </span>
+                        </div>
+                        <button
+                          onClick={() => toggleBookmark(event.id)}
+                          className="rounded-lg p-2 transition-colors hover:bg-gray-100"
+                        >
+                          <BookmarkMinus
+                            className={`h-5 w-5 ${
+                              bookmarkedEvents.has(event.id)
+                                ? 'fill-cyan-500 text-cyan-500'
+                                : 'text-gray-400'
+                            }`}
+                          />
+                        </button>
+                      </div>
+
+                      <div className="mb-6 space-y-3">
+                        <div className="flex items-center gap-3 text-gray-600">
+                          <Calendar className="h-5 w-5 flex-shrink-0" />
+                          <span className="font-medium">{event.date}</span>
+                        </div>
+                        <div className="flex items-center gap-3 text-gray-600">
+                          <Clock className="h-5 w-5 flex-shrink-0" />
+                          <span className="font-medium">{event.time}</span>
+                        </div>
+                        <div className="flex items-start gap-3 text-gray-600">
+                          <MapPin className="mt-0.5 h-5 w-5 flex-shrink-0" />
+                          <span className="line-clamp-2 font-medium">
+                            {event.location}
+                          </span>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => handleOpenModal(event)}
+                        className="w-full rounded-lg bg-cyan-500 py-3 font-medium text-white transition-colors hover:bg-cyan-600"
+                      >
+                        More Details
+                      </button>
+                    </div>
+                  ))}
+                </div>
+
+                {filteredEvents.length === 0 && (
+                  <div className="py-12 text-center">
+                    <Calendar className="mx-auto mb-4 h-16 w-16 text-gray-300" />
+                    <p className="text-lg text-gray-500">
+                      {searchQuery
+                        ? 'No events found matching your search'
+                        : 'No events found'}
+                    </p>
+                  </div>
+                )}
+
+                {/* Pagination */}
+                {totalPages > 1 && !searchQuery && (
+                  <div className="mt-8 flex items-center justify-center gap-2">
+                    <button
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      className="rounded-lg border border-gray-300 bg-white p-2 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <ChevronLeft className="h-5 w-5" />
+                    </button>
+
+                    <div className="flex gap-1">
+                      {/* Show first page */}
+                      <button
+                        onClick={() => handlePageChange(1)}
+                        className={`h-10 w-10 rounded-lg font-medium transition-colors ${
+                          currentPage === 1
+                            ? 'bg-cyan-500 text-white'
+                            : 'border border-gray-300 bg-white text-gray-800 hover:bg-gray-50'
                         }`}
-                      />
+                      >
+                        1
+                      </button>
+
+                      {/* Show ellipsis if needed */}
+                      {currentPage > 3 && (
+                        <span className="flex h-10 w-10 items-center justify-center text-gray-500">
+                          ...
+                        </span>
+                      )}
+
+                      {/* Show pages around current page */}
+                      {Array.from({ length: totalPages }, (_, i) => i + 1)
+                        .filter(
+                          (page) =>
+                            page !== 1 &&
+                            page !== totalPages &&
+                            page >= currentPage - 1 &&
+                            page <= currentPage + 1
+                        )
+                        .map((page) => (
+                          <button
+                            key={page}
+                            onClick={() => handlePageChange(page)}
+                            className={`h-10 w-10 rounded-lg font-medium transition-colors ${
+                              currentPage === page
+                                ? 'bg-cyan-500 text-white'
+                                : 'border border-gray-300 bg-white text-gray-800 hover:bg-gray-50'
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        ))}
+
+                      {/* Show ellipsis if needed */}
+                      {currentPage < totalPages - 2 && (
+                        <span className="flex h-10 w-10 items-center justify-center text-gray-500">
+                          ...
+                        </span>
+                      )}
+
+                      {/* Show last page */}
+                      {totalPages > 1 && (
+                        <button
+                          onClick={() => handlePageChange(totalPages)}
+                          className={`h-10 w-10 rounded-lg font-medium transition-colors ${
+                            currentPage === totalPages
+                              ? 'bg-cyan-500 text-white'
+                              : 'border border-gray-300 bg-white text-gray-800 hover:bg-gray-50'
+                          }`}
+                        >
+                          {totalPages}
+                        </button>
+                      )}
+                    </div>
+
+                    <button
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                      className="rounded-lg border border-gray-300 bg-white p-2 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      <ChevronRight className="h-5 w-5" />
                     </button>
                   </div>
+                )}
 
-                  <div className="mb-6 space-y-3">
-                    <div className="flex items-center gap-3 text-gray-600">
-                      <Calendar className="h-5 w-5" />
-                      <span className="font-medium">{event.date}</span>
-                    </div>
-                    <div className="flex items-center gap-3 text-gray-600">
-                      <Clock className="h-5 w-5" />
-                      <span className="font-medium">{event.time}</span>
-                    </div>
-                    <div className="flex items-center gap-3 text-gray-600">
-                      <MapPin className="h-5 w-5" />
-                      <span className="font-medium">{event.location}</span>
-                    </div>
+                {/* Page info */}
+                {totalPages > 1 && (
+                  <div className="mt-4 text-center text-sm text-gray-500">
+                    Page {currentPage} of {totalPages}
                   </div>
-
-                  <button
-                    onClick={() => handleOpenModal(event)}
-                    className="w-full rounded-lg bg-cyan-500 py-3 font-medium text-white transition-colors hover:bg-cyan-600"
-                  >
-                    More Details
-                  </button>
-                </div>
-              ))}
-            </div>
-
-            {filteredEvents.length === 0 && (
-              <div className="py-12 text-center">
-                <Calendar className="mx-auto mb-4 h-16 w-16 text-gray-300" />
-                <p className="text-lg text-gray-500">No events found</p>
-              </div>
+                )}
+              </>
             )}
           </div>
         )}

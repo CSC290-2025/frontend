@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Calendar,
   MapPin,
@@ -27,76 +27,31 @@ const HistoryPage: React.FC<HistoryPageProps> = ({ setActiveTab }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [selectedTag, setSelectedTag] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState('');
+  const [historyEvents, setHistoryEvents] = useState<HistoryEvent[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   const itemsPerPage = 6;
 
-  // Mock history data
-  const historyEvents: HistoryEvent[] = [
-    {
-      id: 1,
-      title: 'Big cleaning',
-      date: '15 Aug 2025',
-      time: '09:00 - 15:00',
-      location: 'KMUTT',
-      status: 'Completed',
-    },
-    {
-      id: 2,
-      title: 'Beach cleanup',
-      date: '10 Aug 2025',
-      time: '08:00 - 12:00',
-      location: 'Pattaya Beach',
-      status: 'Completed',
-    },
-    {
-      id: 3,
-      title: 'Tree planting',
-      date: '05 Aug 2025',
-      time: '09:00 - 15:00',
-      location: 'City Park',
-      status: 'Attended',
-    },
-    {
-      id: 4,
-      title: 'Food donation drive',
-      date: '01 Aug 2025',
-      time: '10:00 - 16:00',
-      location: 'Community Center',
-      status: 'Completed',
-    },
-    {
-      id: 5,
-      title: 'Street art festival',
-      date: '25 Jul 2025',
-      time: '14:00 - 20:00',
-      location: 'Downtown',
-      status: 'Attended',
-    },
-    {
-      id: 6,
-      title: 'Music workshop',
-      date: '20 Jul 2025',
-      time: '13:00 - 17:00',
-      location: 'Arts Center',
-      status: 'Cancelled',
-    },
-    {
-      id: 7,
-      title: 'Community cooking',
-      date: '15 Jul 2025',
-      time: '11:00 - 14:00',
-      location: 'Community Kitchen',
-      status: 'Completed',
-    },
-    {
-      id: 8,
-      title: 'Park renovation',
-      date: '10 Jul 2025',
-      time: '08:00 - 16:00',
-      location: 'Central Park',
-      status: 'Completed',
-    },
-  ];
+  // Load history events from your API
+  useEffect(() => {
+    const loadHistoryEvents = async () => {
+      setIsLoading(true);
+      try {
+        // Replace with your actual API call
+        // const response = await fetchHistoryEvents();
+        // setHistoryEvents(response.data);
+
+        // For now, it will be empty until you connect your API
+        setHistoryEvents([]);
+      } catch (error) {
+        console.error('Error loading history events:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadHistoryEvents();
+  }, []);
 
   const tags = ['All', 'Completed', 'Attended', 'Cancelled'];
 
@@ -157,7 +112,7 @@ const HistoryPage: React.FC<HistoryPageProps> = ({ setActiveTab }) => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="mx-auto max-w-7xl p-6">
-        {/* Tabs and Search - Matching HomePage */}
+        {/* Tabs and Search */}
         <div className="mb-6 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
           <div className="flex flex-wrap gap-2">
             {['Events', 'History', 'Contact', 'Monthly', 'Bookmark'].map(
@@ -225,56 +180,63 @@ const HistoryPage: React.FC<HistoryPageProps> = ({ setActiveTab }) => {
           ))}
         </div>
 
-        {/* Events Grid - 3 columns like HomePage */}
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {currentEvents.map((event) => (
-            <div
-              key={event.id}
-              className="rounded-2xl border border-gray-200 bg-white p-6 transition-shadow hover:shadow-lg"
-            >
-              <div className="mb-4 flex items-start justify-between">
-                <div>
-                  <h3 className="mb-1 text-xl font-bold text-gray-800">
-                    {event.title}
-                  </h3>
-                  <span
-                    className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-medium ${getStatusColor(event.status)}`}
-                  >
-                    <div
-                      className={`h-2 w-2 rounded-full ${getStatusDotColor(event.status)}`}
-                    ></div>
-                    {event.status}
-                  </span>
+        {/* Events Grid */}
+        {isLoading ? (
+          <div className="py-12 text-center">
+            <p className="text-lg text-gray-500">Loading...</p>
+          </div>
+        ) : currentEvents.length > 0 ? (
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {currentEvents.map((event) => (
+              <div
+                key={event.id}
+                className="rounded-2xl border border-gray-200 bg-white p-6 transition-shadow hover:shadow-lg"
+              >
+                <div className="mb-4 flex items-start justify-between">
+                  <div>
+                    <h3 className="mb-1 text-xl font-bold text-gray-800">
+                      {event.title}
+                    </h3>
+                    <span
+                      className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-sm font-medium ${getStatusColor(event.status)}`}
+                    >
+                      <div
+                        className={`h-2 w-2 rounded-full ${getStatusDotColor(event.status)}`}
+                      ></div>
+                      {event.status}
+                    </span>
+                  </div>
                 </div>
+
+                <div className="mb-6 space-y-3">
+                  <div className="flex items-center gap-3 text-gray-600">
+                    <Calendar className="h-5 w-5" />
+                    <span className="font-medium">{event.date}</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-gray-600">
+                    <Clock className="h-5 w-5" />
+                    <span className="font-medium">{event.time}</span>
+                  </div>
+                  <div className="flex items-center gap-3 text-gray-600">
+                    <MapPin className="h-5 w-5" />
+                    <span className="font-medium">{event.location}</span>
+                  </div>
+                </div>
+
+                <button className="w-full rounded-lg bg-cyan-500 py-3 font-medium text-white transition-colors hover:bg-cyan-600">
+                  More Details
+                </button>
               </div>
-
-              <div className="mb-6 space-y-3">
-                <div className="flex items-center gap-3 text-gray-600">
-                  <Calendar className="h-5 w-5" />
-                  <span className="font-medium">{event.date}</span>
-                </div>
-                <div className="flex items-center gap-3 text-gray-600">
-                  <Clock className="h-5 w-5" />
-                  <span className="font-medium">{event.time}</span>
-                </div>
-                <div className="flex items-center gap-3 text-gray-600">
-                  <MapPin className="h-5 w-5" />
-                  <span className="font-medium">{event.location}</span>
-                </div>
-              </div>
-
-              <button className="w-full rounded-lg bg-cyan-500 py-3 font-medium text-white transition-colors hover:bg-cyan-600">
-                More Details
-              </button>
-            </div>
-          ))}
-        </div>
-
-        {/* Empty State */}
-        {filteredEvents.length === 0 && (
+            ))}
+          </div>
+        ) : (
           <div className="py-12 text-center">
             <Calendar className="mx-auto mb-4 h-16 w-16 text-gray-300" />
-            <p className="text-lg text-gray-500">No history events found</p>
+            <p className="text-lg text-gray-500">
+              {searchQuery || selectedTag !== 'All'
+                ? 'No history events found'
+                : 'No history events yet'}
+            </p>
           </div>
         )}
 
