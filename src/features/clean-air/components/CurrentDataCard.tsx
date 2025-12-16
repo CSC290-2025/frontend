@@ -4,23 +4,14 @@ import useDistrictDetailQuery from '@/features/clean-air/hooks/useDistrictDetail
 export default function CurrentDataCard() {
   const { district } = useParams('/clean-air/district-detail/:district');
   const { data, isLoading, error } = useDistrictDetailQuery(district);
-  if (isLoading) {
+  if (isLoading || error || !data?.currentData) {
     return (
-      <div className="rounded-xl border border-gray-300 bg-white p-6 text-gray-900 shadow-md">
-                <div className="text-center">Loading current data...</div>   
-         {' '}
-      </div>
-    );
-  }
-
-  if (error || !data?.currentData) {
-    return (
-      <div className="rounded-xl border border-gray-300 bg-white p-6 text-gray-900 shadow-md">
-               {' '}
-        <div className="text-center text-red-600">
-                    {error?.message || 'No current data available'}       {' '}
-        </div>
-               {' '}
+      <div className="flex min-h-[150px] items-center justify-center rounded-xl border border-black bg-white p-6 shadow-md">
+        <p>
+          {isLoading
+            ? 'Loading current data...'
+            : error?.message || 'No data available'}
+        </p>
       </div>
     );
   }
@@ -61,35 +52,29 @@ export default function CurrentDataCard() {
 
   return (
     <div className="rounded-xl border border-black bg-white p-6 text-gray-900 shadow-md">
-           {' '}
-      <div className="mb-4">
-               {' '}
-        <h2 className="text-base font-semibold text-gray-800">
-                    Major Air Pollutants        {' '}
+      <div className="mb-6">
+        <h2 className="text-lg font-semibold text-gray-800">
+          Major Air Pollutants
         </h2>
-             {' '}
       </div>
-           {' '}
-      <div className="grid grid-cols-3 gap-2 text-center md:grid-cols-6">
-               {' '}
+      <div className="grid grid-cols-3 gap-6 text-center lg:grid-cols-6 lg:gap-5">
         {pollutants.map((pollutant, index) => (
-          <div key={index} className="flex flex-col items-center p-2">
-                       {' '}
-            <p className="text-2xl font-bold text-gray-900">
-                            {pollutant.value}           {' '}
+          <div
+            key={index}
+            className="flex flex-col items-center justify-center"
+          >
+            <p className="text-3xl leading-tight font-medium text-gray-900">
+              {pollutant.value}
             </p>
-                       {' '}
-            <p className="mt-1 text-sm text-gray-800">{pollutant.unit}</p>     
-                 {' '}
-            <p className="mt-1 text-base font-medium text-gray-800 uppercase">
-                            {pollutant.name}           {' '}
+            <p className="mt-1 text-[12px] font-normal text-gray-400">
+              {pollutant.unit}
             </p>
-                     {' '}
+            <p className="mt-0.5 text-sm font-medium tracking-wide text-gray-600 uppercase">
+              {pollutant.name}
+            </p>
           </div>
         ))}
-             {' '}
       </div>
-         {' '}
     </div>
   );
 }

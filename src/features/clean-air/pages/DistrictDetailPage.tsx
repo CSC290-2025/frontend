@@ -45,28 +45,21 @@ export function DistrictDetailPage() {
 
   return (
     <div className="min-h-screen bg-white text-gray-900">
-           {' '}
-      <div className="mx-auto max-w-4xl space-y-8 px-9 py-4 sm:py-8 lg:px-[100px]">
-               {' '}
-        <div className="-mt-4 text-3xl font-semibold">
-                    Air Quality        {' '}
-        </div>
-                        <CurrentAqiCard onDocumentationClick={openModal} />
-                <CurrentDataCard />       {' '}
+      <div className="mx-auto flex max-w-4xl flex-col space-y-6 px-9 py-4 sm:py-8 lg:space-y-5 lg:px-[100px]">
+        <div className="-mt-4 text-3xl font-semibold">Air Quality</div>
+        <CurrentAqiCard onDocumentationClick={openModal} />
+        <CurrentDataCard />
         <div className="flex flex-col gap-6 md:flex-row lg:gap-5">
-                   {' '}
           <div className="w-full md:w-2/3">
-                        <Summary />         {' '}
+            <Summary />
           </div>
-                   {' '}
           <div className="w-full md:w-1/3">
-                        <HealthTips />         {' '}
+            <HealthTips />
           </div>
-                 {' '}
         </div>
-                <HistoricalTable />     {' '}
+        <HistoricalTable />
       </div>
-            <Pm25GuideModal isOpen={isModalOpen} onClose={closeModal} />   {' '}
+      <Pm25GuideModal isOpen={isModalOpen} onClose={closeModal} />
     </div>
   );
 }
