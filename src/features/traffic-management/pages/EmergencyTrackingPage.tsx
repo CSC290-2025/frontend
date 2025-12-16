@@ -51,7 +51,6 @@ interface EmergencySettings {
   movementStep: number; // How much to move per keypress (in degrees)
   proximityThreshold: number; // Distance in meters to trigger traffic light change
   enableTrafficControl: boolean; // Whether to affect traffic lights
-  controlMode: 'direction' | 'all-red'; // Direction-based green or all-red
   showProximityCircle: boolean;
   autoCenter: boolean; // Auto-pan map to follow vehicle
 }
@@ -60,7 +59,6 @@ const DEFAULT_SETTINGS: EmergencySettings = {
   movementStep: 0.0003,
   proximityThreshold: 200,
   enableTrafficControl: true,
-  controlMode: 'direction',
   showProximityCircle: true,
   autoCenter: true,
 };
@@ -441,8 +439,22 @@ export default function EmergencyTrackingPage() {
         updatedAt: Date.now(),
       });
     } catch (err) {
-      console.error('Firebase error:', err);
+      // Silently handle Firebase errors
     }
+  }, []);
+
+  // Sync ambulance position from Firebase on load
+  useEffect(() => {
+    const ambulanceRef = ref(database, 'teams/13/ambulance_car');
+    const unsubscribe = onValue(ambulanceRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data && typeof data.lat === 'number' && typeof data.lng === 'number') {
+        setVehiclePosition({ lat: data.lat, lng: data.lng });
+        prevPositionRef.current = { lat: data.lat, lng: data.lng };
+      }
+    }, { onlyOnce: true }); // Only sync once on load, not continuously
+
+    return () => unsubscribe();
   }, []);
 
   // Move vehicle function
@@ -726,68 +738,17 @@ export default function EmergencyTrackingPage() {
         // Only send Firebase updates if not already controlled in Firebase
         // This prevents unnecessary writes and potential race conditions
         if (!isControlledInFirebase) {
-
-          console.log(
-            `🚨 Emergency vehicle approaching Inter-${interid} (${Math.round(distance)}m)`
-          );
-
           const updates: Record<string, any> = {};
 
-          // Store emergency mode at system level
-          updates['teams/10/emergency-mode'] = settings.controlMode;
+          // Store emergency mode at system level (all-red mode)
+          updates['teams/10/emergency-mode'] = 'all-red';
           updates[`teams/10/emergency-controlled-intersections/${interid}`] = true;
 
-          // Update traffic lights based on control mode
-          if (settings.controlMode === 'direction' && movementDirection) {
-            // Direction-based: Find the light closest to the vehicle's approach direction
-            let bestLight = lights[0];
-            let bestScore = -Infinity;
-
-            lights.forEach((light) => {
-              const dirToLight = calculateDirection(
-                vehiclePosition.lat,
-                vehiclePosition.lng,
-                light.lat,
-                light.lng
-              );
-
-              const directionMatch =
-                dirToLight === movementDirection ||
-                (movementDirection === 'N' && (dirToLight === 'NE' || dirToLight === 'NW')) ||
-                (movementDirection === 'S' && (dirToLight === 'SE' || dirToLight === 'SW')) ||
-                (movementDirection === 'E' && (dirToLight === 'NE' || dirToLight === 'SE')) ||
-                (movementDirection === 'W' && (dirToLight === 'NW' || dirToLight === 'SW'));
-
-              const score = directionMatch ? 1 : 0;
-              if (score > bestScore) {
-                bestScore = score;
-                bestLight = light;
-              }
-            });
-
-            // Best light goes green, others go red
-            lights.forEach((light) => {
-              const greenDur = light.green_duration || 27;
-              const yellowDur = light.yellow_duration || 3;
-              if (light.key === bestLight.key) {
-                updates[`teams/10/traffic_lights/${light.key}/color`] = COLOR_GREEN;
-                updates[`teams/10/traffic_lights/${light.key}/remaintime`] = greenDur + yellowDur;
-              } else {
-                updates[`teams/10/traffic_lights/${light.key}/color`] = COLOR_RED;
-                updates[`teams/10/traffic_lights/${light.key}/remaintime`] = 0; // Will show --
-              }
-            });
-
-            console.log(`✅ Direction-based: Road-${bestLight.roadid} -> GREEN`);
-          } else {
-            // All-red mode: All lights go red for safety, show --
-            lights.forEach((light) => {
-              updates[`teams/10/traffic_lights/${light.key}/color`] = COLOR_RED;
-              updates[`teams/10/traffic_lights/${light.key}/remaintime`] = 0; // Will show --
-            });
-
-            console.log(`🛑 All-red mode: Inter-${interid} -> ALL RED`);
-          }
+          // All-red mode: All lights go red for safety
+          lights.forEach((light) => {
+            updates[`teams/10/traffic_lights/${light.key}/color`] = COLOR_RED;
+            updates[`teams/10/traffic_lights/${light.key}/remaintime`] = 0;
+          });
 
           update(ref(database), updates).catch(console.error);
         }
@@ -800,7 +761,6 @@ export default function EmergencyTrackingPage() {
         if (isControlledLocally || isControlledInFirebase) {
           controlledIntersectionsRef.current.delete(interid);
 
-          console.log(`✓ Emergency cleared Inter-${interid} - Restarting cycle`);
 
           const updates: Record<string, any> = {};
 
@@ -846,7 +806,6 @@ export default function EmergencyTrackingPage() {
     trafficLights,
     settings.enableTrafficControl,
     settings.proximityThreshold,
-    settings.controlMode,
     movementDirection,
     emergencyControlledIntersections,
   ]);
@@ -906,33 +865,32 @@ export default function EmergencyTrackingPage() {
       <div className="absolute right-0 bottom-0 left-0 bg-gradient-to-t from-black/80 to-transparent p-6">
         <div className="mx-auto max-w-4xl">
           {/* Status Bar */}
-          <div className="mb-4 flex items-center justify-between rounded-lg bg-white/90 px-4 py-3 backdrop-blur">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-gray-600" />
-                <span className="text-sm font-medium text-gray-700">
-                  {vehiclePosition.lat.toFixed(6)},{' '}
-                  {vehiclePosition.lng.toFixed(6)}
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-lg bg-white/90 px-3 py-2 backdrop-blur sm:px-4 sm:py-3">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-4">
+              <div className="flex items-center gap-1 sm:gap-2">
+                <MapPin className="h-3 w-3 text-gray-600 sm:h-4 sm:w-4" />
+                <span className="text-xs font-medium text-gray-700 sm:text-sm">
+                  {vehiclePosition.lat.toFixed(5)}, {vehiclePosition.lng.toFixed(5)}
                 </span>
               </div>
               {movementDirection && (
-                <div className="flex items-center gap-2 rounded-full bg-blue-100 px-3 py-1">
+                <div className="flex items-center gap-1 rounded-full bg-blue-100 px-2 py-0.5 sm:gap-2 sm:px-3 sm:py-1">
                   <Zap className="h-3 w-3 text-blue-600" />
-                  <span className="text-sm font-medium text-blue-700">
-                    Heading {movementDirection}
+                  <span className="text-xs font-medium text-blue-700 sm:text-sm">
+                    {movementDirection}
                   </span>
                 </div>
               )}
               {nearbyIntersections.length > 0 && (
-                <div className="flex items-center gap-2 rounded-full bg-orange-100 px-3 py-1">
+                <div className="flex items-center gap-1 rounded-full bg-orange-100 px-2 py-0.5 sm:gap-2 sm:px-3 sm:py-1">
                   <AlertTriangle className="h-3 w-3 text-orange-600" />
-                  <span className="text-sm font-medium text-orange-700">
-                    {nearbyIntersections.length} intersection(s) controlled
+                  <span className="text-xs font-medium text-orange-700 sm:text-sm">
+                    {nearbyIntersections.length} controlled
                   </span>
                 </div>
               )}
             </div>
-            <div className="flex items-center gap-2">
+            <div className="hidden items-center gap-2 sm:flex">
               <span className="text-xs text-gray-500">
                 Step: {(settings.movementStep * 111000).toFixed(1)}m
               </span>
@@ -1130,57 +1088,6 @@ function SettingsDialog({ settings, onSave, onClose }: SettingsDialogProps) {
             </p>
           </div>
 
-          {/* Control Mode */}
-          <div>
-            <label className="mb-2 block text-sm font-semibold text-gray-700">
-              Traffic Control Mode
-            </label>
-            <div className="space-y-2">
-              <label className="flex items-center gap-3 rounded-lg border border-gray-200 p-3 transition hover:bg-gray-50">
-                <input
-                  type="radio"
-                  name="controlMode"
-                  value="direction"
-                  checked={localSettings.controlMode === 'direction'}
-                  onChange={() =>
-                    setLocalSettings({
-                      ...localSettings,
-                      controlMode: 'direction',
-                    })
-                  }
-                  className="h-4 w-4 text-blue-600"
-                />
-                <div>
-                  <p className="font-medium text-gray-800">Direction-based</p>
-                  <p className="text-xs text-gray-500">
-                    Green light for vehicle's direction, others red
-                  </p>
-                </div>
-              </label>
-              <label className="flex items-center gap-3 rounded-lg border border-gray-200 p-3 transition hover:bg-gray-50">
-                <input
-                  type="radio"
-                  name="controlMode"
-                  value="all-red"
-                  checked={localSettings.controlMode === 'all-red'}
-                  onChange={() =>
-                    setLocalSettings({
-                      ...localSettings,
-                      controlMode: 'all-red',
-                    })
-                  }
-                  className="h-4 w-4 text-blue-600"
-                />
-                <div>
-                  <p className="font-medium text-gray-800">All-Red Safety</p>
-                  <p className="text-xs text-gray-500">
-                    All lights turn red when vehicle approaches
-                  </p>
-                </div>
-              </label>
-            </div>
-          </div>
-
           {/* Toggles */}
           <div className="space-y-3">
             <label className="flex items-center justify-between">
@@ -1316,15 +1223,8 @@ function HelpDialog({ onClose }: { onClose: () => void }) {
             </h3>
             <ul className="space-y-1 text-sm text-orange-700">
               <li>
-                • When the emergency vehicle approaches an intersection, traffic
-                lights are automatically controlled
-              </li>
-              <li>
-                • <strong>Direction mode:</strong> The light in the vehicle's
-                direction turns green
-              </li>
-              <li>
-                • <strong>All-red mode:</strong> All lights turn red for safety
+                • When the emergency vehicle approaches an intersection, all
+                traffic lights turn red for safety
               </li>
               <li>
                 • Lights return to normal operation after the vehicle passes

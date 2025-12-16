@@ -176,9 +176,6 @@ function useTeam10TrafficSignals() {
               }
             });
 
-            console.log(
-              `[Control] Displaying ${allSignals.length} signals from traffic_lights`
-            );
             setSignals(allSignals);
             setError(null);
             setLoading(false);
@@ -590,7 +587,6 @@ export default function TrafficControlPage() {
         const roadid = parseInt(lightData?.roadid) || 0;
         const supportMarkerId = lightData?.support_marker_id;
 
-        console.log(`Light ${lightKey}: previousStatus=${previousStatus}, newStatus=${status}, supportMarkerId=${supportMarkerId}`);
 
         const updates: Record<string, any> = {
           [`teams/10/traffic_lights/${lightKey}/green_duration`]: greenDuration,
@@ -609,14 +605,9 @@ export default function TrafficControlPage() {
               location: { lat, lng },
             });
 
-            console.log('Full API response:', JSON.stringify(response.data, null, 2));
             const markerId = response.data?.data?.marker?.id;
-            console.log('Extracted markerId:', markerId);
             if (markerId) {
               updates[`teams/10/traffic_lights/${lightKey}/support_marker_id`] = markerId;
-              console.log(`Created support marker ${markerId} for ${statusLabel} light`);
-            } else {
-              console.warn('markerId is undefined or null, response structure may have changed');
             }
           } catch (markerErr) {
             console.error('Failed to create support marker:', markerErr);
@@ -626,26 +617,17 @@ export default function TrafficControlPage() {
 
         // When status changes back to normal (0), delete the support marker
         if ((previousStatus === 1 || previousStatus === 2) && status === 0) {
-          console.log(`Attempting to delete support marker: ${supportMarkerId}`);
           if (supportMarkerId) {
             try {
               await apiClient.delete(`/api/markers/${supportMarkerId}`);
               updates[`teams/10/traffic_lights/${lightKey}/support_marker_id`] = null;
-              console.log(`Deleted support marker ${supportMarkerId} - light is now active`);
             } catch (markerErr) {
-              console.error('Failed to delete support marker:', markerErr);
               // Continue with the update even if marker deletion fails
             }
-          } else {
-            console.warn(`No support_marker_id found for light ${lightKey}`);
           }
         }
 
-        console.log('Firebase updates object:', JSON.stringify(updates, null, 2));
         await update(ref(database), updates);
-        console.log(
-          `Light ${lightKey} updated: green=${greenDuration}s, yellow=${yellowDuration}s, status=${status}`
-        );
         setShowLightEditor(false);
         setEditingLight(null);
       } catch (err) {
@@ -671,7 +653,6 @@ export default function TrafficControlPage() {
         };
 
         await update(ref(database), updates);
-        console.log(`⚡ Force green: Light ${lightKey} set to GREEN`);
         setShowLightEditor(false);
         setEditingLight(null);
       } catch (err) {
@@ -699,7 +680,6 @@ export default function TrafficControlPage() {
         'teams/10/emergency-stop': true,
       });
       setEmergencyStopAll(true);
-      console.log('🛑 EMERGENCY STOP - All junctions stopped');
     } catch (err) {
       console.error('Failed to set emergency stop:', err);
     }
@@ -726,7 +706,6 @@ export default function TrafficControlPage() {
           calculateIntersectionLightDurations(sortedLights);
         const { greenDuration, yellowDuration } = getLightDuration(firstLight);
 
-        console.log(`Resetting Inter-${interidStr}:`, lightDurations);
 
         // Set first light to green, others to red with stacked times
         sortedLights.forEach((light, idx) => {
@@ -748,7 +727,6 @@ export default function TrafficControlPage() {
       await update(ref(database), resetUpdates);
       setEmergencyStopAll(false);
       setStoppedJunctions(new Set());
-      console.log('SYSTEM START - All intersections reset and resumed');
     } catch (err) {
       console.error('Failed to start all:', err);
     }
@@ -762,7 +740,6 @@ export default function TrafficControlPage() {
         [`teams/10/stopped-intersections/${interid}`]: true,
       });
       setStoppedJunctions((prev) => new Set(prev).add(junctionId));
-      console.log(`Junction ${junctionId} stopped`);
     } catch (err) {
       console.error('Failed to stop junction:', err);
     }
@@ -790,7 +767,6 @@ export default function TrafficControlPage() {
           const { greenDuration, yellowDuration } =
             getLightDuration(firstLight);
 
-          console.log(`Resetting ${junctionId}:`, lightDurations);
 
           // Set first light to green, others to red with stacked times
           sortedLights.forEach((light, idx) => {
@@ -814,7 +790,6 @@ export default function TrafficControlPage() {
           newSet.delete(junctionId);
           return newSet;
         });
-        console.log(`Junction ${junctionId} reset and started`);
       } catch (err) {
         console.error('Failed to start junction:', err);
       }

@@ -185,9 +185,6 @@ function useTeam10TrafficSignals(refreshRate: number) {
               }
             });
 
-            console.log(
-              `Displaying ${allSignals.length} signals from traffic_lights`
-            );
             setSignals(allSignals);
             setError(null);
             setLastUpdate(Date.now());
