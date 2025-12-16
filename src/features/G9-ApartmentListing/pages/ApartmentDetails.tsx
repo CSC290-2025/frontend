@@ -174,8 +174,8 @@ export default function ApartmentDetailPage() {
         return new Date(b.date).getTime() - new Date(a.date).getTime();
       }),
   };
-  const aptLat = address?.latitude || 0;
-  const aptLon = address?.longitude || 0;
+  const aptLat = parseFloat(address?.latitude as string) || 0;
+  const aptLon = parseFloat(address?.longitude as string) || 0;
   const { data: otherNearbyAmenities } = LocationIQ.getnearbyAmenities(
     aptLat,
     aptLon,
@@ -198,6 +198,7 @@ export default function ApartmentDetailPage() {
       try {
         // 1000m ≈ 0.009 degrees
         const offset = 0.029;
+
         const response = await axios.get(
           'http://localhost:3000/api/routes/lines',
           {
@@ -209,14 +210,17 @@ export default function ApartmentDetailPage() {
             },
           }
         );
-        console.log('Transit routes:', response.data);
+
+        if (response.data?.data) {
+          setTransitRoutes(response.data.data);
+        }
       } catch (error) {
         console.error('Failed to fetch routes:', error);
         setTransitRoutes([]);
       }
     };
 
-    if (aptLat && aptLon) {
+    if (aptLat && aptLon && aptLat !== 0 && aptLon !== 0) {
       fetchRoutes();
     }
   }, [aptLat, aptLon]);
@@ -944,11 +948,13 @@ export default function ApartmentDetailPage() {
                   </h3>
                   <div className="space-y-2">
                     {transitRoutes.length > 0 ? (
-                      transitRoutes.map((route: string, index: number) => (
-                        <div key={index} className="text-sm text-gray-600">
-                          <p className="font-medium">{route}</p>
-                        </div>
-                      ))
+                      transitRoutes
+                        .slice(0, 4)
+                        .map((route: string, index: number) => (
+                          <div key={index} className="text-sm text-gray-600">
+                            <p className="font-medium">{route}</p>
+                          </div>
+                        ))
                     ) : (
                       <p className="text-sm text-gray-400">
                         No bus lines found nearby
