@@ -26,7 +26,7 @@ export const banners = [
     title: 'Recycle & Reuse',
     subtitle: 'Build a sustainable community',
     imageUrl:
-      'https://i.pinimg.com/736x/b1/e8/d8/b1e8d8662363a6eba071a5949d8b05d3.jpg',
+      'https://i.pinimg.com/736x/a9/0f/4d/a90f4d4ef47c46b6362ec24961392809.jpg',
   },
   {
     gradient: 'from-green-100 to-yellow-300',
@@ -34,6 +34,6 @@ export const banners = [
     subtitle:
       'Plenty of great items are waiting for you to discover and take home.',
     imageUrl:
-      'https://i.pinimg.com/1200x/ef/68/d8/ef68d8d1f226b22cb243d5fd39edc7c1.jpg',
+      'https://i.pinimg.com/1200x/cd/7b/a6/cd7ba65af2859723b83b085ec6220fec.jpg',
   },
 ];

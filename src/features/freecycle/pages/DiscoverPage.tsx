@@ -86,10 +86,10 @@ export default function DiscoverPage({
 
       {/* Filters Section */}
       {showFilters && (
-        <div className="rounded-2xl border border-gray-100 bg-gradient-to-br from-white to-gray-50 p-6 shadow-lg">
-          <h3 className="mb-4 text-lg font-bold text-gray-900">
+        <div className="rounded-lg bg-gradient-to-br from-slate-50 via-cyan-50 to-blue-50 p-4">
+          {/* <h3 className="mb-4 text-lg font-bold text-gray-900">
             Filter by Category
-          </h3>
+          </h3> */}
           <CategoryFilter
             categories={categoriesData}
             selectedCategories={selectedCategories}

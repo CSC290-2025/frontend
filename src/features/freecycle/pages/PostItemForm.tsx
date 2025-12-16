@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Upload, X } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
 import type { Category } from '@/types/postItem';
 import {
   createPost,
@@ -24,6 +25,7 @@ interface PostItemFormProps {
 }
 
 export default function PostItemForm({ onSuccess, onBack }: PostItemFormProps) {
+  const queryClient = useQueryClient();
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
   const [loading, setLoading] = useState(false);
@@ -32,6 +34,7 @@ export default function PostItemForm({ onSuccess, onBack }: PostItemFormProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
   const { isLoading: isUserLoading } = useCurrentUser();
   const userId = useGetAuthMe().data?.data?.userId ?? null;
@@ -74,6 +77,11 @@ export default function PostItemForm({ onSuccess, onBack }: PostItemFormProps) {
       return;
     }
 
+    setShowConfirmDialog(true);
+  };
+
+  const handleConfirmPost = async () => {
+    setShowConfirmDialog(false);
     setLoading(true);
     setError(null);
 
@@ -103,6 +111,8 @@ export default function PostItemForm({ onSuccess, onBack }: PostItemFormProps) {
         await addCategoriesToPost(createdPost.id, selectedCategories, userId);
       }
 
+      // Invalidate the MyPosts query to refresh the list
+      queryClient.invalidateQueries({ queryKey: ['posts', 'me'] });
       setLoading(false);
       if (typeof onSuccess === 'function') onSuccess();
     } catch (err) {
@@ -325,6 +335,39 @@ export default function PostItemForm({ onSuccess, onBack }: PostItemFormProps) {
           </button>
         </form>
       </div>
+
+      {/* Confirmation Dialog */}
+      {showConfirmDialog && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+            <h2 className="text-lg font-semibold text-gray-900">
+              Post this item?
+            </h2>
+            <p className="mt-2 text-sm text-gray-600">
+              Once posted, your item will be visible to the community. You can
+              edit or delete it later if needed.
+            </p>
+
+            <div className="mt-6 flex gap-3">
+              <button
+                type="button"
+                onClick={() => setShowConfirmDialog(false)}
+                className="flex-1 rounded-lg border border-gray-300 py-2 font-medium text-gray-700 transition-colors hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmPost}
+                disabled={loading}
+                className="flex-1 rounded-lg bg-cyan-500 py-2 font-medium text-white transition-colors hover:bg-cyan-600 disabled:opacity-50"
+              >
+                {loading ? 'Posting...' : 'Post'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

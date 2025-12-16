@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import DiscoverPage from './DiscoverPage';
 import PostItemForm from './PostItemForm';
 import PostEventForm from './PostEventForm';
@@ -30,10 +30,22 @@ export default function FreecycleHomepage() {
   const navigate = useNavigate();
 
   const [currentPage, setCurrentPage] = useState<Page>('home');
-  const [activeTab, setActiveTab] = useState<Tab>('discover');
+  const [activeTab, setActiveTab] = useState<Tab>(() => {
+    // Check localStorage for saved activeTab
+    const saved = localStorage.getItem('freecycle_activeTab');
+    if (saved === 'my-items' || saved === 'my-requests') {
+      return saved as Tab;
+    }
+    return 'discover';
+  });
   const [searchQuery] = useState('');
 
   const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
+
+  // Clear localStorage when navigation back to avoid persisting old tab
+  useEffect(() => {
+    localStorage.removeItem('freecycle_activeTab');
+  }, []);
 
   // Fetch user's posts for "My Items" tab
   const { data: userPosts, isLoading: postsLoading } = useMyPosts();
@@ -42,7 +54,9 @@ export default function FreecycleHomepage() {
   const markAsNotGivenMutation = useMarkPostAsNotGiven();
 
   const handleViewItem = (item: PostItem) => {
-    navigate(`/freecycle/items/${item.id}` as any);
+    navigate(`/freecycle/items/${item.id}` as any, {
+      state: { backPath: '/freecycle' },
+    });
   };
 
   const handleToggleCategory = (categoryId: number) => {
@@ -170,7 +184,12 @@ export default function FreecycleHomepage() {
                               key={item.id}
                               item={item}
                               onClick={() =>
-                                navigate(`/freecycle/items/${item.id}` as any)
+                                navigate(`/freecycle/items/${item.id}` as any, {
+                                  state: {
+                                    backPath: '/freecycle',
+                                    activeTab: 'my-items',
+                                  },
+                                })
                               }
                             />
                           );

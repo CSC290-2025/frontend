@@ -1,5 +1,6 @@
 import { useState, useRef } from 'react';
 import { Upload, X } from 'lucide-react';
+import { useNavigate } from '@/router';
 import {
   useCreateEvent,
   useCreateVolunteerEvent,
@@ -13,6 +14,7 @@ interface PostEventFormProps {
 }
 
 export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
+  const navigate = useNavigate();
   const { isLoading: isUserLoading } = useCurrentUser();
   const userId = useGetAuthMe().data?.data?.userId ?? null;
 
@@ -20,7 +22,7 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
     title: '',
     description: '',
     image_url: '',
-    total_seats: 0,
+    total_seats: '',
     start_at: '',
     end_at: '',
     volunteer_required: false,
@@ -32,6 +34,7 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
   const { mutateAsync: createEvent } = useCreateEvent();
   const { mutateAsync: createVolunteerEvent } = useCreateVolunteerEvent();
@@ -72,6 +75,22 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
       setLoading(false);
       return;
     }
+    if (
+      formData.volunteer_required &&
+      (!formData.total_seats || parseInt(formData.total_seats) < 1)
+    ) {
+      alert('Please enter at least 1 volunteer needed');
+      setLoading(false);
+      return;
+    }
+
+    setShowConfirmDialog(true);
+  };
+
+  const handleConfirmEvent = async () => {
+    setShowConfirmDialog(false);
+    setLoading(true);
+    setError(null);
 
     try {
       let finalImageUrl = formData.image_url;
@@ -124,7 +143,9 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
           title: formData.title,
           description: formData.description,
           image_url: finalImageUrl || '',
-          total_seats: formData.total_seats || 0,
+          total_seats: formData.total_seats
+            ? parseInt(formData.total_seats)
+            : 0,
           start_at: `${startDateTime.date}T${startDateTime.time}:00Z`,
           end_at: `${endDateTime.date}T${endDateTime.time}:00Z`,
           created_by_user_id: userId,
@@ -151,6 +172,7 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
       }
 
       alert('Event created successfully!');
+      navigate('/freecycle' as any);
       _onSuccess?.();
     } catch (err: any) {
       console.error('Process Error:', err);
@@ -344,7 +366,8 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
                   onChange={(e) =>
                     setFormData({
                       ...formData,
-                      total_seats: parseInt(e.target.value) || 0,
+                      // total_seats: parseInt(e.target.value) || 0,
+                      total_seats: e.target.value,
                     })
                   }
                   className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
@@ -390,6 +413,39 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
           </button>
         </form>
       </div>
+
+      {/* Confirmation Dialog */}
+      {showConfirmDialog && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+            <h2 className="text-lg font-semibold text-gray-900">
+              Post this event?
+            </h2>
+            <p className="mt-2 text-sm text-gray-600">
+              Once posted, your event will be visible to the community. You can
+              edit it on the event page if needed.
+            </p>
+
+            <div className="mt-6 flex gap-3">
+              <button
+                type="button"
+                onClick={() => setShowConfirmDialog(false)}
+                className="flex-1 rounded-lg border border-gray-300 py-2 font-medium text-gray-700 transition-colors hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmEvent}
+                disabled={loading}
+                className="flex-1 rounded-lg bg-cyan-500 py-2 font-medium text-white transition-colors hover:bg-cyan-600 disabled:opacity-50"
+              >
+                {loading ? 'Posting...' : 'Post'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

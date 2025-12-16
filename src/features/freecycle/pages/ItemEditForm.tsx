@@ -56,6 +56,7 @@ export default function ItemEditForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isFormInitialized, setIsFormInitialized] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
   useEffect(() => {
     fetchAllCategories().then(setCategories).catch(console.error);
@@ -113,6 +114,12 @@ export default function ItemEditForm() {
       return;
     }
 
+    // Show confirmation dialog instead of using window.confirm
+    setShowConfirmDialog(true);
+  };
+
+  const handleConfirmSave = async () => {
+    setShowConfirmDialog(false);
     setLoading(true);
     setError(null);
 
@@ -142,7 +149,7 @@ export default function ItemEditForm() {
       }
 
       setLoading(false);
-      navigate(`/freecycle/items/${postId}` as any);
+      navigate('/freecycle' as any);
     } catch (err: any) {
       console.error('Update Error:', err);
       setError(err.message || 'Failed to update post.');
@@ -250,11 +257,12 @@ export default function ItemEditForm() {
           <input
             type="number"
             step="0.01"
-            value={formData.item_weight || ''}
+            value={formData.item_weight ?? ''}
             onChange={(e) =>
               setFormData({
                 ...formData,
-                item_weight: e.target.value ? Number(e.target.value) : null,
+                item_weight:
+                  e.target.value !== '' ? Number(e.target.value) : null,
               })
             }
             className="w-full rounded-lg border border-gray-300 bg-gray-50 px-4 py-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
@@ -320,6 +328,39 @@ export default function ItemEditForm() {
           {loading ? 'Saving Changes...' : 'Save Changes'}
         </button>
       </form>
+
+      {/* Confirmation Dialog */}
+      {showConfirmDialog && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+            <h2 className="text-lg font-semibold text-gray-900">
+              Save changes?
+            </h2>
+            <p className="mt-2 text-sm text-gray-600">
+              Are you sure you want to save these changes? You can edit this
+              item again later if needed.
+            </p>
+
+            <div className="mt-6 flex gap-3">
+              <button
+                type="button"
+                onClick={() => setShowConfirmDialog(false)}
+                className="flex-1 rounded-lg border border-gray-300 py-2 font-medium text-gray-700 transition-colors hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmSave}
+                disabled={loading}
+                className="flex-1 rounded-lg bg-cyan-500 py-2 font-medium text-white transition-colors hover:bg-cyan-600 disabled:opacity-50"
+              >
+                {loading ? 'Saving...' : 'Save'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

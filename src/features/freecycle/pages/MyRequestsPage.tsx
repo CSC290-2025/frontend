@@ -66,8 +66,10 @@ export default function MyRequestsPage() {
 
   const handleRequestCardClick = (post: ApiPost | null | undefined) => {
     if (post) {
-      // *** Router Navigation ***
-      navigate(`/freecycle/items/${post.id}` as any);
+      // *** Router Navigation with state to track origin ***
+      navigate(`/freecycle/items/${post.id}` as any, {
+        state: { backPath: '/freecycle/my-requests' },
+      });
     }
   };
 

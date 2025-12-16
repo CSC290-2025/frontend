@@ -14,7 +14,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { useNavigate } from '@/router';
-import { useParams } from 'react-router';
+import { useParams, useLocation } from 'react-router';
 import { useQueryClient } from '@tanstack/react-query';
 
 import type { PostItem, Category, CategoryWithName } from '@/types/postItem';
@@ -214,7 +214,29 @@ function RequestsList({
 
 export default function ItemDetailPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [categories, setCategories] = useState<Category[]>([]);
+  const [backPath, setBackPath] = useState<string>('/freecycle');
+
+  useEffect(() => {
+    // Get backPath from location state if provided
+    if (
+      location.state &&
+      typeof location.state === 'object' &&
+      'backPath' in location.state
+    ) {
+      setBackPath((location.state as { backPath: string }).backPath);
+    }
+    // Get activeTab from location state if provided and store it
+    if (
+      location.state &&
+      typeof location.state === 'object' &&
+      'activeTab' in location.state
+    ) {
+      const activeTab = (location.state as { activeTab: string }).activeTab;
+      localStorage.setItem('freecycle_activeTab', activeTab);
+    }
+  }, [location.state]);
 
   const createRequestMutation = useCreateRequest();
   const cancelRequestMutation = useCancelRequest();
@@ -362,7 +384,7 @@ export default function ItemDetailPage() {
       <div className="mx-auto max-w-4xl p-4">
         <h1 className="text-2xl font-bold text-red-600">Item Not Found</h1>
         <button
-          onClick={() => navigate('/freecycle')}
+          onClick={() => navigate(backPath)}
           className="mt-4 flex items-center gap-2 font-medium text-cyan-600 hover:text-cyan-700"
         >
           {/* <ArrowLeft className="h-5 w-5" /> Back to Home */}
@@ -374,7 +396,7 @@ export default function ItemDetailPage() {
   return (
     <div className="mx-auto max-w-6xl p-4">
       <button
-        onClick={() => navigate('/freecycle')}
+        onClick={() => navigate(backPath)}
         className="mb-6 flex items-center gap-2 font-medium text-cyan-600 hover:text-cyan-700"
       >
         {/* <ArrowLeft className="h-5 w-5" /> Back */}
