@@ -18,9 +18,14 @@ import type {
 import type { AxiosError } from 'axios';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router';
+import { useAuth } from '@/features/auth';
+import { ROLES } from '@/constant';
+import MetroCardManagement from '../components/metro-cards/MetroCardManagement';
 
 export default function MetroCardPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isAdmin = user?.roles?.role_name === ROLES.ADMIN;
 
   const { data: metroCardResponse, refetch, isLoading } = useGetMetroCardsMe();
 
@@ -98,6 +103,7 @@ export default function MetroCardPage() {
             ))}
           </div>
         )}
+        {isAdmin && <MetroCardManagement />}
       </div>
     </div>
   );
