@@ -6,13 +6,18 @@ import Picture from '../components/userSettingPage/Picture';
 import { UserAPI } from '../api';
 import { ChevronLeft } from 'lucide-react';
 import { useNavigate } from '@/router';
-
+import { useGetAuthMe } from '@/api/generated/authentication';
 function UserSettingPage() {
-  const userID = 7;
+  const userID = useGetAuthMe().data?.data?.userId;
   const [user, setUser] = useState<any>(null);
   const [specialists, setSpecialists] = useState<any[]>([]);
   const [userRoles, setUserRoles] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState('personal');
+
+  // --- 1. STATE FOR NEW FILE ---
+  const [selectedProfilePicture, setSelectedProfilePicture] =
+    useState<File | null>(null);
+
   const navigate = useNavigate();
 
   const mapUserData = (userApiData: any) => {
@@ -67,7 +72,7 @@ function UserSettingPage() {
         console.error('Error fetching user:', err);
       }
     };
-
+    console.log(userID);
     const getSpecialists = async () => {
       try {
         const response = await UserAPI.getUserSpecialists(userID);
@@ -140,10 +145,23 @@ function UserSettingPage() {
 
   if (!user) return <div>Loading...</div>;
 
-  const { personal, health, account, picture } = user;
-
+  const { personal, health, account } = user;
+  let { picture } = user;
   const handleSave = async () => {
     try {
+      // --- 2. UPLOAD PICTURE FIRST ---
+      if (selectedProfilePicture && userID) {
+        // Use the API function you just created
+
+        const data = await UserAPI.updateUserProfilePicture(
+          userID,
+          selectedProfilePicture
+        );
+        console.log(data);
+        picture = data.profilePictureUrl;
+        console.log(data.profilePictureUrl);
+      }
+      // --- 3. UPLOAD OTHER DATA ---
       const personalPayload = {
         user: {
           phone: personal.PhoneNumber,
@@ -235,7 +253,13 @@ function UserSettingPage() {
         <div className="flex flex-col gap-8 md:flex-row lg:gap-[20px]">
           {/* Left Sidebar - Picture */}
           <div className="flex w-full shrink-0 justify-center md:w-auto md:justify-start">
-            <Picture username={account.Username} picture={picture} />
+            {/* --- 4. UPDATED PICTURE COMPONENT --- */}
+            <Picture
+              username={account.Username}
+              picture={picture}
+              userId={userID} // Passed userId as required
+              onFileSelect={(file) => setSelectedProfilePicture(file)}
+            />
           </div>
 
           {/* Right Content - Forms */}
