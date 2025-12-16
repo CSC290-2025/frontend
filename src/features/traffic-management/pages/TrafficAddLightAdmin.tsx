@@ -16,6 +16,7 @@ import type { Database, DataSnapshot } from 'firebase/database';
 import { getBaseAPIURL } from '@/lib/apiClient.ts';
 import { calculateGreenDuration } from '../components/calculateGreenDuration';
 import { calculateRedDuration } from '../components/calculateRedDuration';
+import { useNavigate } from '@/router';
 
 // กำหนดค่า Firebase (แทนที่ด้วยค่าโปรเจกต์ของคุณ!)
 /*const firebaseConfig = {
@@ -102,6 +103,7 @@ interface TrafficRecord extends TrafficData {
 }
 
 const TrafficDataForm: React.FC = () => {
+  const navigate = useNavigate();
   const [selectref, setSelectref] = useState<string>('teams/10/traffic_lights');
   const [updatemode, setUpdatemode] = useState<boolean>(false);
   const [backendmode, setBackendmode] = useState<boolean>(true);
@@ -140,6 +142,7 @@ const TrafficDataForm: React.FC = () => {
     isError: false,
   });
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [updating, setUpdateing] = useState<boolean>(false);
 
   const initialTrafficLightData: TrafficLightPayload = {
     status: 0,
@@ -495,7 +498,7 @@ const TrafficDataForm: React.FC = () => {
 
   // --- ส่วน Render ของ Component ---
   return (
-    <div className="m-2 mt-5 justify-self-center rounded-md border-1 border-gray-300 p-5 lg:w-250">
+    <div className="m-2 max-w-170 justify-self-center rounded-md border-1 border-gray-300 p-5">
       {backendmode ? (
         <div>
           {message.text && (
@@ -510,6 +513,12 @@ const TrafficDataForm: React.FC = () => {
             <h1 className="w-full rounded-md bg-gradient-to-r from-green-400 to-blue-500 p-3 text-center font-bold text-white">
               🚦 Traffic Light management (Firebase Realtime DB)
             </h1>
+            <button
+              className="ml-5 rounded-md bg-gradient-to-r from-blue-500 to-blue-600 p-3 text-center font-bold text-white hover:from-blue-600 hover:to-blue-700"
+              onClick={() => navigate('/traffic/admin')}
+            >
+              Admin
+            </button>
             <button
               className="ml-5 rounded-md bg-gradient-to-r from-blue-500 to-blue-600 p-3 text-center font-bold text-white hover:from-blue-600 hover:to-blue-700"
               onClick={changeMode}
@@ -989,10 +998,10 @@ const TrafficDataForm: React.FC = () => {
           )}
         </div>
       ) : (
-        <div>
+        <div className="">
           <div className="mb-6 flex flex-row justify-between">
             <h1 className="w-full rounded-md bg-gradient-to-r from-blue-400 to-purple-500 p-3 text-center font-bold text-white">
-              🚦 Traffic Light management (backend DB)
+              🚦 Traffic Light calculation
             </h1>
 
             <button

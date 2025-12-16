@@ -175,11 +175,11 @@ export default function TrafficSettingPopup({
                 <div className="flex w-1/2 flex-col rounded-lg bg-white p-4 shadow-md">
                   <div className="ml-2 font-bold">Intersection : {interid}</div>
                   <div className="ml-2 font-bold">Light NO : {Traffickey}</div>
-                  {/*<div className="ml-2 text-xs font-bold">
-                    Location : {roadname}
-                  </div>*/}
                   <div className="ml-2 text-xs font-bold">
-                    Auto-mode : {status ? 'on' : 'off'}
+                    Road id : {roadid}
+                  </div>
+                  <div className="ml-2 text-xs font-bold">
+                    Auto-mode : {autoON ? 'on' : 'off'}
                   </div>
                 </div>
               </div>
