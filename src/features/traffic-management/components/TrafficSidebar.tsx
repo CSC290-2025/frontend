@@ -30,6 +30,9 @@ interface TrafficSidebarProps {
   onToggleBrokenLights?: () => void;
   searchQuery?: string;
   onSearchChange?: (query: string) => void;
+  emergencyStopAll?: boolean;
+  stoppedIntersections?: Set<number>;
+  emergencyControlledIntersections?: Set<number>;
 }
 
 export default function TrafficSidebar({
@@ -40,6 +43,9 @@ export default function TrafficSidebar({
   onToggleBrokenLights,
   searchQuery = '',
   onSearchChange,
+  emergencyStopAll = false,
+  stoppedIntersections = new Set(),
+  emergencyControlledIntersections = new Set(),
 }: TrafficSidebarProps) {
   const [colorFilter, setColorFilter] = useState<
     'all' | 'red' | 'yellow' | 'green'
@@ -310,6 +316,12 @@ export default function TrafficSidebar({
                           ? 'FIXING'
                           : '';
 
+                    // Check if this intersection is stopped or emergency controlled
+                    const interid = parseInt(signal.junctionId.replace('Inter-', '')) || 0;
+                    const isStopped = emergencyStopAll || stoppedIntersections.has(interid);
+                    const isEmergencyControlled = emergencyControlledIntersections.has(interid);
+                    const showDash = isBrokenOrFixing || isStopped || isEmergencyControlled;
+
                     const signalKey = `${signal.junctionId}-${signal.direction}`;
                     return (
                       <button
@@ -322,7 +334,7 @@ export default function TrafficSidebar({
                           selectedSignal?.junctionId === signal.junctionId &&
                           selectedSignal?.direction === signal.direction
                             ? 'border-slate-700 bg-slate-100'
-                            : isBrokenOrFixing
+                            : isBrokenOrFixing || isEmergencyControlled
                               ? 'border-gray-400 bg-gray-200'
                               : 'border-gray-200 bg-gray-50 hover:bg-gray-100'
                         }`}
@@ -330,7 +342,7 @@ export default function TrafficSidebar({
                         <div className="flex items-center gap-2">
                           <div
                             className={`h-3 w-3 rounded-full ${
-                              isBrokenOrFixing
+                              showDash
                                 ? 'bg-gray-500'
                                 : signal.color === 'red'
                                   ? 'bg-red-500'
@@ -348,12 +360,17 @@ export default function TrafficSidebar({
                                 {statusLabel}
                               </span>
                             )}
+                            {isEmergencyControlled && !isBrokenOrFixing && (
+                              <span className="text-[10px] text-orange-500">
+                                EMERGENCY
+                              </span>
+                            )}
                           </div>
                         </div>
                         <span
-                          className={`text-xs font-bold ${isBrokenOrFixing ? 'text-gray-500' : 'text-gray-800'}`}
+                          className={`text-xs font-bold ${showDash ? 'text-gray-500' : 'text-gray-800'}`}
                         >
-                          {isBrokenOrFixing ? '--' : `${signal.remainingTime}s`}
+                          {showDash ? '--' : `${signal.remainingTime}s`}
                         </span>
                       </button>
                     );

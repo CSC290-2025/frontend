@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef, memo } from 'react';
 import {
   APIProvider,
   Map,
@@ -201,78 +201,96 @@ function useTeam10TrafficSignals() {
   return { signals, loading, error, trafficLightsData };
 }
 
-function TrafficSignalMarker({
-  signal,
-  isSelected,
-  onClick,
-  isStopped,
-  isEmergencyAllRed,
-}: {
-  signal: TrafficSignal;
-  isSelected: boolean;
-  onClick: () => void;
-  isStopped?: boolean;
-  isEmergencyAllRed?: boolean;
-}) {
-  const colorMap = {
-    red: '#ef4444',
-    yellow: '#fbbf24',
-    green: '#22c55e',
-  };
+const TrafficSignalMarker = memo(
+  function TrafficSignalMarker({
+    signal,
+    isSelected,
+    onClick,
+    isStopped,
+    isEmergencyAllRed,
+  }: {
+    signal: TrafficSignal;
+    isSelected: boolean;
+    onClick: () => void;
+    isStopped?: boolean;
+    isEmergencyAllRed?: boolean;
+  }) {
+    const colorMap = {
+      red: '#ef4444',
+      yellow: '#fbbf24',
+      green: '#22c55e',
+    };
 
-  if (!signal.online) return null;
+    if (!signal.online) return null;
 
-  // Check if light is broken (status=1) or fixing (status=2)
-  const isBrokenOrFixing = signal.status === 1 || signal.status === 2;
-  const statusLabel =
-    signal.status === 1 ? 'BROKEN' : signal.status === 2 ? 'FIXING' : '';
+    // Check if light is broken (status=1) or fixing (status=2)
+    const isBrokenOrFixing = signal.status === 1 || signal.status === 2;
+    const statusLabel =
+      signal.status === 1 ? 'BROKEN' : signal.status === 2 ? 'FIXING' : '';
 
-  // Determine background color - gray for broken/fixing, normal color otherwise
-  const backgroundColor = isBrokenOrFixing ? '#6b7280' : colorMap[signal.color];
+    // Determine background color - gray for broken/fixing, normal color otherwise
+    const backgroundColor = isBrokenOrFixing ? '#6b7280' : colorMap[signal.color];
 
-  // Show "--" for stopped, broken/fixing, or emergency all-red mode lights
-  const showDash = isStopped || isBrokenOrFixing || isEmergencyAllRed;
+    // Show "--" for stopped, broken/fixing, or emergency all-red mode lights
+    const showDash = isStopped || isBrokenOrFixing || isEmergencyAllRed;
 
-  return (
-    <AdvancedMarker
-      position={{ lat: signal.lat, lng: signal.lng }}
-      title={`Junction: ${signal.junctionId} | Direction: ${signal.direction}${isStopped ? ' (STOPPED)' : ''}${isBrokenOrFixing ? ` (${statusLabel})` : ''}`}
-      onClick={onClick}
-    >
-      <div className="flex cursor-pointer flex-col items-center">
-        <div
-          className={`flex items-center justify-center rounded-full border-4 shadow-lg ${
-            isSelected
-              ? 'border-slate-700 ring-4 ring-slate-300'
-              : isBrokenOrFixing
-                ? 'border-gray-400'
-                : 'border-white'
-          }`}
-          style={{
-            backgroundColor,
-            width: '48px',
-            height: '48px',
-          }}
-        >
-          <span className="text-base font-bold text-white">
-            {showDash ? '--' : signal.remainingTime}
-          </span>
+    return (
+      <AdvancedMarker
+        position={{ lat: signal.lat, lng: signal.lng }}
+        title={`Junction: ${signal.junctionId} | Direction: ${signal.direction}${isStopped ? ' (STOPPED)' : ''}${isBrokenOrFixing ? ` (${statusLabel})` : ''}`}
+        onClick={onClick}
+      >
+        <div className="flex cursor-pointer flex-col items-center">
+          <div
+            className={`flex items-center justify-center rounded-full border-4 shadow-lg ${
+              isSelected
+                ? 'border-slate-700 ring-4 ring-slate-300'
+                : isBrokenOrFixing
+                  ? 'border-gray-400'
+                  : 'border-white'
+            }`}
+            style={{
+              backgroundColor,
+              width: '48px',
+              height: '48px',
+            }}
+          >
+            <span className="text-base font-bold text-white">
+              {showDash ? '--' : signal.remainingTime}
+            </span>
+          </div>
+          <div
+            className={`mt-1 rounded px-2 py-1 text-xs font-semibold shadow-md ${
+              isSelected
+                ? 'bg-slate-800 text-white'
+                : isBrokenOrFixing
+                  ? 'bg-gray-600 text-white'
+                  : 'bg-white text-gray-800'
+            }`}
+          >
+            {isBrokenOrFixing ? statusLabel : signal.junctionId}
+          </div>
         </div>
-        <div
-          className={`mt-1 rounded px-2 py-1 text-xs font-semibold shadow-md ${
-            isSelected
-              ? 'bg-slate-800 text-white'
-              : isBrokenOrFixing
-                ? 'bg-gray-600 text-white'
-                : 'bg-white text-gray-800'
-          }`}
-        >
-          {isBrokenOrFixing ? statusLabel : signal.junctionId}
-        </div>
-      </div>
-    </AdvancedMarker>
-  );
-}
+      </AdvancedMarker>
+    );
+  },
+  (prevProps, nextProps) => {
+    // Custom comparison to prevent flickering
+    return (
+      prevProps.signal.junctionId === nextProps.signal.junctionId &&
+      prevProps.signal.direction === nextProps.signal.direction &&
+      prevProps.signal.color === nextProps.signal.color &&
+      prevProps.signal.remainingTime === nextProps.signal.remainingTime &&
+      prevProps.signal.lat === nextProps.signal.lat &&
+      prevProps.signal.lng === nextProps.signal.lng &&
+      prevProps.signal.online === nextProps.signal.online &&
+      prevProps.signal.status === nextProps.signal.status &&
+      prevProps.isSelected === nextProps.isSelected &&
+      prevProps.isStopped === nextProps.isStopped &&
+      prevProps.isEmergencyAllRed === nextProps.isEmergencyAllRed
+    );
+  }
+);
 
 function MapContent({
   signals,
@@ -335,7 +353,7 @@ function MapContent({
   return (
     <>
       {/* Traffic Signal Markers */}
-      {signals.map((signal, index) => {
+      {signals.map((signal) => {
         const isStopped =
           emergencyStopAll || stoppedJunctions?.has(signal.junctionId);
         // Check if this intersection is under emergency control (any mode)
@@ -343,7 +361,7 @@ function MapContent({
           emergencyControlledIntersections?.has(signal.junctionId);
         return (
           <TrafficSignalMarker
-            key={`${signal.junctionId}-${signal.direction}-${index}`}
+            key={`${signal.junctionId}-${signal.direction}`}
             signal={signal}
             isSelected={
               selectedSignal?.junctionId === signal.junctionId &&

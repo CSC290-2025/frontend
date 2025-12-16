@@ -29,6 +29,7 @@ export function useTrafficLightCycle() {
   const trafficLightsRef = useRef<Record<string, any>>({});
   const emergencyStopRef = useRef(false);
   const stoppedIntersectionsRef = useRef<Set<number>>(new Set());
+  const emergencyControlledRef = useRef<Set<number>>(new Set());
   // Track previous status of each light to detect status changes
   const prevLightStatusRef = useRef<Record<string, number>>({});
 
@@ -53,14 +54,13 @@ export function useTrafficLightCycle() {
       database,
       'teams/10/stopped-intersections'
     );
+    const emergencyControlledDbRef = ref(
+      database,
+      'teams/10/emergency-controlled-intersections'
+    );
 
     const unsubscribeEmergencyStop = onValue(emergencyStopDbRef, (snapshot) => {
       emergencyStopRef.current = snapshot.val() === true;
-      if (emergencyStopRef.current) {
-        console.log('Emergency stop activated - traffic cycle paused');
-      } else {
-        console.log('Emergency stop deactivated - traffic cycle resumed');
-      }
     });
 
     const unsubscribeStoppedIntersections = onValue(
@@ -72,12 +72,23 @@ export function useTrafficLightCycle() {
             .filter((key) => data[key] === true)
             .map((key) => parseInt(key));
           stoppedIntersectionsRef.current = new Set(intersectionIds);
-          console.log(
-            'Stopped intersections:',
-            Array.from(stoppedIntersectionsRef.current)
-          );
         } else {
           stoppedIntersectionsRef.current = new Set();
+        }
+      }
+    );
+
+    const unsubscribeEmergencyControlled = onValue(
+      emergencyControlledDbRef,
+      (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+          const intersectionIds = Object.keys(data)
+            .filter((key) => data[key] === true)
+            .map((key) => parseInt(key));
+          emergencyControlledRef.current = new Set(intersectionIds);
+        } else {
+          emergencyControlledRef.current = new Set();
         }
       }
     );
@@ -85,6 +96,7 @@ export function useTrafficLightCycle() {
     return () => {
       unsubscribeEmergencyStop();
       unsubscribeStoppedIntersections();
+      unsubscribeEmergencyControlled();
     };
   }, []);
 
@@ -169,8 +181,11 @@ export function useTrafficLightCycle() {
       for (const [interidStr, lights] of Object.entries(intersections)) {
         const interid = parseInt(interidStr);
 
-        // Check if this intersection is stopped
+        // Check if this intersection is stopped or controlled by emergency vehicle
         if (stoppedIntersectionsRef.current.has(interid)) {
+          continue;
+        }
+        if (emergencyControlledRef.current.has(interid)) {
           continue;
         }
 

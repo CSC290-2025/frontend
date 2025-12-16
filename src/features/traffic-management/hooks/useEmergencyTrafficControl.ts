@@ -127,7 +127,7 @@ export function useEmergencyTrafficControl(
                 if (hasBackendLights) {
                   try {
                     const response = await fetch(
-                      `${getBaseAPIURL}/traffic-lights?intersection_id=${junctionId}`
+                      `${getBaseAPIURL}/traffic-lights?id=${junctionId.replace('Inter-', '')}`
                     );
 
                     if (response.ok) {

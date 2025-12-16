@@ -11,7 +11,6 @@ import { MarkerClusterer } from '@googlemaps/markerclusterer';
 import { Navigation } from 'lucide-react';
 import ControlPanel from '../components/ControlPanel';
 import MapSettingsDialog from '../components/MapSettingsDialog';
-import TrafficNotifications from '../components/TrafficNotifications';
 import EmergencyVehicleMarker from '../components/EmergencyVehicleMarker';
 import TrafficLegend from '../components/TrafficLegend';
 import TrafficSidebar from '../components/TrafficSidebar';
@@ -227,79 +226,108 @@ interface TrafficSignalMarkerProps {
     key: string
   ) => void;
   isStopped?: boolean;
+  isEmergencyControlled?: boolean;
 }
 
-const TrafficSignalMarker = memo(function TrafficSignalMarker({
-  signal,
-  isSelected,
-  onClick,
-  setMarkerRef,
-  isStopped,
-}: TrafficSignalMarkerProps) {
-  const colorMap = {
-    red: '#ef4444',
-    yellow: '#fbbf24',
-    green: '#22c55e',
-  };
+const TrafficSignalMarker = memo(
+  function TrafficSignalMarker({
+    signal,
+    isSelected,
+    onClick,
+    setMarkerRef,
+    isStopped,
+    isEmergencyControlled,
+  }: TrafficSignalMarkerProps) {
+    const colorMap = {
+      red: '#ef4444',
+      yellow: '#fbbf24',
+      green: '#22c55e',
+    };
 
-  const markerKey = `${signal.junctionId}-${signal.direction}`;
+    const markerKey = `${signal.junctionId}-${signal.direction}`;
 
-  if (!signal.online) {
-    return null;
+    if (!signal.online) {
+      return null;
+    }
+
+    // Check if light is broken (status=1) or fixing (status=2)
+    const isBrokenOrFixing = signal.status === 1 || signal.status === 2;
+    const statusLabel =
+      signal.status === 1 ? 'BROKEN' : signal.status === 2 ? 'FIXING' : '';
+
+    // Determine background color - gray for broken/fixing/emergency, normal color otherwise
+    const backgroundColor =
+      isBrokenOrFixing || isEmergencyControlled
+        ? '#6b7280'
+        : colorMap[signal.color];
+
+    // Show "--" for stopped, broken/fixing, or emergency controlled lights
+    const showDash = isStopped || isBrokenOrFixing || isEmergencyControlled;
+
+    return (
+      <AdvancedMarker
+        position={{ lat: signal.lat, lng: signal.lng }}
+        title={`Junction: ${signal.junctionId} | Direction: ${signal.direction}${isStopped ? ' (STOPPED)' : ''}${isBrokenOrFixing ? ` (${statusLabel})` : ''}${isEmergencyControlled ? ' (EMERGENCY)' : ''}`}
+        onClick={onClick}
+        ref={(marker) => setMarkerRef && setMarkerRef(marker, markerKey)}
+      >
+        <div className="flex cursor-pointer flex-col items-center">
+          <div
+            className={`flex items-center justify-center rounded-full shadow-lg ${
+              isSelected
+                ? 'border-4 border-blue-500 ring-4 ring-blue-300'
+                : isBrokenOrFixing || isEmergencyControlled
+                  ? 'border-4 border-gray-400'
+                  : 'border-4 border-white'
+            }`}
+            style={{
+              backgroundColor,
+              width: '48px',
+              height: '48px',
+            }}
+          >
+            <span className="text-base font-bold text-white">
+              {showDash ? '--' : signal.remainingTime}
+            </span>
+          </div>
+          <div
+            className={`mt-1 rounded px-2 py-1 text-xs font-semibold shadow-md ${
+              isSelected
+                ? 'bg-blue-500 text-white'
+                : isBrokenOrFixing
+                  ? 'bg-gray-600 text-white'
+                  : isEmergencyControlled
+                    ? 'bg-orange-500 text-white'
+                    : 'bg-white text-gray-800'
+            }`}
+          >
+            {isBrokenOrFixing
+              ? statusLabel
+              : isEmergencyControlled
+                ? 'EMERGENCY'
+                : signal.junctionId}
+          </div>
+        </div>
+      </AdvancedMarker>
+    );
+  },
+  (prevProps, nextProps) => {
+    // Custom comparison to prevent flickering - only re-render when visually relevant props change
+    return (
+      prevProps.signal.junctionId === nextProps.signal.junctionId &&
+      prevProps.signal.direction === nextProps.signal.direction &&
+      prevProps.signal.color === nextProps.signal.color &&
+      prevProps.signal.remainingTime === nextProps.signal.remainingTime &&
+      prevProps.signal.lat === nextProps.signal.lat &&
+      prevProps.signal.lng === nextProps.signal.lng &&
+      prevProps.signal.online === nextProps.signal.online &&
+      prevProps.signal.status === nextProps.signal.status &&
+      prevProps.isSelected === nextProps.isSelected &&
+      prevProps.isStopped === nextProps.isStopped &&
+      prevProps.isEmergencyControlled === nextProps.isEmergencyControlled
+    );
   }
-
-  // Check if light is broken (status=1) or fixing (status=2)
-  const isBrokenOrFixing = signal.status === 1 || signal.status === 2;
-  const statusLabel =
-    signal.status === 1 ? 'BROKEN' : signal.status === 2 ? 'FIXING' : '';
-
-  // Determine background color - gray for broken/fixing, normal color otherwise
-  const backgroundColor = isBrokenOrFixing ? '#6b7280' : colorMap[signal.color];
-
-  // Show "--" for stopped or broken/fixing lights
-  const showDash = isStopped || isBrokenOrFixing;
-
-  return (
-    <AdvancedMarker
-      position={{ lat: signal.lat, lng: signal.lng }}
-      title={`Junction: ${signal.junctionId} | Direction: ${signal.direction}${isStopped ? ' (STOPPED)' : ''}${isBrokenOrFixing ? ` (${statusLabel})` : ''}`}
-      onClick={onClick}
-      ref={(marker) => setMarkerRef && setMarkerRef(marker, markerKey)}
-    >
-      <div className="flex cursor-pointer flex-col items-center">
-        <div
-          className={`flex items-center justify-center rounded-full shadow-lg ${
-            isSelected
-              ? 'border-4 border-blue-500 ring-4 ring-blue-300'
-              : isBrokenOrFixing
-                ? 'border-4 border-gray-400'
-                : 'border-4 border-white'
-          }`}
-          style={{
-            backgroundColor,
-            width: '48px',
-            height: '48px',
-          }}
-        >
-          <span className="text-base font-bold text-white">
-            {showDash ? '--' : signal.remainingTime}
-          </span>
-        </div>
-        <div
-          className={`mt-1 rounded px-2 py-1 text-xs font-semibold shadow-md ${
-            isSelected
-              ? 'bg-blue-500 text-white'
-              : isBrokenOrFixing
-                ? 'bg-gray-600 text-white'
-                : 'bg-white text-gray-800'
-          }`}
-        >
-          {isBrokenOrFixing ? statusLabel : signal.junctionId}
-        </div>
-      </div>
-    </AdvancedMarker>
-  );
-});
+);
 
 interface MapContentProps {
   settings: MapSettings;
@@ -314,6 +342,7 @@ interface MapContentProps {
   onUserLocationUpdate?: (location: { lat: number; lng: number }) => void;
   emergencyStopAll?: boolean;
   stoppedIntersections?: Set<number>;
+  emergencyControlledIntersections?: Set<number>;
 }
 
 function MapContent({
@@ -329,6 +358,7 @@ function MapContent({
   onUserLocationUpdate,
   emergencyStopAll = false,
   stoppedIntersections = new Set(),
+  emergencyControlledIntersections = new Set(),
 }: MapContentProps) {
   const map = useMap();
   const [isGettingLocation, setIsGettingLocation] = useState(false);
@@ -498,6 +528,9 @@ function MapContent({
     }
   }, [map, selectedSignal]);
 
+  // Debounce clusterer update to prevent flickering
+  const clustererUpdateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const setMarkerRef = useCallback(
     (marker: google.maps.marker.AdvancedMarkerElement | null, key: string) => {
       if (marker) {
@@ -506,11 +539,20 @@ function MapContent({
         delete markersMapRef.current[key];
       }
 
-      // Update clusterer when markers change (if clustering is enabled)
+      // Debounce clusterer update when markers change (if clustering is enabled)
       if (map && settings.enableClustering && clustererRef.current) {
-        const markerArray = Object.values(markersMapRef.current);
-        clustererRef.current.clearMarkers();
-        clustererRef.current.addMarkers(markerArray);
+        // Clear any pending update
+        if (clustererUpdateTimeoutRef.current) {
+          clearTimeout(clustererUpdateTimeoutRef.current);
+        }
+        // Schedule update after a short delay
+        clustererUpdateTimeoutRef.current = setTimeout(() => {
+          if (clustererRef.current) {
+            const markerArray = Object.values(markersMapRef.current);
+            clustererRef.current.clearMarkers();
+            clustererRef.current.addMarkers(markerArray);
+          }
+        }, 100);
       }
     },
     [map, settings.enableClustering]
@@ -531,14 +573,16 @@ function MapContent({
 
   return (
     <>
-      {visibleSignals.map((signal, index) => {
+      {visibleSignals.map((signal) => {
         // Extract interid from junctionId (e.g., "Inter-3" -> 3)
         const interid = parseInt(signal.junctionId.replace('Inter-', '')) || 0;
         const isStopped = emergencyStopAll || stoppedIntersections.has(interid);
+        const isEmergencyControlled =
+          emergencyControlledIntersections.has(interid);
 
         return (
           <TrafficSignalMarker
-            key={`${signal.junctionId}-${signal.direction}-${index}`}
+            key={`${signal.junctionId}-${signal.direction}`}
             signal={signal}
             isSelected={
               selectedSignal?.junctionId === signal.junctionId &&
@@ -547,6 +591,7 @@ function MapContent({
             onClick={() => onSignalClick(signal)}
             setMarkerRef={setMarkerRef}
             isStopped={isStopped}
+            isEmergencyControlled={isEmergencyControlled}
           />
         );
       })}
@@ -705,6 +750,8 @@ export default function TrafficMapPage() {
   const [stoppedIntersections, setStoppedIntersections] = useState<Set<number>>(
     new Set()
   );
+  const [emergencyControlledIntersections, setEmergencyControlledIntersections] =
+    useState<Set<number>>(new Set());
 
   // Listen to emergency stop state from Firebase
   useEffect(() => {
@@ -712,6 +759,10 @@ export default function TrafficMapPage() {
     const stoppedIntersectionsRef = ref(
       database,
       'teams/10/stopped-intersections'
+    );
+    const emergencyControlledRef = ref(
+      database,
+      'teams/10/emergency-controlled-intersections'
     );
 
     const unsubscribeEmergencyStop = onValue(emergencyStopRef, (snapshot) => {
@@ -734,9 +785,25 @@ export default function TrafficMapPage() {
       }
     );
 
+    const unsubscribeEmergencyControlled = onValue(
+      emergencyControlledRef,
+      (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+          const intersectionIds = Object.keys(data)
+            .filter((key) => data[key] === true)
+            .map((key) => parseInt(key));
+          setEmergencyControlledIntersections(new Set(intersectionIds));
+        } else {
+          setEmergencyControlledIntersections(new Set());
+        }
+      }
+    );
+
     return () => {
       unsubscribeEmergencyStop();
       unsubscribeStoppedIntersections();
+      unsubscribeEmergencyControlled();
     };
   }, []);
 
@@ -824,10 +891,11 @@ export default function TrafficMapPage() {
           onToggleBrokenLights={handleToggleBrokenLights}
           searchQuery={junctionSearchQuery}
           onSearchChange={setJunctionSearchQuery}
+          emergencyStopAll={emergencyStopAll}
+          stoppedIntersections={stoppedIntersections}
+          emergencyControlledIntersections={emergencyControlledIntersections}
         />
       </div>
-
-      <TrafficNotifications />
 
       {/* Map area - Takes remaining space */}
       <div className="flex flex-1 flex-col">
@@ -864,6 +932,7 @@ export default function TrafficMapPage() {
                   onUserLocationUpdate={handleUserLocationUpdate}
                   emergencyStopAll={emergencyStopAll}
                   stoppedIntersections={stoppedIntersections}
+                  emergencyControlledIntersections={emergencyControlledIntersections}
                 />
               </Map>
             </APIProvider>
