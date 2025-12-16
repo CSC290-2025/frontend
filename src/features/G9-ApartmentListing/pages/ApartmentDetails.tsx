@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import '@/features/G9-ApartmentListing/styles/animations.css';
 import { useParams } from '@/router';
+import { getBaseAPIURL } from '@/lib/apiClient';
 import axios from 'axios';
 import {
   APT,
@@ -196,20 +197,16 @@ export default function ApartmentDetailPage() {
   useEffect(() => {
     const fetchRoutes = async () => {
       try {
-        // 1000m ≈ 0.009 degrees
-        const offset = 0.029;
-
-        const response = await axios.get(
-          'http://localhost:3000/api/routes/lines',
-          {
-            params: {
-              origLat: aptLat,
-              origLng: aptLon,
-              destLat: aptLat + offset,
-              destLng: aptLon + offset,
-            },
-          }
-        );
+        // 1000m ≈ 0.009 degrees, so 3000m ≈ 0.027 degrees
+        const offset = 0.009 * 3;
+        const response = await axios.get(`${getBaseAPIURL}/api/routes/lines`, {
+          params: {
+            origLat: aptLat,
+            origLng: aptLon,
+            destLat: aptLat + offset,
+            destLng: aptLon + offset,
+          },
+        });
 
         if (response.data?.data) {
           setTransitRoutes(response.data.data);

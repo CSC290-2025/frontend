@@ -1,7 +1,7 @@
 import { LOCapi } from '@/features/G9-ApartmentListing/api/index';
 import { useQuery } from '@tanstack/react-query';
 
-export function calDistance(
+export function getDistance(
   lon1: number,
   lon2: number,
   lat1: number,
@@ -21,8 +21,8 @@ export function getnearbyAmenities(
   lat: number,
   lon: number,
   radius: number,
-  limit: number,
-  tag?: string
+  limit: number, // number of results to return
+  tag?: string //type of amenities e.g., restaurant, cafe, park
 ) {
   return useQuery({
     queryKey: ['nearbyAmenities', lat, lon, radius, limit, tag],
@@ -42,7 +42,7 @@ export function getnearbyAllAmenities(
   tag?: string
 ) {
   return useQuery({
-    queryKey: ['nearbyAmenities', lat, lon, radius, limit, tag],
+    queryKey: ['nearbyAllAmenities', lat, lon, radius, limit, tag],
     queryFn: () => LOCapi.getNearbyAmenities(lat, lon, radius, limit, tag),
     select: (response) => {
       return response.data.data;
