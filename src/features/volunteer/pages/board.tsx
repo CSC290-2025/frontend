@@ -21,6 +21,8 @@ interface VolunteerEvent {
   title: string;
   description: string | null;
   start_at: string | null;
+  // Added registration_deadline to interface for sorting
+  registration_deadline: string | null;
   current_participants: number;
   total_seats: number;
   image_url: string | null;
@@ -70,7 +72,6 @@ const EventCardSkeleton = () => (
   </div>
 );
 
-// --- RESTORED ORIGINAL PAGINATION ---
 const PaginationControls: React.FC<PaginationProps> = ({
   currentPage,
   totalPages,
@@ -187,14 +188,39 @@ export default function CityVolunteerHomepage() {
           search: debouncedSearch || undefined,
           tag: selectedCategory || undefined,
         };
-        console.log(role);
         const response = await apiClient.get<ApiResponse>(
           '/api/v1/volunteer/getAll',
           { params }
         );
 
         if (response.data.success) {
-          setVolunteerJobs(response.data.data.events);
+          const events = response.data.data.events;
+
+          // --- SORTING LOGIC START ---
+          const sortedEvents = events.sort((a, b) => {
+            const now = new Date();
+            // Use registration_deadline if available, otherwise start_at
+            const dateA = a.registration_deadline
+              ? new Date(a.registration_deadline)
+              : new Date(a.start_at || '9999-12-31');
+            const dateB = b.registration_deadline
+              ? new Date(b.registration_deadline)
+              : new Date(b.start_at || '9999-12-31');
+
+            const isPassedA = dateA < now;
+            const isPassedB = dateB < now;
+
+            // If A is passed and B is not, B comes first (return 1 to push A back)
+            if (isPassedA && !isPassedB) return 1;
+            // If B is passed and A is not, A comes first (return -1 to push B back)
+            if (!isPassedA && isPassedB) return -1;
+
+            // If both are the same status (both active or both passed), sort by date ascending
+            return dateA.getTime() - dateB.getTime();
+          });
+          // --- SORTING LOGIC END ---
+
+          setVolunteerJobs(sortedEvents);
           setTotalPages(response.data.data.totalPages);
         } else {
           throw new Error('API did not return success');
@@ -251,7 +277,6 @@ export default function CityVolunteerHomepage() {
                   My Joined Events
                 </button>
 
-                {/* --- CONDITIONAL RENDER START --- */}
                 {(role === 'Volunteer Coordinator' || role === 'Admin') && (
                   <button
                     onClick={() => navigate('/volunteer/createpost')}
@@ -261,7 +286,6 @@ export default function CityVolunteerHomepage() {
                     Create Event
                   </button>
                 )}
-                {/* --- CONDITIONAL RENDER END --- */}
               </div>
             </div>
           </div>
@@ -351,12 +375,15 @@ export default function CityVolunteerHomepage() {
                     100
                   );
                   const isFull = job.current_participants >= job.total_seats;
+                  const isPassed = job.registration_deadline
+                    ? new Date(job.registration_deadline) < new Date()
+                    : false;
 
                   return (
                     <div
                       key={job.id}
                       onClick={() => handleCardClick(job.id)}
-                      className="group relative flex cursor-pointer flex-col overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200/50 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:ring-blue-500/20"
+                      className={`group relative flex cursor-pointer flex-col overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-slate-200/50 transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:ring-blue-500/20 ${isPassed ? 'opacity-75 grayscale-[0.5] hover:opacity-100 hover:grayscale-0' : ''}`}
                     >
                       {/* Image Container */}
                       <div className="relative h-48 w-full overflow-hidden bg-gray-100">
@@ -376,6 +403,17 @@ export default function CityVolunteerHomepage() {
                             {job.tag}
                           </span>
                         )}
+
+                        {/* Status Badge (Passed/Full) */}
+                        {isPassed ? (
+                          <span className="absolute top-4 right-4 rounded-lg bg-red-600/90 px-3 py-1 text-xs font-bold tracking-wider text-white uppercase backdrop-blur-sm">
+                            Closed
+                          </span>
+                        ) : isFull ? (
+                          <span className="absolute top-4 right-4 rounded-lg bg-orange-500/90 px-3 py-1 text-xs font-bold tracking-wider text-white uppercase backdrop-blur-sm">
+                            Full
+                          </span>
+                        ) : null}
 
                         {/* Date Badge */}
                         {job.start_at && (
@@ -402,10 +440,14 @@ export default function CityVolunteerHomepage() {
                         <div className="mt-auto pt-4">
                           <div className="mb-1 flex items-end justify-between text-sm">
                             <span className="font-medium text-slate-600">
-                              {isFull ? 'Full' : 'Spots filled'}
+                              {isPassed
+                                ? 'Registration Closed'
+                                : isFull
+                                  ? 'Full'
+                                  : 'Spots filled'}
                             </span>
                             <span
-                              className={`font-bold ${isFull ? 'text-red-500' : 'text-blue-600'}`}
+                              className={`font-bold ${isFull || isPassed ? 'text-slate-500' : 'text-blue-600'}`}
                             >
                               {job.current_participants}/{job.total_seats}
                             </span>
@@ -413,7 +455,7 @@ export default function CityVolunteerHomepage() {
 
                           <div className="h-2 w-full overflow-hidden rounded-full bg-slate-100">
                             <div
-                              className={`h-full rounded-full transition-all duration-500 ${isFull ? 'bg-red-500' : 'bg-blue-500'}`}
+                              className={`h-full rounded-full transition-all duration-500 ${isPassed ? 'bg-slate-400' : isFull ? 'bg-red-500' : 'bg-blue-500'}`}
                               style={{ width: `${percentFilled}%` }}
                             />
                           </div>
