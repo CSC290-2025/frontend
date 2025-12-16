@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Calendar,
   MapPin,
@@ -9,6 +9,29 @@ import {
   ChevronRight,
   Search,
 } from 'lucide-react';
+import { fetchPastBookmarkedEvents } from '@/features/Event_Hub/api/Event.api.ts'; // Assuming correct import path
+
+// Utility function to format date/time from ISO string
+const formatDate = (isoString: string) =>
+  new Date(isoString).toLocaleDateString('en-US', { dateStyle: 'medium' });
+const formatTime = (isoString: string) =>
+  new Date(isoString).toLocaleTimeString('en-US', { timeStyle: 'short' });
+
+// Define the shape of the event returned by the API
+interface Address {
+  address_line?: string;
+  province?: string;
+  district?: string;
+}
+
+interface EventFromApi {
+  id: number;
+  title: string;
+  start_at: string;
+  end_at: string;
+  addresses?: Address;
+  // NOTE: Assuming event status logic remains on the client-side for now
+}
 
 interface HistoryEvent {
   id: number;
@@ -19,56 +42,90 @@ interface HistoryEvent {
   status: 'Completed' | 'Cancelled' | 'Attended';
 }
 
+interface ApiResponse {
+  items: EventFromApi[];
+  total: number;
+  page: number;
+  limit: number;
+}
+
 interface HistoryPageProps {
   setActiveTab: (tab: string) => void;
 }
 
 const HistoryPage: React.FC<HistoryPageProps> = ({ setActiveTab }) => {
-  const [currentPage, setCurrentPage] = useState(1);
-  const [selectedTag, setSelectedTag] = useState<string>('All');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [historyEvents, setHistoryEvents] = useState<HistoryEvent[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-
   const itemsPerPage = 6;
 
-  // Load history events from your API
-  useEffect(() => {
-    const loadHistoryEvents = async () => {
-      setIsLoading(true);
-      try {
-        // Replace with your actual API call
-        // const response = await fetchHistoryEvents();
-        // setHistoryEvents(response.data);
-
-        // For now, it will be empty until you connect your API
-        setHistoryEvents([]);
-      } catch (error) {
-        console.error('Error loading history events:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadHistoryEvents();
-  }, []);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [selectedTag, setSelectedTag] = useState<
+    HistoryEvent['status'] | 'All'
+  >('All');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [historyEvents, setHistoryEvents] = useState<HistoryEvent[]>([]);
+  const [totalEvents, setTotalEvents] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
 
   const tags = ['All', 'Completed', 'Attended', 'Cancelled'];
 
-  // Filter events by selected tag AND search query
-  const filteredEvents = historyEvents
-    .filter((event) => selectedTag === 'All' || event.status === selectedTag)
-    .filter(
-      (event) =>
-        event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        event.location.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+  // Memoize the API call logic
+  const loadHistoryEvents = useCallback(
+    async (page: number, q: string) => {
+      setIsLoading(true);
+      try {
+        // Use the new API function
+        const response = await fetchPastBookmarkedEvents({
+          page: page,
+          limit: itemsPerPage,
+          q: q,
+        });
 
-  // Calculate pagination
-  const totalPages = Math.ceil(filteredEvents.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentEvents = filteredEvents.slice(startIndex, endIndex);
+        const data = response.data.data as ApiResponse;
+
+        const mappedEvents: HistoryEvent[] = data.items.map((event) => {
+          // Map API response to HistoryEvent structure
+          const locationParts = [
+            event.addresses?.address_line,
+            event.addresses?.district,
+            event.addresses?.province,
+          ].filter(Boolean); // Filter out undefined/null/empty strings
+
+          return {
+            id: event.id,
+            title: event.title,
+            // Use end_at to determine the past event date/time
+            date: formatDate(event.end_at),
+            time: formatTime(event.end_at),
+            location: locationParts.join(', '),
+            // Status is a placeholder/client-side filter for now
+            // You would need backend logic or client-side logic to determine the true status
+            status: 'Completed', // Defaulting to 'Completed' as the API filters for past events
+          } as HistoryEvent;
+        });
+
+        setHistoryEvents(mappedEvents);
+        setTotalEvents(data.total);
+        setCurrentPage(data.page); // Ensure current page matches returned page
+      } catch (error) {
+        console.error('Error loading history events:', error);
+        setHistoryEvents([]);
+        setTotalEvents(0);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [itemsPerPage]
+  );
+
+  useEffect(() => {
+    loadHistoryEvents(currentPage, searchQuery);
+  }, [loadHistoryEvents, currentPage, searchQuery]);
+
+  const filteredEvents = historyEvents.filter(
+    (event) => selectedTag === 'All' || event.status === selectedTag
+  );
+
+  // Calculate pagination (based on total events returned by API)
+  const totalPages = Math.ceil(totalEvents / itemsPerPage);
 
   // Handle page change
   const handlePageChange = (page: number) => {
@@ -77,10 +134,12 @@ const HistoryPage: React.FC<HistoryPageProps> = ({ setActiveTab }) => {
     }
   };
 
-  // Handle tag change
-  const handleTagChange = (tag: string) => {
+  // Handle tag change - This is now only a client-side filter
+  const handleTagChange = (tag: HistoryEvent['status'] | 'All') => {
     setSelectedTag(tag);
-    setCurrentPage(1);
+    // Since the API call already filters on 'q' and 'page',
+    // we only reset to page 1 if we decide to re-fetch on tag change,
+    // but here we rely on the current page's data for client-side status filtering.
   };
 
   const getStatusColor = (status: string) => {
@@ -141,7 +200,10 @@ const HistoryPage: React.FC<HistoryPageProps> = ({ setActiveTab }) => {
                 type="text"
                 placeholder="Search for items"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setCurrentPage(1); // Reset page on search change
+                }}
                 className="w-64 rounded-lg border border-gray-300 py-2.5 pr-4 pl-10 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
               />
             </div>
@@ -152,10 +214,6 @@ const HistoryPage: React.FC<HistoryPageProps> = ({ setActiveTab }) => {
         <div className="mb-6 flex items-center justify-between">
           <h2 className="text-3xl font-bold text-gray-800">History</h2>
           <div className="flex gap-2">
-            <button className="flex items-center gap-2 rounded-lg bg-cyan-500 px-4 py-2.5 text-white transition-colors hover:bg-cyan-600">
-              <Plus className="h-5 w-5" />
-              <span className="font-medium">Create</span>
-            </button>
             <button className="flex items-center gap-2 rounded-lg border border-gray-300 px-4 py-2.5 transition-colors hover:bg-gray-50">
               <Tag className="h-5 w-5 text-gray-600" />
               <span className="font-medium text-gray-700">Filter</span>
@@ -168,7 +226,9 @@ const HistoryPage: React.FC<HistoryPageProps> = ({ setActiveTab }) => {
           {tags.map((tag) => (
             <button
               key={tag}
-              onClick={() => handleTagChange(tag)}
+              onClick={() =>
+                handleTagChange(tag as HistoryEvent['status'] | 'All')
+              }
               className={`rounded-full px-6 py-2.5 font-medium transition-colors ${
                 selectedTag === tag
                   ? 'bg-cyan-500 text-white'
@@ -185,9 +245,9 @@ const HistoryPage: React.FC<HistoryPageProps> = ({ setActiveTab }) => {
           <div className="py-12 text-center">
             <p className="text-lg text-gray-500">Loading...</p>
           </div>
-        ) : currentEvents.length > 0 ? (
+        ) : filteredEvents.length > 0 ? (
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {currentEvents.map((event) => (
+            {filteredEvents.map((event) => (
               <div
                 key={event.id}
                 className="rounded-2xl border border-gray-200 bg-white p-6 transition-shadow hover:shadow-lg"
@@ -233,8 +293,8 @@ const HistoryPage: React.FC<HistoryPageProps> = ({ setActiveTab }) => {
           <div className="py-12 text-center">
             <Calendar className="mx-auto mb-4 h-16 w-16 text-gray-300" />
             <p className="text-lg text-gray-500">
-              {searchQuery || selectedTag !== 'All'
-                ? 'No history events found'
+              {searchQuery
+                ? `No results found for "${searchQuery}"`
                 : 'No history events yet'}
             </p>
           </div>

@@ -207,19 +207,26 @@ const EventDetailModal: React.FC<EventDetailModalProps> = ({
           </div>
 
           <div className="space-y-6 p-6">
-            <div className="flex items-center justify-between border-b pb-4">
+            <div className="border-b pb-4">
               <h2 id="modal-title" className="text-3xl font-bold text-gray-800">
                 {event.title}
               </h2>
-              <span
-                className={`inline-flex items-center gap-2 rounded-lg border ${statusClasses.badge} px-4 py-2 text-sm font-medium`}
-              >
-                <div
-                  className={`h-2 w-2 rounded-full ${statusClasses.dot}`}
-                  aria-hidden="true"
-                ></div>
-                {event.status}
-              </span>
+              {/* NEW: Category and Status Tags */}
+              <div className="mt-2 flex flex-wrap items-center gap-3">
+                <span className="rounded-lg border border-cyan-200 bg-cyan-50 px-4 py-2 text-sm font-medium text-cyan-700">
+                  Category:{' '}
+                  <span className="font-semibold">{event.category}</span>
+                </span>
+                <span
+                  className={`inline-flex items-center gap-2 rounded-lg border ${statusClasses.badge} px-4 py-2 text-sm font-medium`}
+                >
+                  <div
+                    className={`h-2 w-2 rounded-full ${statusClasses.dot}`}
+                    aria-hidden="true"
+                  ></div>
+                  {event.status}
+                </span>
+              </div>
             </div>
 
             <div>

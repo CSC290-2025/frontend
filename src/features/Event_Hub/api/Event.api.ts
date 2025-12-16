@@ -48,7 +48,6 @@ export const createEvent = (data: {
 }) => {
   return apiClient.post('/events', data);
 };
-// Update existing event
 export const updateEvent = (
   id: number,
   data: Partial<{
@@ -72,13 +71,18 @@ export const deleteEvent = (id: number) => {
 };
 
 export const fetchEventsByDay = async (date: string) => {
-  // ✅ send YYYY-MM-DD ONLY
   const formattedDate = date;
 
   const res = await apiClient.get('/events/by-day', {
     params: { date: formattedDate },
   });
 
-  // ✅ ALWAYS return array
   return Array.isArray(res.data?.data) ? res.data.data : [];
+};
+export const fetchPastBookmarkedEvents = (params?: {
+  page?: number;
+  limit?: number;
+  q?: string; // Query for searching
+}) => {
+  return apiClient.get('/events/bookmarked-history', { params });
 };
