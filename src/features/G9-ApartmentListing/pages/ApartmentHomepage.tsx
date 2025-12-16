@@ -304,6 +304,7 @@ export default function ApartmentHomepage() {
 
   const handleMaxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = Number(e.target.value);
+    if (value < 0 || value > 20000) return;
     const newMaxPrice = Math.max(value, minPrice + 1000);
     setMaxPrice(newMaxPrice);
     setCurrentPage(1);
