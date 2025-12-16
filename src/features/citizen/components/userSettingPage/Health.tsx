@@ -2,10 +2,11 @@ import { CitizenSetting } from '../../types';
 import BloodTypeDropdown from './BloodTypeDropDown';
 import GenderDropdown from './GenderDropDown';
 import { z } from 'zod';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface HealthPropsWithSetter extends CitizenSetting.HeathProps {
   onDataChange: (newData: any) => void;
+  onValidationChange?: (errors: Record<string, string>) => void;
 }
 
 const healthSchema = z.object({
@@ -51,8 +52,19 @@ const healthSchema = z.object({
   }),
 });
 
-function Health({ data, onDataChange }: HealthPropsWithSetter) {
+function Health({
+  data,
+  onDataChange,
+  onValidationChange,
+}: HealthPropsWithSetter) {
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Notify parent component when errors change
+  useEffect(() => {
+    if (onValidationChange) {
+      onValidationChange(errors);
+    }
+  }, [errors, onValidationChange]);
 
   const validateField = (name: string, value: any) => {
     const result = healthSchema

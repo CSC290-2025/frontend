@@ -1,10 +1,11 @@
 import { CitizenSetting } from '../../types';
 import { z } from 'zod';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface PersonalPropsWithSetter extends CitizenSetting.PersonalProps {
   specialists?: any[];
   onDataChange: (newData: any) => void;
+  onValidationChange?: (errors: Record<string, string>) => void;
 }
 
 const personalSchema = z.object({
@@ -70,8 +71,16 @@ function Personal({
   data,
   specialists = [],
   onDataChange,
+  onValidationChange,
 }: PersonalPropsWithSetter) {
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Notify parent component when errors change
+  useEffect(() => {
+    if (onValidationChange) {
+      onValidationChange(errors);
+    }
+  }, [errors, onValidationChange]);
 
   const validateField = (name: string, value: string) => {
     const result = personalSchema

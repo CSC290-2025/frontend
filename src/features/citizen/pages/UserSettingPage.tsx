@@ -15,6 +15,15 @@ function UserSettingPage() {
   const [specialists, setSpecialists] = useState<any[]>([]);
   const [userRoles, setUserRoles] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState('personal');
+  const [validationErrors, setValidationErrors] = useState<{
+    personal: Record<string, string>;
+    health: Record<string, string>;
+    account: Record<string, string>;
+  }>({
+    personal: {},
+    health: {},
+    account: {},
+  });
 
   const [selectedProfilePicture, setSelectedProfilePicture] =
     useState<File | null>(null);
@@ -138,6 +147,16 @@ function UserSettingPage() {
     }));
   };
 
+  const handleValidationErrors = (
+    section: 'personal' | 'health' | 'account',
+    errors: Record<string, string>
+  ) => {
+    setValidationErrors((prev) => ({
+      ...prev,
+      [section]: errors,
+    }));
+  };
+
   const handleBackButton = () => {
     navigate('/profile');
   };
@@ -157,6 +176,175 @@ function UserSettingPage() {
   let { picture } = user;
 
   const handleSave = async () => {
+    // Validate all fields before saving
+    const validateAllFields = () => {
+      const allErrors: {
+        personal: Record<string, string>;
+        health: Record<string, string>;
+        account: Record<string, string>;
+      } = {
+        personal: {},
+        health: {},
+        account: {},
+      };
+
+      // Validate Personal fields
+      const personalFieldsToValidate = [
+        'IdCardNumber',
+        'Firstname',
+        'Lastname',
+        'PhoneNumber',
+        'AddressLine',
+        'SubDistrict',
+        'District',
+        'Province',
+        'PostalCode',
+      ];
+
+      personalFieldsToValidate.forEach((field) => {
+        const value = personal[field as keyof typeof personal];
+        if (field === 'Firstname' && (!value || value === '')) {
+          allErrors.personal[field] = 'First name is required';
+        } else if (field === 'Lastname' && (!value || value === '')) {
+          allErrors.personal[field] = 'Last name is required';
+        } else if (field === 'AddressLine' && (!value || value === '')) {
+          allErrors.personal[field] = 'Address is required';
+        } else if (field === 'SubDistrict' && (!value || value === '')) {
+          allErrors.personal[field] = 'Sub-district is required';
+        } else if (field === 'District' && (!value || value === '')) {
+          allErrors.personal[field] = 'District is required';
+        } else if (field === 'Province' && (!value || value === '')) {
+          allErrors.personal[field] = 'Province is required';
+        } else if (
+          field === 'IdCardNumber' &&
+          value &&
+          value !== '' &&
+          (value.length !== 13 || !/^\d+$/.test(value))
+        ) {
+          allErrors.personal[field] =
+            'ID card number must be exactly 13 digits';
+        } else if (
+          field === 'PostalCode' &&
+          value &&
+          value !== '' &&
+          (value.length !== 5 || !/^\d+$/.test(value))
+        ) {
+          allErrors.personal[field] = 'Postal code must be exactly 5 digits';
+        } else if (
+          field === 'PhoneNumber' &&
+          value &&
+          value !== '' &&
+          !/^[0-9]{10}$|^[0-9]{3}-[0-9]{3}-[0-9]{4}$/.test(value)
+        ) {
+          allErrors.personal[field] =
+            'Phone number must be in format: 0812345678 or 081-234-5678';
+        }
+      });
+
+      // Validate Account fields
+      if (!account.Username || account.Username.length < 3) {
+        allErrors.account.Username = 'Username must be at least 3 characters';
+      } else if (account.Username.length > 30) {
+        allErrors.account.Username = 'Username must be less than 30 characters';
+      }
+
+      if (!account.Email || account.Email === '') {
+        allErrors.account.Email = 'Email is required';
+      } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(account.Email)) {
+        allErrors.account.Email = 'Please enter a valid email address';
+      }
+
+      // Validate Health fields
+      if (health.Height && health.Height !== 0) {
+        const heightNum =
+          typeof health.Height === 'string'
+            ? parseFloat(health.Height)
+            : health.Height;
+        if (isNaN(heightNum) || heightNum < 50 || heightNum > 300) {
+          allErrors.health.Height = 'Height must be between 50 and 300 cm';
+        }
+      }
+
+      if (health.Weight && health.Weight !== 0) {
+        const weightNum =
+          typeof health.Weight === 'string'
+            ? parseFloat(health.Weight)
+            : health.Weight;
+        if (isNaN(weightNum) || weightNum < 2 || weightNum > 500) {
+          allErrors.health.Weight = 'Weight must be between 2 and 500 kg';
+        }
+      }
+
+      if (health.CongenitalDisease && health.CongenitalDisease.length > 500) {
+        allErrors.health.CongenitalDisease =
+          'Description must be less than 500 characters';
+      }
+
+      if (health.Allergic && health.Allergic.length > 500) {
+        allErrors.health.Allergic =
+          'Description must be less than 500 characters';
+      }
+
+      return allErrors;
+    };
+
+    // Run full validation
+    const allValidationErrors = validateAllFields();
+
+    // Update validation errors state
+    setValidationErrors(allValidationErrors);
+
+    // Check if there are any validation errors
+    const hasPersonalErrors =
+      Object.keys(allValidationErrors.personal).length > 0;
+    const hasHealthErrors = Object.keys(allValidationErrors.health).length > 0;
+    const hasAccountErrors =
+      Object.keys(allValidationErrors.account).length > 0;
+
+    if (hasPersonalErrors || hasHealthErrors || hasAccountErrors) {
+      let errorMessage = 'Please fix the following errors before saving:\n\n';
+
+      if (hasPersonalErrors) {
+        errorMessage += '📋 Personal Information:\n';
+        Object.entries(allValidationErrors.personal).forEach(
+          ([field, error]) => {
+            errorMessage += `  • ${error}\n`;
+          }
+        );
+        errorMessage += '\n';
+      }
+
+      if (hasHealthErrors) {
+        errorMessage += '🏥 Health Information:\n';
+        Object.entries(allValidationErrors.health).forEach(([field, error]) => {
+          errorMessage += `  • ${error}\n`;
+        });
+        errorMessage += '\n';
+      }
+
+      if (hasAccountErrors) {
+        errorMessage += '👤 Account Information:\n';
+        Object.entries(allValidationErrors.account).forEach(
+          ([field, error]) => {
+            errorMessage += `  • ${error}\n`;
+          }
+        );
+      }
+
+      alert(errorMessage.trim());
+
+      // Switch to the first tab that has errors
+      if (hasPersonalErrors) {
+        setActiveTab('personal');
+      } else if (hasHealthErrors) {
+        setActiveTab('health');
+      } else if (hasAccountErrors) {
+        setActiveTab('account');
+      }
+
+      return;
+    }
+
     try {
       if (selectedProfilePicture && userID) {
         const data = await UserAPI.updateUserProfilePicture(
@@ -209,7 +397,7 @@ function UserSettingPage() {
       await UserAPI.updateUserPersonal(userID, personalPayload);
       await UserAPI.updateUserHealth(userID, healthPayload);
       await UserAPI.updateUserAccount(userID, accountPayload);
-      alert('Saved successfully!');
+      alert('Successfully saved! ✓');
     } catch (err: any) {
       console.error(err);
       alert(`Failed to save: ${err.response?.data?.message || err.message}`);
@@ -219,27 +407,38 @@ function UserSettingPage() {
   const Tabs = () => (
     <div className="mb-5 flex justify-center overflow-x-auto md:mb-6">
       <div className="flex w-full gap-2">
-        {['personal', 'health', 'account'].map((tab) => (
-          <button
-            key={tab}
-            className={`group relative flex h-10 flex-1 cursor-pointer items-center justify-center rounded-xl border transition-all duration-300 md:h-11 ${
-              activeTab === tab
-                ? 'border-cyan-400 bg-gradient-to-r from-cyan-400 to-blue-400 shadow-md'
-                : 'border-gray-200 bg-white hover:border-cyan-300 hover:bg-gray-50'
-            }`}
-            onClick={() => setActiveTab(tab)}
-          >
-            <h2
-              className={`text-xs font-semibold capitalize transition-all duration-300 md:text-sm lg:text-base ${
+        {['personal', 'health', 'account'].map((tab) => {
+          const hasErrors =
+            Object.keys(validationErrors[tab as keyof typeof validationErrors])
+              .length > 0;
+
+          return (
+            <button
+              key={tab}
+              className={`group relative flex h-10 flex-1 cursor-pointer items-center justify-center rounded-xl border transition-all duration-300 md:h-11 ${
                 activeTab === tab
-                  ? 'text-white'
-                  : 'text-gray-600 group-hover:text-cyan-400'
+                  ? 'border-cyan-400 bg-gradient-to-r from-cyan-400 to-blue-400 shadow-md'
+                  : hasErrors
+                    ? 'border-red-300 bg-red-50 hover:border-red-400'
+                    : 'border-gray-200 bg-white hover:border-cyan-300 hover:bg-gray-50'
               }`}
+              onClick={() => setActiveTab(tab)}
             >
-              {tab}
-            </h2>
-          </button>
-        ))}
+              <h2
+                className={`text-xs font-semibold capitalize transition-all duration-300 md:text-sm lg:text-base ${
+                  activeTab === tab
+                    ? 'text-white'
+                    : hasErrors
+                      ? 'text-red-600'
+                      : 'text-gray-600 group-hover:text-cyan-400'
+                }`}
+              >
+                {tab}
+                {hasErrors && <span className="ml-1 text-xs">⚠️</span>}
+              </h2>
+            </button>
+          );
+        })}
       </div>
     </div>
   );
@@ -286,11 +485,20 @@ function UserSettingPage() {
                       data={personal}
                       specialists={specialists}
                       onDataChange={handlePersonalChange}
+                      onValidationChange={(errors) =>
+                        handleValidationErrors('personal', errors)
+                      }
                     />
                   )}
 
                   {user && activeTab === 'health' && (
-                    <Health data={health} onDataChange={handleHealthChange} />
+                    <Health
+                      data={health}
+                      onDataChange={handleHealthChange}
+                      onValidationChange={(errors) =>
+                        handleValidationErrors('health', errors)
+                      }
+                    />
                   )}
 
                   {user && activeTab === 'account' && (
@@ -298,6 +506,9 @@ function UserSettingPage() {
                       data={account}
                       onDataChange={handleAccountChange}
                       roles={userRoles}
+                      onValidationChange={(errors) =>
+                        handleValidationErrors('account', errors)
+                      }
                     />
                   )}
                 </div>

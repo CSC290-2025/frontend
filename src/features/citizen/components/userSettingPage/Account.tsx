@@ -1,9 +1,10 @@
 import { CitizenSetting } from '../../types';
 import { z } from 'zod';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 interface AccountPropsWithSetter extends CitizenSetting.AccountProps {
   onDataChange: (newData: any) => void;
+  onValidationChange?: (errors: Record<string, string>) => void;
   roles?: Array<{ id: number; role_name: string }>;
 }
 
@@ -19,8 +20,20 @@ const accountSchema = z.object({
     .max(100, 'Email must be less than 100 characters'),
 });
 
-function Account({ data, onDataChange, roles = [] }: AccountPropsWithSetter) {
+function Account({
+  data,
+  onDataChange,
+  onValidationChange,
+  roles = [],
+}: AccountPropsWithSetter) {
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Notify parent component when errors change
+  useEffect(() => {
+    if (onValidationChange) {
+      onValidationChange(errors);
+    }
+  }, [errors, onValidationChange]);
 
   const validateField = (name: string, value: string) => {
     const result = accountSchema
