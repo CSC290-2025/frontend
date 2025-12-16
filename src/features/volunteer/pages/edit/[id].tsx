@@ -1,7 +1,19 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from '@/router';
 import { apiClient } from '@/lib/apiClient';
-import { ArrowLeft } from 'lucide-react';
+import {
+  ArrowLeft,
+  X,
+  Image as ImageIcon,
+  Plus,
+  MapPin,
+  Calendar,
+  Clock,
+  Users,
+  LayoutTemplate,
+  Building2,
+  FileText,
+} from 'lucide-react';
 
 interface VolunteerEvent {
   id: number;
@@ -60,6 +72,10 @@ export default function EditVolunteerPage() {
   const [selectedCategory, setSelectedCategory] = useState<string | undefined>(
     undefined
   );
+  const [uploadedImage, setUploadedImage] = useState<
+    string | ArrayBuffer | null
+  >(null);
+
   const postTag = [
     'Environment',
     'Freecycle',
@@ -69,6 +85,7 @@ export default function EditVolunteerPage() {
     'Disability/Elderly Support',
     'Community & Social',
   ];
+
   const [tags] = useState(postTag);
   const [currentParticipants, setCurrentParticipants] = useState(0);
   const [formData, setFormData] = useState<Partial<UpdateEventData>>({
@@ -113,6 +130,10 @@ export default function EditVolunteerPage() {
             tag: event.tag,
           });
           setSelectedCategory(event.tag);
+          // Set the existing image
+          if (event.image_url) {
+            setUploadedImage(event.image_url);
+          }
         } else {
           throw new Error('API did not return success');
         }
@@ -136,14 +157,35 @@ export default function EditVolunteerPage() {
     }));
   };
 
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files && e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setUploadedImage(reader.result);
+        setFormData((prev) => ({
+          ...prev,
+          image_url: typeof reader.result === 'string' ? reader.result : '',
+        }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeImage = () => {
+    setUploadedImage(null);
+    setFormData((prev) => ({
+      ...prev,
+      image_url: '',
+    }));
+  };
+
   const getStartDatePart = () => {
     if (!formData.start_at) return '';
     return formData.start_at.substring(0, 10);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
+  const handleSubmit = async () => {
     // Validate total_seats
     if (formData.total_seats && formData.total_seats < currentParticipants) {
       setError(
@@ -170,6 +212,7 @@ export default function EditVolunteerPage() {
         ? Number(formData.total_seats)
         : undefined,
       tag: selectedCategory,
+      image_url: typeof uploadedImage === 'string' ? uploadedImage : undefined,
     };
 
     Object.keys(payload).forEach(
@@ -202,6 +245,15 @@ export default function EditVolunteerPage() {
     }
   };
 
+  const renderSectionHeader = (icon: React.ReactNode, title: string) => (
+    <h2 className="mb-6 flex items-center gap-2 text-lg font-bold text-gray-800">
+      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+        {icon}
+      </span>
+      {title}
+    </h2>
+  );
+
   if (isLoading) {
     return (
       <div className="p-8 text-center text-gray-500">Loading event data...</div>
@@ -213,34 +265,94 @@ export default function EditVolunteerPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50/50 pb-20 font-sans">
       {/* Header */}
-      <div className="border-b border-gray-200 bg-white">
-        <div className="mx-auto flex max-w-5xl items-center px-8 py-4">
+      <div className="sticky top-0 z-20 border-b border-gray-200 bg-white/80 backdrop-blur-md">
+        <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-800"
+            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
           >
-            <ArrowLeft className="h-5 w-5" />
-            <span className="font-medium">Back to Event</span>
+            <ArrowLeft className="h-4 w-4" />
+            Back
           </button>
-          <h1 className="ml-8 text-xl font-bold text-gray-800">
-            Edit Volunteer Opportunity
-          </h1>
+          <h1 className="text-lg font-bold text-gray-900">Edit Opportunity</h1>
+          <div className="w-16"></div>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="mx-auto max-w-5xl px-8 py-8">
-        <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+        {error && (
+          <div className="animate-in fade-in slide-in-from-top-2 mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-600">
+            <div className="flex items-center gap-2 font-semibold">
+              <X className="h-4 w-4" />
+              Update Error
+            </div>
+            <p className="mt-1 ml-6">{error}</p>
+          </div>
+        )}
+
+        <div className="space-y-8">
+          {/* Cover Image */}
+          <section className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-200 transition-shadow hover:shadow-md">
+            <div className="p-6">
+              {renderSectionHeader(
+                <ImageIcon className="h-5 w-5" />,
+                'Cover Image'
+              )}
+              <div className="relative">
+                {uploadedImage ? (
+                  <div className="group relative overflow-hidden rounded-xl border border-gray-200">
+                    <img
+                      src={
+                        typeof uploadedImage === 'string'
+                          ? uploadedImage
+                          : undefined
+                      }
+                      alt="Uploaded"
+                      className="h-64 w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-black/20 opacity-0 transition-opacity group-hover:opacity-100" />
+                    <button
+                      onClick={removeImage}
+                      className="absolute top-4 right-4 rounded-full bg-white/90 p-2 text-gray-700 shadow-lg backdrop-blur-sm transition-transform hover:scale-110 hover:text-red-600"
+                    >
+                      <X className="h-5 w-5" />
+                    </button>
+                  </div>
+                ) : (
+                  <label className="flex h-64 w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 transition-all hover:border-blue-400 hover:bg-blue-50/50">
+                    <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 text-blue-600">
+                      <Plus className="h-6 w-6" />
+                    </div>
+                    <span className="text-lg font-medium text-gray-700">
+                      Upload cover photo
+                    </span>
+                    <span className="mt-1 text-sm text-gray-500">
+                      PNG, JPG up to 10MB
+                    </span>
+                    <input
+                      type="file"
+                      className="hidden"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                    />
+                  </label>
+                )}
+              </div>
+            </div>
+          </section>
+
           {/* Basic Information */}
-          <div className="rounded-2xl border border-gray-200 bg-white p-6">
-            <h2 className="mb-4 text-lg font-bold text-gray-800">
-              Basic Information
-            </h2>
+          <section className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-200">
+            {renderSectionHeader(
+              <LayoutTemplate className="h-5 w-5" />,
+              'Basic Information'
+            )}
             <div className="space-y-4">
               <div>
-                <label className="mb-2 block text-sm font-medium text-gray-700">
+                <label className="mb-1.5 block text-sm font-medium text-gray-700">
                   Title *
                 </label>
                 <input
@@ -248,13 +360,12 @@ export default function EditVolunteerPage() {
                   name="title"
                   value={formData.title}
                   onChange={handleChange}
-                  required
-                  className="w-full rounded-xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                  className="w-full rounded-xl border-gray-200 bg-gray-50 px-4 py-3 text-gray-900 transition-all outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-200"
                 />
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-gray-700">
+                <label className="mb-1.5 block text-sm font-medium text-gray-700">
                   Description
                 </label>
                 <textarea
@@ -262,20 +373,21 @@ export default function EditVolunteerPage() {
                   rows={6}
                   value={formData.description || ''}
                   onChange={handleChange}
-                  className="w-full rounded-xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                  className="w-full resize-none rounded-xl border-gray-200 bg-gray-50 px-4 py-3 text-gray-900 transition-all outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-200"
                 />
               </div>
             </div>
-          </div>
+          </section>
 
           {/* Schedule & Capacity */}
-          <div className="rounded-2xl border border-gray-200 bg-white p-6">
-            <h2 className="mb-4 text-lg font-bold text-gray-800">
-              Schedule & Capacity
-            </h2>
-            <div className="grid grid-cols-2 gap-4">
+          <section className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-200">
+            {renderSectionHeader(
+              <Calendar className="h-5 w-5" />,
+              'Schedule & Capacity'
+            )}
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               <div>
-                <label className="mb-2 block text-sm font-medium text-gray-700">
+                <label className="mb-1.5 block text-sm font-medium text-gray-700">
                   Start Time (Date & Time) *
                 </label>
                 <input
@@ -283,13 +395,12 @@ export default function EditVolunteerPage() {
                   name="start_at"
                   value={formData.start_at || ''}
                   onChange={handleChange}
-                  required
-                  className="w-full rounded-xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                  className="w-full rounded-xl border-gray-200 bg-gray-50 px-4 py-3 text-gray-900 transition-all outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-200"
                 />
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-gray-700">
+                <label className="mb-1.5 block text-sm font-medium text-gray-700">
                   End Time (Time Only) *
                 </label>
                 <input
@@ -297,26 +408,25 @@ export default function EditVolunteerPage() {
                   name="end_at"
                   value={formData.end_at || ''}
                   onChange={handleChange}
-                  required
-                  className="w-full rounded-xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                  className="w-full rounded-xl border-gray-200 bg-gray-50 px-4 py-3 text-gray-900 transition-all outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-200"
                 />
               </div>
 
               <div>
-                <label className="mb-2 block text-sm font-medium text-gray-700">
-                  Registration Deadline (Date Only) *
+                <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                  Registration Deadline *
                 </label>
                 <input
                   type="date"
                   name="registration_deadline"
                   value={formData.registration_deadline || ''}
                   onChange={handleChange}
-                  required
-                  className="w-full rounded-xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                  className="w-full rounded-xl border-gray-200 bg-gray-50 px-4 py-3 text-gray-900 transition-all outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-200"
                 />
               </div>
+
               <div>
-                <label className="mb-2 block text-sm font-medium text-gray-700">
+                <label className="mb-1.5 block text-sm font-medium text-gray-700">
                   Total Seats *
                 </label>
                 <input
@@ -325,95 +435,65 @@ export default function EditVolunteerPage() {
                   value={formData.total_seats || 1}
                   onChange={handleChange}
                   min={currentParticipants}
-                  required
-                  className="w-full rounded-xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                  className="w-full rounded-xl border-gray-200 bg-gray-50 px-4 py-3 text-gray-900 transition-all outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-200"
                 />
                 <p className="mt-1 text-xs text-gray-500">
                   Minimum: {currentParticipants} (current participants)
                 </p>
               </div>
             </div>
-          </div>
+          </section>
 
-          {/* Image URL */}
-          <div className="rounded-2xl border border-gray-200 bg-white p-6">
-            <h2 className="mb-4 text-lg font-bold text-gray-800">
-              Cover Image
-            </h2>
-            <div>
-              <label className="mb-2 block text-sm font-medium text-gray-700">
-                Image URL
-              </label>
-              <input
-                type="text"
-                name="image_url"
-                value={formData.image_url || ''}
-                onChange={handleChange}
-                placeholder="https://example.com/image.jpg"
-                className="w-full rounded-xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:outline-none"
-              />
-            </div>
-          </div>
-          <div className="grid grid-cols-3 gap-3">
-            {tags.map((category) => {
-              const isSelected = selectedCategory === category;
-
-              return (
+          {/* Category Tags */}
+          <section className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-200">
+            {renderSectionHeader(<FileText className="h-5 w-5" />, 'Category')}
+            <div className="flex flex-wrap gap-2">
+              {tags.map((tag) => (
                 <button
-                  key={category}
+                  key={tag}
                   type="button"
                   onClick={() => {
-                    setSelectedCategory(category);
-                    setFormData((prev) => ({ ...prev, category }));
+                    setSelectedCategory(tag);
+                    setFormData((prev) => ({ ...prev, tag }));
                   }}
-                  className={`flex items-center gap-2 rounded-lg border px-4 py-2 text-sm ${
-                    isSelected
-                      ? 'border-cyan-500 bg-cyan-50 text-cyan-700'
-                      : 'border-gray-300 bg-gray-50 text-gray-700'
+                  className={`rounded-full px-4 py-2 text-sm font-medium transition-all ${
+                    selectedCategory === tag
+                      ? 'bg-blue-600 text-white shadow-md ring-2 shadow-blue-200 ring-blue-600 ring-offset-1'
+                      : 'border border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
                   }`}
                 >
-                  <div
-                    className={`flex h-4 w-4 items-center justify-center rounded-full border-2 ${
-                      isSelected
-                        ? 'border-cyan-500 bg-cyan-500'
-                        : 'border-gray-400'
-                    }`}
-                  >
-                    {isSelected && (
-                      <div className="h-2 w-2 rounded-full bg-white" />
-                    )}
-                  </div>
-
-                  {category}
+                  {tag}
                 </button>
-              );
-            })}
-          </div>
-          {/* Error Message */}
-          {error && (
-            <div className="rounded-lg border border-red-300 bg-red-100 p-3 text-red-800">
-              <strong>Error:</strong> {error}
+              ))}
             </div>
-          )}
+          </section>
 
           {/* Action Buttons */}
           <div className="flex justify-end gap-4 pt-4">
             <button
               type="button"
               onClick={() => navigate(-1)}
-              className="rounded-full border border-gray-300 px-8 py-3 font-medium text-gray-700 hover:bg-gray-50"
+              className="rounded-xl border border-gray-200 bg-white px-8 py-3.5 font-semibold text-gray-700 transition-colors hover:bg-gray-50"
             >
               Cancel
             </button>
             <button
-              type="submit"
+              type="button"
+              onClick={handleSubmit}
               disabled={isSubmitting}
-              className="rounded-full bg-blue-500 px-8 py-3 font-medium text-white hover:bg-blue-600 disabled:opacity-50"
+              className="rounded-xl bg-lime-400 px-8 py-4 text-base font-bold text-gray-900 shadow-lg shadow-lime-200/50 transition-all hover:-translate-y-1 hover:bg-lime-500 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
             >
-              {isSubmitting ? 'Saving...' : 'Save Changes'}
+              {isSubmitting ? (
+                <span className="flex items-center justify-center gap-2">
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-800 border-t-transparent"></div>
+                  Saving...
+                </span>
+              ) : (
+                'Save Changes'
+              )}
             </button>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );
