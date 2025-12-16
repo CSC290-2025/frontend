@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { database } from '@/lib/firebase';
 import { ref, set } from 'firebase/database';
+import { apiClient } from '@/lib/apiClient';
 
 const mapColor = (colorNumber: number) => {
   switch (colorNumber) {
@@ -37,8 +38,8 @@ export default function TrafficSyncPage() {
 
   const fetchAndPush = async () => {
     try {
-      const res = await fetch('http://localhost:3000/traffic-lights');
-      const apiData = await res.json();
+      const res = await apiClient.get('/traffic-lights');
+      const apiData = res.data;
 
       const lightsArray = apiData.data.trafficLights;
 

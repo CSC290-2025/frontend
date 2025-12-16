@@ -17,10 +17,19 @@ import {
   Shield,
   Users,
   MapPin,
+  House,
   Heart,
   LogOut,
   ChevronDown,
   BarChart3,
+  MessageSquare,
+  Trees,
+  AlertTriangle,
+  PhoneOff,
+  Activity,
+  Radio,
+  Cloud,
+  Navigation,
 } from 'lucide-react';
 
 export default function Sidebar() {
@@ -42,7 +51,11 @@ export default function Sidebar() {
     { icon: BusFront, label: 'Transport', path: '/public_transportation' },
     { icon: Trophy, label: 'Events', path: '/event_hub' },
     { icon: CloudLightning, label: 'Weather', path: '/weatherCity' },
-    { icon: Hospital, label: 'Healthcare', path: '/healthcare' },
+    {
+      icon: Hospital,
+      label: 'Healthcare',
+      path: '/healthcare/healthcare-user',
+    },
     { icon: BookText, label: 'Learn AI', path: '/Know-AI/createCourse' },
   ];
 
@@ -53,7 +66,15 @@ export default function Sidebar() {
     { icon: Shield, label: 'Emergency', path: '/sos' },
     { icon: Users, label: 'Volunteer', path: '/volunteer/board' },
     { icon: MapPin, label: 'Map', path: '/map' },
+    { icon: House, label: 'Apartments', path: '/ApartmentHomepage' },
     { icon: Heart, label: 'Freecycle', path: '/freecycle' },
+    { icon: Trees, label: 'Clean Air', path: '/clean-air/district-selection' },
+    { icon: AlertTriangle, label: 'Harm Reports', path: '/harm' },
+    { icon: Radio, label: 'Traffic', path: '/traffic' },
+    { icon: Cloud, label: 'Air Quality', path: '/weather-aqi' },
+    { icon: Activity, label: 'Activity', path: '/activity' },
+    { icon: MessageSquare, label: 'Chat', path: '/chat' },
+    { icon: PhoneOff, label: 'Hotline', path: '/hotLine' },
   ];
 
   // User routes

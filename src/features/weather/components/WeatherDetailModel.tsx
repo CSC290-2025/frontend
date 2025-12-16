@@ -64,16 +64,20 @@ export default function WeatherDetailModel({
         {/* Extra info */}
         <div className="mt-4 flex justify-around text-sm text-gray-700">
           <div className="text-center">
-            <div>Highest temp</div>
-            <div>Feels {data.feelLike}°</div>
+            <div>temperature</div>
+            <div>Feels {data.temp}°</div>
           </div>
           <div className="text-center">
-            <div>Lowest </div>
-            <div>{data.wind} km/h</div>
+            <div>Feels like </div>
+            <div>{data.feelLike}°</div>
           </div>
           <div className="text-center">
             <div>humidity</div>
             <div>{data.humidity}%</div>
+          </div>
+          <div className="text-center">
+            <div>Wind Speed</div>
+            <div>{data.wind} km/h</div>
           </div>
         </div>
 
