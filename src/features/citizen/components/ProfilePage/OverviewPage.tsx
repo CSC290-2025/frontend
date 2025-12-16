@@ -1,13 +1,15 @@
 import { useEffect } from 'react';
 import { useMyProfile } from '../../hooks/ProfileUser';
 import { useMyMetroCards } from '../../hooks/useMyMetroCards';
+import { useGetAuthMe } from '@/api/generated/authentication';
 
 interface Props {
   onEditProfile: () => void;
 }
 
 export default function ProfileCard({ onEditProfile }: Props) {
-  const profileQ = useMyProfile();
+  const userID = useGetAuthMe().data?.data?.userId;
+  const profileQ = useMyProfile(userID);
   const cardsQ = useMyMetroCards();
 
   useEffect(() => {
