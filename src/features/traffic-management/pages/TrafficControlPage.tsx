@@ -5,15 +5,37 @@ import {
   AdvancedMarker,
   useMap,
 } from '@vis.gl/react-google-maps';
-import { ref, onValue, off, update, get } from 'firebase/database';
+import { ref, onValue, update } from 'firebase/database';
 import { database } from '@/lib/firebase';
 import { useEmergencyVehicles } from '../hooks/useEmergencyVehicles';
 import { useTrafficLightCycle } from '../hooks/useTrafficLightCycle';
 import EmergencyVehicleMarker from '../components/EmergencyVehicleMarker';
 import TrafficLightControlPopup from '../components/TrafficLightControlPopup';
 import MapSettingsDialog from '../components/MapSettingsDialog';
-import { Activity, AlertTriangle, Settings, MapPin, Search, Eye, EyeOff, Power, PlayCircle, StopCircle, Navigation } from 'lucide-react';
-import type { trafficLight } from '../types/traffic.types';
+import LightEditorDialog from '../components/LightEditorDialog';
+import {
+  Activity,
+  AlertTriangle,
+  Settings,
+  MapPin,
+  Search,
+  Eye,
+  EyeOff,
+  PlayCircle,
+  StopCircle,
+  Navigation,
+} from 'lucide-react';
+import {
+  colorNumberToString,
+  getLightDuration,
+  groupLightsByIntersection,
+  calculateIntersectionLightDurations,
+  calculateRedLightRemainingTime,
+  sortLightsByRoadId,
+  COLOR_GREEN,
+  COLOR_YELLOW,
+  COLOR_RED,
+} from '../utils/trafficLightCalculations';
 
 interface TrafficSignal {
   color: 'red' | 'yellow' | 'green';
@@ -26,6 +48,7 @@ interface TrafficSignal {
   junctionId: string;
   source?: 'legacy' | 'backend'; // Track if this is from junctions (legacy) or traffic_lights (backend)
   trafficLightId?: string; // ID for traffic_lights updates (only for backend signals)
+  status?: number; // 0=normal, 1=broken, 2=fixing
 }
 
 interface MapSettings {
@@ -52,10 +75,9 @@ interface MapContentProps {
   emergencyVehicles: any[];
   onSignalClick: (signal: TrafficSignal) => void;
   selectedSignal: TrafficSignal | null;
-  brokenLights?: trafficLight[];
-  showBrokenLights?: boolean;
   onMapReady?: (map: google.maps.Map | null) => void;
-  onBrokenLightClick?: (light: trafficLight) => void;
+  emergencyStopAll?: boolean;
+  stoppedJunctions?: Set<string>;
 }
 
 function parseCoordinate(value: any): number | null {
@@ -79,238 +101,117 @@ function isValidSignal(signal: any): boolean {
 
 function useTeam10TrafficSignals() {
   const [signals, setSignals] = useState<TrafficSignal[]>([]);
-  const [junctionsData, setJunctionsData] = useState<Record<string, any>>({});
+  const [trafficLightsData, setTrafficLightsData] = useState<
+    Record<string, any>
+  >({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const junctionsRef = ref(database, 'teams/10/junctions');
     const trafficLightsRef = ref(database, 'teams/10/traffic_lights');
 
-    const fetchData = async () => {
-      // Sync traffic_lights to junctions ONCE at startup, then only listen to junctions
-      // This prevents duplicates and flickering from dual listeners
+    // Listen to traffic_lights only (single source of truth)
+    const unsubscribe = onValue(
+      trafficLightsRef,
+      (snapshot) => {
+        try {
+          const data = snapshot.val();
 
-      // 1. First, sync traffic_lights to junctions (one-time operation)
-      try {
-        const trafficLightsSnapshot = await get(ref(database, 'teams/10/traffic_lights'));
-        const trafficLightsData = trafficLightsSnapshot.val();
+          if (data) {
+            setTrafficLightsData(data);
 
-        if (trafficLightsData) {
-          console.log('📡 [Control] Traffic_lights data received (one-time sync):', Object.keys(trafficLightsData).length, 'lights');
+            const allSignals: TrafficSignal[] = [];
 
-          // Group traffic lights by intersection ID
-          const intersectionGroups: Record<string, any[]> = {};
+            Object.entries(data).forEach(([key, lightData]: [string, any]) => {
+              if (
+                lightData &&
+                typeof lightData === 'object' &&
+                isValidSignal(lightData)
+              ) {
+                const lat = parseCoordinate(lightData.lat);
+                const lng = parseCoordinate(lightData.lng);
 
-          Object.entries(trafficLightsData).forEach(([key, signalData]: [string, any]) => {
-            if (signalData && typeof signalData === 'object' && isValidSignal(signalData)) {
-              const lat = parseCoordinate(signalData.lat);
-              const lng = parseCoordinate(signalData.lng);
+                if (lat !== null && lng !== null) {
+                  const colorNum = parseInt(lightData.color) || 1;
+                  const color = colorNumberToString(colorNum);
+                  const { greenDuration, yellowDuration } =
+                    getLightDuration(lightData);
 
-              if (lat !== null && lng !== null) {
-                const colorMap: Record<number, 'red' | 'yellow' | 'green'> = {
-                  1: 'red',
-                  2: 'yellow',
-                  3: 'green',
-                };
+                  // Get raw remaining time from Firebase
+                  const remainingTime = parseInt(lightData.remaintime) || 0;
 
-                const color = colorMap[signalData.color] || 'red';
-                const remainingTime = parseInt(signalData.remaintime) || 0;
-                const interid = signalData.interid || key;
-                const roadid = signalData.roadid || key;
+                  // For display: green shows only green portion, yellow shows yellow portion
+                  let displayTime = remainingTime;
+                  if (colorNum === COLOR_GREEN) {
+                    // Green: show time minus yellow duration
+                    displayTime = Math.max(0, remainingTime - yellowDuration);
+                  } else if (colorNum === COLOR_YELLOW) {
+                    // Yellow: show remaining time as-is (should be <= yellowDuration)
+                    displayTime = remainingTime;
+                  }
+                  // Red: show remaining time as-is (time until green)
 
-                // Group by intersection for junction sync
-                if (!intersectionGroups[interid]) {
-                  intersectionGroups[interid] = [];
+                  const interid = parseInt(lightData.interid) || 0;
+                  const roadid = parseInt(lightData.roadid) || 0;
+                  const status = parseInt(lightData.status) || 0;
+
+                  allSignals.push({
+                    color,
+                    direction: `Road-${roadid}`,
+                    lat,
+                    lng,
+                    online: lightData.autoON !== false,
+                    remainingTime: displayTime,
+                    timestamp: lightData.timestamp
+                      ? new Date(lightData.timestamp).getTime()
+                      : Date.now(),
+                    junctionId: `Inter-${interid}`,
+                    source: 'backend',
+                    trafficLightId: key,
+                    status,
+                  });
                 }
-                intersectionGroups[interid].push({
-                  key,
-                  color,
-                  remainingTime,
-                  roadid,
-                  lat,
-                  lng,
-                  online: signalData.autoON !== false,
-                });
-              }
-            }
-          });
-
-          // Sync traffic_lights to junctions structure for cycle controller
-          const junctionUpdates: Record<string, any> = {};
-          Object.entries(intersectionGroups).forEach(([interid, lights]) => {
-            const junctionId = `Inter-${interid}`;
-
-            // Find which light should be active (green or highest remainingTime)
-            let activeLightIndex = 0;
-            let maxRemaining = 0;
-            lights.forEach((light, idx) => {
-              if (light.color === 'green' || light.remainingTime > maxRemaining) {
-                activeLightIndex = idx;
-                maxRemaining = light.remainingTime;
               }
             });
 
-            const activeLight = lights[activeLightIndex];
-            const defaultGreenDuration = 27;
-            const defaultYellowDuration = 3;
-
-            // If active light has 0 time, start it with proper duration
-            let activeRemainingTime = activeLight.remainingTime;
-            let activeColor = activeLight.color;
-
-            if (activeRemainingTime === 0 || activeColor === 'red') {
-              // Start the cycle with green
-              activeColor = 'green';
-              activeRemainingTime = defaultGreenDuration + defaultYellowDuration;
-            }
-
-            const lightsData: Record<string, any> = {};
-            lights.forEach((light, idx) => {
-              const isActive = idx === activeLightIndex;
-              lightsData[`Road-${light.roadid}`] = {
-                color: isActive ? activeColor : 'red',
-                direction: `Road-${light.roadid}`,
-                lat: light.lat,
-                lng: light.lng,
-                online: light.online,
-                remainingTime: isActive ? activeRemainingTime : 0,
-                timestamp: Date.now(),
-                trafficLightId: light.key, // Store mapping for cycle controller
-                greenDuration: defaultGreenDuration,
-                yellowDuration: defaultYellowDuration,
-              };
-            });
-
-            junctionUpdates[`teams/10/junctions/${junctionId}/lights`] = lightsData;
-            junctionUpdates[`teams/10/junctions/${junctionId}/currentActive`] = `Road-${lights[activeLightIndex].roadid}`;
-          });
-
-          // Apply junction updates to sync with traffic_lights
-          if (Object.keys(junctionUpdates).length > 0) {
-            await update(ref(database), junctionUpdates);
-            console.log(`🔄 [Control] Synced ${Object.keys(intersectionGroups).length} intersections from traffic_lights to junctions`);
-          }
-        }
-      } catch (err) {
-        console.error('Failed to sync traffic_lights to junctions:', err);
-      }
-
-      // 2. Now listen ONLY to junctions (single source of truth)
-      const mergeAndUpdate = (signals: TrafficSignal[]) => {
-        console.log(`🔄 [Control] Displaying ${signals.length} signals from junctions`);
-        setSignals(signals);
-        setError(null);
-        setLoading(false);
-      };
-
-      // Listen to junctions structure (teams/10/junctions)
-      const unsubscribeJunctions = onValue(
-        junctionsRef,
-        (snapshot) => {
-          try {
-            const data = snapshot.val();
-
-            if (data) {
-              // Store junction data for cycle management
-              setJunctionsData(data);
-
-              const allSignals: TrafficSignal[] = [];
-
-              Object.entries(data).forEach(([junctionId, junctionData]: [string, any]) => {
-                if (junctionData?.lights) {
-                  const lights = junctionData.lights;
-                  const currentActive = junctionData.currentActive;
-
-                  // Calculate total cycle time for this junction
-                  let totalCycleTime = 0;
-                  Object.values(lights).forEach((light: any) => {
-                    const greenDuration = parseInt(light.greenDuration) || parseInt(light.duration) || 27;
-                    const yellowDuration = parseInt(light.yellowDuration) || 3;
-                    totalCycleTime += greenDuration + yellowDuration;
-                  });
-
-                  // Get active light's remaining time
-                  const activeLight = currentActive ? lights[currentActive] : null;
-                  const activeRemainingTime = activeLight ? (parseInt(activeLight.remainingTime) || 0) : 0;
-
-                  Object.entries(lights).forEach(([lightKey, light]: [string, any]) => {
-                    if (light && typeof light === 'object' && isValidSignal(light)) {
-                      const lat = parseCoordinate(light.lat);
-                      const lng = parseCoordinate(light.lng);
-
-                      if (lat !== null && lng !== null) {
-                        const isActive = lightKey === currentActive;
-                        const lightGreenDuration = parseInt(light.greenDuration) || parseInt(light.duration) || 27;
-                        const lightYellowDuration = parseInt(light.yellowDuration) || 3;
-                        const lightTotalDuration = lightGreenDuration + lightYellowDuration;
-
-                        // Calculate remaining time for red lights (time until they become green)
-                        let remainingTime = parseInt(light.remainingTime) || 0;
-                        if (!isActive && light.color === 'red') {
-                          // Red light shows time until it becomes green
-                          // = total cycle time - active light's duration - active remaining time
-                          remainingTime = Math.max(0, totalCycleTime - lightTotalDuration - (lightTotalDuration - activeRemainingTime));
-                        }
-
-                        allSignals.push({
-                          color: light.color || 'red',
-                          direction: light.direction || lightKey,
-                          lat,
-                          lng,
-                          online: light.online ?? true,
-                          remainingTime,
-                          timestamp: light.timestamp || Date.now(),
-                          junctionId,
-                          source: light.trafficLightId ? 'backend' : 'legacy',
-                          trafficLightId: light.trafficLightId,
-                        });
-                      }
-                    }
-                  });
-                }
-              });
-
-              mergeAndUpdate(allSignals);
-            }
-          } catch (err) {
-            setError('Error processing junction data');
+            console.log(
+              `[Control] Displaying ${allSignals.length} signals from traffic_lights`
+            );
+            setSignals(allSignals);
+            setError(null);
+            setLoading(false);
+          } else {
+            setSignals([]);
             setLoading(false);
           }
-        },
-        (err) => {
-          setError(err.message);
+        } catch (err) {
+          console.error('Error processing traffic_lights data:', err);
+          setError('Error processing traffic lights data');
           setLoading(false);
         }
-      );
+      },
+      (err) => {
+        setError(err.message);
+        setLoading(false);
+      }
+    );
 
-      return () => {
-        unsubscribeJunctions();
-      };
-    };
-
-    let unsubscribe: (() => void) | null = null;
-
-    fetchData().then((cleanupFn) => {
-      unsubscribe = cleanupFn;
-    });
-
-    return () => {
-      if (unsubscribe) unsubscribe();
-    };
+    return () => unsubscribe();
   }, []);
 
-  return { signals, loading, error, junctionsData };
+  return { signals, loading, error, trafficLightsData };
 }
 
 function TrafficSignalMarker({
   signal,
   isSelected,
   onClick,
+  isStopped,
 }: {
   signal: TrafficSignal;
   isSelected: boolean;
   onClick: () => void;
+  isStopped?: boolean;
 }) {
   const colorMap = {
     red: '#ef4444',
@@ -320,72 +221,67 @@ function TrafficSignalMarker({
 
   if (!signal.online) return null;
 
+  // Check if light is broken (status=1) or fixing (status=2)
+  const isBrokenOrFixing = signal.status === 1 || signal.status === 2;
+  const statusLabel =
+    signal.status === 1 ? 'BROKEN' : signal.status === 2 ? 'FIXING' : '';
+
+  // Determine background color - gray for broken/fixing, normal color otherwise
+  const backgroundColor = isBrokenOrFixing ? '#6b7280' : colorMap[signal.color];
+
+  // Show "--" for stopped or broken/fixing lights
+  const showDash = isStopped || isBrokenOrFixing;
+
   return (
     <AdvancedMarker
       position={{ lat: signal.lat, lng: signal.lng }}
-      title={`Junction: ${signal.junctionId} | Direction: ${signal.direction}`}
+      title={`Junction: ${signal.junctionId} | Direction: ${signal.direction}${isStopped ? ' (STOPPED)' : ''}${isBrokenOrFixing ? ` (${statusLabel})` : ''}`}
       onClick={onClick}
     >
       <div className="flex cursor-pointer flex-col items-center">
         <div
           className={`flex items-center justify-center rounded-full border-4 shadow-lg ${
-            isSelected ? 'border-slate-700 ring-4 ring-slate-300' : 'border-white'
+            isSelected
+              ? 'border-slate-700 ring-4 ring-slate-300'
+              : isBrokenOrFixing
+                ? 'border-gray-400'
+                : 'border-white'
           }`}
           style={{
-            backgroundColor: colorMap[signal.color],
+            backgroundColor,
             width: '48px',
             height: '48px',
           }}
         >
           <span className="text-base font-bold text-white">
-            {signal.remainingTime}
+            {showDash ? '--' : signal.remainingTime}
           </span>
         </div>
         <div
           className={`mt-1 rounded px-2 py-1 text-xs font-semibold shadow-md ${
-            isSelected ? 'bg-slate-800 text-white' : 'bg-white text-gray-800'
+            isSelected
+              ? 'bg-slate-800 text-white'
+              : isBrokenOrFixing
+                ? 'bg-gray-600 text-white'
+                : 'bg-white text-gray-800'
           }`}
         >
-          {signal.junctionId}
+          {isBrokenOrFixing ? statusLabel : signal.junctionId}
         </div>
       </div>
     </AdvancedMarker>
   );
 }
 
-function BrokenLightMarker({ light, onClick }: { light: trafficLight; onClick?: () => void }) {
-  if (!light.location?.coordinates || light.location.coordinates.length !== 2) {
-    return null;
-  }
-
-  const [lng, lat] = light.location.coordinates;
-
-  return (
-    <AdvancedMarker
-      position={{ lat, lng }}
-      title={`Broken Light | ID: ${light.id} | Intersection: ${light.intersection_id}`}
-      onClick={onClick}
-    >
-      <div className="flex cursor-pointer flex-col items-center">
-        <div
-          className="flex items-center justify-center rounded-full border-4 border-white shadow-lg"
-          style={{
-            backgroundColor: '#6b7280', // gray-500
-            width: '48px',
-            height: '48px',
-          }}
-        >
-          <AlertTriangle className="h-6 w-6 text-gray-200" />
-        </div>
-        <div className="mt-1 rounded bg-gray-600 px-2 py-1 text-xs font-semibold text-white shadow-md">
-          BROKEN
-        </div>
-      </div>
-    </AdvancedMarker>
-  );
-}
-
-function MapContent({ signals, emergencyVehicles, onSignalClick, selectedSignal, brokenLights = [], showBrokenLights = true, onMapReady, onBrokenLightClick }: MapContentProps) {
+function MapContent({
+  signals,
+  emergencyVehicles,
+  onSignalClick,
+  selectedSignal,
+  onMapReady,
+  emergencyStopAll,
+  stoppedJunctions,
+}: MapContentProps) {
   const map = useMap();
   const [isGettingLocation, setIsGettingLocation] = useState<boolean>(false);
 
@@ -420,7 +316,9 @@ function MapContent({ signals, emergencyVehicles, onSignalClick, selectedSignal,
       },
       (error) => {
         console.error('Error getting location:', error);
-        alert('Unable to get your location. Please check location permissions.');
+        alert(
+          'Unable to get your location. Please check location permissions.'
+        );
         setIsGettingLocation(false);
       },
       {
@@ -434,40 +332,38 @@ function MapContent({ signals, emergencyVehicles, onSignalClick, selectedSignal,
   return (
     <>
       {/* Traffic Signal Markers */}
-      {signals.map((signal, index) => (
-        <TrafficSignalMarker
-          key={`${signal.junctionId}-${signal.direction}-${index}`}
-          signal={signal}
-          isSelected={
-            selectedSignal?.junctionId === signal.junctionId &&
-            selectedSignal?.direction === signal.direction
-          }
-          onClick={() => onSignalClick(signal)}
-        />
-      ))}
+      {signals.map((signal, index) => {
+        const isStopped =
+          emergencyStopAll || stoppedJunctions?.has(signal.junctionId);
+        return (
+          <TrafficSignalMarker
+            key={`${signal.junctionId}-${signal.direction}-${index}`}
+            signal={signal}
+            isSelected={
+              selectedSignal?.junctionId === signal.junctionId &&
+              selectedSignal?.direction === signal.direction
+            }
+            onClick={() => onSignalClick(signal)}
+            isStopped={isStopped}
+          />
+        );
+      })}
 
       {/* Emergency Vehicle Markers */}
       {emergencyVehicles.map((vehicle) => (
         <EmergencyVehicleMarker key={vehicle.vehicleId} vehicle={vehicle} />
       ))}
 
-      {/* Broken Light Markers */}
-      {showBrokenLights && brokenLights.map((light) => (
-        <BrokenLightMarker
-          key={`broken-${light.id}`}
-          light={light}
-          onClick={() => onBrokenLightClick && onBrokenLightClick(light)}
-        />
-      ))}
-
       {/* Jump to Current Location Button */}
       <button
         onClick={handleJumpToLocation}
         disabled={isGettingLocation}
-        className="absolute bottom-4 right-4 z-10 flex items-center gap-2 rounded-lg border border-gray-200 bg-white/95 px-4 py-3 shadow-lg backdrop-blur-sm transition hover:bg-white disabled:opacity-50"
+        className="absolute right-4 bottom-4 z-10 flex items-center gap-2 rounded-lg border border-gray-200 bg-white/95 px-4 py-3 shadow-lg backdrop-blur-sm transition hover:bg-white disabled:opacity-50"
         title="Jump to my location"
       >
-        <Navigation className={`h-5 w-5 text-slate-600 ${isGettingLocation ? 'animate-pulse' : ''}`} />
+        <Navigation
+          className={`h-5 w-5 text-slate-600 ${isGettingLocation ? 'animate-pulse' : ''}`}
+        />
         <span className="text-sm font-medium text-gray-700">
           {isGettingLocation ? 'Getting location...' : 'My Location'}
         </span>
@@ -478,20 +374,26 @@ function MapContent({ signals, emergencyVehicles, onSignalClick, selectedSignal,
 
 export default function TrafficControlPage() {
   const apiKey = import.meta.env.VITE_G10_GOOGLE_MAPS_API_KEY;
-  const { signals, loading, error, junctionsData } = useTeam10TrafficSignals();
+  const { signals, loading, error, trafficLightsData } =
+    useTeam10TrafficSignals();
   const { vehicles: emergencyVehicles } = useEmergencyVehicles();
 
   // Manage traffic light cycles with Firebase sync (only one controller across all instances)
-  useTrafficLightCycle(junctionsData);
+  useTrafficLightCycle();
 
-  const [selectedSignal, setSelectedSignal] = useState<TrafficSignal | null>(null);
+  const [selectedSignal, setSelectedSignal] = useState<TrafficSignal | null>(
+    null
+  );
   const [showControlPopup, setShowControlPopup] = useState(false);
-  const [filter, setFilter] = useState<'all' | 'red' | 'yellow' | 'green'>('all');
-  const [activeTab, setActiveTab] = useState<'signals' | 'broken'>('signals');
-  const [brokenLights, setBrokenLights] = useState<trafficLight[]>([]);
+  const [filter, setFilter] = useState<'all' | 'red' | 'yellow' | 'green'>(
+    'all'
+  );
+  const [editingLight, setEditingLight] = useState<TrafficSignal | null>(null);
+  const [showLightEditor, setShowLightEditor] = useState(false);
 
   // Load broken lights visibility from localStorage
-  const BROKEN_LIGHTS_STORAGE_KEY = 'smartcity_traffic_control_show_broken_lights_v1';
+  const BROKEN_LIGHTS_STORAGE_KEY =
+    'smartcity_traffic_control_show_broken_lights_v1';
   const [showBrokenLights, setShowBrokenLights] = useState<boolean>(() => {
     try {
       const saved = localStorage.getItem(BROKEN_LIGHTS_STORAGE_KEY);
@@ -509,7 +411,10 @@ export default function TrafficControlPage() {
     setShowBrokenLights((prev) => {
       const newValue = !prev;
       try {
-        localStorage.setItem(BROKEN_LIGHTS_STORAGE_KEY, JSON.stringify(newValue));
+        localStorage.setItem(
+          BROKEN_LIGHTS_STORAGE_KEY,
+          JSON.stringify(newValue)
+        );
       } catch (err) {
         console.error('Failed to save broken lights visibility:', err);
       }
@@ -521,7 +426,44 @@ export default function TrafficControlPage() {
   const [mapInstance, setMapInstance] = useState<google.maps.Map | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [emergencyStopAll, setEmergencyStopAll] = useState(false);
-  const [stoppedJunctions, setStoppedJunctions] = useState<Set<string>>(new Set());
+  const [stoppedJunctions, setStoppedJunctions] = useState<Set<string>>(
+    new Set()
+  );
+
+  // Listen to emergency stop state from Firebase
+  useEffect(() => {
+    const emergencyStopRef = ref(database, 'teams/10/emergency-stop');
+    const stoppedIntersectionsRef = ref(
+      database,
+      'teams/10/stopped-intersections'
+    );
+
+    const unsubscribeEmergencyStop = onValue(emergencyStopRef, (snapshot) => {
+      const value = snapshot.val();
+      setEmergencyStopAll(value === true);
+    });
+
+    const unsubscribeStoppedIntersections = onValue(
+      stoppedIntersectionsRef,
+      (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+          // Convert interid keys to junction ID format (e.g., "3" -> "Inter-3")
+          const junctionIds = Object.keys(data)
+            .filter((key) => data[key] === true)
+            .map((key) => `Inter-${key}`);
+          setStoppedJunctions(new Set(junctionIds));
+        } else {
+          setStoppedJunctions(new Set());
+        }
+      }
+    );
+
+    return () => {
+      unsubscribeEmergencyStop();
+      unsubscribeStoppedIntersections();
+    };
+  }, []);
 
   // Load settings from localStorage with unique key
   const STORAGE_KEY = 'smartcity_traffic_control_map_settings_v1';
@@ -554,53 +496,20 @@ export default function TrafficControlPage() {
     };
   });
 
-  // Fetch broken traffic lights
-  useEffect(() => {
-    const fetchBrokenLights = async () => {
-      try {
-        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL ?? ''}/traffic-lights/status`);
-        if (!res.ok) throw new Error('Failed to fetch status');
-        const json = await res.json();
-        const allLights = Array.isArray(json)
-          ? json
-          : json?.data?.trafficLights || json?.trafficLights || [];
+  const handleSignalClick = useCallback(
+    (signal: TrafficSignal) => {
+      setSelectedSignal(signal);
 
-        // Filter for broken (status=1) and maintenance (status=2)
-        const problematicLights = allLights.filter((light: trafficLight) => {
-          const status = light.status;
-          const label = (light.statusLabel || '').toString().toLowerCase();
-          return (
-            status === 1 ||
-            status === 2 ||
-            /broken/.test(label) ||
-            /maintenance/.test(label)
-          );
-        });
-
-        setBrokenLights(problematicLights);
-      } catch (err) {
-        console.error('Failed to fetch broken traffic lights:', err);
+      // Pan to the signal location
+      if (mapInstance) {
+        mapInstance.panTo({ lat: signal.lat, lng: signal.lng });
+        mapInstance.setZoom(18);
       }
-    };
 
-    fetchBrokenLights();
-
-    // Refresh every 30 seconds
-    const interval = setInterval(fetchBrokenLights, 30000);
-    return () => clearInterval(interval);
-  }, []);
-
-  const handleSignalClick = useCallback((signal: TrafficSignal) => {
-    setSelectedSignal(signal);
-
-    // Pan to the signal location
-    if (mapInstance) {
-      mapInstance.panTo({ lat: signal.lat, lng: signal.lng });
-      mapInstance.setZoom(18);
-    }
-
-    // Don't auto-open dialog - user must click control button
-  }, [mapInstance]);
+      // Don't auto-open dialog - user must click control button
+    },
+    [mapInstance]
+  );
 
   const handleOpenControl = useCallback(() => {
     if (selectedSignal) {
@@ -608,13 +517,37 @@ export default function TrafficControlPage() {
     }
   }, [selectedSignal]);
 
-  const handleBrokenLightClick = useCallback((light: trafficLight) => {
-    if (light.location?.coordinates && mapInstance) {
-      const [lng, lat] = light.location.coordinates;
-      mapInstance.panTo({ lat, lng });
-      mapInstance.setZoom(18);
-    }
-  }, [mapInstance]);
+  const handleEditLight = useCallback((signal: TrafficSignal) => {
+    setEditingLight(signal);
+    setShowLightEditor(true);
+  }, []);
+
+  const handleSaveLightSettings = useCallback(
+    async (
+      lightKey: string,
+      greenDuration: number,
+      yellowDuration: number,
+      status: number
+    ) => {
+      try {
+        const updates: Record<string, any> = {
+          [`teams/10/traffic_lights/${lightKey}/green_duration`]: greenDuration,
+          [`teams/10/traffic_lights/${lightKey}/yellow_duration`]:
+            yellowDuration,
+          [`teams/10/traffic_lights/${lightKey}/status`]: status,
+        };
+        await update(ref(database), updates);
+        console.log(
+          `Light ${lightKey} updated: green=${greenDuration}s, yellow=${yellowDuration}s, status=${status}`
+        );
+        setShowLightEditor(false);
+        setEditingLight(null);
+      } catch (err) {
+        console.error('Failed to update light settings:', err);
+      }
+    },
+    []
+  );
 
   const handleSaveSettings = (newSettings: MapSettings) => {
     setSettings(newSettings);
@@ -629,42 +562,151 @@ export default function TrafficControlPage() {
   };
 
   const handleEmergencyStopAll = useCallback(async () => {
-    setEmergencyStopAll(true);
-    // TODO: Implement Firebase update to stop all traffic light cycles
-    console.log('🛑 EMERGENCY STOP - All junctions stopped');
+    try {
+      await update(ref(database), {
+        'teams/10/emergency-stop': true,
+      });
+      setEmergencyStopAll(true);
+      console.log('🛑 EMERGENCY STOP - All junctions stopped');
+    } catch (err) {
+      console.error('Failed to set emergency stop:', err);
+    }
   }, []);
 
   const handleStartAll = useCallback(async () => {
-    setEmergencyStopAll(false);
-    setStoppedJunctions(new Set());
-    // TODO: Implement Firebase update to resume all traffic light cycles
-    console.log('▶️ SYSTEM START - All junctions resumed');
-  }, []);
+    try {
+      // Reset all intersection cycles to start fresh
+      const resetUpdates: Record<string, any> = {
+        'teams/10/emergency-stop': false,
+        'teams/10/stopped-intersections': {},
+      };
+
+      // Group traffic lights by intersection
+      const intersections = groupLightsByIntersection(trafficLightsData);
+
+      // Reset each intersection's cycle using unified calculation
+      Object.entries(intersections).forEach(([interidStr, lights]) => {
+        if (lights.length === 0) return;
+
+        const sortedLights = sortLightsByRoadId(lights);
+        const firstLight = sortedLights[0];
+        const lightDurations =
+          calculateIntersectionLightDurations(sortedLights);
+        const { greenDuration, yellowDuration } = getLightDuration(firstLight);
+
+        console.log(`Resetting Inter-${interidStr}:`, lightDurations);
+
+        // Set first light to green, others to red with stacked times
+        sortedLights.forEach((light, idx) => {
+          const isActive = idx === 0;
+          const redTime = isActive
+            ? 0
+            : calculateRedLightRemainingTime(lightDurations, 0, idx);
+
+          resetUpdates[`teams/10/traffic_lights/${light.key}/color`] = isActive
+            ? COLOR_GREEN
+            : COLOR_RED;
+          resetUpdates[`teams/10/traffic_lights/${light.key}/remaintime`] =
+            isActive ? greenDuration + yellowDuration : redTime;
+          resetUpdates[`teams/10/traffic_lights/${light.key}/timestamp`] =
+            new Date().toISOString();
+        });
+      });
+
+      await update(ref(database), resetUpdates);
+      setEmergencyStopAll(false);
+      setStoppedJunctions(new Set());
+      console.log('SYSTEM START - All intersections reset and resumed');
+    } catch (err) {
+      console.error('Failed to start all:', err);
+    }
+  }, [trafficLightsData]);
 
   const handleStopJunction = useCallback(async (junctionId: string) => {
-    setStoppedJunctions(prev => new Set(prev).add(junctionId));
-    // TODO: Implement Firebase update to stop this junction's cycle
-    console.log(`🛑 Junction ${junctionId} stopped`);
+    try {
+      // Extract interid from junctionId (e.g., "Inter-3" -> 3)
+      const interid = junctionId.replace('Inter-', '');
+      await update(ref(database), {
+        [`teams/10/stopped-intersections/${interid}`]: true,
+      });
+      setStoppedJunctions((prev) => new Set(prev).add(junctionId));
+      console.log(`Junction ${junctionId} stopped`);
+    } catch (err) {
+      console.error('Failed to stop junction:', err);
+    }
   }, []);
 
-  const handleStartJunction = useCallback(async (junctionId: string) => {
-    setStoppedJunctions(prev => {
-      const newSet = new Set(prev);
-      newSet.delete(junctionId);
-      return newSet;
-    });
-    // TODO: Implement Firebase update to resume this junction's cycle
-    console.log(`▶️ Junction ${junctionId} started`);
-  }, []);
+  const handleStartJunction = useCallback(
+    async (junctionId: string) => {
+      try {
+        // Extract interid from junctionId (e.g., "Inter-3" -> 3)
+        const interid = parseInt(junctionId.replace('Inter-', ''));
+
+        const resetUpdates: Record<string, any> = {
+          [`teams/10/stopped-intersections/${interid}`]: null,
+        };
+
+        // Group traffic lights and find this intersection
+        const intersections = groupLightsByIntersection(trafficLightsData);
+        const lights = intersections[interid];
+
+        if (lights && lights.length > 0) {
+          const sortedLights = sortLightsByRoadId(lights);
+          const firstLight = sortedLights[0];
+          const lightDurations =
+            calculateIntersectionLightDurations(sortedLights);
+          const { greenDuration, yellowDuration } =
+            getLightDuration(firstLight);
+
+          console.log(`Resetting ${junctionId}:`, lightDurations);
+
+          // Set first light to green, others to red with stacked times
+          sortedLights.forEach((light, idx) => {
+            const isActive = idx === 0;
+            const redTime = isActive
+              ? 0
+              : calculateRedLightRemainingTime(lightDurations, 0, idx);
+
+            resetUpdates[`teams/10/traffic_lights/${light.key}/color`] =
+              isActive ? COLOR_GREEN : COLOR_RED;
+            resetUpdates[`teams/10/traffic_lights/${light.key}/remaintime`] =
+              isActive ? greenDuration + yellowDuration : redTime;
+            resetUpdates[`teams/10/traffic_lights/${light.key}/timestamp`] =
+              new Date().toISOString();
+          });
+        }
+
+        await update(ref(database), resetUpdates);
+        setStoppedJunctions((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(junctionId);
+          return newSet;
+        });
+        console.log(`Junction ${junctionId} reset and started`);
+      } catch (err) {
+        console.error('Failed to start junction:', err);
+      }
+    },
+    [trafficLightsData]
+  );
 
   const stats = useMemo(() => {
     const total = signals.length;
-    const red = signals.filter((s) => s.color === 'red').length;
-    const yellow = signals.filter((s) => s.color === 'yellow').length;
-    const green = signals.filter((s) => s.color === 'green').length;
+    const red = signals.filter(
+      (s) => s.color === 'red' && s.status !== 1 && s.status !== 2
+    ).length;
+    const yellow = signals.filter(
+      (s) => s.color === 'yellow' && s.status !== 1 && s.status !== 2
+    ).length;
+    const green = signals.filter(
+      (s) => s.color === 'green' && s.status !== 1 && s.status !== 2
+    ).length;
     const offline = signals.filter((s) => !s.online).length;
+    const broken = signals.filter(
+      (s) => s.status === 1 || s.status === 2
+    ).length;
 
-    return { total, red, yellow, green, offline };
+    return { total, red, yellow, green, offline, broken };
   }, [signals]);
 
   const filteredSignals = useMemo(() => {
@@ -677,9 +719,10 @@ export default function TrafficControlPage() {
     // Apply search query
     if (junctionSearchQuery.trim()) {
       const query = junctionSearchQuery.toLowerCase();
-      filtered = filtered.filter((s) =>
-        s.junctionId.toLowerCase().includes(query) ||
-        s.direction.toLowerCase().includes(query)
+      filtered = filtered.filter(
+        (s) =>
+          s.junctionId.toLowerCase().includes(query) ||
+          s.direction.toLowerCase().includes(query)
       );
     }
 
@@ -737,7 +780,9 @@ export default function TrafficControlPage() {
               <Settings className="h-5 w-5" />
             </button>
           </div>
-          <p className="text-sm text-slate-300">Manage traffic lights in real-time</p>
+          <p className="text-sm text-slate-300">
+            Manage traffic lights in real-time
+          </p>
 
           {/* Emergency Stop/Start Controls */}
           <div className="mt-4 flex gap-2">
@@ -763,42 +808,54 @@ export default function TrafficControlPage() {
 
         {/* Statistics */}
         <div className="border-b border-gray-200 bg-white p-4">
-          <h2 className="mb-3 text-sm font-semibold text-gray-700">System Status</h2>
+          <h2 className="mb-3 text-sm font-semibold text-gray-700">
+            System Status
+          </h2>
           <div className="grid grid-cols-3 gap-2">
             <div className="rounded-lg bg-slate-50 p-3">
               <div className="flex items-center justify-between">
                 <Activity className="h-4 w-4 text-slate-600" />
-                <span className="text-2xl font-bold text-gray-800">{stats.total}</span>
+                <span className="text-2xl font-bold text-gray-800">
+                  {stats.total}
+                </span>
               </div>
               <p className="mt-1 text-xs text-gray-600">Total Lights</p>
             </div>
             <div className="rounded-lg bg-slate-50 p-3">
               <div className="flex items-center justify-between">
                 <div className="h-3 w-3 rounded-full bg-red-500"></div>
-                <span className="text-2xl font-bold text-gray-800">{stats.red}</span>
+                <span className="text-2xl font-bold text-gray-800">
+                  {stats.red}
+                </span>
               </div>
               <p className="mt-1 text-xs text-gray-600">Red</p>
             </div>
             <div className="rounded-lg bg-slate-50 p-3">
               <div className="flex items-center justify-between">
                 <div className="h-3 w-3 rounded-full bg-yellow-500"></div>
-                <span className="text-2xl font-bold text-gray-800">{stats.yellow}</span>
+                <span className="text-2xl font-bold text-gray-800">
+                  {stats.yellow}
+                </span>
               </div>
               <p className="mt-1 text-xs text-gray-600">Yellow</p>
             </div>
             <div className="rounded-lg bg-slate-50 p-3">
               <div className="flex items-center justify-between">
                 <div className="h-3 w-3 rounded-full bg-green-500"></div>
-                <span className="text-2xl font-bold text-gray-800">{stats.green}</span>
+                <span className="text-2xl font-bold text-gray-800">
+                  {stats.green}
+                </span>
               </div>
               <p className="mt-1 text-xs text-gray-600">Green</p>
             </div>
-            <div className="col-span-2 rounded-lg bg-slate-50 p-3">
+            <div className="col-span-2 rounded-lg bg-gray-100 p-3">
               <div className="flex items-center justify-between">
-                <AlertTriangle className="h-4 w-4 text-slate-600" />
-                <span className="text-2xl font-bold text-gray-800">{brokenLights.length}</span>
+                <AlertTriangle className="h-4 w-4 text-gray-600" />
+                <span className="text-2xl font-bold text-gray-800">
+                  {stats.broken}
+                </span>
               </div>
-              <p className="mt-1 text-xs text-gray-600">Broken / Maintenance</p>
+              <p className="mt-1 text-xs text-gray-600">Broken / Fixing</p>
             </div>
           </div>
 
@@ -808,69 +865,60 @@ export default function TrafficControlPage() {
               <div className="flex items-center gap-2">
                 <AlertTriangle className="h-5 w-5 text-red-600" />
                 <span className="font-semibold text-red-800">
-                  {emergencyVehicles.length} Emergency Vehicle{emergencyVehicles.length !== 1 ? 's' : ''} Active
+                  {emergencyVehicles.length} Emergency Vehicle
+                  {emergencyVehicles.length !== 1 ? 's' : ''} Active
                 </span>
               </div>
-              <p className="mt-1 text-xs text-red-600">Automatic green light override enabled</p>
+              <p className="mt-1 text-xs text-red-600">
+                Automatic green light override enabled
+              </p>
             </div>
           )}
         </div>
 
-        {/* Tabs */}
-        <div className="flex border-b border-gray-200 bg-white">
-          <button
-            onClick={() => setActiveTab('signals')}
-            className={`flex-1 px-4 py-3 text-sm font-medium transition ${
-              activeTab === 'signals'
-                ? 'border-b-2 border-slate-900 bg-slate-50 text-slate-900'
-                : 'text-gray-600 hover:bg-gray-50'
-            }`}
-          >
+        {/* Title */}
+        <div className="border-b border-gray-200 bg-white px-4 py-3">
+          <span className="text-sm font-medium text-gray-700">
             Traffic Signals ({filteredSignals.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('broken')}
-            className={`flex-1 px-4 py-3 text-sm font-medium transition ${
-              activeTab === 'broken'
-                ? 'border-b-2 border-slate-900 bg-slate-50 text-slate-900'
-                : 'text-gray-600 hover:bg-gray-50'
-            }`}
-          >
-            Broken Lights ({brokenLights.length})
-          </button>
+          </span>
         </div>
 
         {/* Search Bar */}
         <div className="border-b border-gray-200 bg-white p-4">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <input
               type="text"
               placeholder="Search junction..."
               value={junctionSearchQuery}
               onChange={(e) => setJunctionSearchQuery(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-3 text-sm focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500"
+              className="w-full rounded-lg border border-gray-300 py-2 pr-3 pl-10 text-sm focus:border-slate-500 focus:ring-1 focus:ring-slate-500 focus:outline-none"
             />
           </div>
         </div>
 
-        {/* Filter - Only show for signals tab */}
-        {activeTab === 'signals' && (
-          <div className="border-b border-gray-200 bg-white p-4">
-            <div className="mb-2 flex items-center justify-between">
-              <h2 className="text-sm font-semibold text-gray-700">Filter by Status</h2>
-              <button
-                onClick={handleToggleBrokenLights}
-                className={`flex items-center gap-1 rounded px-2 py-1 text-xs font-medium transition ${
-                  showBrokenLights
-                    ? 'bg-slate-200 text-slate-700 hover:bg-slate-300'
-                    : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
-                }`}
-              >
-                {showBrokenLights ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
-                Broken Lights
-              </button>
-            </div>
+        {/* Filter */}
+        <div className="border-b border-gray-200 bg-white p-4">
+          <div className="mb-2 flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-gray-700">
+              Filter by Status
+            </h2>
+            <button
+              onClick={handleToggleBrokenLights}
+              className={`flex items-center gap-1 rounded px-2 py-1 text-xs font-medium transition ${
+                showBrokenLights
+                  ? 'bg-slate-200 text-slate-700 hover:bg-slate-300'
+                  : 'bg-gray-200 text-gray-600 hover:bg-gray-300'
+              }`}
+            >
+              {showBrokenLights ? (
+                <Eye className="h-3 w-3" />
+              ) : (
+                <EyeOff className="h-3 w-3" />
+              )}
+              Broken Lights
+            </button>
+          </div>
           <div className="flex gap-2">
             <button
               onClick={() => setFilter('all')}
@@ -913,11 +961,10 @@ export default function TrafficControlPage() {
               Green
             </button>
           </div>
-          </div>
-        )}
+        </div>
 
         {/* Control Button - Shows when signal selected */}
-        {selectedSignal && activeTab === 'signals' && (
+        {selectedSignal && (
           <div className="border-b border-gray-200 bg-slate-50 p-4">
             <div className="mb-2 text-xs font-medium text-gray-600">
               Selected: {selectedSignal.junctionId} - {selectedSignal.direction}
@@ -931,150 +978,133 @@ export default function TrafficControlPage() {
           </div>
         )}
 
-        {/* Content - Junctions or Broken Lights */}
+        {/* Content - Junctions */}
         <div className="flex-1 overflow-y-auto p-4">
-          {activeTab === 'signals' ? (
-            <>
-              <h2 className="mb-3 text-sm font-semibold text-gray-700">
-                Junctions ({junctions.length})
-              </h2>
-              <div className="space-y-2">
+          <h2 className="mb-3 text-sm font-semibold text-gray-700">
+            Junctions ({junctions.length})
+          </h2>
+          <div className="space-y-2">
             {junctions.map(([junctionId, junctionSignals]) => {
-              const isJunctionStopped = emergencyStopAll || stoppedJunctions.has(junctionId);
+              const isJunctionStopped =
+                emergencyStopAll || stoppedJunctions.has(junctionId);
 
               return (
-              <div
-                key={junctionId}
-                className={`rounded-lg border p-3 shadow-sm transition ${
-                  isJunctionStopped
-                    ? 'border-red-300 bg-red-50'
-                    : 'border-gray-200 bg-white hover:shadow-md'
-                }`}
-              >
-                <div className="mb-2 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4 text-slate-600" />
-                    <span className="font-semibold text-gray-800">{junctionId}</span>
-                    {isJunctionStopped && (
-                      <span className="rounded bg-red-600 px-2 py-0.5 text-xs font-bold text-white">
-                        STOPPED
+                <div
+                  key={junctionId}
+                  className={`rounded-lg border p-3 shadow-sm transition ${
+                    isJunctionStopped
+                      ? 'border-red-300 bg-red-50'
+                      : 'border-gray-200 bg-white hover:shadow-md'
+                  }`}
+                >
+                  <div className="mb-2 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-slate-600" />
+                      <span className="font-semibold text-gray-800">
+                        {junctionId}
                       </span>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-gray-500">
-                      {junctionSignals.length} light{junctionSignals.length !== 1 ? 's' : ''}
-                    </span>
-                    {!emergencyStopAll && (
-                      isJunctionStopped ? (
-                        <button
-                          onClick={() => handleStartJunction(junctionId)}
-                          className="rounded-md bg-green-600 p-1 text-white transition hover:bg-green-700"
-                          title="Start Junction"
-                        >
-                          <PlayCircle className="h-3 w-3" />
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => handleStopJunction(junctionId)}
-                          className="rounded-md bg-red-600 p-1 text-white transition hover:bg-red-700"
-                          title="Stop Junction"
-                        >
-                          <StopCircle className="h-3 w-3" />
-                        </button>
-                      )
-                    )}
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-1">
-                  {junctionSignals
-                    .filter((s) => filter === 'all' || s.color === filter)
-                    .map((signal, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => handleSignalClick(signal)}
-                        className="flex items-center justify-between rounded-md border border-gray-200 bg-gray-50 p-2 text-left transition hover:bg-gray-100"
-                      >
-                        <div className="flex items-center gap-2">
-                          <div
-                            className={`h-3 w-3 rounded-full ${
-                              signal.color === 'red'
-                                ? 'bg-red-500'
-                                : signal.color === 'yellow'
-                                  ? 'bg-yellow-500'
-                                  : 'bg-green-500'
-                            }`}
-                          />
-                          <span className="text-xs font-medium text-gray-700">
-                            {signal.direction}
-                          </span>
-                        </div>
-                        <span className="text-xs font-bold text-gray-800">
-                          {signal.remainingTime}s
+                      {isJunctionStopped && (
+                        <span className="rounded bg-red-600 px-2 py-0.5 text-xs font-bold text-white">
+                          STOPPED
                         </span>
-                      </button>
-                    ))}
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-gray-500">
+                        {junctionSignals.length} light
+                        {junctionSignals.length !== 1 ? 's' : ''}
+                      </span>
+                      {!emergencyStopAll &&
+                        (isJunctionStopped ? (
+                          <button
+                            onClick={() => handleStartJunction(junctionId)}
+                            className="rounded-md bg-green-600 p-1 text-white transition hover:bg-green-700"
+                            title="Start Junction"
+                          >
+                            <PlayCircle className="h-3 w-3" />
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleStopJunction(junctionId)}
+                            className="rounded-md bg-red-600 p-1 text-white transition hover:bg-red-700"
+                            title="Stop Junction"
+                          >
+                            <StopCircle className="h-3 w-3" />
+                          </button>
+                        ))}
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    {junctionSignals
+                      .filter((s) => filter === 'all' || s.color === filter)
+                      .map((signal, idx) => {
+                        const isBrokenOrFixing =
+                          signal.status === 1 || signal.status === 2;
+                        const statusLabel =
+                          signal.status === 1
+                            ? 'BROKEN'
+                            : signal.status === 2
+                              ? 'FIXING'
+                              : '';
+                        const showDash = isJunctionStopped || isBrokenOrFixing;
+
+                        return (
+                          <div
+                            key={idx}
+                            className={`rounded-lg border p-3 transition ${
+                              selectedSignal?.trafficLightId ===
+                              signal.trafficLightId
+                                ? 'border-slate-500 bg-slate-50 ring-2 ring-slate-200'
+                                : isBrokenOrFixing
+                                  ? 'border-gray-400 bg-gray-200'
+                                  : 'border-gray-200 bg-gray-50 hover:bg-gray-100'
+                            }`}
+                          >
+                            <div className="flex items-start justify-between">
+                              <button
+                                onClick={() => handleSignalClick(signal)}
+                                className="flex flex-1 items-center gap-3 text-left"
+                              >
+                                <div
+                                  className={`flex h-12 w-12 items-center justify-center rounded-full text-lg font-bold text-white shadow-md ${
+                                    isBrokenOrFixing
+                                      ? 'bg-gray-500'
+                                      : signal.color === 'red'
+                                        ? 'bg-red-500'
+                                        : signal.color === 'yellow'
+                                          ? 'bg-yellow-500'
+                                          : 'bg-green-500'
+                                  }`}
+                                >
+                                  {showDash ? '--' : signal.remainingTime}
+                                </div>
+                                <div className="flex-1">
+                                  <div className="font-semibold text-gray-800">
+                                    {signal.direction}
+                                  </div>
+                                  <div className="text-xs text-gray-500 capitalize">
+                                    {isBrokenOrFixing
+                                      ? statusLabel
+                                      : `${signal.color} Light`}
+                                  </div>
+                                </div>
+                              </button>
+                              <button
+                                onClick={() => handleEditLight(signal)}
+                                className="rounded-md p-2 text-gray-400 transition hover:bg-gray-200 hover:text-gray-600"
+                                title="Edit light settings"
+                              >
+                                <Settings className="h-4 w-4" />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                  </div>
                 </div>
-              </div>
               );
             })}
-              </div>
-            </>
-          ) : (
-            <>
-              <h2 className="mb-3 text-sm font-semibold text-gray-700">
-                Broken / Maintenance Lights ({brokenLights.length})
-              </h2>
-              <div className="space-y-2">
-                {brokenLights.length === 0 ? (
-                  <div className="py-8 text-center text-gray-500">
-                    <AlertTriangle className="mx-auto mb-2 h-8 w-8 opacity-50" />
-                    <p className="text-sm">No broken or maintenance lights</p>
-                  </div>
-                ) : (
-                  brokenLights.map((light) => (
-                    <button
-                      key={light.id}
-                      onClick={() => handleBrokenLightClick(light)}
-                      className="w-full rounded-lg border border-gray-300 bg-gray-50 p-3 text-left shadow-sm transition hover:bg-gray-100"
-                    >
-                      <div className="mb-2 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <AlertTriangle className="h-4 w-4 text-gray-600" />
-                          <span className="font-semibold text-gray-800">
-                            Light #{light.id}
-                          </span>
-                        </div>
-                        <span
-                          className={`rounded px-2 py-0.5 text-xs font-bold ${
-                            light.status === 1
-                              ? 'bg-gray-200 text-gray-700'
-                              : 'bg-slate-200 text-slate-700'
-                          }`}
-                        >
-                          {light.status === 1 ? 'BROKEN' : 'MAINTENANCE'}
-                        </span>
-                      </div>
-                      <div className="text-xs text-gray-700">
-                        <p className="flex items-center gap-2">
-                          <MapPin className="h-3 w-3" />
-                          <span className="font-medium">Intersection:</span> {light.intersection_id}
-                        </p>
-                        <p className="mt-1">
-                          <span className="font-medium">Road:</span> {light.road_id}
-                        </p>
-                        {light.location?.coordinates && (
-                          <p className="mt-1 text-xs text-gray-500">
-                            {light.location.coordinates[1].toFixed(6)}, {light.location.coordinates[0].toFixed(6)}
-                          </p>
-                        )}
-                      </div>
-                    </button>
-                  ))
-                )}
-              </div>
-            </>
-          )}
+          </div>
         </div>
       </div>
 
@@ -1103,10 +1133,9 @@ export default function TrafficControlPage() {
               emergencyVehicles={emergencyVehicles}
               onSignalClick={handleSignalClick}
               selectedSignal={selectedSignal}
-              brokenLights={brokenLights}
-              showBrokenLights={showBrokenLights}
               onMapReady={setMapInstance}
-              onBrokenLightClick={handleBrokenLightClick}
+              emergencyStopAll={emergencyStopAll}
+              stoppedJunctions={stoppedJunctions}
             />
           </Map>
         </APIProvider>
@@ -1129,6 +1158,45 @@ export default function TrafficControlPage() {
         onSave={handleSaveSettings}
         currentSettings={settings}
       />
+
+      {/* Light Editor Dialog */}
+      {editingLight && (
+        <LightEditorDialog
+          open={showLightEditor}
+          onClose={() => {
+            setShowLightEditor(false);
+            setEditingLight(null);
+          }}
+          onSave={handleSaveLightSettings}
+          lightKey={editingLight.trafficLightId || ''}
+          initialGreenDuration={
+            editingLight.trafficLightId &&
+            trafficLightsData[editingLight.trafficLightId]
+              ? parseInt(
+                  trafficLightsData[editingLight.trafficLightId].green_duration
+                ) || 27
+              : 27
+          }
+          initialYellowDuration={
+            editingLight.trafficLightId &&
+            trafficLightsData[editingLight.trafficLightId]
+              ? parseInt(
+                  trafficLightsData[editingLight.trafficLightId].yellow_duration
+                ) || 3
+              : 3
+          }
+          initialStatus={
+            editingLight.trafficLightId &&
+            trafficLightsData[editingLight.trafficLightId]
+              ? parseInt(
+                  trafficLightsData[editingLight.trafficLightId].status
+                ) || 0
+              : 0
+          }
+          direction={editingLight.direction}
+          junctionId={editingLight.junctionId}
+        />
+      )}
     </div>
   );
 }

@@ -131,11 +131,17 @@ export async function calculateTraffic(intersectionId: number): Promise<void> {
         return sum;
       }, 0);
 
+      // นับจำนวนไฟอื่นๆ (ไม่รวมตัวเอง)
+      const numberOfOtherLights = detailedLights.length - 1;
+
       const OFFSET_DURATION = 9; // กำหนดค่าคงที่อีกครั้งใน scope นี้เพื่อความชัดเจน
-      const newRedDuration = sumOfOtherGreenDurations + OFFSET_DURATION;
+      const newRedDuration =
+        sumOfOtherGreenDurations +
+        YELLOW_DURATION * numberOfOtherLights +
+        OFFSET_DURATION;
 
       console.log(
-        `Light ID ${currentLight.id}: New Red Duration = ${newRedDuration} (${sumOfOtherGreenDurations} + ${OFFSET_DURATION})`
+        `Light ID ${currentLight.id}: New Red Duration = ${newRedDuration} (${sumOfOtherGreenDurations} + ${YELLOW_DURATION} * ${numberOfOtherLights} + ${OFFSET_DURATION})`
       );
 
       // อัปเดต Body

@@ -1,76 +1,95 @@
-import { useEffect, useRef, useMemo } from 'react';
+import { useEffect, useRef } from 'react';
 import { ref, update, onValue, remove } from 'firebase/database';
 import { database } from '@/lib/firebase';
+import {
+  COLOR_RED,
+  COLOR_YELLOW,
+  COLOR_GREEN,
+  groupLightsByIntersection,
+  calculateIntersectionLightDurations,
+  calculateRedLightRemainingTime,
+  getNextActiveLightInIntersection,
+  sortLightsByRoadId,
+  getLightDuration,
+  type TrafficLightData,
+} from '../utils/trafficLightCalculations';
 
-const DEFAULT_GREEN_DURATION = 27; // seconds
-const DEFAULT_YELLOW_DURATION = 3; // seconds
 const CYCLE_CONTROLLER_KEY = 'teams/10/traffic-cycle-controller';
+const TRAFFIC_LIGHTS_PATH = 'teams/10/traffic_lights';
 
 /**
  * Hook to manage traffic light cycles with Firebase synchronization
  * Uses leader election to ensure only one instance controls the timer
  *
- * Updates both:
- * - teams/10/junctions (legacy format with color as string)
- * - teams/10/traffic_lights (backend format with color as number 1/2/3)
- *
- * Note: For traffic_lights to update, junction lights must have a 'trafficLightId' field
- * that maps to the key in teams/10/traffic_lights
+ * Works directly with teams/10/traffic_lights structure
  */
-export function useTrafficLightCycle(junctionsData: Record<string, any>) {
+export function useTrafficLightCycle() {
   const isControllerRef = useRef(false);
   const controllerIdRef = useRef<string>('');
-  const junctionsDataRef = useRef(junctionsData);
+  const trafficLightsRef = useRef<Record<string, any>>({});
+  const emergencyStopRef = useRef(false);
+  const stoppedIntersectionsRef = useRef<Set<number>>(new Set());
+  // Track previous status of each light to detect status changes
+  const prevLightStatusRef = useRef<Record<string, number>>({});
 
-  // Update ref with latest data, but don't cause re-renders
+  // Listen to traffic_lights data
   useEffect(() => {
-    junctionsDataRef.current = junctionsData;
-  }, [junctionsData]);
+    const trafficLightsDbRef = ref(database, TRAFFIC_LIGHTS_PATH);
 
-  // Only re-initialize when junction structure changes (junction IDs), not on every data update
-  const junctionIds = useMemo(() => {
-    return Object.keys(junctionsData || {})
-      .sort()
-      .join(',');
-  }, [junctionsData]);
-
-  useEffect(() => {
-    if (!junctionsData || Object.keys(junctionsData).length === 0) {
-      console.log('⏳ Waiting for junctions data to load...');
-      return; // Wait for junctions data to load
-    }
-
-    console.log(
-      '📍 Junctions data loaded:',
-      Object.keys(junctionsData).length,
-      'junctions'
-    );
-
-    // Check if any lights have trafficLightId mapping
-    let hasTrafficLightMapping = false;
-    Object.values(junctionsData).forEach((junction: any) => {
-      if (junction?.lights) {
-        Object.values(junction.lights).forEach((light: any) => {
-          if (light?.trafficLightId) {
-            hasTrafficLightMapping = true;
-          }
-        });
+    const unsubscribe = onValue(trafficLightsDbRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        trafficLightsRef.current = data;
       }
     });
 
-    if (hasTrafficLightMapping) {
-      console.log(
-        '✅ Found trafficLightId mappings - will update both junctions and traffic_lights'
-      );
-    } else {
-      console.log(
-        '⚠️ No trafficLightId mappings found - will only update junctions (legacy format)'
-      );
-      console.log(
-        '💡 To enable traffic_lights updates, add trafficLightId field to junction lights'
-      );
-    }
+    return () => unsubscribe();
+  }, []);
 
+  // Listen to emergency stop state
+  useEffect(() => {
+    const emergencyStopDbRef = ref(database, 'teams/10/emergency-stop');
+    const stoppedIntersectionsDbRef = ref(
+      database,
+      'teams/10/stopped-intersections'
+    );
+
+    const unsubscribeEmergencyStop = onValue(emergencyStopDbRef, (snapshot) => {
+      emergencyStopRef.current = snapshot.val() === true;
+      if (emergencyStopRef.current) {
+        console.log('Emergency stop activated - traffic cycle paused');
+      } else {
+        console.log('Emergency stop deactivated - traffic cycle resumed');
+      }
+    });
+
+    const unsubscribeStoppedIntersections = onValue(
+      stoppedIntersectionsDbRef,
+      (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+          const intersectionIds = Object.keys(data)
+            .filter((key) => data[key] === true)
+            .map((key) => parseInt(key));
+          stoppedIntersectionsRef.current = new Set(intersectionIds);
+          console.log(
+            'Stopped intersections:',
+            Array.from(stoppedIntersectionsRef.current)
+          );
+        } else {
+          stoppedIntersectionsRef.current = new Set();
+        }
+      }
+    );
+
+    return () => {
+      unsubscribeEmergencyStop();
+      unsubscribeStoppedIntersections();
+    };
+  }, []);
+
+  // Main cycle controller
+  useEffect(() => {
     // Generate unique ID for this instance
     const instanceId = `${Date.now()}-${Math.random()}`;
     controllerIdRef.current = instanceId;
@@ -78,17 +97,14 @@ export function useTrafficLightCycle(junctionsData: Record<string, any>) {
     // Listen for controller assignment
     const controllerRef = ref(database, CYCLE_CONTROLLER_KEY);
 
-    // Immediately claim controller (aggressive approach)
+    // Immediately claim controller
     update(controllerRef, {
       id: instanceId,
       timestamp: Date.now(),
     })
       .then(() => {
         isControllerRef.current = true;
-        console.log(
-          '🎮 Aggressively claimed traffic cycle controller:',
-          instanceId
-        );
+        console.log('Claimed traffic cycle controller:', instanceId);
       })
       .catch((err) => {
         console.error('Failed to claim controller:', err);
@@ -97,7 +113,6 @@ export function useTrafficLightCycle(junctionsData: Record<string, any>) {
     const unsubscribe = onValue(controllerRef, (snapshot) => {
       const currentController = snapshot.val();
 
-      // If no controller or controller is stale (>10 seconds old), claim it
       if (
         !currentController ||
         Date.now() - currentController.timestamp > 10000
@@ -108,15 +123,13 @@ export function useTrafficLightCycle(junctionsData: Record<string, any>) {
         });
         isControllerRef.current = true;
         console.log(
-          '🎮 Re-claimed traffic cycle controller (stale detected):',
+          'Re-claimed traffic cycle controller (stale detected):',
           instanceId
         );
       } else if (currentController.id === instanceId) {
         isControllerRef.current = true;
-        console.log('✅ Confirmed as controller:', instanceId);
       } else {
         isControllerRef.current = false;
-        console.log('❌ Another instance is controller:', currentController.id);
       }
     });
 
@@ -133,141 +146,228 @@ export function useTrafficLightCycle(junctionsData: Record<string, any>) {
     // Traffic light cycle management
     const cycleInterval = setInterval(async () => {
       if (!isControllerRef.current) {
-        return; // Silently skip if not controller
+        return; // Skip if not controller
       }
 
-      const currentJunctionsData = junctionsDataRef.current;
-      if (!currentJunctionsData) return;
+      // Check for global emergency stop
+      if (emergencyStopRef.current) {
+        return; // Skip all processing if emergency stop is active
+      }
 
-      // Process each junction
-      for (const [junctionId, junctionData] of Object.entries(
-        currentJunctionsData
-      )) {
-        if (!junctionData?.lights || !junctionData?.currentActive) continue;
+      const currentTrafficLights = trafficLightsRef.current;
+      if (
+        !currentTrafficLights ||
+        Object.keys(currentTrafficLights).length === 0
+      ) {
+        return;
+      }
 
-        const lights = junctionData.lights;
-        const currentActive = junctionData.currentActive;
-        const currentLight = lights[currentActive];
+      // Group lights by intersection
+      const intersections = groupLightsByIntersection(currentTrafficLights);
 
-        if (!currentLight) continue;
+      // Process each intersection
+      for (const [interidStr, lights] of Object.entries(intersections)) {
+        const interid = parseInt(interidStr);
 
-        const remainingTime = parseInt(currentLight.remainingTime) || 0;
-        const newRemainingTime = Math.max(0, remainingTime - 1);
-
-        // Get durations for this light (support both old 'duration' field and new 'greenDuration'/'yellowDuration')
-        const greenDuration =
-          parseInt(currentLight.greenDuration) ||
-          parseInt(currentLight.duration) ||
-          DEFAULT_GREEN_DURATION;
-        const yellowDuration =
-          parseInt(currentLight.yellowDuration) || DEFAULT_YELLOW_DURATION;
-        const totalDuration = greenDuration + yellowDuration;
-
-        // Determine new color based on remaining time
-        let newColor = currentLight.color;
-        if (remainingTime > yellowDuration) {
-          newColor = 'green';
-        } else if (remainingTime > 0 && remainingTime <= yellowDuration) {
-          newColor = 'yellow';
-        } else if (remainingTime === 0) {
-          newColor = 'red';
+        // Check if this intersection is stopped
+        if (stoppedIntersectionsRef.current.has(interid)) {
+          continue;
         }
 
-        // Helper to convert color string to number for backend format
-        const colorToNumber = (color: string): number => {
-          const map: Record<string, number> = { red: 1, yellow: 2, green: 3 };
-          return map[color] || 1;
-        };
+        if (lights.length === 0) continue;
 
-        // Update current light in BOTH junctions (legacy) and traffic_lights (backend) formats
-        const updates: Record<string, any> = {
-          // Legacy junctions format
-          [`teams/10/junctions/${junctionId}/lights/${currentActive}/remainingTime`]:
-            newRemainingTime,
-          [`teams/10/junctions/${junctionId}/lights/${currentActive}/color`]:
-            newColor,
-          [`teams/10/junctions/${junctionId}/lights/${currentActive}/timestamp`]:
-            Date.now(),
-        };
+        // Filter out broken (status=1) and fixing (status=2) lights from cycle
+        // Only normal lights (status=0 or undefined) participate in the cycle
+        const allLights = sortLightsByRoadId(lights);
+        const normalLights = allLights.filter((l) => {
+          const status = parseInt(String(l.status ?? 0)) || 0;
+          return status === 0; // Only normal lights
+        });
 
-        // Also update traffic_lights format if this light has a traffic light ID
-        // Check if the light has an ID or interid that maps to traffic_lights
-        if (currentLight.trafficLightId) {
-          updates[
-            `teams/10/traffic_lights/${currentLight.trafficLightId}/color`
-          ] = colorToNumber(newColor);
-          updates[
-            `teams/10/traffic_lights/${currentLight.trafficLightId}/remaintime`
-          ] = newRemainingTime;
-          updates[
-            `teams/10/traffic_lights/${currentLight.trafficLightId}/timestamp`
-          ] = new Date().toISOString();
-        }
+        // If no normal lights, skip this intersection
+        if (normalLights.length === 0) continue;
 
-        // If timer reached 0, cycle to next light
-        if (newRemainingTime === 0) {
-          const lightKeys = Object.keys(lights);
-          const currentIndex = lightKeys.indexOf(currentActive);
-          const nextIndex = (currentIndex + 1) % lightKeys.length;
-          const nextActive = lightKeys[nextIndex];
+        // Check for status changes (light becoming normal from broken/fixing)
+        let needsRecalculation = false;
+        allLights.forEach((light) => {
+          const currentStatus = parseInt(String(light.status ?? 0)) || 0;
+          const prevStatus = prevLightStatusRef.current[light.key];
 
-          // Set all lights to red first
-          lightKeys.forEach((key) => {
-            updates[`teams/10/junctions/${junctionId}/lights/${key}/color`] =
-              'red';
-            updates[
-              `teams/10/junctions/${junctionId}/lights/${key}/remainingTime`
-            ] = 0;
+          // If light changed from broken/fixing (1 or 2) to normal (0)
+          if (
+            prevStatus !== undefined &&
+            (prevStatus === 1 || prevStatus === 2) &&
+            currentStatus === 0
+          ) {
+            needsRecalculation = true;
+            console.log(
+              `Light ${light.key} changed from ${prevStatus === 1 ? 'broken' : 'fixing'} to normal - recalculating intersection ${interid}`
+            );
+          }
 
-            // Also update traffic_lights if this light has a mapping
-            const light = lights[key];
-            if (light?.trafficLightId) {
-              updates[`teams/10/traffic_lights/${light.trafficLightId}/color`] =
-                1; // red
-              updates[
-                `teams/10/traffic_lights/${light.trafficLightId}/remaintime`
-              ] = 0;
+          // Update tracked status
+          prevLightStatusRef.current[light.key] = currentStatus;
+        });
+
+        // Find the active light (green or yellow) among normal lights only
+        let activeLight = normalLights.find(
+          (l) => l.color === COLOR_GREEN || l.color === COLOR_YELLOW
+        );
+
+        // If no active light, start the first normal one
+        if (!activeLight) {
+          activeLight = normalLights[0];
+          const { greenDuration, yellowDuration } =
+            getLightDuration(activeLight);
+          const updates: Record<string, any> = {
+            [`${TRAFFIC_LIGHTS_PATH}/${activeLight.key}/color`]: COLOR_GREEN,
+            [`${TRAFFIC_LIGHTS_PATH}/${activeLight.key}/remaintime`]:
+              greenDuration + yellowDuration,
+            [`${TRAFFIC_LIGHTS_PATH}/${activeLight.key}/timestamp`]:
+              new Date().toISOString(),
+          };
+
+          // Set red light times for other normal lights
+          const lightDurations =
+            calculateIntersectionLightDurations(normalLights);
+          const activeIndex = normalLights.findIndex(
+            (l) => l.key === activeLight!.key
+          );
+
+          normalLights.forEach((light, idx) => {
+            if (light.key !== activeLight!.key) {
+              const redTime = calculateRedLightRemainingTime(
+                lightDurations,
+                activeIndex,
+                idx
+              );
+              updates[`${TRAFFIC_LIGHTS_PATH}/${light.key}/color`] = COLOR_RED;
+              updates[`${TRAFFIC_LIGHTS_PATH}/${light.key}/remaintime`] =
+                redTime;
             }
           });
 
-          // Set next light to green with its duration
-          const nextLight = lights[nextActive];
-          const nextGreenDuration =
-            parseInt(nextLight.greenDuration) ||
-            parseInt(nextLight.duration) ||
-            DEFAULT_GREEN_DURATION;
-          const nextYellowDuration =
-            parseInt(nextLight.yellowDuration) || DEFAULT_YELLOW_DURATION;
-          const nextTotalDuration = nextGreenDuration + nextYellowDuration;
+          await update(ref(database), updates);
+          continue;
+        }
 
-          updates[`teams/10/junctions/${junctionId}/currentActive`] =
-            nextActive;
-          updates[
-            `teams/10/junctions/${junctionId}/lights/${nextActive}/color`
-          ] = 'green';
-          updates[
-            `teams/10/junctions/${junctionId}/lights/${nextActive}/remainingTime`
-          ] = nextTotalDuration;
-          updates[
-            `teams/10/junctions/${junctionId}/lights/${nextActive}/timestamp`
-          ] = Date.now();
-
-          // Also update traffic_lights for next light
-          if (nextLight?.trafficLightId) {
-            updates[
-              `teams/10/traffic_lights/${nextLight.trafficLightId}/color`
-            ] = 3; // green
-            updates[
-              `teams/10/traffic_lights/${nextLight.trafficLightId}/remaintime`
-            ] = nextTotalDuration;
-            updates[
-              `teams/10/traffic_lights/${nextLight.trafficLightId}/timestamp`
-            ] = new Date().toISOString();
-          }
-
-          console.log(
-            `🚦 Junction ${junctionId}: Cycled from ${currentActive} to ${nextActive} (Green: ${nextGreenDuration}s, Yellow: ${nextYellowDuration}s, Total: ${nextTotalDuration}s)`
+        // If a light just became normal, recalculate all remaining times based on current active light
+        if (needsRecalculation) {
+          const lightDurations =
+            calculateIntersectionLightDurations(normalLights);
+          const activeIndex = normalLights.findIndex(
+            (l) => l.key === activeLight.key
           );
+          const { greenDuration, yellowDuration } =
+            getLightDuration(activeLight);
+
+          // Calculate time elapsed in current cycle (how much of active light's duration has passed)
+          const totalActiveDuration = greenDuration + yellowDuration;
+          const elapsedTime = totalActiveDuration - activeLight.remaintime;
+
+          const updates: Record<string, any> = {};
+
+          // Recalculate remaining times for all red lights
+          normalLights.forEach((light, idx) => {
+            if (light.key !== activeLight.key) {
+              const fullRedTime = calculateRedLightRemainingTime(
+                lightDurations,
+                activeIndex,
+                idx
+              );
+              // Subtract elapsed time since active light started
+              const adjustedRedTime = Math.max(0, fullRedTime - elapsedTime);
+              updates[`${TRAFFIC_LIGHTS_PATH}/${light.key}/color`] = COLOR_RED;
+              updates[`${TRAFFIC_LIGHTS_PATH}/${light.key}/remaintime`] =
+                adjustedRedTime;
+            }
+          });
+
+          if (Object.keys(updates).length > 0) {
+            await update(ref(database), updates);
+            console.log(
+              `Intersection ${interid}: Recalculated remaining times after status change`
+            );
+          }
+          continue;
+        }
+
+        const remainingTime = activeLight.remaintime;
+        const newRemainingTime = Math.max(0, remainingTime - 1);
+        const { greenDuration, yellowDuration } = getLightDuration(activeLight);
+
+        // Determine new color based on remaining time
+        let newColor = activeLight.color;
+        if (newRemainingTime > yellowDuration) {
+          newColor = COLOR_GREEN;
+        } else if (newRemainingTime > 0 && newRemainingTime <= yellowDuration) {
+          newColor = COLOR_YELLOW;
+        } else if (newRemainingTime === 0) {
+          newColor = COLOR_RED;
+        }
+
+        // Build updates object
+        const updates: Record<string, any> = {
+          [`${TRAFFIC_LIGHTS_PATH}/${activeLight.key}/remaintime`]:
+            newRemainingTime,
+          [`${TRAFFIC_LIGHTS_PATH}/${activeLight.key}/color`]: newColor,
+          [`${TRAFFIC_LIGHTS_PATH}/${activeLight.key}/timestamp`]:
+            new Date().toISOString(),
+        };
+
+        // Decrement all other normal red lights
+        normalLights.forEach((light) => {
+          if (light.key !== activeLight!.key) {
+            const redRemainingTime = Math.max(0, light.remaintime - 1);
+            updates[`${TRAFFIC_LIGHTS_PATH}/${light.key}/remaintime`] =
+              redRemainingTime;
+            updates[`${TRAFFIC_LIGHTS_PATH}/${light.key}/color`] = COLOR_RED;
+          }
+        });
+
+        // If timer reached 0, cycle to next normal light
+        if (newRemainingTime === 0) {
+          const nextLight = getNextActiveLightInIntersection(
+            normalLights,
+            activeLight.key
+          );
+
+          if (nextLight) {
+            const lightDurations =
+              calculateIntersectionLightDurations(normalLights);
+            const nextIndex = normalLights.findIndex(
+              (l) => l.key === nextLight.key
+            );
+            const { greenDuration: nextGreen, yellowDuration: nextYellow } =
+              getLightDuration(nextLight);
+
+            // Set next light to green
+            updates[`${TRAFFIC_LIGHTS_PATH}/${nextLight.key}/color`] =
+              COLOR_GREEN;
+            updates[`${TRAFFIC_LIGHTS_PATH}/${nextLight.key}/remaintime`] =
+              nextGreen + nextYellow;
+            updates[`${TRAFFIC_LIGHTS_PATH}/${nextLight.key}/timestamp`] =
+              new Date().toISOString();
+
+            // Calculate stacked remaining times for all other normal lights
+            normalLights.forEach((light, idx) => {
+              if (light.key !== nextLight.key) {
+                const redTime = calculateRedLightRemainingTime(
+                  lightDurations,
+                  nextIndex,
+                  idx
+                );
+                updates[`${TRAFFIC_LIGHTS_PATH}/${light.key}/color`] =
+                  COLOR_RED;
+                updates[`${TRAFFIC_LIGHTS_PATH}/${light.key}/remaintime`] =
+                  redTime;
+              }
+            });
+
+            console.log(
+              `Intersection ${interid}: Cycled from roadid ${activeLight.roadid} to roadid ${nextLight.roadid} (Green: ${nextGreen}s, Yellow: ${nextYellow}s)`
+            );
+          }
         }
 
         // Apply updates to Firebase
@@ -280,14 +380,13 @@ export function useTrafficLightCycle(junctionsData: Record<string, any>) {
       clearInterval(cycleInterval);
       unsubscribe();
 
-      // Release controller if we own it - use remove() instead of setting to null
       if (isControllerRef.current) {
         remove(controllerRef).catch((err) => {
           console.error('Failed to remove controller:', err);
         });
       }
     };
-  }, [junctionIds]); // Only re-run when junction structure changes, not on every data update
+  }, []);
 
   return {
     isController: isControllerRef.current,

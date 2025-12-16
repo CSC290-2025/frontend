@@ -5,7 +5,7 @@ import {
   AdvancedMarker,
   useMap,
 } from '@vis.gl/react-google-maps';
-import { ref, onValue, off, update, get } from 'firebase/database';
+import { ref, onValue } from 'firebase/database';
 import { database } from '@/lib/firebase';
 import { MarkerClusterer } from '@googlemaps/markerclusterer';
 import { Navigation } from 'lucide-react';
@@ -18,7 +18,12 @@ import TrafficSidebar from '../components/TrafficSidebar';
 import { useEmergencyVehicles } from '../hooks/useEmergencyVehicles';
 import { useEmergencyTrafficControl } from '../hooks/useEmergencyTrafficControl';
 import { useTrafficLightCycle } from '../hooks/useTrafficLightCycle';
-import type { trafficLight } from '../types/traffic.types';
+import {
+  colorNumberToString,
+  getLightDuration,
+  COLOR_GREEN,
+  COLOR_YELLOW,
+} from '../utils/trafficLightCalculations';
 
 interface TrafficLight {
   color: 'red' | 'yellow' | 'green';
@@ -41,6 +46,7 @@ interface SignalWithMeta extends TrafficLight {
   junctionId: string;
   source?: 'legacy' | 'backend'; // Track if this is from junctions (legacy) or traffic_lights (backend)
   trafficLightId?: string; // ID for traffic_lights updates (only for backend signals)
+  status?: number; // 0=normal, 1=broken, 2=fixing
 }
 
 interface MapSettings {
@@ -105,243 +111,114 @@ function calculateDistance(
 
 function useTeam10TrafficSignals(refreshRate: number) {
   const [signals, setSignals] = useState<SignalWithMeta[]>([]);
-  const [junctionsData, setJunctionsData] = useState<Record<string, any>>({});
+  const [trafficLightsData, setTrafficLightsData] = useState<
+    Record<string, any>
+  >({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState<number>(Date.now());
 
   useEffect(() => {
-    const junctionsRef = ref(database, 'teams/10/junctions');
     const trafficLightsRef = ref(database, 'teams/10/traffic_lights');
 
-    const fetchData = async () => {
-      // Sync traffic_lights to junctions ONCE at startup, then only listen to junctions
-      // This prevents duplicates and flickering from dual listeners
+    // Listen to traffic_lights only (single source of truth)
+    const unsubscribe = onValue(
+      trafficLightsRef,
+      (snapshot) => {
+        try {
+          const data = snapshot.val();
 
-      // 1. First, sync traffic_lights to junctions (one-time operation)
-      try {
-        const trafficLightsSnapshot = await get(ref(database, 'teams/10/traffic_lights'));
-        const trafficLightsData = trafficLightsSnapshot.val();
+          if (data) {
+            setTrafficLightsData(data);
 
-        if (trafficLightsData) {
-          console.log('📡 Traffic_lights data received (one-time sync):', Object.keys(trafficLightsData).length, 'lights');
+            const allSignals: SignalWithMeta[] = [];
 
-          // Group traffic lights by intersection ID
-          const intersectionGroups: Record<string, any[]> = {};
+            Object.entries(data).forEach(([key, lightData]: [string, any]) => {
+              if (
+                lightData &&
+                typeof lightData === 'object' &&
+                isValidSignal(lightData)
+              ) {
+                const lat = parseCoordinate(lightData.lat);
+                const lng = parseCoordinate(lightData.lng);
 
-          Object.entries(trafficLightsData).forEach(([key, signalData]: [string, any]) => {
-            if (signalData && typeof signalData === 'object' && isValidSignal(signalData)) {
-              const lat = parseCoordinate(signalData.lat);
-              const lng = parseCoordinate(signalData.lng);
+                if (lat !== null && lng !== null) {
+                  const colorNum = parseInt(lightData.color) || 1;
+                  const color = colorNumberToString(colorNum);
+                  const { greenDuration, yellowDuration } =
+                    getLightDuration(lightData);
 
-              if (lat !== null && lng !== null) {
-                const colorMap: Record<number, 'red' | 'yellow' | 'green'> = {
-                  1: 'red',
-                  2: 'yellow',
-                  3: 'green',
-                };
+                  // Get raw remaining time from Firebase
+                  const remainingTime = parseInt(lightData.remaintime) || 0;
 
-                const color = colorMap[signalData.color] || 'red';
-                const remainingTime = parseInt(signalData.remaintime) || 0;
-                const interid = signalData.interid || key;
-                const roadid = signalData.roadid || key;
-
-                // Group by intersection for junction sync
-                if (!intersectionGroups[interid]) {
-                  intersectionGroups[interid] = [];
-                }
-                intersectionGroups[interid].push({
-                  key,
-                  color,
-                  remainingTime,
-                  roadid,
-                  lat,
-                  lng,
-                  online: signalData.autoON !== false,
-                });
-              }
-            }
-          });
-
-          // Sync traffic_lights to junctions structure for cycle controller
-          const junctionUpdates: Record<string, any> = {};
-          Object.entries(intersectionGroups).forEach(([interid, lights]) => {
-            const junctionId = `Inter-${interid}`;
-
-            // Find which light should be active (green or highest remainingTime)
-            let activeLightIndex = 0;
-            let maxRemaining = 0;
-            lights.forEach((light, idx) => {
-              if (light.color === 'green' || light.remainingTime > maxRemaining) {
-                activeLightIndex = idx;
-                maxRemaining = light.remainingTime;
-              }
-            });
-
-            const activeLight = lights[activeLightIndex];
-            const defaultGreenDuration = 27;
-            const defaultYellowDuration = 3;
-
-            // If active light has 0 time, start it with proper duration
-            let activeRemainingTime = activeLight.remainingTime;
-            let activeColor = activeLight.color;
-
-            if (activeRemainingTime === 0 || activeColor === 'red') {
-              // Start the cycle with green
-              activeColor = 'green';
-              activeRemainingTime = defaultGreenDuration + defaultYellowDuration;
-            }
-
-            const lightsData: Record<string, any> = {};
-            lights.forEach((light, idx) => {
-              const isActive = idx === activeLightIndex;
-              lightsData[`Road-${light.roadid}`] = {
-                color: isActive ? activeColor : 'red',
-                direction: `Road-${light.roadid}`,
-                lat: light.lat,
-                lng: light.lng,
-                online: light.online,
-                remainingTime: isActive ? activeRemainingTime : 0,
-                timestamp: Date.now(),
-                trafficLightId: light.key, // Store mapping for cycle controller
-                greenDuration: defaultGreenDuration,
-                yellowDuration: defaultYellowDuration,
-              };
-            });
-
-            junctionUpdates[`teams/10/junctions/${junctionId}/lights`] = lightsData;
-            junctionUpdates[`teams/10/junctions/${junctionId}/currentActive`] = `Road-${lights[activeLightIndex].roadid}`;
-          });
-
-          // Apply junction updates to sync with traffic_lights
-          if (Object.keys(junctionUpdates).length > 0) {
-            await update(ref(database), junctionUpdates);
-            console.log(`🔄 Synced ${Object.keys(intersectionGroups).length} intersections from traffic_lights to junctions`);
-          }
-        }
-      } catch (err) {
-        console.error('Failed to sync traffic_lights to junctions:', err);
-      }
-
-      // 2. Now listen ONLY to junctions (single source of truth)
-      const mergeAndUpdate = (signals: SignalWithMeta[]) => {
-        console.log(`🔄 Displaying ${signals.length} signals from junctions`);
-        setSignals(signals);
-        setError(null);
-        setLastUpdate(Date.now());
-        setLoading(false);
-      };
-
-      // Listen to junctions structure (teams/10/junctions)
-      const unsubscribeJunctions = onValue(
-        junctionsRef,
-        (snapshot) => {
-          try {
-            const data = snapshot.val();
-
-            if (data) {
-              // Store junction data for cycle management
-              setJunctionsData(data);
-
-              const allSignals: SignalWithMeta[] = [];
-
-              Object.entries(data).forEach(
-                ([junctionId, junctionData]: [string, any]) => {
-                  if (junctionData?.lights) {
-                    const lights = junctionData.lights;
-                    const currentActive = junctionData.currentActive;
-
-                    // Calculate total cycle time for this junction
-                    let totalCycleTime = 0;
-                    Object.values(lights).forEach((light: any) => {
-                      const greenDuration = parseInt(light.greenDuration) || parseInt(light.duration) || 27;
-                      const yellowDuration = parseInt(light.yellowDuration) || 3;
-                      totalCycleTime += greenDuration + yellowDuration;
-                    });
-
-                    // Get active light's remaining time
-                    const activeLight = currentActive ? lights[currentActive] : null;
-                    const activeRemainingTime = activeLight ? (parseInt(activeLight.remainingTime) || 0) : 0;
-
-                    Object.entries(lights).forEach(
-                      ([lightKey, light]: [string, any]) => {
-                        if (
-                          light &&
-                          typeof light === 'object' &&
-                          isValidSignal(light)
-                        ) {
-                          const lat = parseCoordinate(light.lat);
-                          const lng = parseCoordinate(light.lng);
-
-                          if (lat !== null && lng !== null) {
-                            const isActive = lightKey === currentActive;
-                            const lightGreenDuration = parseInt(light.greenDuration) || parseInt(light.duration) || 27;
-                            const lightYellowDuration = parseInt(light.yellowDuration) || 3;
-                            const lightTotalDuration = lightGreenDuration + lightYellowDuration;
-
-                            // Calculate remaining time for red lights (time until they become green)
-                            let remainingTime = parseInt(light.remainingTime) || 0;
-                            if (!isActive && light.color === 'red') {
-                              // Red light shows time until it becomes green
-                              // = total cycle time - active light's duration - active remaining time
-                              remainingTime = Math.max(0, totalCycleTime - lightTotalDuration - (lightTotalDuration - activeRemainingTime));
-                            }
-
-                            allSignals.push({
-                              color: light.color || 'red',
-                              direction: light.direction || lightKey,
-                              lat,
-                              lng,
-                              online: light.online ?? true,
-                              remainingTime,
-                              timestamp: light.timestamp || Date.now(),
-                              junctionId,
-                              source: light.trafficLightId ? 'backend' : 'legacy',
-                              trafficLightId: light.trafficLightId,
-                            });
-                          }
-                        }
-                      }
-                    );
+                  // For display: green shows only green portion, yellow shows yellow portion
+                  let displayTime = remainingTime;
+                  if (colorNum === COLOR_GREEN) {
+                    // Green: show time minus yellow duration
+                    displayTime = Math.max(0, remainingTime - yellowDuration);
+                  } else if (colorNum === COLOR_YELLOW) {
+                    // Yellow: show remaining time as-is (should be <= yellowDuration)
+                    displayTime = remainingTime;
                   }
-                }
-              );
+                  // Red: show remaining time as-is (time until green)
 
-              mergeAndUpdate(allSignals);
-            }
-          } catch (err) {
-            setError('Error processing junction data');
+                  const interid = parseInt(lightData.interid) || 0;
+                  const roadid = parseInt(lightData.roadid) || 0;
+                  const status = parseInt(lightData.status) || 0;
+
+                  allSignals.push({
+                    color,
+                    direction: `Road-${roadid}`,
+                    lat,
+                    lng,
+                    online: lightData.autoON !== false,
+                    remainingTime: displayTime,
+                    timestamp: lightData.timestamp
+                      ? new Date(lightData.timestamp).getTime()
+                      : Date.now(),
+                    junctionId: `Inter-${interid}`,
+                    source: 'backend',
+                    trafficLightId: key,
+                    status,
+                  });
+                }
+              }
+            });
+
+            console.log(
+              `Displaying ${allSignals.length} signals from traffic_lights`
+            );
+            setSignals(allSignals);
+            setError(null);
+            setLastUpdate(Date.now());
+            setLoading(false);
+          } else {
+            setSignals([]);
             setLoading(false);
           }
-        },
-        (err) => {
-          setError(err.message);
+        } catch (err) {
+          console.error('Error processing traffic_lights data:', err);
+          setError('Error processing traffic lights data');
           setLoading(false);
         }
-      );
-
-      return () => {
-        unsubscribeJunctions();
-      };
-    };
-
-    let unsubscribe: (() => void) | null = null;
-
-    fetchData().then((cleanupFn) => {
-      unsubscribe = cleanupFn;
-    });
+      },
+      (err) => {
+        setError(err.message);
+        setLoading(false);
+      }
+    );
 
     const interval = setInterval(() => {
       setLastUpdate(Date.now());
     }, refreshRate * 1000);
 
     return () => {
-      if (unsubscribe) unsubscribe();
+      unsubscribe();
       clearInterval(interval);
     };
   }, [refreshRate]);
 
-  return { signals, loading, error, lastUpdate, junctionsData };
+  return { signals, loading, error, lastUpdate, trafficLightsData };
 }
 
 interface TrafficSignalMarkerProps {
@@ -352,6 +229,7 @@ interface TrafficSignalMarkerProps {
     marker: google.maps.marker.AdvancedMarkerElement | null,
     key: string
   ) => void;
+  isStopped?: boolean;
 }
 
 const TrafficSignalMarker = memo(function TrafficSignalMarker({
@@ -359,6 +237,7 @@ const TrafficSignalMarker = memo(function TrafficSignalMarker({
   isSelected,
   onClick,
   setMarkerRef,
+  isStopped,
 }: TrafficSignalMarkerProps) {
   const colorMap = {
     red: '#ef4444',
@@ -372,86 +251,58 @@ const TrafficSignalMarker = memo(function TrafficSignalMarker({
     return null;
   }
 
+  // Check if light is broken (status=1) or fixing (status=2)
+  const isBrokenOrFixing = signal.status === 1 || signal.status === 2;
+  const statusLabel =
+    signal.status === 1 ? 'BROKEN' : signal.status === 2 ? 'FIXING' : '';
+
+  // Determine background color - gray for broken/fixing, normal color otherwise
+  const backgroundColor = isBrokenOrFixing ? '#6b7280' : colorMap[signal.color];
+
+  // Show "--" for stopped or broken/fixing lights
+  const showDash = isStopped || isBrokenOrFixing;
+
   return (
     <AdvancedMarker
       position={{ lat: signal.lat, lng: signal.lng }}
-      title={`Junction: ${signal.junctionId} | Direction: ${signal.direction}`}
+      title={`Junction: ${signal.junctionId} | Direction: ${signal.direction}${isStopped ? ' (STOPPED)' : ''}${isBrokenOrFixing ? ` (${statusLabel})` : ''}`}
       onClick={onClick}
       ref={(marker) => setMarkerRef && setMarkerRef(marker, markerKey)}
     >
       <div className="flex cursor-pointer flex-col items-center">
         <div
-          className={`flex items-center justify-center rounded-full border-4 shadow-lg ${
-            isSelected ? 'border-blue-500 ring-4 ring-blue-300' : 'border-white'
+          className={`flex items-center justify-center rounded-full shadow-lg ${
+            isSelected
+              ? 'border-4 border-blue-500 ring-4 ring-blue-300'
+              : isBrokenOrFixing
+                ? 'border-4 border-gray-400'
+                : 'border-4 border-white'
           }`}
           style={{
-            backgroundColor: colorMap[signal.color],
+            backgroundColor,
             width: '48px',
             height: '48px',
           }}
         >
           <span className="text-base font-bold text-white">
-            {signal.remainingTime}
+            {showDash ? '--' : signal.remainingTime}
           </span>
         </div>
         <div
           className={`mt-1 rounded px-2 py-1 text-xs font-semibold shadow-md ${
-            isSelected ? 'bg-blue-500 text-white' : 'bg-white text-gray-800'
+            isSelected
+              ? 'bg-blue-500 text-white'
+              : isBrokenOrFixing
+                ? 'bg-gray-600 text-white'
+                : 'bg-white text-gray-800'
           }`}
         >
-          {signal.junctionId}
+          {isBrokenOrFixing ? statusLabel : signal.junctionId}
         </div>
       </div>
     </AdvancedMarker>
   );
 });
-
-interface BrokenLightMarkerProps {
-  light: trafficLight;
-}
-
-function BrokenLightMarker({ light }: BrokenLightMarkerProps) {
-  if (!light.location?.coordinates || light.location.coordinates.length !== 2) {
-    return null;
-  }
-
-  const [lng, lat] = light.location.coordinates;
-
-  return (
-    <AdvancedMarker
-      position={{ lat, lng }}
-      title={`Broken Light | ID: ${light.id} | Intersection: ${light.intersection_id}`}
-    >
-      <div className="flex cursor-pointer flex-col items-center">
-        <div
-          className="flex items-center justify-center rounded-full border-4 border-white shadow-lg"
-          style={{
-            backgroundColor: '#6b7280', // gray-500
-            width: '48px',
-            height: '48px',
-          }}
-        >
-          <span className="text-5xl text-amber-300">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="currentColor"
-              className="icon icon-tabler icons-tabler-filled icon-tabler-alert-triangle"
-            >
-              <path stroke="none" d="M0 0h24v24H0z" fill="none" />
-              <path d="M12 1.67c.955 0 1.845 .467 2.39 1.247l.105 .16l8.114 13.548a2.914 2.914 0 0 1 -2.307 4.363l-.195 .008h-16.225a2.914 2.914 0 0 1 -2.582 -4.2l.099 -.185l8.11 -13.538a2.914 2.914 0 0 1 2.491 -1.403zm.01 13.33l-.127 .007a1 1 0 0 0 0 1.986l.117 .007l.127 -.007a1 1 0 0 0 0 -1.986l-.117 -.007zm-.01 -7a1 1 0 0 0 -.993 .883l-.007 .117v4l.007 .117a1 1 0 0 0 1.986 0l.007 -.117v-4l-.007 -.117a1 1 0 0 0 -.993 -.883z" />
-            </svg>
-          </span>
-        </div>
-        <div className="mt-1 rounded bg-gray-600 px-2 py-1 text-xs font-semibold text-white shadow-md">
-          BROKEN
-        </div>
-      </div>
-    </AdvancedMarker>
-  );
-}
 
 interface MapContentProps {
   settings: MapSettings;
@@ -459,12 +310,13 @@ interface MapContentProps {
   selectedSignal: SignalWithMeta | null;
   onSignalClick: (signal: SignalWithMeta) => void;
   signals: SignalWithMeta[];
-  brokenLights: trafficLight[];
   onMapReady?: (map: google.maps.Map | null) => void;
   showBrokenLights?: boolean;
   legendVisible?: boolean;
   onToggleLegend?: () => void;
   onUserLocationUpdate?: (location: { lat: number; lng: number }) => void;
+  emergencyStopAll?: boolean;
+  stoppedIntersections?: Set<number>;
 }
 
 function MapContent({
@@ -473,12 +325,13 @@ function MapContent({
   selectedSignal,
   onSignalClick,
   signals,
-  brokenLights,
   onMapReady,
   showBrokenLights = true,
   legendVisible = true,
   onToggleLegend,
   onUserLocationUpdate,
+  emergencyStopAll = false,
+  stoppedIntersections = new Set(),
 }: MapContentProps) {
   const map = useMap();
   const [isGettingLocation, setIsGettingLocation] = useState(false);
@@ -512,7 +365,9 @@ function MapContent({
       },
       (error) => {
         console.error('Error getting location:', error);
-        alert('Unable to get your location. Please check location permissions.');
+        alert(
+          'Unable to get your location. Please check location permissions.'
+        );
         setIsGettingLocation(false);
       },
       {
@@ -543,20 +398,30 @@ function MapContent({
   );
 
   const visibleSignals = useMemo(() => {
-    if (!userLocation || settings.visibilityRange === 0) {
-      return signals;
+    let filtered = signals;
+
+    // Filter out broken/fixing lights if showBrokenLights is false
+    if (!showBrokenLights) {
+      filtered = filtered.filter(
+        (s) => s.status === 0 || s.status === undefined
+      );
     }
 
-    return signals.filter((signal) => {
-      const distance = calculateDistance(
-        userLocation.lat,
-        userLocation.lng,
-        signal.lat,
-        signal.lng
-      );
-      return distance <= settings.visibilityRange;
-    });
-  }, [signals, userLocation, settings.visibilityRange]);
+    // Filter by distance if user location and visibility range are set
+    if (userLocation && settings.visibilityRange > 0) {
+      filtered = filtered.filter((signal) => {
+        const distance = calculateDistance(
+          userLocation.lat,
+          userLocation.lng,
+          signal.lat,
+          signal.lng
+        );
+        return distance <= settings.visibilityRange;
+      });
+    }
+
+    return filtered;
+  }, [signals, userLocation, settings.visibilityRange, showBrokenLights]);
 
   // Handle traffic layer
   useEffect(() => {
@@ -669,34 +534,38 @@ function MapContent({
 
   return (
     <>
-      {visibleSignals.map((signal, index) => (
-        <TrafficSignalMarker
-          key={`${signal.junctionId}-${signal.direction}-${index}`}
-          signal={signal}
-          isSelected={
-            selectedSignal?.junctionId === signal.junctionId &&
-            selectedSignal?.direction === signal.direction
-          }
-          onClick={() => onSignalClick(signal)}
-          setMarkerRef={setMarkerRef}
-        />
-      ))}
+      {visibleSignals.map((signal, index) => {
+        // Extract interid from junctionId (e.g., "Inter-3" -> 3)
+        const interid = parseInt(signal.junctionId.replace('Inter-', '')) || 0;
+        const isStopped = emergencyStopAll || stoppedIntersections.has(interid);
 
-      {showBrokenLights && brokenLights.map((light) => (
-        <BrokenLightMarker key={`broken-${light.id}`} light={light} />
-      ))}
+        return (
+          <TrafficSignalMarker
+            key={`${signal.junctionId}-${signal.direction}-${index}`}
+            signal={signal}
+            isSelected={
+              selectedSignal?.junctionId === signal.junctionId &&
+              selectedSignal?.direction === signal.direction
+            }
+            onClick={() => onSignalClick(signal)}
+            setMarkerRef={setMarkerRef}
+            isStopped={isStopped}
+          />
+        );
+      })}
 
       {emergencyVehicles.map((vehicle) => (
-        <EmergencyVehicleMarker
-          key={vehicle.vehicleId}
-          vehicle={vehicle}
-        />
+        <EmergencyVehicleMarker key={vehicle.vehicleId} vehicle={vehicle} />
       ))}
 
       <TrafficLegend
         totalLights={signals.length}
-        activeLights={visibleSignals.filter((s) => s.online).length}
-        brokenLights={brokenLights.length}
+        activeLights={
+          visibleSignals.filter((s) => s.online && s.status === 0).length
+        }
+        brokenLights={
+          signals.filter((s) => s.status === 1 || s.status === 2).length
+        }
         emergencyVehicles={emergencyVehicles.length}
         junctionsOverridden={switchedJunctions.length}
         isVisible={legendVisible}
@@ -707,10 +576,12 @@ function MapContent({
       <button
         onClick={handleJumpToLocation}
         disabled={isGettingLocation}
-        className="absolute bottom-4 right-4 z-10 flex items-center gap-2 rounded-lg border border-gray-200 bg-white/95 px-4 py-3 shadow-lg backdrop-blur-sm transition hover:bg-white disabled:opacity-50"
+        className="absolute right-4 bottom-4 z-10 flex items-center gap-2 rounded-lg border border-gray-200 bg-white/95 px-4 py-3 shadow-lg backdrop-blur-sm transition hover:bg-white disabled:opacity-50"
         title="Jump to my location"
       >
-        <Navigation className={`h-5 w-5 text-slate-600 ${isGettingLocation ? 'animate-pulse' : ''}`} />
+        <Navigation
+          className={`h-5 w-5 text-slate-600 ${isGettingLocation ? 'animate-pulse' : ''}`}
+        />
         <span className="text-sm font-medium text-gray-700">
           {isGettingLocation ? 'Getting location...' : 'My Location'}
         </span>
@@ -724,7 +595,6 @@ export default function TrafficMapPage() {
   const [currentLocation, setCurrentLocation] = useState('');
   const [destination, setDestination] = useState('');
   const [showSettings, setShowSettings] = useState(false);
-  const [brokenLights, setBrokenLights] = useState<trafficLight[]>([]);
   const [mapInstance, setMapInstance] = useState<google.maps.Map | null>(null);
   const [userLocation, setUserLocation] = useState<{
     lat: number;
@@ -733,12 +603,10 @@ export default function TrafficMapPage() {
   const [selectedSignal, setSelectedSignal] = useState<SignalWithMeta | null>(
     null
   );
-  const [selectedBrokenLight, setSelectedBrokenLight] = useState<trafficLight | null>(
-    null
-  );
 
   // Load broken lights visibility from localStorage
-  const BROKEN_LIGHTS_STORAGE_KEY = 'smartcity_traffic_map_show_broken_lights_v1';
+  const BROKEN_LIGHTS_STORAGE_KEY =
+    'smartcity_traffic_map_show_broken_lights_v1';
   const [showBrokenLights, setShowBrokenLights] = useState<boolean>(() => {
     try {
       const saved = localStorage.getItem(BROKEN_LIGHTS_STORAGE_KEY);
@@ -756,7 +624,10 @@ export default function TrafficMapPage() {
     setShowBrokenLights((prev) => {
       const newValue = !prev;
       try {
-        localStorage.setItem(BROKEN_LIGHTS_STORAGE_KEY, JSON.stringify(newValue));
+        localStorage.setItem(
+          BROKEN_LIGHTS_STORAGE_KEY,
+          JSON.stringify(newValue)
+        );
       } catch (err) {
         console.error('Failed to save broken lights visibility:', err);
       }
@@ -824,42 +695,52 @@ export default function TrafficMapPage() {
     };
   });
 
-  // Fetch traffic signals from Firebase
-  const { signals, loading, error, junctionsData } = useTeam10TrafficSignals(settings.refreshRate);
+  // Fetch traffic signals from Firebase (reads from traffic_lights only)
+  const { signals, loading, error } = useTeam10TrafficSignals(
+    settings.refreshRate
+  );
 
   // Manage traffic light cycles with Firebase sync (only one controller across all instances)
-  useTrafficLightCycle(junctionsData);
+  useTrafficLightCycle();
 
-  // Fetch broken traffic lights on mount
+  // Emergency stop state
+  const [emergencyStopAll, setEmergencyStopAll] = useState(false);
+  const [stoppedIntersections, setStoppedIntersections] = useState<Set<number>>(
+    new Set()
+  );
+
+  // Listen to emergency stop state from Firebase
   useEffect(() => {
-    const fetchBrokenLights = async () => {
-      try {
-        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL ?? ''}/traffic-lights/status`);
-        if (!res.ok) throw new Error('Failed to fetch status');
-        const json = await res.json();
-        const allLights = Array.isArray(json)
-          ? json
-          : json?.data?.trafficLights || json?.trafficLights || [];
+    const emergencyStopRef = ref(database, 'teams/10/emergency-stop');
+    const stoppedIntersectionsRef = ref(
+      database,
+      'teams/10/stopped-intersections'
+    );
 
-        // Filter for broken (status=1) and maintenance (status=2)
-        const problematicLights = allLights.filter((light: trafficLight) => {
-          const status = light.status;
-          const label = (light.statusLabel || '').toString().toLowerCase();
-          return (
-            status === 1 ||
-            status === 2 ||
-            /broken/.test(label) ||
-            /maintenance/.test(label)
-          );
-        });
+    const unsubscribeEmergencyStop = onValue(emergencyStopRef, (snapshot) => {
+      const value = snapshot.val();
+      setEmergencyStopAll(value === true);
+    });
 
-        setBrokenLights(problematicLights);
-      } catch (err) {
-        console.error('Failed to fetch broken traffic lights:', err);
+    const unsubscribeStoppedIntersections = onValue(
+      stoppedIntersectionsRef,
+      (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+          const intersectionIds = Object.keys(data)
+            .filter((key) => data[key] === true)
+            .map((key) => parseInt(key));
+          setStoppedIntersections(new Set(intersectionIds));
+        } else {
+          setStoppedIntersections(new Set());
+        }
       }
-    };
+    );
 
-    fetchBrokenLights();
+    return () => {
+      unsubscribeEmergencyStop();
+      unsubscribeStoppedIntersections();
+    };
   }, []);
 
   const handleStart = async () => {
@@ -902,23 +783,12 @@ export default function TrafficMapPage() {
     });
   }, []);
 
-  const handleBrokenLightClick = useCallback((light: trafficLight, mapRef?: google.maps.Map | null) => {
-    setSelectedBrokenLight(light);
-    // Pan and zoom map to broken light location
-    if (light.location?.coordinates) {
-      const [lng, lat] = light.location.coordinates;
-
-      // Pan to the location
-      if (mapRef) {
-        mapRef.panTo({ lat, lng });
-        mapRef.setZoom(18); // Zoom in to see the light clearly
-      }
-    }
-  }, []);
-
-  const handleUserLocationUpdate = useCallback((location: { lat: number; lng: number }) => {
-    setUserLocation(location);
-  }, []);
+  const handleUserLocationUpdate = useCallback(
+    (location: { lat: number; lng: number }) => {
+      setUserLocation(location);
+    },
+    []
+  );
 
   const initialCenter = { lat: 13.647372072504554, lng: 100.49553588244684 };
 
@@ -945,15 +815,13 @@ export default function TrafficMapPage() {
   }
 
   return (
-    <div className="mt-24 flex h-screen w-full">
+    <div className="flex h-screen w-full">
       {/* Enhanced Sidebar - Fixed width column */}
       <div className="w-96 flex-shrink-0">
         <TrafficSidebar
           signals={signals}
-          brokenLights={brokenLights}
           selectedSignal={selectedSignal}
           onSignalSelect={handleSignalSelect}
-          onBrokenLightClick={handleBrokenLightClick}
           mapInstance={mapInstance}
           showBrokenLights={showBrokenLights}
           onToggleBrokenLights={handleToggleBrokenLights}
@@ -992,12 +860,13 @@ export default function TrafficMapPage() {
                   selectedSignal={selectedSignal}
                   onSignalClick={handleSignalSelect}
                   signals={signals}
-                  brokenLights={brokenLights}
                   onMapReady={setMapInstance}
                   showBrokenLights={showBrokenLights}
                   legendVisible={legendVisible}
                   onToggleLegend={handleToggleLegend}
                   onUserLocationUpdate={handleUserLocationUpdate}
+                  emergencyStopAll={emergencyStopAll}
+                  stoppedIntersections={stoppedIntersections}
                 />
               </Map>
             </APIProvider>
