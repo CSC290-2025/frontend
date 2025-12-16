@@ -1,35 +1,37 @@
-import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { toast } from 'sonner';
 import {
-  useUseGetUserInsuranceCards as useGetUserInsuranceCards,
-  useUseUpdateInsuranceCard as useUpdateInsuranceCard,
-  getUseGetUserInsuranceCardsQueryKey,
-  getUseGetMyInsuranceCardsQueryKey,
-} from '@/api/generated/insurance-cards';
+  useGetMetroCardsUserUserId,
+  usePutMetroCardsMetroCardId,
+} from '@/api/generated/metro-cards';
 import { useGetUserProfileId } from '@/api/generated/user';
 import { Loader2, RefreshCw } from 'lucide-react';
 import type { AxiosError } from 'axios';
 import type {
-  UseUpdateInsuranceCard400,
-  UseUpdateInsuranceCard404,
+  PutMetroCardsMetroCardId400,
+  PutMetroCardsMetroCardId404,
 } from '@/api/generated/model';
+import { useQueryClient } from '@tanstack/react-query';
 import { useDebounce } from '@/features/Financial/hooks/useDebounce';
+import {
+  getGetMetroCardsMeQueryKey,
+  getGetMetroCardsUserUserIdQueryKey,
+} from '@/api/generated/metro-cards';
 
-export default function InsuranceCardManagement() {
+export default function MetroCardManagement() {
+  const queryClient = useQueryClient();
   const [userId, setUserId] = useState('');
   const debouncedUserId = useDebounce(userId, 500);
-  const queryClient = useQueryClient();
 
   const {
     data: cardsData,
     refetch: refetchCards,
     isFetching: isFetchingCards,
     isError: isCardsError,
-  } = useGetUserInsuranceCards(Number(debouncedUserId), {
+  } = useGetMetroCardsUserUserId(Number(debouncedUserId), {
     query: { enabled: !!debouncedUserId },
   });
 
@@ -40,30 +42,31 @@ export default function InsuranceCardManagement() {
     }
   );
 
-  const { mutate: updateCard, isPending: isUpdating } = useUpdateInsuranceCard<
-    AxiosError<UseUpdateInsuranceCard400 | UseUpdateInsuranceCard404>
-  >({
-    mutation: {
-      onSuccess: () => {
-        toast.success('Card updated successfully!');
-        queryClient.invalidateQueries({
-          queryKey: getUseGetUserInsuranceCardsQueryKey(
-            Number(debouncedUserId)
-          ),
-        });
-        queryClient.invalidateQueries({
-          queryKey: getUseGetMyInsuranceCardsQueryKey(),
-        });
+  const { mutate: updateCard, isPending: isUpdating } =
+    usePutMetroCardsMetroCardId<
+      AxiosError<PutMetroCardsMetroCardId400 | PutMetroCardsMetroCardId404>
+    >({
+      mutation: {
+        onSuccess: () => {
+          toast.success('Card updated successfully!');
+          queryClient.invalidateQueries({
+            queryKey: getGetMetroCardsUserUserIdQueryKey(
+              Number(debouncedUserId)
+            ),
+          });
+          queryClient.invalidateQueries({
+            queryKey: getGetMetroCardsMeQueryKey(),
+          });
+        },
+        onError: (error) => {
+          const message =
+            (error.response?.data as any)?.message || 'Failed to update card';
+          toast.error(message);
+        },
       },
-      onError: (error) => {
-        const message =
-          (error.response?.data as any)?.message || 'Failed to update card';
-        toast.error(message);
-      },
-    },
-  });
+    });
 
-  const cards = cardsData?.data?.insuranceCards || [];
+  const cards = cardsData?.data?.metroCards || [];
   const username = (userData?.data as any)?.user?.username;
 
   const isFetching = isFetchingCards || isFetchingUser;
@@ -73,7 +76,7 @@ export default function InsuranceCardManagement() {
     <Card className="mt-8 mb-6">
       <CardContent className="p-6">
         <h3 className="mb-4 text-lg font-semibold text-gray-900">
-          Admin Insurance Card Management
+          Admin Metro Card Management
         </h3>
         <div className="mb-4 space-y-2">
           <label className="block text-sm font-medium text-gray-700">
@@ -108,7 +111,7 @@ export default function InsuranceCardManagement() {
 
         {debouncedUserId && cards.length === 0 && !isFetching && !isError && (
           <div className="mt-2 text-sm text-gray-500">
-            No insurance cards found for this user.
+            No metro cards found for this user.
           </div>
         )}
 
@@ -159,7 +162,7 @@ export default function InsuranceCardManagement() {
                           status:
                             card.status === 'active' ? 'suspended' : 'active',
                         },
-                        insuranceCardId: card.id,
+                        metroCardId: card.id,
                       })
                     }
                     variant={
