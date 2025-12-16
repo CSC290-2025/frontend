@@ -13,23 +13,23 @@ function BloodTypeDropdown({ value, onChange }: BloodTypeDropdownProps) {
   return (
     <div className="relative w-full">
       <div
-        className="flex h-12 cursor-pointer items-center justify-between rounded-[10px] border border-[#00000040] bg-[#FAFAFA] px-4 py-3 text-sm text-[#2B5991] md:h-[50px] md:text-base lg:h-[50px] lg:px-[16px] lg:py-[13px] lg:text-[16px]"
+        className="flex h-[38px] cursor-pointer items-center justify-between rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 transition-all duration-200 hover:border-gray-300 focus:ring-2 focus:ring-cyan-400 focus:outline-none"
         onClick={() => setOpen(!open)}
       >
-        {value}
+        <span>{value}</span>
         {open ? (
-          <ChevronUp className="h-5 w-5 md:h-6 md:w-6 lg:h-[24px] lg:w-[24px]" />
+          <ChevronUp className="h-4 w-4 text-gray-500" />
         ) : (
-          <ChevronDown className="h-5 w-5 md:h-6 md:w-6 lg:h-[24px] lg:w-[24px]" />
+          <ChevronDown className="h-4 w-4 text-gray-500" />
         )}
       </div>
 
       {open && (
-        <div className="absolute left-0 z-10 mt-1 w-full rounded-[10px] border border-[#00000040] bg-white shadow-lg">
+        <div className="absolute left-0 z-10 mt-1 w-full rounded-lg border border-gray-200 bg-white shadow-lg">
           {options.map((opt) => (
             <div
               key={opt}
-              className="cursor-pointer px-4 py-2 text-sm hover:bg-[#2B5991]/10 md:text-base"
+              className="cursor-pointer px-3 py-2 text-sm text-gray-900 transition-colors first:rounded-t-lg last:rounded-b-lg hover:bg-cyan-50"
               onClick={() => {
                 onChange(opt);
                 setOpen(false);

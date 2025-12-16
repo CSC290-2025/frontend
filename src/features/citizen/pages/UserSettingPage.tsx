@@ -6,13 +6,19 @@ import Picture from '../components/userSettingPage/Picture';
 import { UserAPI } from '../api';
 import { ChevronLeft } from 'lucide-react';
 import { useNavigate } from '@/router';
+import { useGetAuthMe } from '@/api/generated/authentication';
+import Layout from '@/components/main/Layout';
 
 function UserSettingPage() {
-  const userID = 7;
+  const userID = useGetAuthMe().data?.data?.userId;
   const [user, setUser] = useState<any>(null);
   const [specialists, setSpecialists] = useState<any[]>([]);
   const [userRoles, setUserRoles] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState('personal');
+
+  const [selectedProfilePicture, setSelectedProfilePicture] =
+    useState<File | null>(null);
+
   const navigate = useNavigate();
 
   const mapUserData = (userApiData: any) => {
@@ -67,13 +73,12 @@ function UserSettingPage() {
         console.error('Error fetching user:', err);
       }
     };
-
+    console.log(userID);
     const getSpecialists = async () => {
       try {
         const response = await UserAPI.getUserSpecialists(userID);
         console.log('Specialists response:', response);
 
-        // Handle the nested response structure
         if (response?.data?.specialists) {
           setSpecialists(response.data.specialists);
         } else if (response?.specialists) {
@@ -94,7 +99,6 @@ function UserSettingPage() {
         const response = await UserAPI.getUserRoles(userID);
         console.log('User roles response:', response);
 
-        // Handle the response structure
         if (response?.roles) {
           setUserRoles(response.roles);
         } else if (Array.isArray(response)) {
@@ -135,15 +139,35 @@ function UserSettingPage() {
   };
 
   const handleBackButton = () => {
-    navigate('/');
+    navigate('/profile');
   };
 
-  if (!user) return <div>Loading...</div>;
+  if (!user) {
+    return (
+      <Layout>
+        <div></div>
+      </Layout>
+    );
+  }
+  if (!userID) {
+    navigate('/');
+  }
 
-  const { personal, health, account, picture } = user;
+  const { personal, health, account } = user;
+  let { picture } = user;
 
   const handleSave = async () => {
     try {
+      if (selectedProfilePicture && userID) {
+        const data = await UserAPI.updateUserProfilePicture(
+          userID,
+          selectedProfilePicture
+        );
+        console.log(data);
+        picture = data.profilePictureUrl;
+        console.log(data.profilePictureUrl);
+      }
+
       const personalPayload = {
         user: {
           phone: personal.PhoneNumber,
@@ -167,13 +191,13 @@ function UserSettingPage() {
       };
 
       const healthPayload = {
-        birth_date: health.BirthDate,
-        blood_type: health.BloodType,
-        congenital_disease: health.CongenitalDisease,
-        allergy: health.Allergic,
-        height: Number(health.Height),
-        weight: Number(health.Weight),
-        gender: health.Gender,
+        birth_date: health.BirthDate || null,
+        blood_type: health.BloodType === 'none' ? null : health.BloodType,
+        congenital_disease: health.CongenitalDisease || null,
+        allergy: health.Allergic || null,
+        height: health.Height ? Number(health.Height) : null,
+        weight: health.Weight ? Number(health.Weight) : null,
+        gender: health.Gender === 'none' ? null : health.Gender,
       };
 
       const accountPayload = {
@@ -192,95 +216,119 @@ function UserSettingPage() {
     }
   };
 
-  // --- New Tabs component for easy reuse ---
   const Tabs = () => (
-    <div className="mb-6 flex overflow-x-auto border-b pb-2 md:mb-8 md:border-none md:pb-0 lg:mb-[39px]">
-      {['personal', 'health', 'account'].map((tab) => (
-        <div
-          key={tab}
-          className={`flex h-10 min-w-[100px] flex-1 cursor-pointer items-center justify-center transition-colors md:h-[47px] md:max-w-[209px] ${activeTab === tab ? 'bg-[#96E0E1]' : 'bg-white'}`}
-          onClick={() => setActiveTab(tab)}
-        >
-          <h2 className="text-sm text-[#2B5991] capitalize md:text-base lg:text-[20px]">
-            {tab}
-          </h2>
-        </div>
-      ))}
+    <div className="mb-5 flex justify-center overflow-x-auto md:mb-6">
+      <div className="flex w-full gap-2">
+        {['personal', 'health', 'account'].map((tab) => (
+          <button
+            key={tab}
+            className={`group relative flex h-10 flex-1 cursor-pointer items-center justify-center rounded-xl border transition-all duration-300 md:h-11 ${
+              activeTab === tab
+                ? 'border-cyan-400 bg-gradient-to-r from-cyan-400 to-blue-400 shadow-md'
+                : 'border-gray-200 bg-white hover:border-cyan-300 hover:bg-gray-50'
+            }`}
+            onClick={() => setActiveTab(tab)}
+          >
+            <h2
+              className={`text-xs font-semibold capitalize transition-all duration-300 md:text-sm lg:text-base ${
+                activeTab === tab
+                  ? 'text-white'
+                  : 'text-gray-600 group-hover:text-cyan-400'
+              }`}
+            >
+              {tab}
+            </h2>
+          </button>
+        ))}
+      </div>
     </div>
   );
-  // ------------------------------------------
 
   return (
-    <div className="flex min-h-screen w-full justify-center bg-white pb-10">
-      {/* Main Container */}
-      <div className="flex w-full max-w-[1200px] flex-col px-4 md:px-10 lg:px-[80px]">
-        {/* Header */}
-        <div className="mt-6 mb-6 flex items-center gap-4 md:mt-8 md:mb-8 lg:mt-[48px] lg:mb-[37px]">
-          <ChevronLeft
-            className="h-8 w-8 cursor-pointer font-bold text-[#2B5991] md:h-10 md:w-10 lg:h-[77px] lg:w-[77px]"
-            onClick={handleBackButton}
-          />
-          <h1 className="text-2xl font-bold text-[#2B5991] md:text-3xl lg:text-[48px]">
-            Edit Profile
-          </h1>
-        </div>
-
-        {/* --- Mobile Tabs (visible on small screens only) --- */}
-        <div className="md:hidden">
-          <Tabs />
-        </div>
-        {/* ---------------------------------------------------- */}
-
-        {/* Content Body */}
-        <div className="flex flex-col gap-8 md:flex-row lg:gap-[20px]">
-          {/* Left Sidebar - Picture */}
-          <div className="flex w-full shrink-0 justify-center md:w-auto md:justify-start">
-            <Picture username={account.Username} picture={picture} />
+    <Layout>
+      <div className="flex min-h-screen w-full justify-center bg-gradient-to-br from-gray-50 to-blue-50 px-4 py-6 md:py-8">
+        <div className="flex w-full max-w-[1100px] flex-col rounded-2xl bg-white px-5 py-6 shadow-xl md:px-8 md:py-8 lg:px-12 lg:py-10">
+          <div className="mb-5 flex items-center gap-3 md:mb-6 lg:mb-8">
+            <button
+              onClick={handleBackButton}
+              className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-white transition-all duration-300 hover:border-cyan-400 hover:bg-cyan-50 md:h-11 md:w-11"
+            >
+              <ChevronLeft className="h-5 w-5 text-gray-600 md:h-6 md:w-6" />
+            </button>
+            <h1 className="text-2xl font-bold text-blue-900 md:text-3xl lg:text-4xl">
+              Edit Profile
+            </h1>
           </div>
 
-          {/* Right Content - Forms */}
-          <div className="w-full min-w-0 flex-1">
-            {/* --- Desktop Tabs (hidden on small screens, shown on md and above) --- */}
-            <div className="hidden md:block">
-              <Tabs />
-            </div>
-            {/* ---------------------------------------------------------------------- */}
+          <div className="md:hidden">
+            <Tabs />
+          </div>
 
-            {/* Form Components */}
-            <div className="w-full">
-              {user && activeTab === 'personal' && (
-                <Personal
-                  data={personal}
-                  specialists={specialists}
-                  onDataChange={handlePersonalChange}
-                />
-              )}
-
-              {user && activeTab === 'health' && (
-                <Health data={health} onDataChange={handleHealthChange} />
-              )}
-
-              {user && activeTab === 'account' && (
-                <Account
-                  data={account}
-                  onDataChange={handleAccountChange}
-                  roles={userRoles}
-                />
-              )}
+          <div className="flex flex-col gap-6 md:flex-row lg:gap-8">
+            <div className="flex w-full shrink-0 justify-center md:w-auto md:justify-start">
+              <Picture
+                username={account.Username}
+                picture={picture}
+                userId={userID}
+                onFileSelect={(file) => setSelectedProfilePicture(file)}
+              />
             </div>
 
-            <div className="mt-8 flex justify-center md:mt-10">
-              <button
-                className="w-full min-w-[120px] cursor-pointer rounded bg-blue-500 px-8 py-3 text-white transition-colors hover:bg-blue-600 md:w-auto"
-                onClick={handleSave}
-              >
-                Save
-              </button>
+            <div className="w-full min-w-0 flex-1">
+              <div className="hidden md:block">
+                <Tabs />
+              </div>
+
+              <div className="w-full">
+                <div className="transition-opacity duration-300 ease-in-out">
+                  {user && activeTab === 'personal' && (
+                    <Personal
+                      data={personal}
+                      specialists={specialists}
+                      onDataChange={handlePersonalChange}
+                    />
+                  )}
+
+                  {user && activeTab === 'health' && (
+                    <Health data={health} onDataChange={handleHealthChange} />
+                  )}
+
+                  {user && activeTab === 'account' && (
+                    <Account
+                      data={account}
+                      onDataChange={handleAccountChange}
+                      roles={userRoles}
+                    />
+                  )}
+                </div>
+              </div>
+
+              <div className="mt-6 flex justify-center md:mt-8">
+                <button
+                  className="group flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-400 px-6 py-2.5 text-sm font-semibold text-white shadow-md transition-all duration-300 hover:scale-105 hover:shadow-lg md:w-auto md:min-w-[180px] md:py-3"
+                  onClick={handleSave}
+                >
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.5"
+                    className="transition-transform group-hover:scale-110"
+                  >
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                    <polyline points="17 21 17 13 7 13 7 21" />
+                    <polyline points="7 3 7 8 15 8" />
+                  </svg>
+                  Save Changes
+                </button>
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </Layout>
   );
 }
 

@@ -51,5 +51,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --no-lockfile
 
+      - name: Generate API types
+        run: pnpm run api:generate
+
       - name: Build Project
         run: pnpm run build

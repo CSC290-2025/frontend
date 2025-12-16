@@ -17,96 +17,124 @@ function Health({ data, onDataChange }: HealthPropsWithSetter) {
     });
   };
 
-  // Shared class for consistent input styling
   const inputClass =
-    'h-12 w-full rounded-[10px] border border-[#00000040] bg-[#FAFAFA] px-4 py-3 text-sm text-[#2B5991] md:h-[50px] md:text-base lg:h-[50px] lg:px-[16px] lg:py-[13px] lg:text-[16px]';
-  const labelClass = 'text-base font-medium md:text-lg lg:text-[20px]';
+    'w-full rounded-lg border border-gray-200 bg-white text-gray-900 px-3 py-2 text-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent hover:border-gray-300';
+  const labelClass = 'font-medium text-gray-700 text-xs md:text-sm';
+  const disabledInputClass =
+    'w-full rounded-lg border border-gray-100 bg-gray-50 text-gray-500 px-3 py-2 text-sm cursor-not-allowed';
 
   return (
-    <div className="flex w-full flex-col gap-5 md:gap-6 lg:gap-[27px]">
-      {/* Row 1: Date of Birth & Blood Type (2 Columns) */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5 lg:gap-[27px]">
-        <div className="flex flex-col gap-2 md:gap-3 lg:gap-[13px]">
-          <h2 className={labelClass}>Date of birth</h2>
-          <input
-            type="date"
-            name="BirthDate"
-            className={inputClass}
-            value={data.BirthDate}
-            onChange={handleChange}
-          />
-        </div>
-        <div className="flex flex-col gap-2 md:gap-3 lg:gap-[13px]">
-          <h2 className={labelClass}>Blood Type</h2>
-          <BloodTypeDropdown
-            value={data.BloodType}
-            onChange={(newValue) =>
-              onDataChange({ ...data, BloodType: newValue })
-            }
-          />
-        </div>
-      </div>
-
-      {/* Row 2: Congenital Disease (Full Width) */}
-      <div className="flex flex-col gap-2 md:gap-3 lg:gap-[13px]">
-        <h2 className={labelClass}>Congenital Disease</h2>
-        <input
-          type="text"
-          name="CongenitalDisease"
-          className={inputClass}
-          value={data.CongenitalDisease}
-          onChange={handleChange}
-        />
-      </div>
-
-      {/* Row 3: Allergic (Full Width) */}
-      <div className="flex flex-col gap-2 md:gap-3 lg:gap-[13px]">
-        <h2 className={labelClass}>Allergic</h2>
-        <input
-          type="text"
-          name="Allergic"
-          className={inputClass}
-          value={data.Allergic}
-          onChange={handleChange}
-        />
-      </div>
-
-      {/* Row 4: Insurance Number (Full Width) */}
-      <div className="flex flex-col gap-2 md:gap-3 lg:gap-[13px]">
-        <h2 className={labelClass}>Insurance Number</h2>
-        <div className={`flex items-center ${inputClass}`}>
-          {data.Insurance}
+    <div className="flex w-full flex-col gap-4 md:gap-5">
+      {/* Basic Health Info Section */}
+      <div className="flex flex-col gap-3 rounded-xl border border-gray-100 p-4 shadow-lg md:p-5">
+        <h1 className="text-base font-bold text-blue-900 md:text-lg">
+          Basic Health Information
+        </h1>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div className="flex flex-col gap-1.5">
+            <h2 className={labelClass}>Date of Birth</h2>
+            <input
+              type="date"
+              name="BirthDate"
+              className={inputClass}
+              value={data.BirthDate}
+              onChange={handleChange}
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <h2 className={labelClass}>Blood Type</h2>
+            <BloodTypeDropdown
+              value={data.BloodType}
+              onChange={(newValue) =>
+                onDataChange({ ...data, BloodType: newValue })
+              }
+            />
+          </div>
         </div>
       </div>
 
-      {/* Row 5: Height, Weight, Gender (3 Columns) */}
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-3 md:gap-5 lg:gap-[27px]">
-        <div className="flex flex-col gap-2 md:gap-3 lg:gap-[13px]">
-          <h2 className={labelClass}>Height</h2>
-          <input
-            type="text"
-            name="Height"
-            className={inputClass}
-            value={data.Height}
-            onChange={handleChange}
-          />
+      {/* Medical Conditions Section */}
+      <div className="flex flex-col gap-3 rounded-xl border border-gray-100 p-4 shadow-lg md:p-5">
+        <h1 className="text-base font-bold text-blue-900 md:text-lg">
+          Medical Conditions
+        </h1>
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-1.5">
+            <h2 className={labelClass}>Congenital Disease</h2>
+            <input
+              type="text"
+              name="CongenitalDisease"
+              className={inputClass}
+              value={data.CongenitalDisease}
+              onChange={handleChange}
+              placeholder="Enter any congenital diseases"
+            />
+          </div>
+
+          <div className="flex flex-col gap-1.5">
+            <h2 className={labelClass}>Allergies</h2>
+            <input
+              type="text"
+              name="Allergic"
+              className={inputClass}
+              value={data.Allergic}
+              onChange={handleChange}
+              placeholder="Enter any allergies"
+            />
+          </div>
         </div>
-        <div className="flex flex-col gap-2 md:gap-3 lg:gap-[13px]">
-          <h2 className={labelClass}>Weight</h2>
-          <input
-            type="text"
-            name="Weight"
-            className={inputClass}
-            value={data.Weight}
-            onChange={handleChange}
-          />
+      </div>
+
+      {/* Insurance Section */}
+      <div className="flex flex-col gap-3 rounded-xl border border-gray-100 p-4 shadow-lg md:p-5">
+        <h1 className="text-base font-bold text-blue-900 md:text-lg">
+          Insurance Information
+        </h1>
+        <div className="flex flex-col gap-1.5">
+          <h2 className={labelClass}>Insurance Number</h2>
+          <div className={disabledInputClass}>
+            {data.Insurance || 'No insurance number'}
+          </div>
         </div>
-        <div className="flex flex-col gap-2 md:gap-3 lg:gap-[13px]">
-          <h2 className={labelClass}>Gender</h2>
-          <GenderDropdown
-            value={data.Gender}
-            onChange={(newValue) => onDataChange({ ...data, Gender: newValue })}
-          />
+      </div>
+
+      {/* Physical Measurements Section */}
+      <div className="flex flex-col gap-3 rounded-xl border border-gray-100 p-4 shadow-lg md:p-5">
+        <h1 className="text-base font-bold text-blue-900 md:text-lg">
+          Physical Measurements
+        </h1>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <div className="flex flex-col gap-1.5">
+            <h2 className={labelClass}>Height (cm)</h2>
+            <input
+              type="text"
+              name="Height"
+              className={inputClass}
+              value={data.Height}
+              onChange={handleChange}
+              placeholder="Enter height"
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <h2 className={labelClass}>Weight (kg)</h2>
+            <input
+              type="text"
+              name="Weight"
+              className={inputClass}
+              value={data.Weight}
+              onChange={handleChange}
+              placeholder="Enter weight"
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <h2 className={labelClass}>Gender</h2>
+            <GenderDropdown
+              value={data.Gender}
+              onChange={(newValue) =>
+                onDataChange({ ...data, Gender: newValue })
+              }
+            />
+          </div>
         </div>
       </div>
     </div>
