@@ -58,8 +58,8 @@ export type Path =
   | `/profile`
   | `/public_transportation`
   | `/register`
-  | `/resetPassword`
-  | `/resetPassword/request`
+  | `/reset-password`
+  | `/reset-password/request`
   | `/sos`
   | `/sos/:id`
   | `/sos/report`

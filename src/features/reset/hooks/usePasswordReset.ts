@@ -11,9 +11,14 @@ export const useForgetPassword = () => {
     mutationFn: forgotPasswordRequest,
     onSuccess: (data) => {
       console.log('Email sent successfully!', data);
+      alert('If that email exists, a reset link has been sent.');
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error('Error sending email:', error);
+      alert(
+        error.response?.data?.message ||
+          'An error occurred while sending the email.'
+      );
     },
   });
 };
@@ -31,7 +36,15 @@ export const useResetPassword = () => {
   return useMutation({
     mutationFn: resetPassword,
     onSuccess: () => {
+      alert('Password reset successfully!');
       window.location.href = '/login';
+    },
+    onError: (error: any) => {
+      console.error('Error sending email:', error);
+      alert(
+        error.response?.data?.message ||
+          'An error occurred while resetting password LOL'
+      );
     },
   });
 };
