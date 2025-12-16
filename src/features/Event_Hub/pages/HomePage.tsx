@@ -1,6 +1,3 @@
-// ============================================================
-// HomePage.tsx - Fixed with Pagination and Data Display
-// ============================================================
 import React, { useState, useEffect } from 'react';
 import {
   Calendar,
@@ -30,7 +27,7 @@ import ContactPage from '@/features/Event_Hub/pages/ContactPage';
 import MonthlyPage from '@/features/Event_Hub/pages/MonthlyPage';
 import { fetchEvents } from '@/features/Event_Hub/api/Event.api';
 import {
-  fetchBookmarks,
+  checkBookmarkStatus,
   createBookmark,
   deleteBookmark,
 } from '@/features/Event_Hub/api/Bookmark.api';
@@ -48,9 +45,32 @@ interface Event {
   organizerName?: string;
   organizerEmail?: string;
   organizerPhone?: string;
-  status: string;
+  status: 'Ended' | 'Ongoing' | 'Available'; // Updated strict status type
   category: string;
 }
+
+/**
+ * Determines the status of an event based on its start and end times.
+ * @param startAtISO The event's start time as an ISO string.
+ * @param endAtISO The event's end time as an ISO string.
+ * @returns 'Ended', 'Ongoing', or 'Available'
+ */
+const getEventStatus = (
+  startAtISO: string,
+  endAtISO: string
+): Event['status'] => {
+  const now = new Date();
+  const start = new Date(startAtISO);
+  const end = new Date(endAtISO);
+
+  if (now > end) {
+    return 'Ended'; // Current time is past the event end time
+  } else if (now >= start && now <= end) {
+    return 'Ongoing'; // Current time is between the start and end time
+  } else {
+    return 'Available'; // Event is in the future
+  }
+};
 
 const HomePage = () => {
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
@@ -81,64 +101,105 @@ const HomePage = () => {
           q: searchQuery || undefined,
         });
 
+        // Handle different API response structures (axios vs fetch, paginated vs flat)
         const body = (response as any).data ?? response;
-        const payload = body.data ?? body;
-        const items: any[] = Array.isArray(payload.items) ? payload.items : [];
+        const payload = body.data ?? body; // Some APIs wrap result in 'data'
+        const items: any[] = Array.isArray(payload.items)
+          ? payload.items
+          : Array.isArray(payload)
+            ? payload
+            : [];
+
         const total = payload.total ?? items.length;
 
-        // Calculate total pages
         setTotalEvents(total);
         setTotalPages(Math.ceil(total / itemsPerPage));
 
         const transformedEvents: Event[] = items.map((event: any) => {
-          // Format address
+          // --- 1. ROBUST DATE HANDLING ---
+          let startObj: Date, endObj: Date;
+          let startAtISO: string, endAtISO: string;
+
+          if (event.start_at && event.end_at) {
+            startObj = new Date(event.start_at);
+            endObj = new Date(event.end_at);
+            startAtISO = event.start_at;
+            endAtISO = event.end_at;
+          } else if (
+            event.start_date &&
+            event.start_time &&
+            event.end_date &&
+            event.end_time
+          ) {
+            // Combine separate date/time fields safely
+            startAtISO = `${event.start_date}T${event.start_time}:00`;
+            endAtISO = `${event.end_date}T${event.end_time}:00`;
+            startObj = new Date(startAtISO);
+            endObj = new Date(endAtISO);
+          } else {
+            // Fallback for missing dates
+            startObj = new Date();
+            endObj = new Date();
+            startAtISO = startObj.toISOString();
+            endAtISO = endObj.toISOString();
+          }
+
+          // --- 2. CALCULATE DYNAMIC STATUS ---
+          const status = getEventStatus(startAtISO, endAtISO);
+
+          // --- 3. ROBUST LOCATION AND ORGANIZATION HANDLING (FIX) ---
+          // Check for both schema name (address/organization) and Prisma model name (addresses/event_organization)
+          const address = event.address || event.addresses;
+          const org = event.organization || event.event_organization;
+
           let locationStr = 'Location TBD';
-          if (event.address) {
+          if (address) {
             const parts = [
-              event.address.address_line,
-              event.address.subdistrict,
-              event.address.district,
-              event.address.province,
-              event.address.postal_code,
-            ].filter(Boolean);
-            locationStr = parts.length > 0 ? parts.join(', ') : 'Location TBD';
+              address.address_line,
+              address.subdistrict,
+              address.district,
+              address.province,
+              address.postal_code,
+            ].filter(Boolean); // Removes null/undefined/empty strings
+
+            if (parts.length > 0) locationStr = parts.join(', ');
           }
 
           return {
             id: event.id,
             title: event.title,
             description: event.description,
-            start_at: event.start_at,
-            end_at: event.end_at,
+            // Keep raw strings for logic if needed, or ISO strings
+            start_at: startAtISO,
+            end_at: endAtISO,
 
-            // Date formatting
-            date: new Date(event.start_at).toLocaleDateString('en-GB', {
+            // Formatted Date for UI
+            date: startObj.toLocaleDateString('en-GB', {
               day: '2-digit',
               month: 'short',
               year: 'numeric',
             }),
 
-            // Time formatting
-            time: `${new Date(event.start_at).toLocaleTimeString('en-US', {
+            // Formatted Time for UI
+            time: `${startObj.toLocaleTimeString('en-US', {
               hour: '2-digit',
               minute: '2-digit',
               hour12: false,
-            })} - ${new Date(event.end_at).toLocaleTimeString('en-US', {
+            })} - ${endObj.toLocaleTimeString('en-US', {
               hour: '2-digit',
               minute: '2-digit',
               hour12: false,
             })}`,
 
-            // Location with full address
             location: locationStr,
 
-            // Organization details
-            organizerName: event.organization?.name ?? 'Unknown Organizer',
-            organizerEmail: event.organization?.email ?? 'N/A',
-            organizerPhone: event.organization?.phone_number ?? 'N/A',
+            // Safe access to organization details
+            organizerName: org?.name || 'Unknown Organizer',
+            organizerEmail: org?.email || 'N/A',
+            organizerPhone: org?.phone_number || 'N/A',
 
-            status: 'Available',
-            category: 'events',
+            status: status,
+            category: event.event_tag_name || 'events',
           };
         });
 
@@ -154,26 +215,34 @@ const HomePage = () => {
     loadEvents();
   }, [currentPage, searchQuery]);
 
-  // Reset to page 1 when search query changes
+  // Load bookmark status for all events when events change
   useEffect(() => {
-    setCurrentPage(1);
-  }, [searchQuery]);
+    const loadBookmarkStatuses = async () => {
+      if (events.length === 0) return;
 
-  useEffect(() => {
-    const loadBookmarks = async () => {
-      try {
-        const response = await fetchBookmarks();
-        const bookmarkedIds = new Set(
-          response.data.data.map((bookmark: any) => bookmark.event_id)
-        );
-        setBookmarkedEvents(bookmarkedIds);
-      } catch (err) {
-        console.error('Error fetching bookmarks:', err);
-      }
+      const bookmarkedIds = new Set<number>();
+
+      // Check bookmark status for each event
+      await Promise.all(
+        events.map(async (event) => {
+          try {
+            const response = await checkBookmarkStatus(event.id);
+            // If bookmarked, add to set
+            if (response.data?.bookmarked || response.data?.data?.bookmarked) {
+              bookmarkedIds.add(event.id);
+            }
+          } catch (err) {
+            // If error (like 404), it means not bookmarked
+            console.debug(`Event ${event.id} not bookmarked`);
+          }
+        })
+      );
+
+      setBookmarkedEvents(bookmarkedIds);
     };
 
-    loadBookmarks();
-  }, []);
+    loadBookmarkStatuses();
+  }, [events]);
 
   const filteredEvents = events.filter((event) => {
     if (activeTab === 'bookmark') {
@@ -295,6 +364,32 @@ const HomePage = () => {
     }
   };
 
+  // Helper function to map status to Tailwind classes
+  const getStatusClasses = (status: Event['status']) => {
+    switch (status) {
+      case 'Available':
+        return {
+          badge: 'bg-green-50 text-green-700 border-green-200',
+          dot: 'bg-green-500',
+        };
+      case 'Ongoing':
+        return {
+          badge: 'bg-blue-50 text-blue-700 border-blue-200',
+          dot: 'bg-blue-500',
+        };
+      case 'Ended':
+        return {
+          badge: 'bg-gray-100 text-gray-500 border-gray-200',
+          dot: 'bg-gray-400',
+        };
+      default:
+        return {
+          badge: 'bg-gray-50 text-gray-700 border-gray-200',
+          dot: 'bg-gray-500',
+        };
+    }
+  };
+
   return (
     <div className="flex h-screen bg-gray-50">
       <Sidebar
@@ -387,60 +482,75 @@ const HomePage = () => {
             ) : (
               <>
                 <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-                  {filteredEvents.map((event) => (
-                    <div
-                      key={event.id}
-                      className="rounded-2xl border border-gray-200 bg-white p-6 transition-shadow hover:shadow-lg"
-                    >
-                      <div className="mb-4 flex items-start justify-between">
-                        <div>
-                          <h3 className="mb-1 text-xl font-bold text-gray-800">
-                            {event.title}
-                          </h3>
-                          <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-3 py-1 text-sm font-medium text-green-700">
-                            <div className="h-2 w-2 rounded-full bg-green-500"></div>
-                            {event.status}
-                          </span>
+                  {filteredEvents.map((event) => {
+                    const statusClasses = getStatusClasses(event.status);
+
+                    return (
+                      <div
+                        key={event.id}
+                        className="rounded-2xl border border-gray-200 bg-white p-6 transition-shadow hover:shadow-lg"
+                      >
+                        <div className="mb-4 flex items-start justify-between">
+                          <div>
+                            <h3 className="mb-1 text-xl font-bold text-gray-800">
+                              {event.title}
+                            </h3>
+                            <span
+                              className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-sm font-medium ${statusClasses.badge}`}
+                            >
+                              <div
+                                className={`h-2 w-2 rounded-full ${statusClasses.dot}`}
+                              ></div>
+                              {event.status}
+                            </span>
+                          </div>
+                          <button
+                            onClick={() => toggleBookmark(event.id)}
+                            className="rounded-lg p-2 transition-colors hover:bg-gray-100"
+                          >
+                            <BookmarkMinus
+                              className={`h-5 w-5 ${
+                                bookmarkedEvents.has(event.id)
+                                  ? 'fill-cyan-500 text-cyan-500'
+                                  : 'text-gray-400'
+                              }`}
+                            />
+                          </button>
                         </div>
+
+                        <div className="mb-6 space-y-3">
+                          <div className="flex items-center gap-3 text-gray-600">
+                            <Calendar className="h-5 w-5 flex-shrink-0" />
+                            <span className="font-medium">{event.date}</span>
+                          </div>
+                          <div className="flex items-center gap-3 text-gray-600">
+                            <Clock className="h-5 w-5 flex-shrink-0" />
+                            <span className="font-medium">{event.time}</span>
+                          </div>
+                          <div className="flex items-start gap-3 text-gray-600">
+                            <MapPin className="mt-0.5 h-5 w-5 flex-shrink-0" />
+                            <span className="line-clamp-2 font-medium">
+                              {event.location}
+                            </span>
+                          </div>
+                        </div>
+
                         <button
-                          onClick={() => toggleBookmark(event.id)}
-                          className="rounded-lg p-2 transition-colors hover:bg-gray-100"
+                          onClick={() => handleOpenModal(event)}
+                          className={`w-full rounded-lg py-3 font-medium text-white transition-colors ${
+                            event.status === 'Ended'
+                              ? 'cursor-not-allowed bg-gray-400'
+                              : 'bg-cyan-500 hover:bg-cyan-600'
+                          }`}
+                          disabled={event.status === 'Ended'}
                         >
-                          <BookmarkMinus
-                            className={`h-5 w-5 ${
-                              bookmarkedEvents.has(event.id)
-                                ? 'fill-cyan-500 text-cyan-500'
-                                : 'text-gray-400'
-                            }`}
-                          />
+                          {event.status === 'Ended'
+                            ? 'Event Ended'
+                            : 'More Details'}
                         </button>
                       </div>
-
-                      <div className="mb-6 space-y-3">
-                        <div className="flex items-center gap-3 text-gray-600">
-                          <Calendar className="h-5 w-5 flex-shrink-0" />
-                          <span className="font-medium">{event.date}</span>
-                        </div>
-                        <div className="flex items-center gap-3 text-gray-600">
-                          <Clock className="h-5 w-5 flex-shrink-0" />
-                          <span className="font-medium">{event.time}</span>
-                        </div>
-                        <div className="flex items-start gap-3 text-gray-600">
-                          <MapPin className="mt-0.5 h-5 w-5 flex-shrink-0" />
-                          <span className="line-clamp-2 font-medium">
-                            {event.location}
-                          </span>
-                        </div>
-                      </div>
-
-                      <button
-                        onClick={() => handleOpenModal(event)}
-                        className="w-full rounded-lg bg-cyan-500 py-3 font-medium text-white transition-colors hover:bg-cyan-600"
-                      >
-                        More Details
-                      </button>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
 
                 {filteredEvents.length === 0 && (

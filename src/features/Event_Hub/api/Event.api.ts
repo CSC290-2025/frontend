@@ -21,17 +21,33 @@ export const fetchEventById = (id: number) => {
 export const createEvent = (data: {
   host_user_id: number;
   title: string;
-  description: undefined;
-  total_seats: number | undefined;
-  start_at: string;
-  end_at: string;
-  organization_id: number | null;
-  address_id: number | null;
-  event_tag_id: number | null;
+  description?: string;
+  total_seats?: number;
+  image_url?: string;
+
+  start_date: string;
+  start_time: string;
+  end_date: string;
+  end_time: string;
+
+  event_tag_name?: string;
+
+  organization?: {
+    name: string;
+    email: string;
+    phone_number: string;
+  };
+
+  address?: {
+    address_line?: string;
+    province?: string;
+    district?: string;
+    subdistrict?: string;
+    postal_code?: string;
+  };
 }) => {
   return apiClient.post('/events', data);
 };
-
 // Update existing event
 export const updateEvent = (
   id: number,
