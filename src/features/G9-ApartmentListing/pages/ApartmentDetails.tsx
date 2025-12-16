@@ -33,6 +33,12 @@ import {
 } from '@/features/G9-ApartmentListing/components/toastBox';
 import { MessageCircle } from 'lucide-react';
 import { OWN } from '@/features/G9-ApartmentListing/api/index';
+interface NearbyPlace {
+  name: string;
+  display_name: string;
+  type: string;
+  distance: number;
+}
 export default function ApartmentDetailPage() {
   const params = useParams('/ApartmentHomepage/:id');
   const apartmentId = params.id;
@@ -186,7 +192,7 @@ export default function ApartmentDetailPage() {
     aptLat,
     aptLon,
     5000,
-    4,
+    20,
     'bank, atm, bus_station, hospital, pharmacy'
   );
   const otherAmenitiesArray = otherNearbyAmenities || [];
@@ -856,11 +862,213 @@ export default function ApartmentDetailPage() {
               </div>
             </div>
 
-            {/* Nearby places - TODO: Add API integration when available */}
+            {/* Nearby places */}
             <div className="mb-6 rounded-lg bg-white p-6 shadow-sm">
               <h2 className="mb-4 text-xl font-bold">Nearby places</h2>
-              <div className="text-sm text-gray-500">
-                Nearby places information will be available soon.
+              <div className="space-y-4">
+                {/* Bank */}
+                <div className="rounded-lg border border-gray-200 p-4">
+                  <h3 className="mb-3 flex items-center gap-2 font-semibold text-gray-800">
+                    Bank
+                  </h3>
+                  <div className="space-y-2">
+                    {nearbyArray
+                      .filter((place: NearbyPlace) => place.type === 'bank')
+                      .slice(0, 3)
+                      .map((place: NearbyPlace, index: number) => (
+                        <div key={index} className="text-sm text-gray-600">
+                          <p className="text-gray-700">
+                            {place.display_name.split(',')[0]}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {(place.distance / 1000).toFixed(2)}km away
+                          </p>
+                        </div>
+                      ))}
+                  </div>
+                  {nearbyArray.filter(
+                    (place: NearbyPlace) => place.type === 'bank'
+                  ).length === 0 && (
+                    <p className="text-sm text-gray-400">
+                      No banks found nearby
+                    </p>
+                  )}
+                </div>
+
+                {/* ATM */}
+                <div className="rounded-lg border border-gray-200 p-4">
+                  <h3 className="mb-3 flex items-center gap-2 font-semibold text-gray-800">
+                    ATM
+                  </h3>
+                  <div className="space-y-2">
+                    {nearbyArray
+                      .filter((place: NearbyPlace) => place.type === 'atm')
+                      .slice(0, 3)
+                      .map((place: NearbyPlace, index: number) => (
+                        <div key={index} className="text-sm text-gray-600">
+                          <p className="text-gray-700">
+                            {place.display_name.split(',')[0]}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {(place.distance / 1000).toFixed(2)}km away
+                          </p>
+                        </div>
+                      ))}
+                  </div>
+                  {nearbyArray.filter(
+                    (place: NearbyPlace) => place.type === 'atm'
+                  ).length === 0 && (
+                    <p className="text-sm text-gray-400">
+                      No ATMs found nearby
+                    </p>
+                  )}
+                </div>
+
+                {/* Bus Lines */}
+                <div className="rounded-lg border border-gray-200 p-4">
+                  <h3 className="mb-3 flex items-center gap-2 font-semibold text-gray-800">
+                    Bus Lines
+                  </h3>
+                  <div className="space-y-2">
+                    {nearbyArray
+                      .filter(
+                        (place: NearbyPlace) => place.type === 'bus_station'
+                      )
+                      .slice(0, 3)
+                      .map((place: NearbyPlace, index: number) => (
+                        <div key={index} className="text-sm text-gray-600">
+                          <p className="text-gray-700">
+                            {place.display_name.split(',')[0]}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {(place.distance / 1000).toFixed(2)}km away
+                          </p>
+                        </div>
+                      ))}
+                  </div>
+                  {nearbyArray.filter(
+                    (place: NearbyPlace) => place.type === 'bus_station'
+                  ).length === 0 && (
+                    <p className="text-sm text-gray-400">
+                      No bus lines found nearby
+                    </p>
+                  )}
+                </div>
+
+                {/* Hospital */}
+                <div className="rounded-lg border border-gray-200 p-4">
+                  <h3 className="mb-3 flex items-center gap-2 font-semibold text-gray-800">
+                    Hospital
+                  </h3>
+                  <div className="space-y-2">
+                    {nearbyArray
+                      .filter((place: NearbyPlace) => place.type === 'hospital')
+                      .slice(0, 3)
+                      .map((place: NearbyPlace, index: number) => (
+                        <div key={index} className="text-sm text-gray-600">
+                          <p className="text-gray-700">
+                            {place.display_name.split(',')[0]}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {(place.distance / 1000).toFixed(2)}km away
+                          </p>
+                        </div>
+                      ))}
+                  </div>
+                  {nearbyArray.filter(
+                    (place: NearbyPlace) => place.type === 'hospital'
+                  ).length === 0 && (
+                    <p className="text-sm text-gray-400">
+                      No hospitals found nearby
+                    </p>
+                  )}
+                </div>
+
+                {/* Pharmacy */}
+                <div className="rounded-lg border border-gray-200 p-4">
+                  <h3 className="mb-3 flex items-center gap-2 font-semibold text-gray-800">
+                    Pharmacy
+                  </h3>
+                  <div className="space-y-2">
+                    {nearbyArray
+                      .filter((place: NearbyPlace) => place.type === 'pharmacy')
+                      .slice(0, 3)
+                      .map((place: NearbyPlace, index: number) => (
+                        <div key={index} className="text-sm text-gray-600">
+                          <p className="text-gray-700">
+                            {place.display_name.split(',')[0]}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {(place.distance / 1000).toFixed(2)}km away
+                          </p>
+                        </div>
+                      ))}
+                  </div>
+                  {nearbyArray.filter(
+                    (place: NearbyPlace) => place.type === 'pharmacy'
+                  ).length === 0 && (
+                    <p className="text-sm text-gray-400">
+                      No pharmacies found nearby
+                    </p>
+                  )}
+                </div>
+
+                {/* Other nearby places */}
+                <div className="rounded-lg border border-gray-200 p-4">
+                  <h3 className="mb-3 flex items-center gap-2 font-semibold text-gray-800">
+                    Other Amenities
+                  </h3>
+                  <div className="space-y-2">
+                    {(otherAmenitiesArray && otherAmenitiesArray.length > 0
+                      ? otherAmenitiesArray
+                      : nearbyArray.filter(
+                          (place: NearbyPlace) =>
+                            ![
+                              'pharmacy',
+                              'hospital',
+                              'bank',
+                              'atm',
+                              'bus_station',
+                            ].includes(place.type)
+                        )
+                    )
+                      .slice(0, 3)
+                      .map((place: NearbyPlace, index: number) => (
+                        <div key={index} className="text-sm text-gray-600">
+                          <p className="text-gray-700">
+                            {
+                              (place.display_name || place.name || '').split(
+                                ','
+                              )[0]
+                            }
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {place.distance
+                              ? `${(place.distance / 1000).toFixed(2)}km away`
+                              : ''}
+                            {place.type ? ` • ${place.type}` : ''}
+                          </p>
+                        </div>
+                      ))}
+                  </div>
+                  {(otherAmenitiesArray && otherAmenitiesArray.length > 0
+                    ? otherAmenitiesArray
+                    : nearbyArray.filter(
+                        (place: NearbyPlace) =>
+                          ![
+                            'pharmacy',
+                            'hospital',
+                            'bank',
+                            'atm',
+                            'bus_station',
+                          ].includes(place.type)
+                      )
+                  ).length === 0 && (
+                    <p className="text-sm text-gray-400">
+                      No other places found nearby
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
 
