@@ -30,9 +30,18 @@ export const ReportOmit = ReportFromSchema.omit({
 });
 
 const ReportResponseMannySchema = z.object({
-  report: z.array(ReportFromSchema),
+  data: z.object({
+    report: z.array(ReportFromSchema),
+  }),
 });
+
+const ReportUpdateFromSchema = ReportFromSchema.omit({
+  id: true,
+  created_at: true,
+  updated_at: true,
+}).partial();
 
 export type ReportRequestFrom = z.infer<typeof ReportOmit>;
 export type ReportResponseFrom = z.infer<typeof ReportFromSchema>;
+export type ReportUpdateForm = z.infer<typeof ReportUpdateFromSchema>;
 export type ReportResponseManny = z.infer<typeof ReportResponseMannySchema>;

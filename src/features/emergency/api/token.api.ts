@@ -1,6 +1,6 @@
-import { post } from '.';
+import { Post } from '.';
 import type { SuccessResponseInterface } from '../interfaces/api';
-import type { TokenModel } from '../interfaces/fcm.ts';
+import type { CreateToken } from '../interfaces/fcm.ts';
 
 export default class TokenApi {
   // static async getTokens() {
@@ -8,10 +8,10 @@ export default class TokenApi {
   //     return response;
   // }
 
-  static async storeToken(token: string) {
-    const response: SuccessResponseInterface<TokenModel> = await post(
-      '/tokens',
-      { tokens: token }
+  static async storeToken(token: string, userId: number) {
+    const response: SuccessResponseInterface<CreateToken> = await Post(
+      '/emergency/tokens',
+      { tokens: token, user_id: userId }
     );
     return response;
   }

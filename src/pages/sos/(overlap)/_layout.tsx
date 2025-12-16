@@ -7,7 +7,7 @@ export default function SosLayout() {
   return (
     <MainLayout overlap={true} classname="transition-colors duration-300">
       <GeoLocationProvider>
-        <ReportFromProvider>
+        <ReportFromProvider initialPage={'1'} initialLimit={'5'}>
           <Outlet />
         </ReportFromProvider>
       </GeoLocationProvider>

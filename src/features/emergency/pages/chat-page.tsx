@@ -2,7 +2,10 @@ import { useState, useEffect, useRef } from 'react';
 import { Send, User, CornerUpLeft, Siren } from 'lucide-react';
 import { Input } from '@/features/emergency/components/ui/input';
 import { Button } from '@/features/emergency/components/ui/button';
-import { Card, CardContent } from '@/features/emergency/components/ui/card';
+import {
+  Card,
+  CardContent,
+} from '@/features/emergency/components/modules/card/card.tsx';
 
 interface Message {
   id: string;

@@ -35,7 +35,6 @@ export function ContactFormProvider({ children }: ContactFormProviderProps) {
     setIsLoading(true);
     try {
       const res = await ContactApi.getContactByUserId(userId);
-
       setContact(res.contact);
     } catch (error) {
       console.error(error);
@@ -47,9 +46,8 @@ export function ContactFormProvider({ children }: ContactFormProviderProps) {
   const createContact = async (data: ContactRequestFrom) => {
     setIsLoading(true);
     try {
-      const res = await ContactApi.postContact(data);
-
-      setContact((prev) => [...prev, res.data]);
+      await ContactApi.postContact(data);
+      await findContactByUserId('1');
     } catch (error) {
       console.error(error);
     } finally {
@@ -77,7 +75,6 @@ export function ContactFormProvider({ children }: ContactFormProviderProps) {
       const fetchData = async () => {
         await findContactByUserId('1'); //mock cuz it not have auth
       };
-
       fetchData();
     } catch (error) {
       console.error(error);

@@ -5,9 +5,15 @@ export interface TokenModel {
   token: string;
 }
 
+const CreateTokenSchema = z.object({
+  token: z.string(),
+  user_id: z.number(),
+});
+
 const NotificationSchema = z.object({
   title: z.string(),
   body: z.string(),
 });
 
 export type NotificationT = z.infer<typeof NotificationSchema>;
+export type CreateToken = z.infer<typeof CreateTokenSchema>;
