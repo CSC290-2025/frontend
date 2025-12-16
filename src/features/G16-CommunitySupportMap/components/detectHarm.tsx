@@ -1,7 +1,8 @@
 // src/App.tsx
 import { useEffect, useState } from 'react';
 import { ShimmerButton } from '@/components/ui/shimmer-button'; //pnpm dlx shadcn@latest add @magicui/shimmer-button
-import { AuroraText } from '@/components/ui/aurora-text'; //pnpm dlx shadcn@latest add @magicui/aurora-text
+import { AuroraText } from '@/components/ui/aurora-text';
+import { getBaseAPIURL } from '@/lib/apiClient.ts'; //pnpm dlx shadcn@latest add @magicui/aurora-text
 
 // type
 type LocalImg = { file: File; url: string };
@@ -20,7 +21,7 @@ type DetectResponse = {
   } | null;
   message?: string;
 };
-const API_PATH = 'http://localhost:3000/api/detect-harm';
+const API_PATH = getBaseAPIURL + '/api/detect-harm';
 
 // component
 export default function DetectHarm() {

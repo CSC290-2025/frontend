@@ -3,5 +3,5 @@
 import { apiClient } from '@/lib/apiClient';
 
 export const fetchUserById = (id: number) => {
-  apiClient.get(`/user/${id}`);
+  return apiClient.get(`/user/${id}`);
 };
