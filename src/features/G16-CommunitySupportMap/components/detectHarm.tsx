@@ -112,7 +112,7 @@ export default function DetectHarm() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 p-6">
       <div className="w-full max-w-md space-y-5 rounded-2xl border bg-white p-6 shadow-sm">
-        <h1 className="px-34 text-xl font-semibold tracking-tight">
+        <h1 className="w-full text-center text-xl font-semibold tracking-tight">
           <AuroraText>Detect issue</AuroraText>
         </h1>
 
