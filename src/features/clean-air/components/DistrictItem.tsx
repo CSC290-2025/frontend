@@ -29,30 +29,30 @@ const getStatusAndStyle = (category: string): StatusDetails => {
     case 'HEALTHY':
       return {
         status: 'HEALTHY',
-        style: 'bg-green-500 text-white',
+        style: 'bg-green-500 text-black',
       };
     case 'MODERATE':
       return {
         status: 'MODERATE',
-        style: 'bg-lime-500 text-white',
+        style: 'bg-lime-500 text-black',
       };
     case 'UNHEALTHY_FOR_SENSITIVE':
       return {
         status: 'UNHEALTHY FOR SENSITIVE',
-        style: 'bg-yellow-500 text-white',
+        style: 'bg-yellow-500 text-black',
       };
     case 'UNHEALTHY':
     case 'BAD':
       return {
         status: 'UNHEALTHY',
-        style: 'bg-orange-500 text-white',
+        style: 'bg-orange-500 text-black',
       };
     case 'VERY_UNHEALTHY':
     case 'DANGEROUS':
     case 'HAZARDOUS':
       return {
         status: 'VERY UNHEALTHY',
-        style: 'bg-red-500 text-white',
+        style: 'bg-red-500 text-black',
       };
     default:
       console.log(

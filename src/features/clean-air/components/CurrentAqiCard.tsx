@@ -40,14 +40,14 @@ const getStatusAndStyle = (category: string): StatusDetails => {
     case 'MODERATE':
       return {
         status: 'MODERATE',
-        style: 'bg-lime-500 text-white',
+        style: 'bg-lime-500 text-black',
         icon: faFaceSmile,
         iconStyle: 'text-lime-500',
       };
     case 'UNHEALTHY_FOR_SENSITIVE':
       return {
         status: 'UNHEALTHY FOR SENSITIVE',
-        style: 'bg-yellow-500 text-white',
+        style: 'bg-yellow-500 text-black',
         icon: faFaceMeh,
         iconStyle: 'text-yellow-500',
       };
@@ -170,7 +170,7 @@ export default function CurrentAqiCard({
           </p>
 
           <span
-            className={`mt-4 inline-block w-fit rounded px-4 py-1 text-sm font-semibold ${statusStyle} `}
+            className={`mt-1 rounded px-2 py-0.5 text-sm font-semibold ${statusStyle} `}
           >
             {status}
           </span>
