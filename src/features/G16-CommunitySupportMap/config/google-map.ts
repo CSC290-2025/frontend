@@ -1,8 +1,8 @@
 import { setOptions, importLibrary } from '@googlemaps/js-api-loader';
 
 setOptions({ key: import.meta.env.VITE_G16_GOOGLE_MAPS_API_KEY });
-const key = import.meta.env.VITE_G16_GOOGLE_MAPS_API_KEY
-console.log(key)
+const key = import.meta.env.VITE_G16_GOOGLE_MAPS_API_KEY;
+console.log(key);
 
 type MapInit = {
   mapEl: HTMLElement;
@@ -19,9 +19,17 @@ const initMapAndMarkers = async ({
   markerOptions = [],
 }: MapInit) => {
   try {
+    //old
+    /*
     const [{ Map }, { AdvancedMarkerElement }] = await Promise.all([
       importLibrary('maps') as Promise<google.maps.MapsLibrary>,
       importLibrary('marker') as Promise<google.maps.MarkerLibrary>,
+    ]);
+    */
+
+    //new
+    const [{ Map }] = await Promise.all([
+      importLibrary('maps') as Promise<google.maps.MapsLibrary>,
     ]);
 
     const map = new Map(mapEl, mapOptions);
@@ -30,10 +38,20 @@ const initMapAndMarkers = async ({
     const infoWindow = new google.maps.InfoWindow();
 
     markerOptions.forEach((opt) => {
+      //old
+      /*
       const marker = new AdvancedMarkerElement({
         position: opt.position,
         title: opt.title,
         map: map,
+      });
+      */
+
+      // new
+      const marker = new google.maps.Marker({
+        position: opt.position,
+        title: opt.title,
+        map,
       });
 
       // when click marker show popup
@@ -43,9 +61,6 @@ const initMapAndMarkers = async ({
         const titleWithoutConfident = (opt.title ?? '')
           .replace(/\(\d+%\)/, '')
           .trim();
-        // const raw = opt.title ?? "";
-        // const typeOnly = raw.split(":")[1]
-        //                   ?.replace(/\(.*\)/, "");
 
         infoWindow.setContent(`
           <div style="min-width:180px; font-size: 14px">
@@ -54,6 +69,7 @@ const initMapAndMarkers = async ({
             Lng: ${opt.position.lng}
           </div>
         `);
+
         infoWindow.open(map, marker);
       });
     });

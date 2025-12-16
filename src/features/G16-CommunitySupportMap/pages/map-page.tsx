@@ -280,7 +280,8 @@ const MapPage = () => {
         const res = await apiClient.get('/api/markers', {
           params: { limit: 200 },
         });
-        const data = res.data.data as SuccessMarker[];
+
+        const data = res.data.data.markers as SuccessMarker[];
 
         const mapped: MapMarker[] = data
           .filter((m) => m.location)
@@ -362,7 +363,7 @@ const MapPage = () => {
     const mapOptions: google.maps.MapOptions = {
       center,
       zoom: 13,
-      mapId: 'map1',
+      // mapId: 'map1',
       // Lock map inside the bounding box
       restriction: {
         latLngBounds: MAP_BOUNDS,
