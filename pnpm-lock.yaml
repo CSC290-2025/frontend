@@ -4722,21 +4722,12 @@ snapshots:
     dependencies:
       '@fortawesome/fontawesome-common-types': 7.1.0
 
-<<<<<<< HEAD
-  '@fortawesome/react-fontawesome@3.1.1(@fortawesome/fontawesome-svg-core@7.1.0)(react@19.1.1)':
-    dependencies:
-      '@fortawesome/fontawesome-svg-core': 7.1.0
-      react: 19.1.1
-
-  '@generouted/react-router@1.20.0(react-router@7.9.1(react-dom@19.1.1(react@19.1.1))(react@19.1.1))(react@19.1.1)(rolldown-vite@7.1.20(@types/node@24.5.2)(esbuild@0.25.9)(jiti@2.5.1)(yaml@2.8.1))':
-=======
   '@fortawesome/react-fontawesome@3.1.0(@fortawesome/fontawesome-svg-core@7.1.0)(react@19.2.1)':
     dependencies:
       '@fortawesome/fontawesome-svg-core': 7.1.0
       react: 19.2.1
 
   '@generouted/react-router@1.20.0(react-router@7.10.1(react-dom@19.2.1(react@19.2.1))(react@19.2.1))(react@19.2.1)(rolldown-vite@7.1.20(@types/node@24.5.2)(esbuild@0.25.12)(jiti@2.6.1)(yaml@2.8.1))':
->>>>>>> f710e4874b6af4ad27385daf124da5da51cb3de8
     dependencies:
       fast-glob: 3.3.3
       generouted: 1.20.0(rolldown-vite@7.1.20(@types/node@24.5.2)(esbuild@0.25.12)(jiti@2.6.1)(yaml@2.8.1))
@@ -4758,13 +4749,6 @@ snapshots:
     dependencies:
       '@types/google.maps': 3.58.1
 
-<<<<<<< HEAD
-  '@googlemaps/map-loader@0.2.0':
-    dependencies:
-      '@googlemaps/js-api-loader': 1.16.8
-
-=======
->>>>>>> f710e4874b6af4ad27385daf124da5da51cb3de8
   '@googlemaps/markerclusterer@2.5.3':
     dependencies:
       fast-deep-equal: 3.1.3

@@ -13,3 +13,5 @@ export function useMyProfile() {
     refetchOnWindowFocus: true,
   });
 }
+
+export const useUserProfileDetails = useMyProfile;
