@@ -215,16 +215,6 @@ export function useUserRequests() {
   });
 }
 
-// export function useCreateRequest() {
-//   const queryClient = useQueryClient();
-//   return useMutation({
-//     mutationFn: createRequest,
-//     onSuccess: () => {
-//       queryClient.invalidateQueries({ queryKey: ['requests', 'user'] });
-//     },
-//   });
-// }
-
 export function useCreateRequest() {
   const queryClient = useQueryClient();
   return useMutation({

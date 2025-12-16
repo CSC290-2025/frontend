@@ -1,8 +1,6 @@
-// API functions for fetching Freecycle data from the backend
 import { apiClient } from '@/lib/apiClient';
 import type { ApiPost, Category, CategoryWithName } from '@/types/postItem';
 
-// Response types matching backend structure
 interface ApiResponseWrapper<T> {
   success: boolean;
   data: T;

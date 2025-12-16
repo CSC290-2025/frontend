@@ -455,9 +455,15 @@ export default function ItemDetailPage() {
                       }
                     >
                       {item.is_given ? (
-                        <RotateCw className="h-5 w-5" />
+                        <div className="flex items-center justify-center gap-2">
+                          <RotateCw className="h-5 w-5" />
+                          mark as not given
+                        </div>
                       ) : (
-                        <CheckCircle className="h-5 w-5" />
+                        <div className="flex items-center justify-center gap-2">
+                          <CheckCircle className="h-5 w-5" />
+                          mark as given
+                        </div>
                       )}
                     </button>
                   </div>

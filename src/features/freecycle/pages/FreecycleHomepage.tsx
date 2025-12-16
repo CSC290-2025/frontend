@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import DiscoverPage from './DiscoverPage';
 import PostItemForm from './PostItemForm';
 import PostEventForm from './PostEventForm';
@@ -8,7 +8,7 @@ import { mapApiPostToItem } from '@/types/postItem';
 import DiscoverBanner from '@/features/freecycle/components/DiscoverBanner';
 import ItemCard from '@/features/freecycle/components/ItemCard';
 import { useNavigate } from '@/router';
-import { Compass, ShoppingBag, Heart } from 'lucide-react';
+import { Compass, ShoppingBag, Heart, Inbox } from 'lucide-react';
 import {
   useMyPosts,
   useDeletePost,
@@ -31,7 +31,6 @@ export default function FreecycleHomepage() {
 
   const [currentPage, setCurrentPage] = useState<Page>('home');
   const [activeTab, setActiveTab] = useState<Tab>(() => {
-    // Check localStorage for saved activeTab
     const saved = localStorage.getItem('freecycle_activeTab');
     if (saved === 'my-items' || saved === 'my-requests') {
       return saved as Tab;
@@ -39,34 +38,46 @@ export default function FreecycleHomepage() {
     return 'discover';
   });
   const [searchQuery] = useState('');
-
   const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
 
-  // Clear localStorage when navigation back to avoid persisting old tab
   useEffect(() => {
     localStorage.removeItem('freecycle_activeTab');
   }, []);
 
-  // Fetch user's posts for "My Items" tab
   const { data: userPosts, isLoading: postsLoading } = useMyPosts();
   const deletePostMutation = useDeletePost();
   const markAsGivenMutation = useMarkPostAsGiven();
   const markAsNotGivenMutation = useMarkPostAsNotGiven();
 
-  const handleViewItem = (item: PostItem) => {
-    navigate(`/freecycle/items/${item.id}` as any, {
-      state: { backPath: '/freecycle' },
-    });
-  };
+  const handleViewItem = useCallback(
+    (item: PostItem) => {
+      navigate(`/freecycle/items/${item.id}` as any, {
+        state: { backPath: '/freecycle' },
+      });
+    },
+    [navigate]
+  );
 
-  const handleToggleCategory = (categoryId: number) => {
+  const handleToggleCategory = useCallback((categoryId: number) => {
     setSelectedCategories((prev) => {
       if (prev.includes(categoryId)) {
         return prev.filter((id) => id !== categoryId);
       }
       return [...prev, categoryId];
     });
-  };
+  }, []);
+
+  const handleItemClick = useCallback(
+    (itemId: number) => {
+      navigate(`/freecycle/items/${itemId}` as any, {
+        state: {
+          backPath: '/freecycle',
+          activeTab: 'my-items',
+        },
+      });
+    },
+    [navigate]
+  );
 
   const renderContent = () => {
     switch (currentPage) {
@@ -180,18 +191,16 @@ export default function FreecycleHomepage() {
                         {userPosts.map((post) => {
                           const item = mapApiPostToItem(post);
                           return (
-                            <ItemCard
-                              key={item.id}
-                              item={item}
-                              onClick={() =>
-                                navigate(`/freecycle/items/${item.id}` as any, {
-                                  state: {
-                                    backPath: '/freecycle',
-                                    activeTab: 'my-items',
-                                  },
-                                })
-                              }
-                            />
+                            <div key={item.id} className="group relative">
+                              <ItemCard
+                                item={item}
+                                onClick={() => handleItemClick(item.id)}
+                              />
+                              <div className="absolute top-2 left-2 z-10 flex items-center gap-1.5 rounded-full border border-yellow-200 bg-yellow-100 px-2.5 py-1 text-xs font-bold text-yellow-800 shadow-md">
+                                interested
+                                <span>{item.request_count || 0}</span>
+                              </div>
+                            </div>
                           );
                         })}
                       </div>
