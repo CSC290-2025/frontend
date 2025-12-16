@@ -4,7 +4,6 @@ import initMapAndMarkers from '../config/google-map';
 import type { SuccessMarker, MapMarker } from '../interfaces/api';
 import { MarkerSidePanel } from '../components/rightSide';
 import { apiClient } from '@/lib/apiClient';
-import Layout from '@/components/main/Layout';
 
 export const MarkerIcon = {
   Trash: (
@@ -388,27 +387,22 @@ const MapPage = () => {
   const panelMarkers = markers.filter(isInAnyZone);
 
   return (
-    <Layout>
-      <div className="w-full space-y-4">
-        {loading && <p className="text-sm text-gray-500">Loading markers...</p>}
+    <div className="w-full space-y-4">
+      {loading && <p className="text-sm text-gray-500">Loading markers...</p>}
 
-        <div className="flex gap-4">
-          <div className="flex-1">
-            <div
-              ref={mapRef}
-              id="google_map"
-              className="overflow-hidden rounded-xl border border-neutral-300 shadow-sm"
-              style={{ height: 'calc(95vh - 180px)' }}
-            />
-          </div>
-
-          <MarkerSidePanel
-            markers={panelMarkers}
-            onDelete={handleDeleteMarker}
+      <div className="flex gap-4">
+        <div className="flex-1">
+          <div
+            ref={mapRef}
+            id="google_map"
+            className="overflow-hidden rounded-xl border border-neutral-300 shadow-sm"
+            style={{ height: 'calc(95vh - 180px)' }}
           />
         </div>
+
+        <MarkerSidePanel markers={panelMarkers} onDelete={handleDeleteMarker} />
       </div>
-    </Layout>
+    </div>
   );
 };
 
