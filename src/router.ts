@@ -1,4 +1,5 @@
 // Generouted, changes to this file will be overridden
+/* eslint-disable */
 
 import { components, hooks, utils } from '@generouted/react-router/client';
 
@@ -25,7 +26,6 @@ export type Path =
   | `/citizen/setting`
   | `/clean-air/district-detail/:district`
   | `/clean-air/district-selection`
-  | `/demo-tracking`
   | `/event_hub`
   | `/event_hub/CreatePage`
   | `/example/:id`
@@ -68,6 +68,7 @@ export type Path =
   | `/traffic/control`
   | `/traffic/mock`
   | `/traffic/test`
+  | `/traffic/tracking`
   | `/users`
   | `/volunteer/board`
   | `/volunteer/createpost`

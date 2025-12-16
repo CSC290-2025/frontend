@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   APIProvider,
   Map,
@@ -7,10 +7,10 @@ import {
 } from '@vis.gl/react-google-maps';
 import { ref, onValue, update } from 'firebase/database';
 import { database } from '@/lib/firebase';
+import { apiClient } from '@/lib/apiClient';
 import { useEmergencyVehicles } from '../hooks/useEmergencyVehicles';
 import { useTrafficLightCycle } from '../hooks/useTrafficLightCycle';
 import EmergencyVehicleMarker from '../components/EmergencyVehicleMarker';
-import TrafficLightControlPopup from '../components/TrafficLightControlPopup';
 import MapSettingsDialog from '../components/MapSettingsDialog';
 import LightEditorDialog from '../components/LightEditorDialog';
 import {
@@ -78,6 +78,8 @@ interface MapContentProps {
   onMapReady?: (map: google.maps.Map | null) => void;
   emergencyStopAll?: boolean;
   stoppedJunctions?: Set<string>;
+  emergencyMode?: string | null;
+  emergencyControlledIntersections?: Set<string>;
 }
 
 function parseCoordinate(value: any): number | null {
@@ -207,11 +209,13 @@ function TrafficSignalMarker({
   isSelected,
   onClick,
   isStopped,
+  isEmergencyAllRed,
 }: {
   signal: TrafficSignal;
   isSelected: boolean;
   onClick: () => void;
   isStopped?: boolean;
+  isEmergencyAllRed?: boolean;
 }) {
   const colorMap = {
     red: '#ef4444',
@@ -229,8 +233,8 @@ function TrafficSignalMarker({
   // Determine background color - gray for broken/fixing, normal color otherwise
   const backgroundColor = isBrokenOrFixing ? '#6b7280' : colorMap[signal.color];
 
-  // Show "--" for stopped or broken/fixing lights
-  const showDash = isStopped || isBrokenOrFixing;
+  // Show "--" for stopped, broken/fixing, or emergency all-red mode lights
+  const showDash = isStopped || isBrokenOrFixing || isEmergencyAllRed;
 
   return (
     <AdvancedMarker
@@ -281,6 +285,8 @@ function MapContent({
   onMapReady,
   emergencyStopAll,
   stoppedJunctions,
+  emergencyMode,
+  emergencyControlledIntersections,
 }: MapContentProps) {
   const map = useMap();
   const [isGettingLocation, setIsGettingLocation] = useState<boolean>(false);
@@ -335,6 +341,9 @@ function MapContent({
       {signals.map((signal, index) => {
         const isStopped =
           emergencyStopAll || stoppedJunctions?.has(signal.junctionId);
+        // Check if this intersection is under emergency control (any mode)
+        const isEmergencyControlled =
+          emergencyControlledIntersections?.has(signal.junctionId);
         return (
           <TrafficSignalMarker
             key={`${signal.junctionId}-${signal.direction}-${index}`}
@@ -345,6 +354,7 @@ function MapContent({
             }
             onClick={() => onSignalClick(signal)}
             isStopped={isStopped}
+            isEmergencyAllRed={isEmergencyControlled}
           />
         );
       })}
@@ -384,7 +394,6 @@ export default function TrafficControlPage() {
   const [selectedSignal, setSelectedSignal] = useState<TrafficSignal | null>(
     null
   );
-  const [showControlPopup, setShowControlPopup] = useState(false);
   const [filter, setFilter] = useState<'all' | 'red' | 'yellow' | 'green'>(
     'all'
   );
@@ -430,12 +439,38 @@ export default function TrafficControlPage() {
     new Set()
   );
 
+  // Emergency ambulance control state
+  const [emergencyMode, setEmergencyMode] = useState<string | null>(null);
+  const [emergencyControlledIntersections, setEmergencyControlledIntersections] =
+    useState<Set<string>>(new Set());
+
+  // Ref for auto-scrolling to selected light in sidebar
+  const lightItemsRef = useRef<Record<string, HTMLDivElement | null>>({});
+
+  // Auto-scroll to selected light in sidebar
+  useEffect(() => {
+    if (selectedSignal?.trafficLightId) {
+      const element = lightItemsRef.current[selectedSignal.trafficLightId];
+      if (element) {
+        element.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+        });
+      }
+    }
+  }, [selectedSignal?.trafficLightId]);
+
   // Listen to emergency stop state from Firebase
   useEffect(() => {
     const emergencyStopRef = ref(database, 'teams/10/emergency-stop');
     const stoppedIntersectionsRef = ref(
       database,
       'teams/10/stopped-intersections'
+    );
+    const emergencyModeRef = ref(database, 'teams/10/emergency-mode');
+    const emergencyControlledRef = ref(
+      database,
+      'teams/10/emergency-controlled-intersections'
     );
 
     const unsubscribeEmergencyStop = onValue(emergencyStopRef, (snapshot) => {
@@ -459,9 +494,31 @@ export default function TrafficControlPage() {
       }
     );
 
+    const unsubscribeEmergencyMode = onValue(emergencyModeRef, (snapshot) => {
+      const value = snapshot.val();
+      setEmergencyMode(value || null);
+    });
+
+    const unsubscribeEmergencyControlled = onValue(
+      emergencyControlledRef,
+      (snapshot) => {
+        const data = snapshot.val();
+        if (data) {
+          const junctionIds = Object.keys(data)
+            .filter((key) => data[key] === true)
+            .map((key) => `Inter-${key}`);
+          setEmergencyControlledIntersections(new Set(junctionIds));
+        } else {
+          setEmergencyControlledIntersections(new Set());
+        }
+      }
+    );
+
     return () => {
       unsubscribeEmergencyStop();
       unsubscribeStoppedIntersections();
+      unsubscribeEmergencyMode();
+      unsubscribeEmergencyControlled();
     };
   }, []);
 
@@ -511,12 +568,6 @@ export default function TrafficControlPage() {
     [mapInstance]
   );
 
-  const handleOpenControl = useCallback(() => {
-    if (selectedSignal) {
-      setShowControlPopup(true);
-    }
-  }, [selectedSignal]);
-
   const handleEditLight = useCallback((signal: TrafficSignal) => {
     setEditingLight(signal);
     setShowLightEditor(true);
@@ -530,12 +581,67 @@ export default function TrafficControlPage() {
       status: number
     ) => {
       try {
+        // Get previous status and light data
+        const lightData = trafficLightsData[lightKey];
+        const previousStatus = parseInt(lightData?.status) || 0;
+        const lat = parseFloat(lightData?.lat) || 0;
+        const lng = parseFloat(lightData?.lng) || 0;
+        const interid = parseInt(lightData?.interid) || 0;
+        const roadid = parseInt(lightData?.roadid) || 0;
+        const supportMarkerId = lightData?.support_marker_id;
+
+        console.log(`Light ${lightKey}: previousStatus=${previousStatus}, newStatus=${status}, supportMarkerId=${supportMarkerId}`);
+
         const updates: Record<string, any> = {
           [`teams/10/traffic_lights/${lightKey}/green_duration`]: greenDuration,
-          [`teams/10/traffic_lights/${lightKey}/yellow_duration`]:
-            yellowDuration,
+          [`teams/10/traffic_lights/${lightKey}/yellow_duration`]: yellowDuration,
           [`teams/10/traffic_lights/${lightKey}/status`]: status,
         };
+
+        // Handle marker API integration for status changes
+        // When status changes to broken (1) or fixing (2), create a support marker
+        if (previousStatus === 0 && (status === 1 || status === 2)) {
+          try {
+            const statusLabel = status === 1 ? 'BROKEN' : 'FIXING';
+            const response = await apiClient.post('/api/markers', {
+              description: `Traffic Light ${statusLabel} - Inter-${interid} Road-${roadid}`,
+              marker_type_id: 2,
+              location: { lat, lng },
+            });
+
+            console.log('Full API response:', JSON.stringify(response.data, null, 2));
+            const markerId = response.data?.data?.marker?.id;
+            console.log('Extracted markerId:', markerId);
+            if (markerId) {
+              updates[`teams/10/traffic_lights/${lightKey}/support_marker_id`] = markerId;
+              console.log(`Created support marker ${markerId} for ${statusLabel} light`);
+            } else {
+              console.warn('markerId is undefined or null, response structure may have changed');
+            }
+          } catch (markerErr) {
+            console.error('Failed to create support marker:', markerErr);
+            // Continue with the update even if marker creation fails
+          }
+        }
+
+        // When status changes back to normal (0), delete the support marker
+        if ((previousStatus === 1 || previousStatus === 2) && status === 0) {
+          console.log(`Attempting to delete support marker: ${supportMarkerId}`);
+          if (supportMarkerId) {
+            try {
+              await apiClient.delete(`/api/markers/${supportMarkerId}`);
+              updates[`teams/10/traffic_lights/${lightKey}/support_marker_id`] = null;
+              console.log(`Deleted support marker ${supportMarkerId} - light is now active`);
+            } catch (markerErr) {
+              console.error('Failed to delete support marker:', markerErr);
+              // Continue with the update even if marker deletion fails
+            }
+          } else {
+            console.warn(`No support_marker_id found for light ${lightKey}`);
+          }
+        }
+
+        console.log('Firebase updates object:', JSON.stringify(updates, null, 2));
         await update(ref(database), updates);
         console.log(
           `Light ${lightKey} updated: green=${greenDuration}s, yellow=${yellowDuration}s, status=${status}`
@@ -546,7 +652,33 @@ export default function TrafficControlPage() {
         console.error('Failed to update light settings:', err);
       }
     },
-    []
+    [trafficLightsData]
+  );
+
+  const handleForceGreen = useCallback(
+    async (lightKey: string) => {
+      try {
+        const lightData = trafficLightsData[lightKey];
+        const greenDuration = parseInt(lightData?.green_duration) || 27;
+        const yellowDuration = parseInt(lightData?.yellow_duration) || 3;
+
+        const updates: Record<string, any> = {
+          [`teams/10/traffic_lights/${lightKey}/color`]: COLOR_GREEN,
+          [`teams/10/traffic_lights/${lightKey}/remaintime`]:
+            greenDuration + yellowDuration,
+          [`teams/10/traffic_lights/${lightKey}/timestamp`]:
+            new Date().toISOString(),
+        };
+
+        await update(ref(database), updates);
+        console.log(`⚡ Force green: Light ${lightKey} set to GREEN`);
+        setShowLightEditor(false);
+        setEditingLight(null);
+      } catch (err) {
+        console.error('Failed to force green:', err);
+      }
+    },
+    [trafficLightsData]
   );
 
   const handleSaveSettings = (newSettings: MapSettings) => {
@@ -859,21 +991,6 @@ export default function TrafficControlPage() {
             </div>
           </div>
 
-          {/* Emergency Vehicles */}
-          {emergencyVehicles.length > 0 && (
-            <div className="mt-3 rounded-lg border-2 border-red-200 bg-red-50 p-3">
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-red-600" />
-                <span className="font-semibold text-red-800">
-                  {emergencyVehicles.length} Emergency Vehicle
-                  {emergencyVehicles.length !== 1 ? 's' : ''} Active
-                </span>
-              </div>
-              <p className="mt-1 text-xs text-red-600">
-                Automatic green light override enabled
-              </p>
-            </div>
-          )}
         </div>
 
         {/* Title */}
@@ -963,21 +1080,6 @@ export default function TrafficControlPage() {
           </div>
         </div>
 
-        {/* Control Button - Shows when signal selected */}
-        {selectedSignal && (
-          <div className="border-b border-gray-200 bg-slate-50 p-4">
-            <div className="mb-2 text-xs font-medium text-gray-600">
-              Selected: {selectedSignal.junctionId} - {selectedSignal.direction}
-            </div>
-            <button
-              onClick={handleOpenControl}
-              className="w-full rounded-lg bg-slate-800 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-slate-700"
-            >
-              Open Control Panel
-            </button>
-          </div>
-        )}
-
         {/* Content - Junctions */}
         <div className="flex-1 overflow-y-auto p-4">
           <h2 className="mb-3 text-sm font-semibold text-gray-700">
@@ -987,6 +1089,9 @@ export default function TrafficControlPage() {
             {junctions.map(([junctionId, junctionSignals]) => {
               const isJunctionStopped =
                 emergencyStopAll || stoppedJunctions.has(junctionId);
+              // Check if this junction is under emergency control (any mode)
+              const isJunctionEmergencyControlled =
+                emergencyControlledIntersections.has(junctionId);
 
               return (
                 <div
@@ -994,7 +1099,9 @@ export default function TrafficControlPage() {
                   className={`rounded-lg border p-3 shadow-sm transition ${
                     isJunctionStopped
                       ? 'border-red-300 bg-red-50'
-                      : 'border-gray-200 bg-white hover:shadow-md'
+                      : isJunctionEmergencyControlled
+                        ? 'border-orange-300 bg-orange-50'
+                        : 'border-gray-200 bg-white hover:shadow-md'
                   }`}
                 >
                   <div className="mb-2 flex items-center justify-between">
@@ -1006,6 +1113,11 @@ export default function TrafficControlPage() {
                       {isJunctionStopped && (
                         <span className="rounded bg-red-600 px-2 py-0.5 text-xs font-bold text-white">
                           STOPPED
+                        </span>
+                      )}
+                      {isJunctionEmergencyControlled && !isJunctionStopped && (
+                        <span className="rounded bg-orange-600 px-2 py-0.5 text-xs font-bold text-white">
+                          EMERGENCY
                         </span>
                       )}
                     </div>
@@ -1046,11 +1158,19 @@ export default function TrafficControlPage() {
                             : signal.status === 2
                               ? 'FIXING'
                               : '';
-                        const showDash = isJunctionStopped || isBrokenOrFixing;
+                        const showDash =
+                          isJunctionStopped ||
+                          isBrokenOrFixing ||
+                          isJunctionEmergencyControlled;
 
                         return (
                           <div
                             key={idx}
+                            ref={(el) => {
+                              if (signal.trafficLightId) {
+                                lightItemsRef.current[signal.trafficLightId] = el;
+                              }
+                            }}
                             className={`rounded-lg border p-3 transition ${
                               selectedSignal?.trafficLightId ===
                               signal.trafficLightId
@@ -1136,20 +1256,12 @@ export default function TrafficControlPage() {
               onMapReady={setMapInstance}
               emergencyStopAll={emergencyStopAll}
               stoppedJunctions={stoppedJunctions}
+              emergencyMode={emergencyMode}
+              emergencyControlledIntersections={emergencyControlledIntersections}
             />
           </Map>
         </APIProvider>
       </div>
-
-      {/* Control Popup */}
-      <TrafficLightControlPopup
-        open={showControlPopup}
-        signal={selectedSignal}
-        onOpenChange={setShowControlPopup}
-        onUpdate={() => {
-          console.log('Traffic light updated successfully');
-        }}
-      />
 
       {/* Map Settings Dialog */}
       <MapSettingsDialog
@@ -1195,6 +1307,7 @@ export default function TrafficControlPage() {
           }
           direction={editingLight.direction}
           junctionId={editingLight.junctionId}
+          onForceGreen={handleForceGreen}
         />
       )}
     </div>

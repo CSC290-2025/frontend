@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import {
   Filter,
   AlertTriangle,
@@ -45,6 +45,23 @@ export default function TrafficSidebar({
     'all' | 'red' | 'yellow' | 'green'
   >('all');
   const [junctionFilter, setJunctionFilter] = useState<string>('all');
+
+  // Ref for auto-scrolling to selected signal
+  const signalItemsRef = useRef<Record<string, HTMLButtonElement | null>>({});
+
+  // Auto-scroll to selected signal
+  useEffect(() => {
+    if (selectedSignal) {
+      const key = `${selectedSignal.junctionId}-${selectedSignal.direction}`;
+      const element = signalItemsRef.current[key];
+      if (element) {
+        element.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+        });
+      }
+    }
+  }, [selectedSignal?.junctionId, selectedSignal?.direction]);
 
   // Get unique junctions
   const junctions = useMemo(() => {
@@ -293,9 +310,13 @@ export default function TrafficSidebar({
                           ? 'FIXING'
                           : '';
 
+                    const signalKey = `${signal.junctionId}-${signal.direction}`;
                     return (
                       <button
                         key={idx}
+                        ref={(el) => {
+                          signalItemsRef.current[signalKey] = el;
+                        }}
                         onClick={() => onSignalSelect(signal)}
                         className={`flex items-center justify-between rounded-md border p-2 text-left transition ${
                           selectedSignal?.junctionId === signal.junctionId &&

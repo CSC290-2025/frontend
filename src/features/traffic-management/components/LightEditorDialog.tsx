@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Save, AlertTriangle, Wrench, CheckCircle } from 'lucide-react';
+import { X, Save, AlertTriangle, Wrench, CheckCircle, Zap } from 'lucide-react';
 
 interface LightEditorDialogProps {
   open: boolean;
@@ -10,6 +10,7 @@ interface LightEditorDialogProps {
     yellowDuration: number,
     status: number
   ) => void;
+  onForceGreen?: (lightKey: string) => void;
   lightKey: string;
   initialGreenDuration?: number;
   initialYellowDuration?: number;
@@ -46,6 +47,7 @@ export default function LightEditorDialog({
   open,
   onClose,
   onSave,
+  onForceGreen,
   lightKey,
   initialGreenDuration = 27,
   initialYellowDuration = 3,
@@ -224,20 +226,31 @@ export default function LightEditorDialog({
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end gap-3 border-t border-gray-200 px-6 py-4">
-          <button
-            onClick={onClose}
-            className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSave}
-            className="flex items-center gap-2 rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700"
-          >
-            <Save className="h-4 w-4" />
-            Save Changes
-          </button>
+        <div className="flex justify-between gap-3 border-t border-gray-200 px-6 py-4">
+          {onForceGreen && (
+            <button
+              onClick={() => onForceGreen(lightKey)}
+              className="flex items-center gap-2 rounded-lg bg-green-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-green-700"
+            >
+              <Zap className="h-4 w-4" />
+              Force Green
+            </button>
+          )}
+          <div className="flex gap-3">
+            <button
+              onClick={onClose}
+              className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSave}
+              className="flex items-center gap-2 rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700"
+            >
+              <Save className="h-4 w-4" />
+              Save Changes
+            </button>
+          </div>
         </div>
       </div>
     </div>
