@@ -25,8 +25,8 @@ const data: AQIData[] = [
     range: '0 - 50',
     status:
       'Good air quality. Safe for health. (Equivalent to PM 2.5 ≤ 12.0 µg/m³)',
-    color: 'bg-green-500',
-    text: 'text-green-500',
+    color: 'bg-teal-500',
+    text: 'text-teal-500',
     icon: faFaceGrinWide,
   },
   {

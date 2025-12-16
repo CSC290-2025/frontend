@@ -23,34 +23,38 @@ interface StatusDetails {
 }
 
 const getStatusAndStyle = (category: string): StatusDetails => {
+  console.log(
+    'CurrentAqiCard received category:',
+    category,
+    'Type:',
+    typeof category
+  ); // Debug
   switch (category.toUpperCase()) {
-    case 'GOOD':
     case 'HEALTHY':
       return {
-        status: 'Good',
-        style: 'bg-green-600 text-white',
+        status: 'HEALTHY',
+        style: 'bg-green-500 text-white',
         icon: faFaceGrinWide,
         iconStyle: 'text-green-600',
       };
     case 'MODERATE':
       return {
-        status: 'Moderate',
-        style: 'bg-lime-500 text-black',
+        status: 'MODERATE',
+        style: 'bg-lime-500 text-white',
         icon: faFaceSmile,
         iconStyle: 'text-lime-500',
       };
-    case 'UNHEALTHY_FOR_SENSITIVE_GROUPS':
-    case 'USG':
+    case 'UNHEALTHY_FOR_SENSITIVE':
       return {
-        status: 'USG',
-        style: 'bg-yellow-500 text-black',
+        status: 'UNHEALTHY FOR SENSITIVE',
+        style: 'bg-yellow-500 text-white',
         icon: faFaceMeh,
         iconStyle: 'text-yellow-500',
       };
     case 'UNHEALTHY':
     case 'BAD':
       return {
-        status: 'Unhealthy',
+        status: 'UNHEALTHY',
         style: 'bg-orange-500 text-white',
         icon: faFaceFrown,
         iconStyle: 'text-orange-500',
@@ -59,12 +63,16 @@ const getStatusAndStyle = (category: string): StatusDetails => {
     case 'DANGEROUS':
     case 'HAZARDOUS':
       return {
-        status: 'Very Unhealthy',
-        style: 'bg-red-600 text-white',
+        status: 'VERY UNHEALTHY',
+        style: 'bg-red-500 text-white',
         icon: faFaceDizzy,
         iconStyle: 'text-red-600',
       };
     default:
+      console.log(
+        'CurrentAqiCard category not matched, showing Unknown:',
+        category
+      ); // Debug
       return {
         status: 'Unknown',
         style: 'bg-gray-400 text-black',
@@ -112,7 +120,7 @@ export default function CurrentAqiCard({
 
   if (error || !districtDetail?.currentData) {
     return (
-      <div className="h-full rounded-xl border border-black bg-white p-6 text-center text-gray-900 text-red-600 shadow-md">
+      <div className="h-full rounded-xl border border-black bg-white p-6 text-center text-gray-900 shadow-md">
         {error?.message || 'No air quality data available'}
       </div>
     );
@@ -162,7 +170,7 @@ export default function CurrentAqiCard({
           </p>
 
           <span
-            className={`mt-4 inline-block rounded-full px-4 py-1 text-sm font-semibold ${statusStyle} w-fit`}
+            className={`mt-4 inline-block w-fit rounded px-4 py-1 text-sm font-semibold ${statusStyle} `}
           >
             {status}
           </span>

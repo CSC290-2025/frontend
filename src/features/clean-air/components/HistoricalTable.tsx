@@ -4,20 +4,24 @@ import { useParams } from '@/router';
 const getStatusBadge = (category: string) => {
   const baseStyle = 'px-2 py-0.5 rounded-full text-xs font-medium';
   switch (category.toUpperCase()) {
-    case 'HAZARDOUS':
-      return `${baseStyle} bg-purple-600 text-white`;
-    case 'VERY_UNHEALTHY':
-      return `${baseStyle} bg-red-700 text-white`;
-    case 'UNHEALTHY':
-      return `${baseStyle} bg-red-600 text-white`;
-    case 'UNHEALTHY_FOR_SENSITIVE':
-      return `${baseStyle} bg-orange-500 text-white`;
-    case 'MODERATE':
-      return `${baseStyle} bg-yellow-500 text-gray-900`;
     case 'GOOD':
-      return `${baseStyle} bg-green-500 text-white`;
+    case 'HEALTHY':
+      return `${baseStyle} bg-teal-200 text-black`;
+    case 'MODERATE':
+      return `${baseStyle} bg-lime-200 text-black`;
+    case 'UNHEALTHY_FOR_SENSITIVE':
+    case 'UNHEALTHY_FOR_SENSITIVE_GROUPS':
+    case 'USG':
+      return `${baseStyle} bg-yellow-200 text-black`;
+    case 'UNHEALTHY':
+    case 'BAD':
+      return `${baseStyle} bg-orange-200 text-black`;
+    case 'VERY_UNHEALTHY':
+    case 'HAZARDOUS':
+      return `${baseStyle} bg-red-200 text-black`;
     default:
-      return `${baseStyle} bg-gray-400 text-gray-900`;
+      console.log('Category not matched, using default gray:', category);
+      return `${baseStyle} bg-gray-400 text-black`;
   }
 };
 
@@ -42,13 +46,10 @@ const formatCategoryLabel = (category: string) => {
 const getLatestRecordPerDate = (records: any[]) => {
   if (!records) return [];
 
-  console.log('Processing records:', records);
-
   const recordsByDate = new Map();
 
   records.forEach((record) => {
     const dateKey = formatDate(record.measured_at);
-    console.log(`Processing: ${record.measured_at} -> ${dateKey}`);
 
     const currentRecord = recordsByDate.get(dateKey);
 
@@ -57,20 +58,14 @@ const getLatestRecordPerDate = (records: any[]) => {
       new Date(record.measured_at) > new Date(currentRecord.measured_at)
     ) {
       recordsByDate.set(dateKey, record);
-      console.log(`Set as latest for ${dateKey}`);
-    } else {
-      console.log(`Skipped ${dateKey} - older record`);
     }
   });
-
-  console.log('RecordsByDate Map:', recordsByDate);
 
   const result = Array.from(recordsByDate.values()).sort(
     (a, b) =>
       new Date(b.measured_at).getTime() - new Date(a.measured_at).getTime()
   );
 
-  console.log('Final sorted result:', result);
   return result;
 };
 export default function HistoricalTable() {
@@ -125,15 +120,7 @@ export default function HistoricalTable() {
     );
   }
 
-  // Debug: log all raw data
-  console.log('Raw history data:', history.history);
-  console.log('Number of raw records:', history.history.length);
-
   const uniqueRecords = getLatestRecordPerDate(history.history);
-
-  // Debug: log processed data
-  console.log('Unique records:', uniqueRecords);
-  console.log('Number of unique records:', uniqueRecords.length);
 
   return (
     <div className="overflow-x-auto rounded-xl border border-gray-900 bg-white p-6 text-gray-900 shadow-2xl shadow-gray-400">
@@ -156,11 +143,6 @@ export default function HistoricalTable() {
           </thead>
           <tbody className="divide-y divide-gray-200 bg-white">
             {uniqueRecords.map((record, index) => {
-              console.log(
-                `Rendering row ${index}:`,
-                formatDate(record.measured_at),
-                record.aqi
-              );
               return (
                 <tr key={index} className="transition-colors hover:bg-gray-50">
                   <td className="px-4 py-3 text-sm font-medium whitespace-nowrap">

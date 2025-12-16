@@ -13,6 +13,58 @@ type Props = Partial<
   Pick<DistrictType, 'district' | 'aqi' | 'pm25' | 'category' | 'measured_at'>
 >;
 
+interface StatusDetails {
+  status: string;
+  style: string;
+}
+
+const getStatusAndStyle = (category: string): StatusDetails => {
+  console.log(
+    'CurrentAqiCard received category:',
+    category,
+    'Type:',
+    typeof category
+  ); // Debug
+  switch (category.toUpperCase()) {
+    case 'HEALTHY':
+      return {
+        status: 'HEALTHY',
+        style: 'bg-green-500 text-white',
+      };
+    case 'MODERATE':
+      return {
+        status: 'MODERATE',
+        style: 'bg-lime-500 text-white',
+      };
+    case 'UNHEALTHY_FOR_SENSITIVE':
+      return {
+        status: 'UNHEALTHY FOR SENSITIVE',
+        style: 'bg-yellow-500 text-white',
+      };
+    case 'UNHEALTHY':
+    case 'BAD':
+      return {
+        status: 'UNHEALTHY',
+        style: 'bg-orange-500 text-white',
+      };
+    case 'VERY_UNHEALTHY':
+    case 'DANGEROUS':
+    case 'HAZARDOUS':
+      return {
+        status: 'VERY UNHEALTHY',
+        style: 'bg-red-500 text-white',
+      };
+    default:
+      console.log(
+        'CurrentAqiCard category not matched, showing Unknown:',
+        category
+      ); // Debug
+      return {
+        status: 'Unknown',
+        style: 'bg-gray-400 text-black',
+      };
+  }
+};
 export default function DistrictItem({
   district,
   aqi,
@@ -113,6 +165,13 @@ export default function DistrictItem({
         <p className="text-sm leading-tight text-gray-700">
           PM2.5: {displayPm25} µg/m³
         </p>
+        {category && (
+          <div
+            className={`mt-1 rounded px-2 py-0.5 text-sm font-semibold ${getStatusAndStyle(category).style}`}
+          >
+            {getStatusAndStyle(category).status}
+          </div>
+        )}
       </div>
     </div>
   );
