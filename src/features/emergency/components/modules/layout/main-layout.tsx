@@ -19,9 +19,6 @@ const MainLayout: FC<MainLayoutProps> = ({
 }) => {
   const { sendAllNotification } = useNotification();
 
-  // useEffect(() => {
-  //   sendAllNotification('Test4', 'Hi Reactes!!!');
-  // }, []);
   return (
     <SidebarProvider defaultOpen={false}>
       <AppSidebar />

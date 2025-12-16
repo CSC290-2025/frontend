@@ -18,7 +18,7 @@ import {
 import { Button } from '@/features/emergency/components/ui/button';
 import ContactCard from '@/features/emergency/components/modules/card/contact-card.tsx';
 import { useContactForm } from '@/features/emergency/hooks/contact-from.tsx';
-import { CardContent } from '@/features/emergency/components/ui/card.tsx';
+import { CardContent } from '@/features/emergency/components/modules/card/card.tsx';
 import { useForm } from 'react-hook-form';
 import {
   ContactOmit,
@@ -35,7 +35,7 @@ interface E_num {
 }
 
 export default function HotlinePage() {
-  const [showAdd] = useState(true);
+  const [showAdd, setShowAdd] = useState(true);
   const { contact, isLoading, createContact } = useContactForm();
   const [open, setOpen] = useState(false);
   console.log(contact);
@@ -68,11 +68,18 @@ export default function HotlinePage() {
     }
   });
 
+  const handleTabChange = (value: string) => {
+    if (value === 'Family') {
+      setShowAdd(true);
+    } else {
+      setShowAdd(false);
+    }
+  };
+
   return (
-    <div className="p-2 sm:p-6">
+    <div className="mx-auto w-full max-w-5xl p-2 sm:p-6">
       <header className="mb-8 flex flex-col items-center justify-between gap-4 sm:flex-row">
         <div className="flex items-center gap-2">
-          <BookUser />
           <h1 className="text-3xl font-bold">Hot line</h1>
         </div>
 
@@ -86,7 +93,6 @@ export default function HotlinePage() {
             <DialogContent>
               <form onSubmit={onSubmit}>
                 <DialogTitle className="text-center">Add contact</DialogTitle>
-
                 <DialogDescription asChild>
                   <CardContent>
                     <div>
@@ -136,7 +142,11 @@ export default function HotlinePage() {
         )}
       </header>
 
-      <Tabs defaultValue="Family" className="w-full">
+      <Tabs
+        defaultValue="Family"
+        className="w-full"
+        onValueChange={handleTabChange}
+      >
         <TabsList>
           <TabsTrigger value="Emergency service">Emergency service</TabsTrigger>
           <TabsTrigger value="Family">Family</TabsTrigger>
