@@ -1,11 +1,16 @@
 import { useMemo } from 'react';
 import type { UserRole } from '@/types/reports';
+import { useAuth } from '@/features/auth';
 
-/**
- * Temporary role resolver. Replace with real auth/user context when available.
- */
 export function useUserRole(): { role: UserRole } {
-  // TODO: integrate with authentication/user context
-  const role = useMemo<UserRole>(() => 'admin', []);
+  const { user } = useAuth();
+  console.log('user', user);
+  const role = useMemo<UserRole>(() => {
+    if (user?.roles?.role_name.toLowerCase() === 'admin') {
+      return 'admin';
+    } else {
+      return 'citizens';
+    }
+  }, [user]);
   return { role };
 }
