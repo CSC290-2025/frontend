@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from '@/router';
+import { apiClient } from '@/lib/apiClient';
 import {
   ArrowLeft,
   Upload,
@@ -191,8 +192,8 @@ ${requirements
     };
 
     try {
-      const response = await axios.post(
-        'http://localhost:3000/api/v1/volunteer/create',
+      const response = await apiClient.post(
+        '/api/v1/volunteer/create',
         payload
       );
 

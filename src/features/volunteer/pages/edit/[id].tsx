@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
 import { useNavigate, useParams } from '@/router';
+import { apiClient } from '@/lib/apiClient';
 import { ArrowLeft } from 'lucide-react';
 
 interface VolunteerEvent {
@@ -80,9 +80,9 @@ export default function EditVolunteerPage() {
       setIsLoading(true);
       setError(null);
       try {
-        const response = await axios.get<
+        const response = await apiClient.get<
           ApiResponse<{ event: VolunteerEvent }>
-        >(`http://localhost:3000/api/v1/volunteer/${id}`);
+        >(`/api/v1/volunteer/${id}`);
         if (response.data.success) {
           const event = response.data.data.event;
           setFormData({
@@ -166,8 +166,8 @@ export default function EditVolunteerPage() {
     );
 
     try {
-      const response = await axios.put(
-        `http://localhost:3000/api/v1/volunteer/${id}/update`,
+      const response = await apiClient.put(
+        `/api/v1/volunteer/${id}/update`,
         payload
       );
 
