@@ -7,7 +7,8 @@ export default function CurrentDataCard() {
   if (isLoading) {
     return (
       <div className="rounded-xl border border-gray-300 bg-white p-6 text-gray-900 shadow-md">
-        <div className="text-center">Loading current data...</div>
+                <div className="text-center">Loading current data...</div>   
+         {' '}
       </div>
     );
   }
@@ -15,9 +16,11 @@ export default function CurrentDataCard() {
   if (error || !data?.currentData) {
     return (
       <div className="rounded-xl border border-gray-300 bg-white p-6 text-gray-900 shadow-md">
+               {' '}
         <div className="text-center text-red-600">
-          {error?.message || 'No current data available'}
+                    {error?.message || 'No current data available'}       {' '}
         </div>
+               {' '}
       </div>
     );
   }
@@ -58,24 +61,35 @@ export default function CurrentDataCard() {
 
   return (
     <div className="rounded-xl border border-black bg-white p-6 text-gray-900 shadow-md">
+           {' '}
       <div className="mb-4">
+               {' '}
         <h2 className="text-base font-semibold text-gray-800">
-          Major Air Pollutants
+                    Major Air Pollutants        {' '}
         </h2>
+             {' '}
       </div>
-      <div className="grid grid-cols-6 gap-2 text-center">
+           {' '}
+      <div className="grid grid-cols-3 gap-2 text-center md:grid-cols-6">
+               {' '}
         {pollutants.map((pollutant, index) => (
           <div key={index} className="flex flex-col items-center p-2">
+                       {' '}
             <p className="text-2xl font-bold text-gray-900">
-              {pollutant.value}
+                            {pollutant.value}           {' '}
             </p>
-            <p className="mt-1 text-sm text-gray-800">{pollutant.unit}</p>
+                       {' '}
+            <p className="mt-1 text-sm text-gray-800">{pollutant.unit}</p>     
+                 {' '}
             <p className="mt-1 text-base font-medium text-gray-800 uppercase">
-              {pollutant.name}
+                            {pollutant.name}           {' '}
             </p>
+                     {' '}
           </div>
         ))}
+             {' '}
       </div>
+         {' '}
     </div>
   );
 }

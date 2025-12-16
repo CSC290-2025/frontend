@@ -65,21 +65,12 @@ export default function DistrictItem({
 
     try {
       if (isFavorite) {
-        console.log('Removing from favorites:', district);
         await removeFavorite.mutateAsync(district);
       } else {
-        console.log('Adding to favorites:', district);
         await addFavorite.mutateAsync(district);
       }
     } catch (error: any) {
-      if (
-        error?.response?.status === 409 ||
-        error?.message?.includes('already added')
-      ) {
-        console.info('District already in favorites, ignoring error');
-      } else {
-        console.error('Error toggling favorite:', error);
-      }
+      console.error('Error toggling favorite:', error);
     }
   };
 
@@ -89,24 +80,18 @@ export default function DistrictItem({
   return (
     <div
       onClick={handleSelectDistrict}
-      className={
-        'relative flex cursor-pointer items-center justify-between rounded-xl border border-gray-200 bg-white p-4 text-black shadow-sm hover:border-gray-300 hover:shadow-md'
-      }
+      className="relative flex cursor-pointer items-center justify-between rounded-xl border border-gray-200 bg-white p-4 text-black shadow-sm hover:border-gray-300 hover:shadow-md"
     >
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-col gap-0">
         <div className="flex items-center gap-2">
-          <h2 className="text-2xl leading-tight font-semibold text-gray-900">
+          <h2 className="text-2xl leading-[1.1] font-medium text-gray-900">
             {district}
           </h2>
 
           <button
             onClick={handleToggleFavorite}
             disabled={isButtonLoading}
-            className="flex h-8 w-8 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-red-500 disabled:cursor-not-allowed disabled:opacity-50"
-            title={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
-            aria-label={
-              isFavorite ? 'Remove from favorites' : 'Add to favorites'
-            }
+            className="flex h-8 w-8 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-red-500 disabled:cursor-not-allowed"
           >
             <FontAwesomeIcon
               icon={isFavorite ? faHeartSolid : faHeartRegular}
@@ -115,17 +100,19 @@ export default function DistrictItem({
           </button>
         </div>
 
-        <p className="text-sm text-gray-500">{time}</p>
+        <p className="mt-0.5 text-sm leading-none text-gray-500">{time}</p>
       </div>
 
       <div className="flex flex-col items-end pl-2">
-        <div className="mb-1 flex items-baseline">
-          <p className="text-3xl leading-none font-bold text-gray-900">
+        <div className="mb-0 flex items-baseline">
+          <p className="text-4xl leading-none font-medium text-gray-900">
             {displayAqi}
           </p>
           <span className="ml-1 text-lg font-medium text-gray-600">AQI</span>
         </div>
-        <p className="text-sm text-gray-700">PM2.5: {displayPm25} µg/m³</p>
+        <p className="text-sm leading-tight text-gray-700">
+          PM2.5: {displayPm25} µg/m³
+        </p>
       </div>
     </div>
   );
