@@ -88,3 +88,35 @@ export interface ApartmentFilterParams {
   maxPrice?: number | null;
   search?: string | null;
 }
+
+export interface ApartmentMutate {
+  apartmentId?: number;
+  id?: number;
+  apartmentName?: string;
+  name?: string;
+  apartment_location?: string;
+  addresses?: {
+    id: number;
+    address_line?: string;
+    province?: string;
+    district?: string;
+    subdistrict?: string;
+    postal_code?: string;
+  };
+  apartment_phone?: string;
+  phone?: string;
+  apartment_img?: string;
+  image?: string;
+  rating?:
+    | number
+    | number[]
+    | { avg?: number; rating?: number; count?: number };
+  reviews?: number;
+}
+
+export interface NearbyPlace {
+  name: string;
+  display_name?: string;
+  type: string;
+  distance: number;
+}

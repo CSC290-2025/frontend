@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import '@/features/G9-ApartmentListing/styles/animations.css';
 import { useParams } from '@/router';
+import axios from 'axios';
 import {
   APT,
   Room,
@@ -33,12 +34,8 @@ import {
 } from '@/features/G9-ApartmentListing/components/toastBox';
 import { MessageCircle } from 'lucide-react';
 import { OWN } from '@/features/G9-ApartmentListing/api/index';
-interface NearbyPlace {
-  name: string;
-  display_name: string;
-  type: string;
-  distance: number;
-}
+import type { NearbyPlace } from '@/features/G9-ApartmentListing/types/apartment.type';
+
 export default function ApartmentDetailPage() {
   const params = useParams('/ApartmentHomepage/:id');
   const apartmentId = params.id;
@@ -59,13 +56,14 @@ export default function ApartmentDetailPage() {
   const [reviewModalMode, setReviewModalMode] = useState<'create' | 'edit'>(
     'create'
   );
+  const [transitRoutes, setTransitRoutes] = useState<string[]>([]);
   const reviewsPerPage = 3;
   const shareUrl = window.location.href;
 
   const {
     data: apartmentData,
-    isLoading: _isLoading,
-    error: _error,
+    isLoading,
+    error,
   } = APT.useApartment(parseInt(apartmentId));
   const { data: rating } = Rating.useCommentsByApartment(parseInt(apartmentId));
   const { data: room } = Room.useRooms(parseInt(apartmentId));
@@ -87,10 +85,8 @@ export default function ApartmentDetailPage() {
   const roomArray: roomTypes.Room[] =
     room || room?.data?.data || room?.data || [];
 
-  // Check if current user already has a review
   const hasExistingReview = ratingArray.some((r) => r.userId === userId);
 
-  // Fetch user data for all review authors
   useEffect(() => {
     const fetchUserData = async () => {
       const uniqueUserIds = [
@@ -121,14 +117,12 @@ export default function ApartmentDetailPage() {
     }
   }, [ratingArray]);
 
-  // Calculate manual average from rating array as fallback
   const manualAverage =
     totalRatings > 0
       ? ratingArray.reduce((sum, rating) => sum + rating.rating, 0) /
         totalRatings
       : 0;
 
-  // Fetch address data using the address_id from apartment
   const { data: addressData } = Address.fetchAddressById(
     rawApartment?.address_id || 0
   );
@@ -158,7 +152,7 @@ export default function ApartmentDetailPage() {
           : `${room.price_start}-${room.price_end} THB`,
       status: room.room_status === 'available' ? 'Available' : 'Unavailable',
     })),
-    nearbyPlaces: [], // TODO: Add nearby places API
+    nearbyPlaces: [],
     reviews: ratingArray
       .map((rating) => ({
         id: rating.id,
@@ -197,6 +191,36 @@ export default function ApartmentDetailPage() {
   );
   const otherAmenitiesArray = otherNearbyAmenities || [];
   const nearbyArray = nearby || [];
+
+  // Fetch transit routes (lines only)
+  useEffect(() => {
+    const fetchRoutes = async () => {
+      try {
+        // 1000m ≈ 0.009 degrees
+        const offset = 0.029;
+        const response = await axios.get(
+          'http://localhost:3000/api/routes/lines',
+          {
+            params: {
+              origLat: aptLat,
+              origLng: aptLon,
+              destLat: aptLat + offset,
+              destLng: aptLon + offset,
+            },
+          }
+        );
+        console.log('Transit routes:', response.data);
+      } catch (error) {
+        console.error('Failed to fetch routes:', error);
+        setTransitRoutes([]);
+      }
+    };
+
+    if (aptLat && aptLon) {
+      fetchRoutes();
+    }
+  }, [aptLat, aptLon]);
+
   const totalReviewPages = Math.ceil(apartment.reviews.length / reviewsPerPage);
   const startReviewIndex = (currentReviewPage - 1) * reviewsPerPage;
   const currentReviews = apartment.reviews.slice(
@@ -237,14 +261,12 @@ export default function ApartmentDetailPage() {
   };
 
   const handleReviewSubmit = async (ratingValue: number, comment: string) => {
-    // Prevent multiple submissions while one is in progress
     if (isSubmittingReview) {
       return;
     }
     try {
       setIsSubmittingReview(true);
 
-      // Double-check for existing review by this user (defensive programming)
       if (hasExistingReview) {
         FailedError('You can only review this apartment once');
         return;
@@ -257,7 +279,6 @@ export default function ApartmentDetailPage() {
         comment,
       });
 
-      // Track newly added review for animation
       if (result?.data?.id) {
         setNewlyAddedReview(result.data.id);
         setTimeout(() => setNewlyAddedReview(null), 2000);
@@ -316,13 +337,11 @@ export default function ApartmentDetailPage() {
     try {
       setDeletingReviewId(ratingId);
 
-      // Small delay for visual feedback
       await new Promise((resolve) => setTimeout(resolve, 200));
 
       await deleteRating.mutateAsync(ratingId);
       SuccessToast('Review deleted successfully.');
 
-      // Reset to first page if current page becomes empty
       const remainingReviews = apartment.reviews.length - 1;
       const maxPages = Math.ceil(remainingReviews / reviewsPerPage);
       if (currentReviewPage > maxPages && maxPages > 0) {
@@ -353,9 +372,9 @@ export default function ApartmentDetailPage() {
               />
             </button>
             <h1
-              className={`text-3xl font-bold ${_isLoading ? 'shimmer-animation h-8 w-64 rounded bg-gray-200' : ''}`}
+              className={`text-3xl font-bold ${isLoading ? 'shimmer-animation h-8 w-64 rounded bg-gray-200' : ''}`}
             >
-              {_isLoading ? '' : apartment.name}
+              {isLoading ? '' : apartment.name}
             </h1>
           </div>
 
@@ -374,13 +393,12 @@ export default function ApartmentDetailPage() {
         </div>
       </div>
 
-      {/* Pictures */}
       <div className="mx-auto -mt-5 max-w-7xl px-8 py-8">
         <div className="grid grid-cols-2 gap-8">
           <div>
             <div className="mb-6">
               <div className="group relative mb-4">
-                {_isLoading ? (
+                {isLoading ? (
                   <div className="shimmer-animation h-80 w-full rounded-lg bg-gray-200"></div>
                 ) : (
                   <img
@@ -446,7 +464,7 @@ export default function ApartmentDetailPage() {
                 <span className="inline-block h-9 w-9 text-gray-800">
                   <img src={LocationIcon} alt="LocationIcon" />
                 </span>
-                {_isLoading ? (
+                {isLoading ? (
                   <div className="shimmer-animation h-6 w-80 rounded bg-gray-200"></div>
                 ) : (
                   <span className="animate-slide-right">
@@ -458,7 +476,7 @@ export default function ApartmentDetailPage() {
                 <span className="ml-1 inline-block h-5 w-5 text-gray-800">
                   <img src={PhoneIcon} alt="PhoneIcon" />
                 </span>
-                {_isLoading ? (
+                {isLoading ? (
                   <div className="shimmer-animation h-6 w-40 rounded bg-gray-200"></div>
                 ) : (
                   <span className="animate-slide-right text-lg">
@@ -664,7 +682,6 @@ export default function ApartmentDetailPage() {
                 </div>
               </div>
 
-              {/* Review Pagination */}
               {totalReviewPages > 1 && (
                 <div className="flex items-center justify-center gap-3">
                   <button
@@ -724,7 +741,7 @@ export default function ApartmentDetailPage() {
               <h2 className="mb-4 text-xl font-bold">About this place</h2>
 
               <h3 className="mb-2 font-semibold">Description</h3>
-              {_isLoading ? (
+              {isLoading ? (
                 <div className="space-y-2">
                   <div className="shimmer-animation h-4 w-full rounded bg-gray-200"></div>
                   <div className="shimmer-animation h-4 w-3/4 rounded bg-gray-200"></div>
@@ -736,7 +753,7 @@ export default function ApartmentDetailPage() {
                 </p>
               )}
 
-              {_isLoading ? (
+              {isLoading ? (
                 <div className="space-y-2 rounded-lg bg-gray-50 p-4">
                   <div className="flex justify-between">
                     <div className="shimmer-animation h-4 w-24 rounded bg-gray-200"></div>
@@ -805,7 +822,7 @@ export default function ApartmentDetailPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {_isLoading ? (
+                    {isLoading ? (
                       [...Array(3)].map((_, index) => (
                         <tr key={index} className="border-b last:border-b-0">
                           <td className="py-3">
@@ -868,206 +885,157 @@ export default function ApartmentDetailPage() {
               <div className="space-y-4">
                 {/* Bank */}
                 <div className="rounded-lg border border-gray-200 p-4">
-                  <h3 className="mb-3 flex items-center gap-2 font-semibold text-gray-800">
-                    Bank
-                  </h3>
+                  <h3 className="mb-3 font-semibold text-gray-800">Bank</h3>
                   <div className="space-y-2">
                     {nearbyArray
                       .filter((place: NearbyPlace) => place.type === 'bank')
                       .slice(0, 3)
                       .map((place: NearbyPlace, index: number) => (
                         <div key={index} className="text-sm text-gray-600">
-                          <p className="text-gray-700">
-                            {place.display_name.split(',')[0]}
+                          <p className="font-medium">
+                            {place.display_name?.split(',')[0] || place.name}
                           </p>
                           <p className="text-xs text-gray-500">
                             {(place.distance / 1000).toFixed(2)}km away
                           </p>
                         </div>
                       ))}
+                    {nearbyArray.filter(
+                      (place: NearbyPlace) => place.type === 'bank'
+                    ).length === 0 && (
+                      <p className="text-sm text-gray-400">
+                        No banks found nearby
+                      </p>
+                    )}
                   </div>
-                  {nearbyArray.filter(
-                    (place: NearbyPlace) => place.type === 'bank'
-                  ).length === 0 && (
-                    <p className="text-sm text-gray-400">
-                      No banks found nearby
-                    </p>
-                  )}
                 </div>
 
                 {/* ATM */}
                 <div className="rounded-lg border border-gray-200 p-4">
-                  <h3 className="mb-3 flex items-center gap-2 font-semibold text-gray-800">
-                    ATM
-                  </h3>
+                  <h3 className="mb-3 font-semibold text-gray-800">ATM</h3>
                   <div className="space-y-2">
                     {nearbyArray
                       .filter((place: NearbyPlace) => place.type === 'atm')
                       .slice(0, 3)
                       .map((place: NearbyPlace, index: number) => (
                         <div key={index} className="text-sm text-gray-600">
-                          <p className="text-gray-700">
-                            {place.display_name.split(',')[0]}
+                          <p className="font-medium">
+                            {place.display_name?.split(',')[0] || place.name}
                           </p>
                           <p className="text-xs text-gray-500">
                             {(place.distance / 1000).toFixed(2)}km away
                           </p>
                         </div>
                       ))}
+                    {nearbyArray.filter(
+                      (place: NearbyPlace) => place.type === 'atm'
+                    ).length === 0 && (
+                      <p className="text-sm text-gray-400">
+                        No ATMs found nearby
+                      </p>
+                    )}
                   </div>
-                  {nearbyArray.filter(
-                    (place: NearbyPlace) => place.type === 'atm'
-                  ).length === 0 && (
-                    <p className="text-sm text-gray-400">
-                      No ATMs found nearby
-                    </p>
-                  )}
                 </div>
 
-                {/* Bus Lines */}
+                {/* Bus Station */}
                 <div className="rounded-lg border border-gray-200 p-4">
-                  <h3 className="mb-3 flex items-center gap-2 font-semibold text-gray-800">
-                    Bus Lines
+                  <h3 className="mb-3 font-semibold text-gray-800">
+                    Bus Lines Nearby
                   </h3>
                   <div className="space-y-2">
-                    {nearbyArray
-                      .filter(
-                        (place: NearbyPlace) => place.type === 'bus_station'
-                      )
-                      .slice(0, 3)
-                      .map((place: NearbyPlace, index: number) => (
+                    {transitRoutes.length > 0 ? (
+                      transitRoutes.map((route: string, index: number) => (
                         <div key={index} className="text-sm text-gray-600">
-                          <p className="text-gray-700">
-                            {place.display_name.split(',')[0]}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {(place.distance / 1000).toFixed(2)}km away
-                          </p>
+                          <p className="font-medium">{route}</p>
                         </div>
-                      ))}
+                      ))
+                    ) : (
+                      <p className="text-sm text-gray-400">
+                        No bus lines found nearby
+                      </p>
+                    )}
                   </div>
-                  {nearbyArray.filter(
-                    (place: NearbyPlace) => place.type === 'bus_station'
-                  ).length === 0 && (
-                    <p className="text-sm text-gray-400">
-                      No bus lines found nearby
-                    </p>
-                  )}
                 </div>
 
                 {/* Hospital */}
                 <div className="rounded-lg border border-gray-200 p-4">
-                  <h3 className="mb-3 flex items-center gap-2 font-semibold text-gray-800">
-                    Hospital
-                  </h3>
+                  <h3 className="mb-3 font-semibold text-gray-800">Hospital</h3>
                   <div className="space-y-2">
                     {nearbyArray
                       .filter((place: NearbyPlace) => place.type === 'hospital')
                       .slice(0, 3)
                       .map((place: NearbyPlace, index: number) => (
                         <div key={index} className="text-sm text-gray-600">
-                          <p className="text-gray-700">
-                            {place.display_name.split(',')[0]}
+                          <p className="font-medium">
+                            {place.display_name?.split(',')[0] || place.name}
                           </p>
                           <p className="text-xs text-gray-500">
                             {(place.distance / 1000).toFixed(2)}km away
                           </p>
                         </div>
                       ))}
+                    {nearbyArray.filter(
+                      (place: NearbyPlace) => place.type === 'hospital'
+                    ).length === 0 && (
+                      <p className="text-sm text-gray-400">
+                        No hospitals found nearby
+                      </p>
+                    )}
                   </div>
-                  {nearbyArray.filter(
-                    (place: NearbyPlace) => place.type === 'hospital'
-                  ).length === 0 && (
-                    <p className="text-sm text-gray-400">
-                      No hospitals found nearby
-                    </p>
-                  )}
                 </div>
 
                 {/* Pharmacy */}
                 <div className="rounded-lg border border-gray-200 p-4">
-                  <h3 className="mb-3 flex items-center gap-2 font-semibold text-gray-800">
-                    Pharmacy
-                  </h3>
+                  <h3 className="mb-3 font-semibold text-gray-800">Pharmacy</h3>
                   <div className="space-y-2">
                     {nearbyArray
                       .filter((place: NearbyPlace) => place.type === 'pharmacy')
                       .slice(0, 3)
                       .map((place: NearbyPlace, index: number) => (
                         <div key={index} className="text-sm text-gray-600">
-                          <p className="text-gray-700">
-                            {place.display_name.split(',')[0]}
+                          <p className="font-medium">
+                            {place.display_name?.split(',')[0] || place.name}
                           </p>
                           <p className="text-xs text-gray-500">
                             {(place.distance / 1000).toFixed(2)}km away
                           </p>
                         </div>
                       ))}
+                    {nearbyArray.filter(
+                      (place: NearbyPlace) => place.type === 'pharmacy'
+                    ).length === 0 && (
+                      <p className="text-sm text-gray-400">
+                        No pharmacies found nearby
+                      </p>
+                    )}
                   </div>
-                  {nearbyArray.filter(
-                    (place: NearbyPlace) => place.type === 'pharmacy'
-                  ).length === 0 && (
-                    <p className="text-sm text-gray-400">
-                      No pharmacies found nearby
-                    </p>
-                  )}
                 </div>
 
-                {/* Other nearby places */}
+                {/* Other Nearby Amenities */}
                 <div className="rounded-lg border border-gray-200 p-4">
-                  <h3 className="mb-3 flex items-center gap-2 font-semibold text-gray-800">
+                  <h3 className="mb-3 font-semibold text-gray-800">
                     Other Amenities
                   </h3>
                   <div className="space-y-2">
-                    {(otherAmenitiesArray && otherAmenitiesArray.length > 0
-                      ? otherAmenitiesArray
-                      : nearbyArray.filter(
-                          (place: NearbyPlace) =>
-                            ![
-                              'pharmacy',
-                              'hospital',
-                              'bank',
-                              'atm',
-                              'bus_station',
-                            ].includes(place.type)
-                        )
-                    )
+                    {otherAmenitiesArray
                       .slice(0, 3)
                       .map((place: NearbyPlace, index: number) => (
                         <div key={index} className="text-sm text-gray-600">
-                          <p className="text-gray-700">
-                            {
-                              (place.display_name || place.name || '').split(
-                                ','
-                              )[0]
-                            }
+                          <p className="font-medium">
+                            {place.display_name?.split(',')[0] || place.name}
                           </p>
                           <p className="text-xs text-gray-500">
-                            {place.distance
-                              ? `${(place.distance / 1000).toFixed(2)}km away`
-                              : ''}
-                            {place.type ? ` • ${place.type}` : ''}
+                            {(place.distance / 1000).toFixed(2)}km away •{' '}
+                            {place.type}
                           </p>
                         </div>
                       ))}
+                    {otherAmenitiesArray.length === 0 && (
+                      <p className="text-sm text-gray-400">
+                        No other amenities found nearby
+                      </p>
+                    )}
                   </div>
-                  {(otherAmenitiesArray && otherAmenitiesArray.length > 0
-                    ? otherAmenitiesArray
-                    : nearbyArray.filter(
-                        (place: NearbyPlace) =>
-                          ![
-                            'pharmacy',
-                            'hospital',
-                            'bank',
-                            'atm',
-                            'bus_station',
-                          ].includes(place.type)
-                      )
-                  ).length === 0 && (
-                    <p className="text-sm text-gray-400">
-                      No other places found nearby
-                    </p>
-                  )}
                 </div>
               </div>
             </div>
