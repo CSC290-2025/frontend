@@ -39,7 +39,7 @@ export default function TrafficDashboard() {
   const [filter, setFilter] = useState<'all' | 'auto' | 'manual'>('all');
 
   useEffect(() => {
-    const trafficRef = ref(database, 'traffic');
+    const trafficRef = ref(database, 'teams/10/traffic');
 
     const unsubscribe = onValue(
       trafficRef,
