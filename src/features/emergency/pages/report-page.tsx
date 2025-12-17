@@ -12,7 +12,7 @@ import {
   Card,
   CardContent,
   CardDescription,
-} from '@/features/emergency/components/ui/card';
+} from '@/features/emergency/components/modules/card/card.tsx';
 import { Checkbox } from '@/features/emergency/components/ui/checkbox';
 import { Label } from '@/features/emergency/components/ui/label';
 import { Button } from '@/features/emergency/components/ui/button';
