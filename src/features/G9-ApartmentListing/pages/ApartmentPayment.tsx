@@ -169,15 +169,6 @@ export default function ApartmentPayment() {
           return;
         }
 
-        console.log(
-          'Transferring from user:',
-          bookingData.user_id,
-          'to owner:',
-          apartmentOwnerId,
-          'amount:',
-          price
-        );
-
         await postWalletsTransfer({
           from_user_id: bookingData.user_id,
           to_user_id: apartmentOwnerId,

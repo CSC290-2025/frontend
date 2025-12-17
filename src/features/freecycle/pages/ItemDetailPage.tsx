@@ -21,6 +21,7 @@ import type { PostItem, Category, CategoryWithName } from '@/types/postItem';
 import type { ReceiverRequest } from '@/features/freecycle/api/freecycle.api';
 import { fetchCategoriesByPostId } from '@/features/freecycle/api/freecycle.api';
 import { useGetAuthMe } from '@/api/generated/authentication';
+import Sidebar from '../../../components/main/Sidebar';
 
 import {
   useCreateRequest,
@@ -291,7 +292,11 @@ export default function ItemDetailPage() {
 
   const { data: myRequests } = useUserRequests();
 
-  const myExistingRequest = myRequests?.find((req) => req.post_id === postId);
+  const myExistingRequest = myRequests?.find(
+    (req) =>
+      Number(req.post_id) === Number(postId) &&
+      req.receiver_id === currentUserId
+  );
   const hasRequested = !!myExistingRequest;
 
   const handleToggleGiven = async () => {
@@ -394,218 +399,225 @@ export default function ItemDetailPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl p-4">
-      <button
-        onClick={() => navigate(backPath)}
-        className="mb-6 flex items-center gap-2 font-medium text-cyan-600 hover:text-cyan-700"
-      >
-        {/* <ArrowLeft className="h-5 w-5" /> Back */}
-      </button>
+    <div className="flex">
+      <Sidebar />
 
-      <div className="overflow-hidden rounded-2xl bg-white shadow-lg">
-        <div className="grid gap-8 md:grid-cols-2">
-          {/* Left: Image */}
-          <div className="m-6 flex aspect-square items-center justify-center overflow-hidden rounded-2xl bg-gray-100">
-            {item.photo_url ? (
-              <img
-                src={item.photo_url}
-                alt={item.item_name}
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              <span className="text-lg text-gray-400">No photo</span>
-            )}
+      <div className="mx-auto max-w-6xl p-4">
+        <button
+          onClick={() => navigate(backPath)}
+          className="group mb-6 flex items-center gap-2 font-medium text-gray-500 transition-colors hover:text-cyan-600"
+        >
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white transition-all group-hover:bg-cyan-50 group-hover:text-cyan-600">
+            {/* <ArrowLeft className="h-5 w-5" /> */}
           </div>
+          {/* Back to Freecycle */}
+        </button>
 
-          {/* Right: Details */}
-          <div className="flex flex-col p-8 pr-8 pb-8">
-            <div className="flex-1">
-              {/* Header & Owner Actions */}
-              <div className="flex flex-col items-start justify-between">
-                {isOwner && (
-                  <div className="mb-4 flex w-full justify-end gap-2">
-                    <button
-                      onClick={() =>
-                        navigate(`/freecycle/items/edit/${item.id}` as any)
-                      }
-                      className="flex-shrink-0 rounded-full bg-gray-100 p-2 text-cyan-600 transition-colors hover:bg-gray-200 hover:text-cyan-700"
-                      title="Edit Item Details"
-                    >
-                      <Edit className="h-5 w-5" />
-                    </button>
-
-                    <button
-                      onClick={() => handleDelete(item.id)}
-                      disabled={deletePostMutation.isPending}
-                      className="flex-shrink-0 rounded-full bg-red-50 p-2 text-red-500 transition-colors hover:bg-red-100 hover:text-red-700 disabled:opacity-50"
-                      title="Delete Item"
-                    >
-                      <Trash2 className="h-5 w-5" />
-                    </button>
-
-                    <button
-                      onClick={handleToggleGiven}
-                      disabled={
-                        markAsGivenMutation.isPending ||
-                        markAsNotGivenMutation.isPending
-                      }
-                      className={`flex-shrink-0 rounded-full p-2 text-white transition-colors disabled:opacity-50 ${item.is_given ? 'bg-red-500 hover:bg-red-600' : 'bg-cyan-500 hover:bg-cyan-600'}`}
-                      title={
-                        item.is_given ? 'Mark as Available' : 'Mark as Given'
-                      }
-                    >
-                      {item.is_given ? (
-                        <div className="flex items-center justify-center gap-2">
-                          <RotateCw className="h-5 w-5" />
-                          mark as not given
-                        </div>
-                      ) : (
-                        <div className="flex items-center justify-center gap-2">
-                          <CheckCircle className="h-5 w-5" />
-                          mark as given
-                        </div>
-                      )}
-                    </button>
-                  </div>
-                )}
-              </div>
-
-              <h1 className="mb-4 pr-4 text-3xl font-bold text-gray-900">
-                {item.item_name}
-              </h1>
-
-              {item.is_given && (
-                <span className="mb-4 inline-block rounded-full bg-gray-100 px-4 py-2 text-sm font-medium text-gray-600">
-                  This item has been given away
-                </span>
+        <div className="overflow-hidden rounded-2xl bg-white shadow-lg">
+          <div className="grid gap-8 md:grid-cols-2">
+            {/* Left: Image */}
+            <div className="m-6 flex aspect-square items-center justify-center overflow-hidden rounded-2xl bg-gray-100">
+              {item.photo_url ? (
+                <img
+                  src={item.photo_url}
+                  alt={item.item_name}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <span className="text-lg text-gray-400">No photo</span>
               )}
-
-              <div className="space-y-4">
-                <div>
-                  <h3 className="mb-1 text-sm font-semibold text-gray-700">
-                    Description
-                  </h3>
-                  <p className="text-gray-600">
-                    {item.description || 'No description provided'}
-                  </p>
-                </div>
-
-                {item.item_weight && (
-                  <div>
-                    <h3 className="mb-1 text-sm font-semibold text-gray-700">
-                      Weight
-                    </h3>
-                    <p className="text-gray-600">{item.item_weight} kg</p>
-                  </div>
-                )}
-
-                {categories.length > 0 && (
-                  <div>
-                    <h3 className="mb-2 text-sm font-semibold text-gray-700">
-                      Categories
-                    </h3>
-                    <div className="flex flex-wrap gap-2">
-                      {categories.map((category) => (
-                        <span
-                          key={`category-${item.id}-${category.id}`}
-                          className="inline-block rounded-full bg-cyan-100 px-3 py-1 text-sm text-cyan-800"
-                        >
-                          {category.category_name}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
-                  <h3 className="mb-2 text-sm font-semibold text-gray-700">
-                    Donater Information
-                  </h3>
-                  <div className="space-y-2">
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <User className="h-4 w-4 text-cyan-600" />
-                      <span className="font-medium">{item.owner_name}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Mail className="h-4 w-4 text-cyan-600" />
-                      <span>{item.owner_email || 'No email provided'}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-gray-600">
-                      <Phone className="h-4 w-4 text-cyan-600" />
-                      <span>{item.owner_phone || 'No phone provided'}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
             </div>
 
-            {/* Owner Section: Requests List */}
-            {isOwner && (
-              <div className="mt-8 border-t pt-6">
-                <div className="mb-4 flex items-center justify-between">
-                  <h3 className="text-xl font-bold text-gray-900">
-                    Item Requests
-                  </h3>
-                  <span className="rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-gray-600">
-                    {requests?.length || 0}
-                  </span>
+            {/* Right: Details */}
+            <div className="flex flex-col p-8 pr-8 pb-8">
+              <div className="flex-1">
+                {/* Header & Owner Actions */}
+                <div className="flex flex-col items-start justify-between">
+                  {isOwner && (
+                    <div className="mb-4 flex w-full justify-end gap-2">
+                      <button
+                        onClick={() =>
+                          navigate(`/freecycle/items/edit/${item.id}` as any)
+                        }
+                        className="flex-shrink-0 rounded-full bg-gray-100 p-2 text-cyan-600 transition-colors hover:bg-gray-200 hover:text-cyan-700"
+                        title="Edit Item Details"
+                      >
+                        <Edit className="h-5 w-5" />
+                      </button>
+
+                      <button
+                        onClick={() => handleDelete(item.id)}
+                        disabled={deletePostMutation.isPending}
+                        className="flex-shrink-0 rounded-full bg-red-50 p-2 text-red-500 transition-colors hover:bg-red-100 hover:text-red-700 disabled:opacity-50"
+                        title="Delete Item"
+                      >
+                        <Trash2 className="h-5 w-5" />
+                      </button>
+
+                      <button
+                        onClick={handleToggleGiven}
+                        disabled={
+                          markAsGivenMutation.isPending ||
+                          markAsNotGivenMutation.isPending
+                        }
+                        className={`flex-shrink-0 rounded-full p-2 text-white transition-colors disabled:opacity-50 ${item.is_given ? 'bg-red-500 hover:bg-red-600' : 'bg-cyan-500 hover:bg-cyan-600'}`}
+                        title={
+                          item.is_given ? 'Mark as Available' : 'Mark as Given'
+                        }
+                      >
+                        {item.is_given ? (
+                          <div className="flex items-center justify-center gap-2">
+                            <RotateCw className="h-5 w-5" />
+                            mark as not given
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-center gap-2">
+                            <CheckCircle className="h-5 w-5" />
+                            mark as given
+                          </div>
+                        )}
+                      </button>
+                    </div>
+                  )}
                 </div>
-                <RequestsList
-                  postId={postId}
-                  requests={requests}
-                  isLoading={requestsLoading}
-                  isError={requestsError}
-                />
+
+                <h1 className="mb-4 pr-4 text-3xl font-bold text-gray-900">
+                  {item.item_name}
+                </h1>
+
+                {item.is_given && (
+                  <span className="mb-4 inline-block rounded-full bg-gray-100 px-4 py-2 text-sm font-medium text-gray-600">
+                    This item has been given away
+                  </span>
+                )}
+
+                <div className="space-y-4">
+                  <div>
+                    <h3 className="mb-1 text-sm font-semibold text-gray-700">
+                      Description
+                    </h3>
+                    <p className="text-gray-600">
+                      {item.description || 'No description provided'}
+                    </p>
+                  </div>
+
+                  {item.item_weight && (
+                    <div>
+                      <h3 className="mb-1 text-sm font-semibold text-gray-700">
+                        Weight
+                      </h3>
+                      <p className="text-gray-600">{item.item_weight} kg</p>
+                    </div>
+                  )}
+
+                  {categories.length > 0 && (
+                    <div>
+                      <h3 className="mb-2 text-sm font-semibold text-gray-700">
+                        Categories
+                      </h3>
+                      <div className="flex flex-wrap gap-2">
+                        {categories.map((category) => (
+                          <span
+                            key={`category-${item.id}-${category.id}`}
+                            className="inline-block rounded-full bg-cyan-100 px-3 py-1 text-sm text-cyan-800"
+                          >
+                            {category.category_name}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="rounded-xl border border-gray-100 bg-gray-50 p-4">
+                    <h3 className="mb-2 text-sm font-semibold text-gray-700">
+                      Donater Information
+                    </h3>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <User className="h-4 w-4 text-cyan-600" />
+                        <span className="font-medium">{item.owner_name}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <Mail className="h-4 w-4 text-cyan-600" />
+                        <span>{item.owner_email || 'No email provided'}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <Phone className="h-4 w-4 text-cyan-600" />
+                        <span>{item.owner_phone || 'No phone provided'}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
-            )}
 
-            {/* Non-Owner Section: Request Button */}
-            {!item.is_given && !isOwner && (
-              <button
-                onClick={handleRequestToggle}
-                disabled={
-                  createRequestMutation.isPending ||
-                  cancelRequestMutation.isPending ||
-                  !isAuthenticated
-                }
-                className={`mt-6 flex w-full items-center justify-center gap-2 rounded-lg py-3 font-medium text-white shadow-md transition-all active:scale-95 disabled:scale-100 disabled:opacity-70 ${
-                  hasRequested
-                    ? 'bg-red-500 shadow-red-200 hover:bg-red-600'
-                    : 'bg-cyan-500 shadow-cyan-200 hover:bg-cyan-600'
-                }`}
-              >
-                {(createRequestMutation.isPending ||
-                  cancelRequestMutation.isPending) && (
-                  <Loader2 className="h-5 w-5 animate-spin" />
-                )}
+              {/* Owner Section: Requests List */}
+              {isOwner && (
+                <div className="mt-8 border-t pt-6">
+                  <div className="mb-4 flex items-center justify-between">
+                    <h3 className="text-xl font-bold text-gray-900">
+                      Item Requests
+                    </h3>
+                    <span className="rounded-full bg-gray-100 px-3 py-1 text-sm font-medium text-gray-600">
+                      {requests?.length || 0}
+                    </span>
+                  </div>
+                  <RequestsList
+                    postId={postId}
+                    requests={requests}
+                    isLoading={requestsLoading}
+                    isError={requestsError}
+                  />
+                </div>
+              )}
 
-                {!isAuthenticated ? (
-                  'Please Login to Request'
-                ) : createRequestMutation.isPending ? (
-                  'Sending...'
-                ) : cancelRequestMutation.isPending ? (
-                  'Cancelling...'
-                ) : hasRequested ? (
-                  <>
-                    <X className="h-5 w-5" /> Cancel Request
-                  </>
-                ) : (
-                  <>
-                    <Check className="h-5 w-5" /> Request Item
-                  </>
-                )}
-              </button>
-            )}
+              {/* Non-Owner Section: Request Button */}
+              {!item.is_given && !isOwner && (
+                <button
+                  onClick={handleRequestToggle}
+                  disabled={
+                    createRequestMutation.isPending ||
+                    cancelRequestMutation.isPending ||
+                    !isAuthenticated
+                  }
+                  className={`mt-6 flex w-full items-center justify-center gap-2 rounded-lg py-3 font-medium text-white shadow-md transition-all active:scale-95 disabled:scale-100 disabled:opacity-70 ${
+                    hasRequested
+                      ? 'bg-red-500 shadow-red-200 hover:bg-red-600'
+                      : 'bg-cyan-500 shadow-cyan-200 hover:bg-cyan-600'
+                  }`}
+                >
+                  {(createRequestMutation.isPending ||
+                    cancelRequestMutation.isPending) && (
+                    <Loader2 className="h-5 w-5 animate-spin" />
+                  )}
 
-            {/* Owner Warning Button */}
-            {!item.is_given && isOwner && (
-              <button
-                disabled
-                className="mt-6 w-full cursor-not-allowed rounded-lg border border-gray-200 bg-gray-100 py-3 font-medium text-gray-400"
-              >
-                You own this item
-              </button>
-            )}
+                  {!isAuthenticated ? (
+                    'Please Login to Request'
+                  ) : createRequestMutation.isPending ? (
+                    'Sending...'
+                  ) : cancelRequestMutation.isPending ? (
+                    'Cancelling...'
+                  ) : hasRequested ? (
+                    <>
+                      <X className="h-5 w-5" /> Cancel Request
+                    </>
+                  ) : (
+                    <>
+                      <Check className="h-5 w-5" /> Request Item
+                    </>
+                  )}
+                </button>
+              )}
+
+              {/* Owner Warning Button */}
+              {!item.is_given && isOwner && (
+                <button
+                  disabled
+                  className="mt-6 w-full cursor-not-allowed rounded-lg border border-gray-200 bg-gray-100 py-3 font-medium text-gray-400"
+                >
+                  You own this item
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </div>

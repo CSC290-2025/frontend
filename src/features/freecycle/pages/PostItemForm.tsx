@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Upload, X } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
+import Sidebar from '@/components/main/Sidebar';
 import type { Category } from '@/types/postItem';
 import {
   createPost,
@@ -35,6 +36,7 @@ export default function PostItemForm({ onSuccess, onBack }: PostItemFormProps) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   const { isLoading: isUserLoading } = useCurrentUser();
   const userId = useGetAuthMe().data?.data?.userId ?? null;
@@ -81,6 +83,11 @@ export default function PostItemForm({ onSuccess, onBack }: PostItemFormProps) {
   };
 
   const handleConfirmPost = async () => {
+    if (!userId) {
+      setError('User not found. Please log in.');
+      setShowConfirmDialog(false);
+      return;
+    }
     setShowConfirmDialog(false);
     setLoading(true);
     setError(null);
@@ -114,7 +121,10 @@ export default function PostItemForm({ onSuccess, onBack }: PostItemFormProps) {
       // Invalidate the MyPosts query to refresh the list
       queryClient.invalidateQueries({ queryKey: ['posts', 'me'] });
       setLoading(false);
-      if (typeof onSuccess === 'function') onSuccess();
+      setShowSuccessModal(true);
+      setTimeout(() => {
+        if (typeof onSuccess === 'function') onSuccess();
+      }, 1500);
     } catch (err) {
       console.error('Error creating post:', err);
       setError('Failed to create post. Please try again.');
@@ -132,7 +142,7 @@ export default function PostItemForm({ onSuccess, onBack }: PostItemFormProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-cyan-50 to-blue-50 px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-2xl">
+      <div className="mx-auto max-w-4xl">
         <div className="mb-8">
           <div className="mb-4 flex items-center gap-4">
             {onBack && (
@@ -365,6 +375,34 @@ export default function PostItemForm({ onSuccess, onBack }: PostItemFormProps) {
                 {loading ? 'Posting...' : 'Post'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {showSuccessModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="flex justify-center">
+              <svg
+                className="h-16 w-16 text-green-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+            </div>
+            <h2 className="mt-4 text-center text-lg font-semibold text-gray-900">
+              Item Posted Successfully!
+            </h2>
+            <p className="mt-2 text-center text-gray-600">
+              Your item is now visible to the community.
+            </p>
           </div>
         </div>
       )}

@@ -84,7 +84,9 @@ export default function MyRequestsPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="mb-4 text-3xl font-bold text-gray-900">Request Items</h1>
+        <h1 className="mb-4 text-2xl font-semibold text-gray-900">
+          Request Items
+        </h1>
         <div className="flex flex-wrap gap-4">
           <div className="rounded-lg bg-yellow-50 px-4 py-2">
             <span className="text-sm text-yellow-800">

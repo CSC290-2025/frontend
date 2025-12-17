@@ -39,3 +39,12 @@ export interface RoomParam {
   id: number;
   roomId: number;
 }
+
+export interface RoomFormData {
+  name: string;
+  type: string;
+  size: string;
+  price_start: number;
+  price_end: number;
+  room_status: RoomStatus;
+}

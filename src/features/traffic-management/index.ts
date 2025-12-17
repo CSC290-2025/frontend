@@ -1,6 +1,15 @@
 export { default as TrafficMapPage } from './pages/TrafficMapPage';
 export { default as TrafficAdminpage } from './pages/TrafficAdminpage';
+export { default as TrafficControlPage } from './pages/TrafficControlPage';
 export { default as TrafficSignalMarker } from './components/TrafficSignalMarker';
 export { default as LocationInput } from './components/LocationInput';
 export { default as ControlPanel } from './components/ControlPanel';
 export { default as RouteInfo } from './components/RouteInfo';
+export { default as EmergencyVehicleMarker } from './components/EmergencyVehicleMarker';
+export { default as TrafficLightControlPopup } from './components/TrafficLightControlPopup';
+export { default as TrafficLegend } from './components/TrafficLegend';
+export { default as TrafficSidebar } from './components/TrafficSidebar';
+export { useEmergencyVehicles } from './hooks/useEmergencyVehicles';
+export { useEmergencyTrafficControl } from './hooks/useEmergencyTrafficControl';
+export { useTrafficLightCycle } from './hooks/useTrafficLightCycle';
+export type { EmergencyVehicle } from './hooks/useEmergencyVehicles';
