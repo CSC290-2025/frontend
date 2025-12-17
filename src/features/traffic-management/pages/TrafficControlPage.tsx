@@ -13,6 +13,8 @@ import { useTrafficLightCycle } from '../hooks/useTrafficLightCycle';
 import EmergencyVehicleMarker from '../components/EmergencyVehicleMarker';
 import MapSettingsDialog from '../components/MapSettingsDialog';
 import LightEditorDialog from '../components/LightEditorDialog';
+import AddLightDialog from '../components/AddLightDialog';
+import AddIntersectionDialog from '../components/AddIntersectionDialog';
 import {
   Activity,
   AlertTriangle,
@@ -24,6 +26,8 @@ import {
   PlayCircle,
   StopCircle,
   Navigation,
+  Plus,
+  Trash2,
 } from 'lucide-react';
 import {
   colorNumberToString,
@@ -80,6 +84,8 @@ interface MapContentProps {
   stoppedJunctions?: Set<string>;
   emergencyMode?: string | null;
   emergencyControlledIntersections?: Set<string>;
+  isPickingPosition?: boolean;
+  onMapClick?: (lat: number, lng: number) => void;
 }
 
 function parseCoordinate(value: any): number | null {
@@ -304,6 +310,8 @@ function MapContent({
   stoppedJunctions,
   emergencyMode,
   emergencyControlledIntersections,
+  isPickingPosition,
+  onMapClick,
 }: MapContentProps) {
   const map = useMap();
   const [isGettingLocation, setIsGettingLocation] = useState<boolean>(false);
@@ -314,6 +322,28 @@ function MapContent({
       onMapReady(map);
     }
   }, [map, onMapReady]);
+
+  // Handle map click for position picking
+  useEffect(() => {
+    if (!map || !isPickingPosition || !onMapClick) return;
+
+    const listener = map.addListener(
+      'click',
+      (e: google.maps.MapMouseEvent) => {
+        if (e.latLng) {
+          onMapClick(e.latLng.lat(), e.latLng.lng());
+        }
+      }
+    );
+
+    // Change cursor to crosshair when picking
+    map.setOptions({ draggableCursor: 'crosshair' });
+
+    return () => {
+      google.maps.event.removeListener(listener);
+      map.setOptions({ draggableCursor: null });
+    };
+  }, [map, isPickingPosition, onMapClick]);
 
   useEffect(() => {
     if (map && selectedSignal) {
@@ -417,6 +447,17 @@ export default function TrafficControlPage() {
   );
   const [editingLight, setEditingLight] = useState<TrafficSignal | null>(null);
   const [showLightEditor, setShowLightEditor] = useState(false);
+
+  // Add light/intersection dialog state
+  const [showAddLightDialog, setShowAddLightDialog] = useState(false);
+  const [showAddIntersectionDialog, setShowAddIntersectionDialog] =
+    useState(false);
+  const [addLightJunctionId, setAddLightJunctionId] = useState<string>('');
+  const [isPickingPosition, setIsPickingPosition] = useState(false);
+  const [pickedPosition, setPickedPosition] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
 
   // Load broken lights visibility from localStorage
   const BROKEN_LIGHTS_STORAGE_KEY =
@@ -687,6 +728,183 @@ export default function TrafficControlPage() {
     [trafficLightsData]
   );
 
+  // Position picking handlers
+  const handleStartPickingPosition = useCallback(() => {
+    setIsPickingPosition(true);
+    setPickedPosition(null);
+  }, []);
+
+  const handleStopPickingPosition = useCallback(() => {
+    setIsPickingPosition(false);
+  }, []);
+
+  const handleMapClick = useCallback((lat: number, lng: number) => {
+    setPickedPosition({ lat, lng });
+  }, []);
+
+  // Add intersection handler
+  const handleAddIntersection = useCallback(
+    async (intersectionId: number, lat: number, lng: number) => {
+      try {
+        const lightKey = `inter${intersectionId}_road1`;
+        const updates: Record<string, any> = {
+          [`teams/10/traffic_lights/${lightKey}`]: {
+            interid: intersectionId,
+            roadid: 1,
+            lat,
+            lng,
+            color: COLOR_GREEN,
+            remaintime: 30,
+            green_duration: 27,
+            yellow_duration: 3,
+            status: 0,
+            autoON: true,
+            timestamp: new Date().toISOString(),
+          },
+        };
+
+        await update(ref(database), updates);
+        setShowAddIntersectionDialog(false);
+        setPickedPosition(null);
+      } catch (err) {
+        console.error('Failed to add intersection:', err);
+      }
+    },
+    []
+  );
+
+  // Add light to existing junction handler
+  const handleAddLight = useCallback(
+    async (junctionId: string, roadId: number, lat: number, lng: number) => {
+      try {
+        const interid = parseInt(junctionId.replace('Inter-', ''));
+        const lightKey = `inter${interid}_road${roadId}`;
+
+        // Get existing lights in this intersection to calculate proper timing
+        const intersections = groupLightsByIntersection(trafficLightsData);
+        const existingLights = intersections[interid] || [];
+        const sortedLights = sortLightsByRoadId(existingLights);
+
+        // Calculate red time for new light (it starts red)
+        const lightDurations = calculateIntersectionLightDurations([
+          ...sortedLights,
+          { key: lightKey, green_duration: 27, yellow_duration: 3 },
+        ]);
+        const newLightIndex = sortedLights.length;
+        const redTime = calculateRedLightRemainingTime(
+          lightDurations,
+          0,
+          newLightIndex
+        );
+
+        const updates: Record<string, any> = {
+          [`teams/10/traffic_lights/${lightKey}`]: {
+            interid,
+            roadid: roadId,
+            lat,
+            lng,
+            color: COLOR_RED,
+            remaintime: redTime,
+            green_duration: 27,
+            yellow_duration: 3,
+            status: 0,
+            autoON: true,
+            timestamp: new Date().toISOString(),
+          },
+        };
+
+        await update(ref(database), updates);
+        setShowAddLightDialog(false);
+        setAddLightJunctionId('');
+        setPickedPosition(null);
+      } catch (err) {
+        console.error('Failed to add light:', err);
+      }
+    },
+    [trafficLightsData]
+  );
+
+  // Remove light handler
+  const handleRemoveLight = useCallback(
+    async (signal: TrafficSignal) => {
+      if (!signal.trafficLightId) return;
+
+      const confirmDelete = window.confirm(
+        `Are you sure you want to remove ${signal.direction} from ${signal.junctionId}?`
+      );
+      if (!confirmDelete) return;
+
+      try {
+        // Check if this light has a support marker to delete
+        const lightData = trafficLightsData[signal.trafficLightId];
+        const supportMarkerId = lightData?.support_marker_id;
+
+        if (supportMarkerId) {
+          try {
+            await apiClient.delete(`/api/markers/${supportMarkerId}`);
+          } catch (markerErr) {
+            console.error('Failed to delete support marker:', markerErr);
+          }
+        }
+
+        // Remove the light from Firebase
+        await update(ref(database), {
+          [`teams/10/traffic_lights/${signal.trafficLightId}`]: null,
+        });
+
+        // Clear selection if this was selected
+        if (selectedSignal?.trafficLightId === signal.trafficLightId) {
+          setSelectedSignal(null);
+        }
+      } catch (err) {
+        console.error('Failed to remove light:', err);
+      }
+    },
+    [trafficLightsData, selectedSignal]
+  );
+
+  // Open add light dialog for a junction
+  const handleOpenAddLightDialog = useCallback((junctionId: string) => {
+    setAddLightJunctionId(junctionId);
+    setShowAddLightDialog(true);
+    setPickedPosition(null);
+  }, []);
+
+  // Get existing intersection IDs
+  const existingIntersectionIds = useMemo(() => {
+    const ids = new Set<number>();
+    signals.forEach((s) => {
+      const interid = parseInt(s.junctionId.replace('Inter-', ''));
+      if (!isNaN(interid)) ids.add(interid);
+    });
+    return Array.from(ids);
+  }, [signals]);
+
+  // Get existing road IDs for a junction
+  const getExistingRoadIds = useCallback(
+    (junctionId: string) => {
+      return signals
+        .filter((s) => s.junctionId === junctionId)
+        .map((s) => parseInt(s.direction.replace('Road-', '')))
+        .filter((id) => !isNaN(id));
+    },
+    [signals]
+  );
+
+  // Get existing light positions for a junction
+  const getExistingLightPositions = useCallback(
+    (junctionId: string) => {
+      return signals
+        .filter((s) => s.junctionId === junctionId)
+        .map((s) => ({
+          lat: s.lat,
+          lng: s.lng,
+          direction: s.direction,
+        }));
+    },
+    [signals]
+  );
+
   const handleSaveSettings = (newSettings: MapSettings) => {
     setSettings(newSettings);
     setShowSettings(false);
@@ -902,13 +1120,22 @@ export default function TrafficControlPage() {
         <div className="border-b border-gray-200 bg-slate-900 p-6 text-white">
           <div className="mb-2 flex items-center justify-between">
             <h1 className="text-2xl font-bold">Traffic Control</h1>
-            <button
-              onClick={() => setShowSettings(true)}
-              className="rounded-lg p-2 transition hover:bg-slate-800"
-              title="Map Settings"
-            >
-              <Settings className="h-5 w-5" />
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowAddIntersectionDialog(true)}
+                className="rounded-lg bg-green-600 p-2 transition hover:bg-green-700"
+                title="Add New Intersection"
+              >
+                <Plus className="h-5 w-5" />
+              </button>
+              <button
+                onClick={() => setShowSettings(true)}
+                className="rounded-lg p-2 transition hover:bg-slate-800"
+                title="Map Settings"
+              >
+                <Settings className="h-5 w-5" />
+              </button>
+            </div>
           </div>
           <p className="text-sm text-slate-300">
             Manage traffic lights in real-time
@@ -1123,6 +1350,13 @@ export default function TrafficControlPage() {
                         {junctionSignals.length} light
                         {junctionSignals.length !== 1 ? 's' : ''}
                       </span>
+                      <button
+                        onClick={() => handleOpenAddLightDialog(junctionId)}
+                        className="rounded-md bg-green-600 p-1 text-white transition hover:bg-green-700"
+                        title="Add Light to Junction"
+                      >
+                        <Plus className="h-3 w-3" />
+                      </button>
                       {!emergencyStopAll &&
                         (isJunctionStopped ? (
                           <button
@@ -1207,13 +1441,22 @@ export default function TrafficControlPage() {
                                   </div>
                                 </div>
                               </button>
-                              <button
-                                onClick={() => handleEditLight(signal)}
-                                className="rounded-md p-2 text-gray-400 transition hover:bg-gray-200 hover:text-gray-600"
-                                title="Edit light settings"
-                              >
-                                <Settings className="h-4 w-4" />
-                              </button>
+                              <div className="flex items-center gap-1">
+                                <button
+                                  onClick={() => handleEditLight(signal)}
+                                  className="rounded-md p-2 text-gray-400 transition hover:bg-gray-200 hover:text-gray-600"
+                                  title="Edit light settings"
+                                >
+                                  <Settings className="h-4 w-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleRemoveLight(signal)}
+                                  className="rounded-md p-2 text-gray-400 transition hover:bg-red-100 hover:text-red-600"
+                                  title="Remove light"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              </div>
                             </div>
                           </div>
                         );
@@ -1258,6 +1501,8 @@ export default function TrafficControlPage() {
               emergencyControlledIntersections={
                 emergencyControlledIntersections
               }
+              isPickingPosition={isPickingPosition}
+              onMapClick={handleMapClick}
             />
           </Map>
         </APIProvider>
@@ -1310,6 +1555,41 @@ export default function TrafficControlPage() {
           onForceGreen={handleForceGreen}
         />
       )}
+
+      {/* Add Intersection Dialog */}
+      <AddIntersectionDialog
+        open={showAddIntersectionDialog}
+        onClose={() => {
+          setShowAddIntersectionDialog(false);
+          setPickedPosition(null);
+          setIsPickingPosition(false);
+        }}
+        onSave={handleAddIntersection}
+        existingIntersectionIds={existingIntersectionIds}
+        onStartPickingPosition={handleStartPickingPosition}
+        onStopPickingPosition={handleStopPickingPosition}
+        isPickingPosition={isPickingPosition}
+        pickedPosition={pickedPosition}
+      />
+
+      {/* Add Light Dialog */}
+      <AddLightDialog
+        open={showAddLightDialog}
+        onClose={() => {
+          setShowAddLightDialog(false);
+          setAddLightJunctionId('');
+          setPickedPosition(null);
+          setIsPickingPosition(false);
+        }}
+        onSave={handleAddLight}
+        junctionId={addLightJunctionId}
+        existingRoadIds={getExistingRoadIds(addLightJunctionId)}
+        onStartPickingPosition={handleStartPickingPosition}
+        onStopPickingPosition={handleStopPickingPosition}
+        isPickingPosition={isPickingPosition}
+        pickedPosition={pickedPosition}
+        existingLightPositions={getExistingLightPositions(addLightJunctionId)}
+      />
     </div>
   );
 }
