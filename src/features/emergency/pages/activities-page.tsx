@@ -158,6 +158,9 @@ export default function ActivitiesPage() {
                           <div className="text-xs text-gray-500">
                             {addressMap[r.id] || 'Fetching address...'}
                           </div>
+                          <div className="mt-4 text-sm text-gray-400">
+                            {new Date(r.created_at).toLocaleDateString('en-EN')}
+                          </div>
 
                           <div className="mt-auto flex items-center gap-2">
                             <Badge className="bg-gray-100 text-gray-700">
