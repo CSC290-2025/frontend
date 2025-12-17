@@ -3,6 +3,7 @@ import { Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import DeleteConfirmModal from './DeletePopup';
 import EditCourseModal from './EditCourse';
+import { useUpdateCourse, useDeleteCourse } from '../hooks/useAdmin';
 
 export default function AdminCard({ course }: { course: any }) {
   const navigate = useNavigate();
@@ -18,16 +19,19 @@ export default function AdminCard({ course }: { course: any }) {
     });
   };
 
+  const { mutate: updateCourseAction } = useUpdateCourse();
+  const { mutate: deleteCourseAction } = useDeleteCourse();
+
   const handleEdit = (e: React.MouseEvent) => {
     e.stopPropagation();
     setShowEditModal(true);
     console.log('Edit:', course.id);
   };
-  const handleConfirmEdit = () => {
-    // Edit API call here Chokun add hereeee
-
-    console.log('Edit course:', course.id);
-    // Example: approveCourse(course.id);
+  const handleConfirmEdit = (updatedData: any) => {
+    updateCourseAction({
+      id: course.id,
+      data: updatedData,
+    });
     setShowEditModal(false);
   };
 

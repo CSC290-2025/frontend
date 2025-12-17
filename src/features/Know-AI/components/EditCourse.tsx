@@ -1,25 +1,6 @@
 import { useState } from 'react';
 import { X, Trash2 } from 'lucide-react';
-
-interface Video {
-  id: number;
-  name: string;
-  description: string;
-  upload_url: string;
-}
-
-interface Course {
-  id: number;
-  course_name: string;
-  course_description: string;
-  course_type: 'online' | 'onsite';
-  cover_image?: string;
-  videos?: Video[];
-  event_date?: string;
-  duration_hrs?: number;
-  reg_deadline?: string;
-  address?: string;
-}
+import type { Course, CourseVideo } from '@/types/course';
 
 interface EditCourseModalProps {
   isOpen: boolean;
@@ -64,7 +45,7 @@ export default function EditCourseModal({
   const handleVideoChange = (videoId: number, field: string, value: string) => {
     setFormData((prev) => ({
       ...prev,
-      videos: prev.videos?.map((video) =>
+      course_videos: prev.course_videos?.map((video) =>
         video.id === videoId ? { ...video, [field]: value } : video
       ),
     }));
@@ -73,7 +54,9 @@ export default function EditCourseModal({
   const handleDeleteVideo = (videoId: number) => {
     setFormData((prev) => ({
       ...prev,
-      videos: prev.videos?.filter((video) => video.id !== videoId),
+      course_videos: prev.course_videos?.filter(
+        (video) => video.id !== videoId
+      ),
     }));
   };
 
@@ -171,10 +154,10 @@ export default function EditCourseModal({
           </div>
 
           {/* Online Course - Video Details */}
-          {formData.course_type === 'online' && formData.videos && (
+          {formData.course_type === 'online' && formData.course_videos && (
             <div className="space-y-3 rounded-lg border border-gray-200 p-4">
               <h3 className="font-medium text-gray-900">Video Details:</h3>
-              {formData.videos.map((video) => (
+              {formData.course_videos.map((video) => (
                 <div
                   key={video.id}
                   className="space-y-2 rounded-lg border border-gray-200 bg-gray-50 p-3"
@@ -183,33 +166,24 @@ export default function EditCourseModal({
                     <div className="flex-1 space-y-2">
                       <input
                         type="text"
-                        value={video.name}
+                        value={video.video_name}
                         onChange={(e) =>
-                          handleVideoChange(video.id, 'name', e.target.value)
+                          handleVideoChange(
+                            video.id,
+                            'video_name',
+                            e.target.value
+                          )
                         }
                         placeholder="Video Name"
                         className="w-full rounded border border-gray-300 px-2 py-1 text-sm"
                       />
                       <input
                         type="text"
-                        value={video.description}
+                        value={video.video_file_path}
                         onChange={(e) =>
                           handleVideoChange(
                             video.id,
-                            'description',
-                            e.target.value
-                          )
-                        }
-                        placeholder="Description"
-                        className="w-full rounded border border-gray-300 px-2 py-1 text-sm"
-                      />
-                      <input
-                        type="text"
-                        value={video.upload_url}
-                        onChange={(e) =>
-                          handleVideoChange(
-                            video.id,
-                            'upload_url',
+                            'video_file_path',
                             e.target.value
                           )
                         }
