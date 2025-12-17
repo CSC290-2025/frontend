@@ -28,24 +28,6 @@ export default function ProfileUserPage() {
 
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                 <ServiceBox
-                  icon={<AlertCircle className="h-full w-full" />}
-                  title="Emergency"
-                  desc="Quick access to emergency services and contacts"
-                  color="bg-red-400"
-                  hoverColor="hover:bg-red-500"
-                  onClick={() => navigate('/citizen/profile/emergency')}
-                />
-
-                <ServiceBox
-                  icon={<Heart className="h-full w-full" />}
-                  title="Healthcare"
-                  desc="Medical records and health management tools"
-                  color="bg-emerald-400"
-                  hoverColor="hover:bg-emerald-500"
-                  onClick={() => navigate('/citizen/profile/healthcare')}
-                />
-
-                <ServiceBox
                   icon={<Recycle className="h-full w-full" />}
                   title="Waste Management"
                   desc="Waste services and history tracking"
