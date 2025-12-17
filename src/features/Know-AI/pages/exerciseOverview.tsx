@@ -1,11 +1,14 @@
 import { useExerciseProgress } from '@/features/Know-AI/hooks/useExerciseProgress';
 import ExerciseButton from '@/features/Know-AI/components/ExerciseButton';
 import LevelBadge from '@/features/Know-AI/components/LevelBadge';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { useGetAuthMe } from '@/api/generated/authentication';
 
 export default function ExerciseOverviewPage() {
-  const userId = 8;
+  const userId = useGetAuthMe().data?.data?.userId ?? 0;
   const levels = [1, 2, 3];
+
+  const [showSpecialtyBanner, setShowSpecialtyBanner] = useState(false);
 
   const progress: Record<number, ReturnType<typeof useExerciseProgress>> = {
     1: useExerciseProgress(1, userId),
@@ -14,10 +17,20 @@ export default function ExerciseOverviewPage() {
   };
 
   useEffect(() => {
-    levels.forEach((level) => {
-      progress[level]?.refetch?.();
-    });
-  }, []);
+    if (userId) {
+      progress[1]?.refetch?.();
+      progress[2]?.refetch?.();
+      progress[3]?.refetch?.();
+    }
+  }, [userId]);
+
+  // Check if Level 3 is completed
+  const level3Data = progress[3]?.data;
+  useEffect(() => {
+    if (level3Data?.correct_answers === 3) {
+      setShowSpecialtyBanner(true);
+    }
+  }, [level3Data]);
 
   // Check if a level is unlocked
   const isLevelUnlocked = (level: number) => {
@@ -54,6 +67,41 @@ export default function ExerciseOverviewPage() {
   return (
     <div className="min-h-screen bg-linear-to-br from-blue-50 via-white to-purple-50 px-4 py-8 md:py-12">
       <div className="mx-auto max-w-5xl">
+        {/* Specialty Achievement Banner */}
+        {showSpecialtyBanner && (
+          <div className="relative mb-8 animate-bounce rounded-2xl bg-gradient-to-r from-[#01CCFF] via-[#01CCFF] to-[#01CCFF] p-6 text-center shadow-xl">
+            {/* close button */}
+            <button
+              className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full bg-white/20 text-white transition-colors hover:bg-white/30"
+              onClick={() => setShowSpecialtyBanner(false)}
+            >
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+
+            <h2 className="mb-2 text-2xl font-bold text-white">
+              Congratulations!
+            </h2>
+            <p className="text-lg font-semibold text-white">
+              You have completed all Level 3 exercises
+            </p>
+            <p className="mt-2 text-sm text-black">
+              You have earned the Know-AI Expert specialty.
+            </p>
+          </div>
+        )}
+
         {/* Header */}
         <div className="mb-10 text-center md:mb-16">
           <h1 className="mb-3 text-3xl font-bold text-gray-800 md:text-4xl">
@@ -61,6 +109,9 @@ export default function ExerciseOverviewPage() {
           </h1>
           <p className="text-sm text-gray-600 md:text-base">
             Test your knowledge across three difficulty levels
+          </p>
+          <p className="mt-1 text-sm text-[#CC2435] md:text-base">
+            Complete all question for AI-Expert specialty!
           </p>
         </div>
 
@@ -196,7 +247,7 @@ export default function ExerciseOverviewPage() {
                 <h3 className="mb-2 font-semibold text-gray-700">
                   Level {level}
                 </h3>
-                <div className="text-2xl font-bold text-blue-600">
+                <div className="text-2xl font-bold text-[#01CCFF]">
                   {calculatedPercentage || 0}%
                 </div>
                 <div className="mt-1 text-xs text-gray-500">
