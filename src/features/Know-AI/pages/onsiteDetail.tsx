@@ -1,44 +1,29 @@
+// pages/OnsiteDetail.tsx
 import { useState } from 'react';
 import { useParams } from '@/router';
 import { useCourseById, useEnrollCourse } from '../hooks/useCourse';
+import { useCurrentUser, useMyProfile } from '../hooks/useUser';
 import { useTravelDuration } from '../hooks/useTravelTime';
 import { useAddress } from '../hooks/useAddress';
 import { useTransitLines } from '../hooks/useTransitLines';
 import { formatAddressToString } from '../api/knowAi.api';
 import EnrollCourseModal from '../components/EnrollmentPopup';
+import { useGetAuthMe } from '@/api/generated/authentication';
 
 export default function OnsiteDetail() {
   const { id } = useParams('/Know-AI/:course/:id');
   const { data: course, isLoading, isError } = useCourseById(id);
 
+  // Get user data
+  const { data: authData } = useGetAuthMe();
+  const userId = authData?.data?.userId ?? null;
+  const { data: users } = useCurrentUser();
+  const { data: profile } = useMyProfile(userId ?? 0); // ใช้ 0 ถ้า userId เป็น null
+
   const [showTransportation, setShowTransportation] = useState(false);
-  const [isPopupOpen, setIsPopupOpen] = useState(false);
-
   const [showEnrollModal, setShowEnrollModal] = useState(false);
+
   const { mutate: enrollCourse } = useEnrollCourse();
-
-  const courseDetail = {
-    id: course.id,
-    course_name: course.course_name,
-    teacher: 'Worrapratch Chokun',
-    time: '18:00 - 20:00',
-    place: 'Siam Paragon Hall (1.3)',
-  };
-
-  const userDetail = {
-    firstname: 'Noteelon',
-    lastname: 'Buepprasert',
-    phone_number: '0801234567',
-    email: 'noteelon@gmail.com',
-  };
-
-  const handleConfirmEnroll = () => {
-    enrollCourse(course.id, {
-      onSuccess: () => {
-        console.log('Enrolled successfully!');
-      },
-    });
-  };
 
   const userAddressId = 19;
   const session = course?.onsite_sessions?.[0];
@@ -59,6 +44,7 @@ export default function OnsiteDetail() {
     showTransportation
   );
 
+  // Loading states
   if (isLoading)
     return (
       <div className="flex h-screen items-center justify-center text-lg">
@@ -70,6 +56,14 @@ export default function OnsiteDetail() {
     return (
       <div className="flex h-screen items-center justify-center text-lg text-red-500">
         Course not found
+      </div>
+    );
+
+  // Check if user data is loaded
+  if (!userId || !users || !profile)
+    return (
+      <div className="flex h-screen items-center justify-center text-lg">
+        Loading user data...
       </div>
     );
 
@@ -101,6 +95,42 @@ export default function OnsiteDetail() {
       hour12: false,
     });
   }
+
+  const courseDetail = {
+    id: course.id,
+    course_name: course.course_name,
+    teacher: `Instructor ID: ${course.author_id}`,
+    time: `${startTime} - ${endTime}`,
+    place: addressData ? formatAddressToString(addressData) : 'Loading...',
+    onsite_session_id: session?.id,
+  };
+
+  const userDetail = {
+    id: userId,
+    firstname: profile.firstName || '',
+    lastname: profile.lastName || '',
+    phone_number: users.phone || '',
+    email: users.email || '',
+  };
+
+  const handleConfirmEnroll = () => {
+    if (!session?.id) {
+      alert('Session ID not found');
+      return;
+    }
+
+    enrollCourse(
+      {
+        onsite_id: session.id,
+        user_id: userId,
+      },
+      {
+        onSuccess: () => {
+          console.log('Enrolled successfully!');
+        },
+      }
+    );
+  };
 
   return (
     <div className="flex flex-col gap-y-6 p-10">
@@ -198,7 +228,6 @@ export default function OnsiteDetail() {
           </h2>
 
           <div className="space-y-6">
-            {/* รถส่วนตัว */}
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-4">
                 <span className="w-40 font-medium text-gray-900">
@@ -264,15 +293,13 @@ export default function OnsiteDetail() {
         </div>
       </div>
 
-      {isPopupOpen && (
-        <EnrollCourseModal
-          isOpen={showEnrollModal}
-          onClose={() => setShowEnrollModal(false)}
-          courseDetail={courseDetail}
-          userDetail={userDetail}
-          onConfirmEnroll={handleConfirmEnroll}
-        />
-      )}
+      <EnrollCourseModal
+        isOpen={showEnrollModal}
+        onClose={() => setShowEnrollModal(false)}
+        courseDetail={courseDetail}
+        userDetail={userDetail}
+        onConfirmEnroll={handleConfirmEnroll}
+      />
     </div>
   );
 }
