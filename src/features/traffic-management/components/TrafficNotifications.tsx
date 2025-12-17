@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import useTrafficSSE, { type StatusEvent } from '../types/useTrafficSSE';
+import type { StatusEvent } from '@/features/traffic-management/types/useTrafficSSE.ts';
 
 type Notification = {
   id: string;
@@ -62,8 +62,6 @@ export default function TrafficNotifications() {
     },
     [push]
   );
-
-  useTrafficSSE(handleEvent, { reconnect: true, maxRetries: 6 });
 
   // Listen for programmatic notification requests dispatched from the page
   useEffect(() => {
