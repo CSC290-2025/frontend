@@ -18,18 +18,17 @@ interface StatusDetails {
   style: string;
 }
 
+interface StatusBorder {
+  borderColor: string;
+}
+
 const getStatusAndStyle = (category: string): StatusDetails => {
-  console.log(
-    'CurrentAqiCard received category:',
-    category,
-    'Type:',
-    typeof category
-  ); // Debug
   switch (category.toUpperCase()) {
+    case 'GOOD':
     case 'HEALTHY':
       return {
-        status: 'HEALTHY',
-        style: 'bg-green-500 text-black',
+        status: 'GOOD',
+        style: 'bg-teal-500 text-black',
       };
     case 'MODERATE':
       return {
@@ -65,6 +64,36 @@ const getStatusAndStyle = (category: string): StatusDetails => {
       };
   }
 };
+
+const getColorBorderStyle = (category: string): StatusBorder => {
+  switch (category.toUpperCase()) {
+    case 'GOOD':
+      return {
+        borderColor: 'border-l-4 border-teal-600 hover:border-teal-400',
+      };
+    case 'MODERATE':
+      return {
+        borderColor: 'border-l-4 border-lime-500 hover:border-lime-400',
+      };
+    case 'UNHEALTHY_FOR_SENSITIVE':
+      return {
+        borderColor: 'border-l-4 border-yellow-500 hover:border-yellow-400',
+      };
+    case 'UNHEALTHY':
+      return {
+        borderColor: 'border-l-4 border-orange-500 hover:border-orange-400',
+      };
+    case 'VERY_UNHEALTHY':
+      return {
+        borderColor: 'border-l-4 border-red-600 hover:border-red-400',
+      };
+    default:
+      return {
+        borderColor: 'border-l-4 border-gray-600 hover:border-gray-400',
+      };
+  }
+};
+
 export default function DistrictItem({
   district,
   aqi,
@@ -132,7 +161,7 @@ export default function DistrictItem({
   return (
     <div
       onClick={handleSelectDistrict}
-      className="relative flex cursor-pointer items-center justify-between rounded-xl border border-gray-200 bg-white p-4 text-black shadow-sm hover:border-gray-300 hover:shadow-md"
+      className={`relative flex cursor-pointer items-center justify-between rounded-xl bg-white p-4 text-black shadow-sm hover:border-gray-300 hover:shadow-md ${getColorBorderStyle(category).borderColor}`}
     >
       <div className="flex flex-col gap-0">
         <div className="flex items-center gap-2">

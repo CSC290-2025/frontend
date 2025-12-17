@@ -30,12 +30,13 @@ const getStatusAndStyle = (category: string): StatusDetails => {
     typeof category
   ); // Debug
   switch (category.toUpperCase()) {
+    case 'GOOD':
     case 'HEALTHY':
       return {
-        status: 'HEALTHY',
-        style: 'bg-green-500 text-white',
+        status: 'GOOD',
+        style: 'bg-teal-500 text-white',
         icon: faFaceGrinWide,
-        iconStyle: 'text-green-600',
+        iconStyle: 'text-teal-600',
       };
     case 'MODERATE':
       return {
