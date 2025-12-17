@@ -236,7 +236,7 @@ export default function EnrollCourseModal({
                 onClick={handleClose}
                 className="mt-6 w-full rounded-full bg-green-400 py-3 text-lg font-medium text-white transition-colors hover:bg-green-500 active:scale-95"
               >
-                Enroll now!
+                Done
               </button>
             </div>
           </div>
