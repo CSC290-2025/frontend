@@ -124,16 +124,6 @@ function Header() {
             className="w-54 rounded-2xl bg-[#2749C9] p-3 text-white shadow-xl"
           >
             <DropdownMenuItem className="group flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 transition hover:bg-white hover:text-black">
-              <BusFront
-                className="h-6 w-6 text-white group-hover:text-black"
-                strokeWidth={2}
-              />
-              <span className="text-base group-hover:text-black">
-                Transportation
-              </span>
-            </DropdownMenuItem>
-
-            <DropdownMenuItem className="group flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 transition hover:bg-white hover:text-black">
               <Wind
                 className="h-6 w-6 text-white group-hover:text-black"
                 strokeWidth={2}
