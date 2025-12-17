@@ -119,3 +119,15 @@ export const createWeatherRating = async (
   const wrapped = unwrapResponse(response.data);
   return wrapped.data;
 };
+export const fetchWeatherData = async () => {
+  try {
+    const response = await fetch('/api/weather'); // Adjust the API path if necessary
+    if (!response.ok) {
+      throw new Error(`Failed to fetch weather data: ${response.statusText}`);
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching weather data:', error);
+    throw error;
+  }
+};

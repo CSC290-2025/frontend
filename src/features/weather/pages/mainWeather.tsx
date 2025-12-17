@@ -2,7 +2,6 @@ import { useWeatherData } from '../hooks/useWeatherData';
 import CurrentWeatherCard from '../components/CurrentWeatherCard';
 import HourlyForecast from '../components/HourlyForecast';
 import WeeklyForecast from '../components/WeeklyForecast';
-
 export default function WeatherMockPage() {
   const { data, isLoading, isError, refetch } = useWeatherData();
 
@@ -28,7 +27,7 @@ export default function WeatherMockPage() {
   return (
     <div className="mx-auto max-w-5xl p-6 text-black select-none">
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-3xl font-bold">Weather Report</h1>
+        <h1 className="text-3xl font-bold">Weather Reports</h1>
         <button
           type="button"
           onClick={() => window.history.back()}

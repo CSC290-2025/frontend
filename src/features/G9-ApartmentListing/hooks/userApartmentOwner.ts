@@ -7,7 +7,6 @@ export function useApartmentOwnerByAPT(user_id: number) {
     queryKey: ['owners', 'user', user_id],
     queryFn: () => OWN.fetchApartmentOwner(user_id),
     select: (response) => {
-      console.log('Apartment Owner Response:', response);
       return response.data.data;
     },
     enabled: !!user_id,

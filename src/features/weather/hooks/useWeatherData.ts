@@ -3,18 +3,34 @@ import { useWeatherCurrent } from './useWeatherCurrent';
 import { useWeatherHourly } from './useWeatherHourly';
 import { useWeatherDaily } from './useWeatherDaily';
 
-const conditionIconMap: Record<string, string> = {
-  Sunny: '☀️',
-  'Partly Cloudy': '⛅️',
-  Cloudy: '☁️',
-  Fog: '🌫️',
-  Rain: '🌧️',
-  Snow: '❄️',
-  Thunderstorm: '⛈️',
+const conditionIconMap: Record<string, { day: string; night: string }> = {
+  Sunny: { day: '☀️', night: '🌙' }, // night = moonly
+  'Partly Cloudy': { day: '⛅️', night: '🌙⛅️' },
+  Cloudy: { day: '☁️', night: '☁️' },
+  Fog: { day: '🌫️', night: '🌫️' },
+  Rain: { day: '🌧️', night: '🌧️' },
+  Snow: { day: '❄️', night: '❄️' },
+  Thunderstorm: { day: '⛈️', night: '⛈️' },
 };
 
-const getConditionIcon = (condition?: string | null) =>
-  condition ? (conditionIconMap[condition] ?? '🌡️') : '🌡️';
+const determineIsNight = (time?: string | null) => {
+  // try to parse provided time, fallback to local now
+  const date = time ? new Date(time) : new Date();
+  if (Number.isNaN(date.getTime())) {
+    // fallback to local hour
+    const h = new Date().getHours();
+    return h >= 18 || h < 6;
+  }
+  const hour = date.getHours();
+  return hour >= 18 || hour < 6;
+};
+
+const getConditionIcon = (condition?: string | null, isNight = false) => {
+  if (!condition) return '🌡️';
+  const entry = conditionIconMap[condition];
+  if (!entry) return '🌡️';
+  return isNight ? entry.night : entry.day;
+};
 
 const formatHour = (value: string) => {
   const date = new Date(value);
@@ -37,10 +53,32 @@ export type WeatherUIData = {
   feelLike: number;
   humidity: number;
   windSpeed: number;
+  windDirection: string;
+  pressure: number | null;
   condition: string;
   conditionIcon: string;
-  forecastHourly: { time: string; temp: number; icon: string }[];
-  forecastWeekly: { day: string; temp: number; icon: string }[];
+  forecastHourly: {
+    time: string;
+    temp: number;
+    icon: string;
+    condition: string;
+    precipitationChance: number | null;
+    humidity: number;
+    feelLike: number;
+    windSpeed: number;
+  }[];
+  forecastWeekly: {
+    day: string;
+    high: number;
+    low: number;
+    icon: string;
+    condition: string;
+    precipitationChance: number | null;
+    date?: string;
+    humidity: number;
+    feelLike: number;
+    windSpeed: number;
+  }[];
   warning: string;
   warningDetail: string;
 };
@@ -75,30 +113,75 @@ export function useWeatherData(locationId?: number) {
     const forecastHourly = hourlyItems.slice(0, 5).map((item) => ({
       time: formatHour(item.time),
       temp: Math.round(item.temperature),
-      icon: getConditionIcon(item.condition),
+      icon: getConditionIcon(item.condition, determineIsNight(item.time)),
+      condition: item.condition,
+      precipitationChance: item.precipitation_chance ?? null,
+      humidity: currentSnapshot.humidity,
+      feelLike: Math.round(currentSnapshot.feels_like),
+      windSpeed: Math.round(currentSnapshot.wind_speed),
     }));
 
     const forecastWeekly = dailyItems.slice(0, 7).map((item) => ({
       day: formatDay(item.date),
-      temp: Math.round(item.high),
-      icon: getConditionIcon(item.condition),
+      high: Math.round(item.high),
+      low: Math.round(item.low),
+      icon: getConditionIcon(item.condition, false),
+      condition: item.condition,
+      precipitationChance: item.precipitation_chance ?? null,
+      date: item.date,
+      humidity: currentSnapshot.humidity,
+      feelLike: Math.round(currentSnapshot.feels_like),
+      windSpeed: Math.round(currentSnapshot.wind_speed),
     }));
 
     const condition = currentSnapshot.condition ?? 'Unknown';
+    const currentIsNight = determineIsNight();
+
+    // analyze precipitation chance from daily items (next 7 days)
+    const precipVals = dailyItems
+      .slice(0, 7)
+      .map((it) => Number(it.precipitation_chance ?? 0));
+
+    // find longest consecutive run of days with precip >= 45%
+    let maxConsec = 0;
+    let consec = 0;
+    for (const v of precipVals) {
+      if (v >= 45) {
+        consec += 1;
+        if (consec > maxConsec) maxConsec = consec;
+      } else {
+        consec = 0;
+      }
+    }
+
+    // decide warning level and message
+    let warningText = 'Low chance of rain';
+    let warningDetail = 'Precipitation chances are low for the next 7 days.';
+
+    if (maxConsec >= 3) {
+      warningText = 'High chance of rain / Flood risk';
+      warningDetail =
+        'Precipitation chance is >=45% for 3 or more consecutive days. High risk of sustained rain and possible flooding — carry an umbrella and avoid flood-prone areas.';
+    } else if (precipVals.some((v) => v > 20)) {
+      // at least one moderate chance day
+      const maxPct = Math.max(...precipVals);
+      warningText = 'Moderate chance of rain';
+      warningDetail = `Some days in the next 7 have moderate precipitation chance (up to ${maxPct}%). Expect intermittent showers; consider carrying rain protection.`;
+    }
 
     return {
       temperature: Math.round(currentSnapshot.temperature),
       feelLike: Math.round(currentSnapshot.feels_like),
       humidity: currentSnapshot.humidity,
       windSpeed: Math.round(currentSnapshot.wind_speed),
+      windDirection: currentSnapshot.wind_direction,
+      pressure: currentSnapshot.pressure,
       condition,
-      conditionIcon: getConditionIcon(condition),
+      conditionIcon: getConditionIcon(condition, currentIsNight),
       forecastHourly,
       forecastWeekly,
-      warning: condition.includes('Rain') ? 'Rain Alert' : 'No Weather Warning',
-      warningDetail: condition.includes('Rain')
-        ? 'Carry an umbrella. Showers expected in the next few hours.'
-        : 'Conditions are calm. No severe alerts at this time.',
+      warning: warningText,
+      warningDetail: warningDetail,
     };
   }, [current.data, daily.data, hourly.data]);
 
