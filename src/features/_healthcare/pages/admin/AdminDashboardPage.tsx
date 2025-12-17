@@ -65,6 +65,7 @@ const AdminDashboardPage: React.FC = () => {
   );
 
   const [doctorForm, setDoctorForm] = useState({
+    doctorName: '',
     specialization: '',
     currentStatus: 'available',
     consultationFee: '',
@@ -140,6 +141,7 @@ const AdminDashboardPage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['doctors'] });
       setEditingDoctorId(null);
       setDoctorForm({
+        doctorName: '',
         specialization: '',
         currentStatus: 'available',
         consultationFee: '',
@@ -160,6 +162,7 @@ const AdminDashboardPage: React.FC = () => {
       queryClient.invalidateQueries({ queryKey: ['doctors'] });
       setEditingDoctorId(null);
       setDoctorForm({
+        doctorName: '',
         specialization: '',
         currentStatus: 'available',
         consultationFee: '',
@@ -253,6 +256,7 @@ const AdminDashboardPage: React.FC = () => {
     }
 
     const payload = {
+      doctorName: doctorForm.doctorName || undefined,
       specialization: doctorForm.specialization || undefined,
       currentStatus: doctorForm.currentStatus || undefined,
       consultationFee:
@@ -292,6 +296,7 @@ const AdminDashboardPage: React.FC = () => {
   const startEditDoctor = (record: Doctor) => {
     setEditingDoctorId(record.id);
     setDoctorForm({
+      doctorName: record.doctorName ?? '',
       specialization: record.specialization ?? '',
       currentStatus: record.currentStatus ?? 'available',
       consultationFee: record.consultationFee?.toString() ?? '',
@@ -441,6 +446,17 @@ const AdminDashboardPage: React.FC = () => {
             icon={Stethoscope}
           />
           <form className="mt-4 space-y-3" onSubmit={handleDoctorSubmit}>
+            <TextField
+              label="Doctor name"
+              value={doctorForm.doctorName}
+              onChange={(value) =>
+                setDoctorForm((prev) => ({
+                  ...prev,
+                  doctorName: value,
+                }))
+              }
+              required
+            />
             <TextField
               label="Specialization"
               value={doctorForm.specialization}
@@ -610,6 +626,9 @@ const AdminDashboardPage: React.FC = () => {
               >
                 <div>
                   <p className="text-sm font-semibold text-gray-900">
+                    {doc.doctorName || 'Doctor name TBD'}
+                  </p>
+                  <p className="text-xs text-gray-500">
                     {doc.specialization || 'Specialization TBD'}
                   </p>
                   <p className="text-xs text-gray-500">
