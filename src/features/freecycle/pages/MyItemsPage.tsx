@@ -74,9 +74,11 @@ export default function MyItemsPage() {
   }
 
   return (
-    <div className="flex">
-      <Sidebar />
-      <div className="min-h-screen min-w-full bg-gray-50">
+    <div className="flex min-h-screen w-full">
+      <div className="flex-shrink-0">
+        <Sidebar />
+      </div>
+      <div className="min-h-screen w-full flex-1 bg-gray-50">
         {/* Header */}
         <div className="sticky top-0 z-10 border-b border-gray-200 bg-white">
           <div className="mx-auto max-w-7xl px-4 py-4 sm:px-6 lg:px-8">

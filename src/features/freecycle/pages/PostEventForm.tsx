@@ -215,13 +215,38 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
       </div>
       <div className="min-h-screen flex-1 bg-gradient-to-br from-slate-50 via-cyan-50 to-blue-50 px-4 py-8 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-2xl">
-          <div className="mb-8">
-            <h1 className="bg-gradient-to-r from-cyan-600 to-blue-600 bg-clip-text text-4xl font-bold text-transparent">
-              Post an Event
-            </h1>
-            <p className="mt-2 text-gray-600">
-              Share your community event with everyone
-            </p>
+          <div className="mt-6 mb-8">
+            <div className="flex">
+              <div className="mr-2 mb-4 flex items-center gap-4">
+                <button
+                  onClick={() => navigate('/freecycle')}
+                  className="rounded-lg p-2 transition-colors hover:bg-gray-100"
+                  aria-label="Back"
+                >
+                  <svg
+                    className="h-6 w-6 text-gray-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 19l-7-7 7-7"
+                    />
+                  </svg>
+                </button>
+              </div>
+              <div>
+                <h1 className="bg-gradient-to-r from-cyan-600 to-blue-600 bg-clip-text text-4xl font-bold text-transparent">
+                  Post an Event
+                </h1>
+                <p className="mt-2 text-gray-600">
+                  Share your community event with everyone
+                </p>
+              </div>
+            </div>
           </div>
 
           <form
