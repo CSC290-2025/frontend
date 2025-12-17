@@ -7,7 +7,6 @@ import type { CourseVideo } from '@/types/course';
 export default function OnlineDetail() {
   const { id } = useParams('/Know-AI/:course/:id');
   const { data: course, isLoading, isError } = useCourseById(id);
-  const [isPopupOpen, setIsPopupOpen] = useState(false);
   const [selectedVideo, setSelectedVideo] = useState<CourseVideo | null>(null);
   const videos: CourseVideo[] = course?.course_videos || [];
 

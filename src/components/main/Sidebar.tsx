@@ -56,7 +56,7 @@ export default function Sidebar() {
       label: 'Healthcare',
       path: '/healthcare/healthcare-user',
     },
-    { icon: BookText, label: 'Learn AI', path: '/Know-AI/createCourse' },
+    { icon: BookText, label: 'Learn AI', path: '/Know-AI/courses' },
   ];
 
   // Additional services with dropdown
@@ -79,7 +79,7 @@ export default function Sidebar() {
 
   // User routes
   const userRoutes = [
-    { icon: CircleUser, label: 'Profile', path: '/profile' },
+    { icon: CircleUser, label: 'Profile', path: '/citizen/profile' },
     { icon: Settings, label: 'Settings', path: '/citizen/setting' },
     { icon: Wallet, label: 'E-Wallet', path: '/financial' },
   ];

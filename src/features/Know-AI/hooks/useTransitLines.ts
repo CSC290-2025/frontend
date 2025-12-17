@@ -6,28 +6,22 @@ import {
 } from '../api/knowAi.api';
 
 export function useTransitLines(
-  userAddressId: number | undefined,
+  userAddress: string | undefined,
   courseAddressId: number | undefined | null,
   isEnabled: boolean
 ) {
   return useQuery({
-    queryKey: ['transitLines', userAddressId, courseAddressId],
+    queryKey: ['transitLines', userAddress, courseAddressId],
     queryFn: async () => {
-      if (!userAddressId || !courseAddressId) return [];
+      if (!userAddress || !courseAddressId) return [];
 
-      const [userAddr, courseAddr] = await Promise.all([
-        getAddressById(userAddressId),
-        getAddressById(courseAddressId),
-      ]);
+      const courseAddr = await getAddressById(courseAddressId);
+      if (!courseAddr) return [];
 
-      if (!userAddr || !courseAddr) return [];
-
-      const origin = formatAddressToString(userAddr);
       const destination = formatAddressToString(courseAddr);
 
-      return await getTransitLines(origin, destination);
+      return await getTransitLines(userAddress, destination);
     },
-    enabled: !!userAddressId && !!courseAddressId && isEnabled,
-    staleTime: 1000 * 60 * 10,
+    enabled: !!userAddress && !!courseAddressId && isEnabled,
   });
 }
