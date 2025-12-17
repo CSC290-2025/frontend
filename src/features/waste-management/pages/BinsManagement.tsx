@@ -60,7 +60,6 @@ export default function BinsManagement() {
         </button>
       </div>
 
-      {/* Filters */}
       <div className="flex gap-4 rounded-lg border border-gray-200 bg-white p-4">
         <select
           value={filterType}
