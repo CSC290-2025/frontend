@@ -90,7 +90,7 @@ export default function MyItemsPage() {
             </button>
 
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl lg:text-4xl">
+              <h1 className="text-2xl font-semibold text-gray-900 sm:text-3xl lg:text-4xl">
                 My Items
               </h1>
               <div className="rounded-full bg-cyan-100 px-4 py-2">
