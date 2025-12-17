@@ -81,6 +81,11 @@ export default function PostItemForm({ onSuccess, onBack }: PostItemFormProps) {
   };
 
   const handleConfirmPost = async () => {
+    if (!userId) {
+      setError('User not found. Please log in.');
+      setShowConfirmDialog(false);
+      return;
+    }
     setShowConfirmDialog(false);
     setLoading(true);
     setError(null);

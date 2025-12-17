@@ -291,7 +291,11 @@ export default function ItemDetailPage() {
 
   const { data: myRequests } = useUserRequests();
 
-  const myExistingRequest = myRequests?.find((req) => req.post_id === postId);
+  const myExistingRequest = myRequests?.find(
+    (req) =>
+      Number(req.post_id) === Number(postId) &&
+      req.receiver_id === currentUserId
+  );
   const hasRequested = !!myExistingRequest;
 
   const handleToggleGiven = async () => {

@@ -88,6 +88,11 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
   };
 
   const handleConfirmEvent = async () => {
+    if (!userId) {
+      setError('User not found. Please log in.');
+      setShowConfirmDialog(false);
+      return;
+    }
     setShowConfirmDialog(false);
     setLoading(true);
     setError(null);
