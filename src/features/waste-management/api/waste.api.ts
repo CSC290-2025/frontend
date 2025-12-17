@@ -4,6 +4,7 @@ import type {
   WasteLogRequest,
   WasteStats,
   DailyStats,
+  DailyLogsResponse,
 } from '@/features/waste-management/types';
 
 export const fetchWasteTypes = async (): Promise<{
@@ -36,4 +37,14 @@ export const fetchDailyStats = async (
   const params = date ? `?date=${date}` : '';
   const response = await apiClient.get(`/waste/stats/daily${params}`);
   return response.data.data;
+};
+
+export const fetchDailyLogs = async (): Promise<DailyLogsResponse> => {
+  const response = await apiClient.get('/waste/logs/daily');
+  return response.data.data;
+};
+
+export const deleteWasteLog = async (logId: number) => {
+  const response = await apiClient.delete(`/waste/log/${logId}`);
+  return response.data;
 };

@@ -100,3 +100,13 @@ export interface ApiResponse<T> {
   data?: T;
   message?: string;
 }
+
+export interface DailyLog {
+  log_id: number;
+  waste_type?: string;
+  weight: number;
+}
+
+export interface DailyLogsResponse {
+  logs: DailyLog[];
+}
