@@ -1,5 +1,10 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Check, User } from 'lucide-react';
+import {
+  createPatient,
+  getPatientById,
+  updatePatient,
+} from '@/features/_healthcare/api/healthcare.api';
 
 interface Props {
   emergencyContact: string;
@@ -18,6 +23,8 @@ const UserProfilePage: React.FC<Props> = ({
   const [patientId, setPatientId] = useState<number | null>(null);
   const [dob, setDob] = useState('');
   const [bloodType, setBloodType] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState('');
 
   const persistProfile = (payload: {
     patientId: number;
@@ -28,6 +35,40 @@ const UserProfilePage: React.FC<Props> = ({
     if (typeof window === 'undefined') return;
     localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
   };
+
+  const hydrateFromBackend = useCallback(
+    async (id: number) => {
+      setError('');
+      setIsSaving(true);
+      try {
+        const patient = await getPatientById(id);
+        setHasApplied(true);
+        setPatientId(patient.id);
+        setDob(patient.dateOfBirth ? patient.dateOfBirth.slice(0, 10) : '');
+        setBloodType(patient.bloodType ?? '');
+        if (patient.emergencyContact) {
+          onContactChange(patient.emergencyContact);
+        }
+        persistProfile({
+          patientId: patient.id,
+          dob: patient.dateOfBirth ? patient.dateOfBirth.slice(0, 10) : '',
+          bloodType: patient.bloodType ?? '',
+          emergencyContact: patient.emergencyContact ?? '',
+        });
+      } catch (err) {
+        setHasApplied(false);
+        setPatientId(null);
+        setError(
+          err instanceof Error
+            ? err.message
+            : 'Unable to load your patient profile.'
+        );
+      } finally {
+        setIsSaving(false);
+      }
+    },
+    [onContactChange]
+  );
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -40,19 +81,16 @@ const UserProfilePage: React.FC<Props> = ({
         bloodType?: string;
         emergencyContact?: string;
       };
+      if (parsed.dob) setDob(parsed.dob);
+      if (parsed.bloodType) setBloodType(parsed.bloodType);
+      if (parsed.emergencyContact) onContactChange(parsed.emergencyContact);
       if (parsed.patientId) {
-        setHasApplied(true);
-        setPatientId(parsed.patientId);
-        setDob(parsed.dob ?? '');
-        setBloodType(parsed.bloodType ?? '');
-        if (parsed.emergencyContact) {
-          onContactChange(parsed.emergencyContact);
-        }
+        void hydrateFromBackend(parsed.patientId);
       }
     } catch {
       // ignore invalid cache
     }
-  }, [onContactChange]);
+  }, [onContactChange, hydrateFromBackend]);
 
   useEffect(() => {
     if (!hasApplied || patientId === null) return;
@@ -69,19 +107,42 @@ const UserProfilePage: React.FC<Props> = ({
     return `Patient ID: ${patientId}`;
   }, [patientId]);
 
-  const handleApply = () => {
-    if (hasApplied) return;
-    const generatedId =
-      patientId ??
-      Math.floor(100000 + Math.random() * 900000); /* simple unique-enough id */
-    setPatientId(generatedId);
-    setHasApplied(true);
-    persistProfile({
-      patientId: generatedId,
-      dob,
-      bloodType,
-      emergencyContact,
-    });
+  const handleApply = async () => {
+    if (isSaving) return;
+
+    const payload = {
+      emergencyContact: emergencyContact || undefined,
+      dateOfBirth: dob || undefined,
+      bloodType: bloodType || undefined,
+    };
+
+    setError('');
+    setIsSaving(true);
+    try {
+      const patient = await (hasApplied && patientId
+        ? updatePatient(patientId, payload)
+        : createPatient(payload));
+
+      setHasApplied(true);
+      setPatientId(patient.id);
+      setDob(patient.dateOfBirth ? patient.dateOfBirth.slice(0, 10) : '');
+      setBloodType(patient.bloodType ?? '');
+      if (patient.emergencyContact) {
+        onContactChange(patient.emergencyContact);
+      }
+      persistProfile({
+        patientId: patient.id,
+        dob: patient.dateOfBirth ? patient.dateOfBirth.slice(0, 10) : '',
+        bloodType: patient.bloodType ?? '',
+        emergencyContact: patient.emergencyContact ?? emergencyContact,
+      });
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : 'Unable to save patient profile.'
+      );
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -99,17 +160,33 @@ const UserProfilePage: React.FC<Props> = ({
           {!hasApplied ? (
             <button
               onClick={handleApply}
+              disabled={isSaving}
               className="rounded-lg bg-[#01CCFF] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0091B5]"
             >
-              Apply as patient
+              {isSaving ? 'Applying...' : 'Apply as patient'}
             </button>
           ) : (
-            <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
-              <Check className="h-4 w-4" />
-              Patient profile active
-            </span>
+            <div className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
+                <Check className="h-4 w-4" />
+                Patient profile active
+              </span>
+              <button
+                onClick={handleApply}
+                disabled={isSaving}
+                className="rounded-lg bg-[#01CCFF] px-3 py-1.5 text-xs font-semibold text-white hover:bg-[#0091B5]"
+              >
+                {isSaving ? 'Saving...' : 'Save changes'}
+              </button>
+            </div>
           )}
         </div>
+
+        {error && (
+          <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            {error}
+          </div>
+        )}
 
         {hasApplied && (
           <div className="mt-5 grid gap-4 md:grid-cols-2">

@@ -31,6 +31,9 @@ import type {
   CreateDoctorPayload,
   UpdateDoctorPayload,
   UpdateAppointmentPayload,
+  Patient,
+  CreatePatientPayload,
+  UpdatePatientPayload,
 } from '@/features/_healthcare/types';
 
 const sanitizeParams = (
@@ -117,6 +120,35 @@ export const fetchPatients = async (params: PatientListParams = {}) => {
   );
 
   return data.data;
+};
+
+export const getPatientById = async (id: number) => {
+  const { data } = await apiClient.get<ApiSuccess<{ patient: Patient }>>(
+    `/patients/${id}`
+  );
+
+  return data.data.patient;
+};
+
+export const createPatient = async (payload: CreatePatientPayload) => {
+  const { data } = await apiClient.post<ApiSuccess<{ patient: Patient }>>(
+    '/patients',
+    payload
+  );
+
+  return data.data.patient;
+};
+
+export const updatePatient = async (
+  id: number,
+  payload: UpdatePatientPayload
+) => {
+  const { data } = await apiClient.put<ApiSuccess<{ patient: Patient }>>(
+    `/patients/${id}`,
+    payload
+  );
+
+  return data.data.patient;
 };
 
 export const fetchAppointments = async (params: AppointmentListParams = {}) => {

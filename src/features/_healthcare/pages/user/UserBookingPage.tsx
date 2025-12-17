@@ -24,8 +24,12 @@ const isSameUtcDay = (a: Date, b: Date) =>
   a.getUTCMonth() === b.getUTCMonth() &&
   a.getUTCDate() === b.getUTCDate();
 
-const makeDoctorLabel = (doctor: Doctor) =>
-  `Doctor #${doctor.id}${doctor.specialization ? ` • ${doctor.specialization}` : ''}`;
+const makeDoctorLabel = (doctor: Doctor) => {
+  const name = doctor.doctorName?.trim();
+  const base = name && name.length > 0 ? name : `Doctor #${doctor.id}`;
+  const specialty = doctor.specialization ? ` • ${doctor.specialization}` : '';
+  return `${base}${specialty}`;
+};
 
 const UserBookingPage: React.FC = () => {
   const queryClient = useQueryClient();
@@ -115,7 +119,7 @@ const UserBookingPage: React.FC = () => {
   );
 
   const appointmentsQuery = useAppointments({
-    limit: 200,
+    limit: 100,
     sortBy: 'appointmentAt',
     sortOrder: 'asc',
     facilityId: selectedFacilityId ?? undefined,
@@ -566,20 +570,21 @@ const DateTimePicker: React.FC<{
           const label = `${hour}:00`;
           const taken = takenSlots.has(hour);
           const isSelected = selectedHour === hour;
+          const unavailable = taken || (isSelected && slotUnavailable);
           return (
             <button
               key={hour}
-              disabled={taken}
+              disabled={unavailable}
               onClick={() => onSelectHour(hour)}
               className={`rounded-lg border px-2 py-2 text-xs font-semibold transition-colors ${
-                taken
-                  ? 'border-red-300 bg-red-100 text-red-700 disabled:cursor-not-allowed disabled:border-red-300 disabled:bg-red-100 disabled:text-red-700 disabled:opacity-100'
+                unavailable
+                  ? 'border-red-500 bg-red-100 text-red-700 disabled:cursor-not-allowed disabled:border-red-500 disabled:bg-red-100 disabled:text-red-700 disabled:opacity-100'
                   : isSelected
                     ? 'border-emerald-500 bg-emerald-500 text-white'
                     : 'border-emerald-200 bg-emerald-50 text-emerald-700 hover:border-emerald-400 hover:bg-emerald-100'
               }`}
             >
-              {label}
+              {unavailable ? `${label} (Taken)` : label}
             </button>
           );
         })}

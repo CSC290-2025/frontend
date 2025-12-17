@@ -432,20 +432,19 @@ const AdminHospitalPage: React.FC = () => {
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-semibold text-gray-900">Bed list</h3>
               <span className="text-xs text-gray-500">
-                {bedsQuery.data?.beds.length ?? 0} items
+                {filteredBeds.length} items
               </span>
             </div>
 
             {bedsQuery.isLoading && (
               <DataState message="Loading beds..." accent="cyan" />
             )}
-            {!bedsQuery.isLoading &&
-              (bedsQuery.data?.beds.length ?? 0) === 0 && (
-                <DataState message="No beds found" />
-              )}
+            {!bedsQuery.isLoading && filteredBeds.length === 0 && (
+              <DataState message="No beds found for this facility" />
+            )}
 
             <div className="mt-3 max-h-[360px] space-y-3 overflow-y-auto pr-1">
-              {(bedsQuery.data?.beds ?? []).map((bed) => (
+              {filteredBeds.map((bed) => (
                 <div
                   key={bed.id}
                   className="flex items-start justify-between gap-3 rounded-xl border border-gray-100 bg-gray-50 px-4 py-3"

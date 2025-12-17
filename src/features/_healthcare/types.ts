@@ -106,6 +106,10 @@ export interface Patient {
   id: number;
   userId: Nullable<number>;
   emergencyContact: Nullable<string>;
+  dateOfBirth: Nullable<string>;
+  bloodType: Nullable<string>;
+  totalPayments: Nullable<number>;
+  appointmentHistory?: Appointment[];
   createdAt: string;
 }
 
@@ -119,11 +123,28 @@ export interface PaginatedPatients {
 export interface PatientListParams {
   page?: number;
   limit?: number;
-  sortBy?: 'id' | 'createdAt';
+  sortBy?: 'id' | 'createdAt' | 'dateOfBirth';
   sortOrder?: 'asc' | 'desc';
   userId?: number;
+  bloodType?: string;
   search?: string;
 }
+
+export interface CreatePatientPayload {
+  userId?: number;
+  emergencyContact?: string;
+  dateOfBirth?: string;
+  bloodType?: string;
+  totalPayments?: number;
+}
+
+export type UpdatePatientPayload = {
+  userId?: number | null;
+  emergencyContact?: string | null;
+  dateOfBirth?: string | null;
+  bloodType?: string | null;
+  totalPayments?: number | null;
+};
 
 export interface Appointment {
   id: number;

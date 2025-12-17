@@ -42,11 +42,18 @@ export const AppointmentCard: React.FC<AppointmentCardProps> = ({
       `Doctor #${appointment.doctorId}`)
     : 'Unassigned';
 
-  const departmentLabel = appointment.facilityId
-    ? (departmentLookup?.get(
-        facilityLookup.get(appointment.facilityId)?.departmentId ?? -1
-      )?.name ?? 'Department N/A')
-    : 'Department N/A';
+  const doctorSpecialty =
+    appointment.doctorId &&
+    doctorLookup?.get(appointment.doctorId)?.specialization;
+  const facilityDeptId = appointment.facilityId
+    ? (facilityLookup.get(appointment.facilityId)?.departmentId ?? null)
+    : null;
+  const resolvedDeptId = facilityDeptId ?? null;
+  const departmentLabel =
+    doctorSpecialty ||
+    (resolvedDeptId && departmentLookup?.get(resolvedDeptId)
+      ? departmentLookup.get(resolvedDeptId)!.name
+      : 'Department N/A');
 
   const patientLabel = appointment.patientId
     ? patientLookup?.get(appointment.patientId)
