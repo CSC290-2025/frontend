@@ -9,6 +9,7 @@ import DiscoverBanner from '@/features/freecycle/components/DiscoverBanner';
 import ItemCard from '@/features/freecycle/components/ItemCard';
 import { useNavigate } from '@/router';
 import { Compass, ShoppingBag, Heart, Inbox } from 'lucide-react';
+import Sidebar from '../../../components/main/Sidebar';
 import {
   useMyPosts,
   useDeletePost,
@@ -197,8 +198,8 @@ export default function FreecycleHomepage() {
                                 onClick={() => handleItemClick(item.id)}
                               />
                               <div className="absolute top-2 left-2 z-10 flex items-center gap-1.5 rounded-full border border-yellow-200 bg-yellow-100 px-2.5 py-1 text-xs font-bold text-yellow-800 shadow-md">
+                                <span>{item.request_count || 0}</span>{' '}
                                 interested
-                                <span>{item.request_count || 0}</span>
                               </div>
                             </div>
                           );
@@ -217,12 +218,18 @@ export default function FreecycleHomepage() {
   };
 
   return (
-    <div
-      className="min-h-screen bg-gradient-to-br from-slate-50 via-cyan-50 to-blue-50"
-      style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-    >
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        {renderContent()}
+    <div className="flex min-w-full">
+      <div className="flex-shrink-0">
+        <Sidebar />
+      </div>
+      {/* <Sidebar /> */}
+      <div
+        className="min-h-screen bg-gradient-to-br from-slate-50 via-cyan-50 to-blue-50"
+        style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+      >
+        <div className="mx-auto max-w-full px-4 py-8 sm:px-6 lg:px-8">
+          {renderContent()}
+        </div>
       </div>
     </div>
   );
