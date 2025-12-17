@@ -405,9 +405,12 @@ export default function ItemDetailPage() {
       <div className="mx-auto max-w-6xl p-4">
         <button
           onClick={() => navigate(backPath)}
-          className="mb-6 flex items-center gap-2 font-medium text-cyan-600 hover:text-cyan-700"
+          className="group mb-6 flex items-center gap-2 font-medium text-gray-500 transition-colors hover:text-cyan-600"
         >
-          {/* <ArrowLeft className="h-5 w-5" /> Back */}
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white transition-all group-hover:bg-cyan-50 group-hover:text-cyan-600">
+            {/* <ArrowLeft className="h-5 w-5" /> */}
+          </div>
+          {/* Back to Freecycle */}
         </button>
 
         <div className="overflow-hidden rounded-2xl bg-white shadow-lg">
