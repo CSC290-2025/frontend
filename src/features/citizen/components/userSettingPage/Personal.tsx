@@ -303,16 +303,6 @@ function Personal({
               <p className={errorClass}>{errors.PhoneNumber}</p>
             )}
           </div>
-
-          <div className="flex flex-col gap-1.5">
-            <h2 className={labelClass}>Emergency Contact</h2>
-            <input
-              type="text"
-              disabled
-              className={disabledInputClass}
-              value={data.EmergencyContact || 'No emergency contact set'}
-            />
-          </div>
         </div>
       </div>
 
