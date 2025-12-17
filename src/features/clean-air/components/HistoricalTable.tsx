@@ -20,7 +20,6 @@ const getStatusBadge = (category: string) => {
     case 'HAZARDOUS':
       return `${baseStyle} bg-red-200 text-black`;
     default:
-      console.log('Category not matched, using default gray:', category);
       return `${baseStyle} bg-gray-400 text-black`;
   }
 };
