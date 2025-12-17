@@ -1,36 +1,7 @@
 //calRedduration
-
-import { initializeApp, type FirebaseApp } from 'firebase/app';
-import { getDatabase, Database, ref, set, get } from 'firebase/database';
+import { getDatabase, ref, set, get } from 'firebase/database';
 import { getBaseAPIURL } from '@/lib/apiClient.ts'; // Assuming this function exists
-
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-};
-
-let app: FirebaseApp;
-let db: Database;
-
-// Initialization Logic (using your provided structure)
-try {
-  app = initializeApp(firebaseConfig);
-  db = getDatabase(app);
-} catch (error: any) {
-  if (error.code === 'app/duplicate-app') {
-    console.warn('Firebase app already initialized. Proceeding.');
-    app = initializeApp(firebaseConfig, 'secondaryAppForSafety');
-    db = getDatabase(app);
-  } else {
-    console.error('Firebase initialization failed:', error);
-    throw error;
-  }
-}
+import { database as db } from '@/lib/firebase.ts';
 
 interface BackendTrafficLight {
   id: number;
