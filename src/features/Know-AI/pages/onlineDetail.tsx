@@ -99,13 +99,6 @@ export default function OnlineDetail() {
               </p>
             </div>
           </div>
-
-          <button
-            onClick={() => setIsPopupOpen(true)}
-            className="rounded-full bg-[#7FFF7F] px-12 py-4 text-lg font-semibold text-white shadow-md transition-colors duration-200 hover:bg-[#6FEF6F]"
-          >
-            Enroll now!
-          </button>
         </div>
 
         <div className="flex flex-col gap-6">
@@ -217,18 +210,6 @@ export default function OnlineDetail() {
           </div>
         </div>
       </div>
-
-      {isPopupOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div
-            className="absolute inset-0 bg-black/50"
-            onClick={() => setIsPopupOpen(false)}
-          />
-          <div className="relative z-10">
-            <EnrollmentPopup />
-          </div>
-        </div>
-      )}
     </div>
   );
 }

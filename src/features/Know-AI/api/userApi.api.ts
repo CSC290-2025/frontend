@@ -8,6 +8,7 @@ type ApiSuccess<T> = {
 };
 
 type AddressApi = {
+  //id?: number | 123;
   address_line?: string | null;
   province?: string | null;
   district?: string | null;
@@ -49,6 +50,7 @@ export type ProfileVM = {
   nationality: string;
   religion: string;
 
+  //addressId: number;
   addressLine: string;
   province: string;
   district: string;
@@ -77,6 +79,7 @@ function normalizeProfile(
     ? addr[0]
     : (addr ?? undefined);
 
+  //const addressId = addressObj?.id ?? '';
   const address_line = addressObj?.address_line ?? '';
   const subdistrict = addressObj?.subdistrict ?? '';
   const district = addressObj?.district ?? '';
@@ -105,6 +108,7 @@ function normalizeProfile(
     nationality: profile?.nationality ?? 'N/A',
     religion: profile?.religion ?? 'N/A',
 
+    //addressId: addressId || 123,
     addressLine: address_line || 'N/A',
     province: province || 'N/A',
     district: district || 'N/A',

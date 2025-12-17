@@ -26,6 +26,7 @@ export default function OnsiteDetail() {
   const { mutate: enrollCourse } = useEnrollCourse();
 
   const userAddressId = 19;
+  //console.log(profile?.addressId)
   const session = course?.onsite_sessions?.[0];
   const courseAddressId = session?.address_id;
 
