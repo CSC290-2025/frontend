@@ -25,7 +25,21 @@ export const RegisterSchema = z
       .min(1, 'Password is required')
       .min(6, 'Password must be at least 6 characters'),
     confirmPassword: z.string().min(1, 'Please confirm your password'),
+
+    firstName: z.string().min(1, 'First name required'),
+    lastName: z.string().min(1, 'Last name required'),
+    dob: z.string().refine((val) => !isNaN(Date.parse(val)), 'Invalid date'),
+    phone: z.string().optional(),
+    emergencyContact: z.string().optional(),
+    gender: z.enum(['male', 'female', 'other']),
+
+    addressLine: z.string().min(1, 'Address required'),
+    subDistrict: z.string().optional(),
+    district: z.string().optional(),
+    province: z.string().optional(),
+    postalCode: z.string().optional(),
   })
+  .refine((data) => data.password === data.confirmPassword, {})
   .refine((data) => data.password === data.confirmPassword, {
     message: 'Passwords do not match',
     path: ['confirmPassword'],
