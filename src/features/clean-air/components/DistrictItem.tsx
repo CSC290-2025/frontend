@@ -25,7 +25,6 @@ interface StatusBorder {
 const getStatusAndStyle = (category: string): StatusDetails => {
   switch (category.toUpperCase()) {
     case 'GOOD':
-    case 'HEALTHY':
       return {
         status: 'GOOD',
         style: 'bg-teal-500 text-black',
