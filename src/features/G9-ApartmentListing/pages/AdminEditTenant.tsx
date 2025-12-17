@@ -10,7 +10,7 @@ import UserIcon from '@/features/G9-ApartmentListing/assets/UserIcon.svg';
 import RoomDetailIcon from '@/features/G9-ApartmentListing/assets/RoomDetailIcon.svg';
 import SaveConfirm from '@/features/G9-ApartmentListing/components/SaveConfirm';
 import SuccessModal from '@/features/G9-ApartmentListing/components/SuccessModal';
-import { Owner } from '../hooks';
+import { Owner } from '@/features/G9-ApartmentListing/hooks';
 
 export default function AdminEditTenant() {
   const params = new URLSearchParams(window.location.search);
