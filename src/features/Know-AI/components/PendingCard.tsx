@@ -1,7 +1,11 @@
 import { useNavigate } from '@/router';
 import { useState } from 'react';
 import { Pencil, Trash2 } from 'lucide-react';
-import { useApproveCourse } from '../hooks/useAdmin';
+import {
+  useApproveCourse,
+  useDeleteCourse,
+  useUpdateCourse,
+} from '../hooks/useAdmin';
 import ApproveConfirmModal from './ApprovePopup';
 import DeclineConfirmModal from './DeclinePopup';
 import EditCourseModal from './EditCourse';
@@ -22,6 +26,8 @@ export default function PendingCard({ course }: { course: any }) {
   };
 
   const { mutate: approveCourse, isPending } = useApproveCourse();
+  const { mutate: deleteCourse } = useDeleteCourse();
+  const { mutate: updateCourseAction } = useUpdateCourse();
 
   const handleApprove = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -44,7 +50,7 @@ export default function PendingCard({ course }: { course: any }) {
 
   const handleConfirmDecline = () => {
     // Decline(Delete) API call here Chokun add here loei
-
+    deleteCourse(course.id);
     console.log('Decline course:', course.id);
     // Example: approveCourse(course.id);
     setShowDeclineModal(false);
@@ -55,11 +61,12 @@ export default function PendingCard({ course }: { course: any }) {
     setShowEditModal(true);
     console.log('Edit:', course.id);
   };
-  const handleConfirmEdit = () => {
-    // Edit API call here Chokun add hereeee
-
-    console.log('Edit course:', course.id);
-    // Example: approveCourse(course.id);
+  const handleConfirmEdit = (updatedData: any) => {
+    updateCourseAction({
+      id: course.id,
+      data: updatedData,
+    });
+    console.log('Updating course:', course.id);
     setShowEditModal(false);
   };
 
