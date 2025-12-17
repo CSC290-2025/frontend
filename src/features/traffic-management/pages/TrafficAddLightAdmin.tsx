@@ -68,6 +68,7 @@ interface TrafficData {
   green_duration: number;
   red_duration: number;
   density_level: number;
+  emergency_override: boolean;
   timestamp: string;
 }
 
@@ -126,6 +127,8 @@ const TrafficDataForm: React.FC = () => {
   const [redduration, setRedduration] = useState<string>('');
   const [densitylevel, setDensitylevel] = useState<string>('');
   const [confirmKey, setConfirmKey] = useState<string>('');
+  const [emergency_override, setEmergency_override] = useState<boolean>(false);
+  const [emerButton, setEmerButton] = useState<boolean>(false);
 
   // State สำหรับการอัปเดต
   const [lightID, setlightID] = useState<string>('');
@@ -192,6 +195,8 @@ const TrafficDataForm: React.FC = () => {
                 green_duration: Number(data[key].green_duration) || 0,
                 red_duration: Number(data[key].red_duration) || 0,
                 density_level: Number(data[key].density_level) || 0,
+                emergency_override:
+                  Boolean(data[key].emergency_override) || false,
                 timestamp: String(data[key].timestamp) || '',
               });
             }
@@ -269,6 +274,7 @@ const TrafficDataForm: React.FC = () => {
         green_duration: Number(greenduration),
         red_duration: Number(redduration),
         density_level: Number(densitylevel),
+        emergency_override: emergency_override,
         timestamp: new Date().toISOString(),
       };
 
@@ -334,6 +340,7 @@ const TrafficDataForm: React.FC = () => {
       setGreenduration(response.data.trafficLight.green_duration);
       setRedduration(response.data.trafficLight.red_duration);
       setDensitylevel(response.data.trafficLight.density_level || 0);
+      setEmergency_override(false);
     } catch (err) {
       console.error('Error loading traffic light details', err);
       setMessage({
@@ -380,6 +387,7 @@ const TrafficDataForm: React.FC = () => {
           setGreenduration(data.green_duration || 0);
           setRedduration(data.red_duration || 0);
           setDensitylevel(data.density_level || 0);
+          setEmergency_override(data.emergency_override || false);
 
           setMessage({
             text: `✅ Successfully loaded data for Key: ${searchTerm}`,
@@ -843,6 +851,11 @@ const TrafficDataForm: React.FC = () => {
                     <th
                       style={{ padding: '10px', border: '1px solid #000000ff' }}
                     >
+                      emergency
+                    </th>
+                    <th
+                      style={{ padding: '10px', border: '1px solid #000000ff' }}
+                    >
                       Lat/Lng
                     </th>
                     <th
@@ -923,6 +936,18 @@ const TrafficDataForm: React.FC = () => {
                           border: '1px solid #000000ff',
                         }}
                       >
+                        {traffic.emergency_override ? (
+                          <div className="font-bold text-green-600">true</div>
+                        ) : (
+                          <div className="font-bold text-red-600">false</div>
+                        )}
+                      </td>
+                      <td
+                        style={{
+                          padding: '10px',
+                          border: '1px solid #000000ff',
+                        }}
+                      >
                         {traffic.lat}, {traffic.lng}
                       </td>
                       <td
@@ -931,7 +956,11 @@ const TrafficDataForm: React.FC = () => {
                           border: '1px solid #000000ff',
                         }}
                       >
-                        {traffic.autoON ? 'True' : 'False'}
+                        {traffic.autoON ? (
+                          <div className="font-bold text-green-600">true</div>
+                        ) : (
+                          <div className="font-bold text-red-600">false</div>
+                        )}
                       </td>
                       <td
                         style={{
@@ -939,7 +968,15 @@ const TrafficDataForm: React.FC = () => {
                           border: '1px solid #000000ff',
                         }}
                       >
-                        {traffic.color}
+                        {traffic.color == 1 ? (
+                          <div className="font-bold text-red-600">Red</div>
+                        ) : traffic.color == 2 ? (
+                          <div className="font-bold text-yellow-600">
+                            Yellow
+                          </div>
+                        ) : (
+                          <div className="font-bold text-green-600">Green</div>
+                        )}
                       </td>
                       <td
                         style={{
@@ -1023,7 +1060,7 @@ const TrafficDataForm: React.FC = () => {
             <div style={{ marginBottom: '10px' }}>
               <label className="font-bold text-purple-600">Traffic Key :</label>
               <input
-                type="number"
+                type="text"
                 name="calcukey"
                 value={calcukey}
                 onChange={(e) => setCalcukey(e.target.value)}
