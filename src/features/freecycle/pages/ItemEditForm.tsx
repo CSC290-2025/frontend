@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { Upload, ArrowLeft, X } from 'lucide-react';
 import { useNavigate } from '@/router';
 import { useParams } from 'react-router';
+import Sidebar from '@/components/main/Sidebar';
 import type { Category } from '@/types/postItem';
 import {
   fetchAllCategories,

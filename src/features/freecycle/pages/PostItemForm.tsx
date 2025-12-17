@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Upload, X } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
+import Sidebar from '@/components/main/Sidebar';
 import type { Category } from '@/types/postItem';
 import {
   createPost,
@@ -141,7 +142,7 @@ export default function PostItemForm({ onSuccess, onBack }: PostItemFormProps) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-cyan-50 to-blue-50 px-4 py-8 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-2xl">
+      <div className="mx-auto max-w-4xl">
         <div className="mb-8">
           <div className="mb-4 flex items-center gap-4">
             {onBack && (

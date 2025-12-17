@@ -218,16 +218,16 @@ export default function FreecycleHomepage() {
   };
 
   return (
-    <div className="flex min-w-full">
+    <div className="flex min-h-screen w-full">
       <div className="flex-shrink-0">
         <Sidebar />
       </div>
       {/* <Sidebar /> */}
       <div
-        className="min-h-screen bg-gradient-to-br from-slate-50 via-cyan-50 to-blue-50"
+        className="flex-1 bg-gradient-to-br from-slate-50 via-cyan-50 to-blue-50"
         style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
       >
-        <div className="mx-auto max-w-full px-4 py-8 sm:px-6 lg:px-8">
+        <div className="w-full px-4 py-8 sm:px-6 lg:px-8">
           {renderContent()}
         </div>
       </div>
