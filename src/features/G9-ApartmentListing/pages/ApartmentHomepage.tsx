@@ -17,7 +17,6 @@ import PhoneIcon from '@/features/G9-ApartmentListing/assets/PhoneIcon.svg';
 import StarIcon from '@/features/G9-ApartmentListing/assets/StarIcon.svg';
 import GrayStarIcon from '@/features/G9-ApartmentListing/assets/GrayStarIcon.svg';
 
-// Component to display apartment image with graceful loading
 const ApartmentImage: React.FC<{
   apartment_id: number;
   name: string;
@@ -45,7 +44,7 @@ const ApartmentImage: React.FC<{
 
   const imageUrl =
     imageArray && imageArray.length > 0
-      ? imageArray[0].file_path || imageArray[0].url || imageArray[0].preview // Try multiple possible field names
+      ? imageArray[0].file_path || imageArray[0].url || imageArray[0].preview
       : defaultImage;
 
   useEffect(() => {
@@ -75,7 +74,6 @@ const ApartmentImage: React.FC<{
 
   return (
     <div className="relative h-36 w-52 overflow-hidden rounded-lg">
-      {/* Enhanced loading skeleton with shimmer effect */}
       {(imageLoading || !imageLoaded) && (
         <div className="absolute inset-0 rounded-lg bg-gray-200">
           <div className="shimmer-animation h-full w-full rounded-lg">
@@ -114,14 +112,12 @@ const ApartmentImage: React.FC<{
   );
 };
 
-// Extended apartment interface that includes the rating and room arrays from API response
 interface ExtendedApartment extends apartmentTypes.Apartment {
   rating: RatingType[];
   room: roomTypes.Room[];
   addresses?: addressTypes.Address;
 }
 
-// Separate component to track room availability for each apartment
 const ApartmentRoomTracker: React.FC<{
   apartmentId: number;
   onUpdate: (id: number, count: number) => void;
@@ -159,9 +155,8 @@ export default function ApartmentHomepage() {
     Record<number, number>
   >({});
 
-  const { data: apartments, isLoading, error: _error } = APT.useApartments();
+  const { data: apartments, isLoading } = APT.useApartments();
 
-  // Callback to update room availability (wrapped in useCallback to prevent re-renders)
   const updateRoomAvailability = React.useCallback(
     (apartmentId: number, count: number) => {
       setRoomAvailability((prev) => {
@@ -174,11 +169,9 @@ export default function ApartmentHomepage() {
     []
   );
 
-  // Combined availability map: use API data if available, fallback to static room count
   const apartmentAvailabilityMap = React.useMemo(() => {
     const map: Record<number, number> = {};
     apartments?.forEach((apt: ExtendedApartment) => {
-      // Use API data if available, otherwise fallback to static room count
       map[apt.id] = roomAvailability[apt.id] ?? (apt.room?.length || 0);
     });
     return map;
@@ -251,9 +244,9 @@ export default function ApartmentHomepage() {
       const bHasAvailableRooms = (apartmentAvailabilityMap[b.id] || 0) > 0;
 
       if (aHasAvailableRooms === bHasAvailableRooms) {
-        return 0; // Keep original order for apartments with same room availability
+        return 0;
       }
-      return bHasAvailableRooms ? 1 : -1; // Apartments with available rooms first
+      return bHasAvailableRooms ? 1 : -1;
     });
   }, [
     apartments,
@@ -304,6 +297,7 @@ export default function ApartmentHomepage() {
 
   const handleMaxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = Number(e.target.value);
+    if (value < 0 || value > 20000) return;
     const newMaxPrice = Math.max(value, minPrice + 1000);
     setMaxPrice(newMaxPrice);
     setCurrentPage(1);
@@ -575,8 +569,7 @@ export default function ApartmentHomepage() {
 
         <div className="animate-fade-in-up space-y-5">
           {isLoading
-            ? // Enhanced loading skeleton
-              Array.from({ length: itemsPerPage }).map((_, index) => (
+            ? Array.from({ length: itemsPerPage }).map((_, index) => (
                 <div
                   key={index}
                   className="flex animate-pulse gap-6 rounded-lg bg-white p-6 shadow-sm"
