@@ -81,6 +81,7 @@ const DetailSkeleton = () => (
 export default function VolunteerDetailPage() {
   const navigate = useNavigate();
   const userId = useGetAuthMe().data?.data?.userId ?? '';
+  const role = useGetAuthMe().data?.data?.role;
   const { id } = useParams('/volunteer/detail/:id');
 
   const { data: wallets, refetch } = useGetWalletsUserUserId(Number(userId));
@@ -272,6 +273,10 @@ export default function VolunteerDetailPage() {
   );
   const isFunding = event.tag === 'Funding';
 
+  const canManageEvent =
+    Number(event.created_by_user_id) === Number(userId) ||
+    role === 'Volunteer Coordinator';
+
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
       {/* --- Header / Navigation --- */}
@@ -289,7 +294,7 @@ export default function VolunteerDetailPage() {
 
           <div className="flex items-center gap-2">
             {/* Owner Actions */}
-            {Number(event.created_by_user_id) === Number(userId) && (
+            {canManageEvent && (
               <>
                 <div className="mx-1 h-6 w-px bg-slate-300"></div>
                 <button
