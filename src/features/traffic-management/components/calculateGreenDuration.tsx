@@ -3,7 +3,7 @@
 import { initializeApp, type FirebaseApp } from 'firebase/app';
 import { getDatabase, Database, ref, update } from 'firebase/database';
 import { getBaseAPIURL } from '@/lib/apiClient.ts'; // Assuming this function exists
-import { loadGoogleMaps } from '@/lib/loadGoogleMaps';
+import { loadGoogleMaps } from '@/features/traffic-management/lib/loadGoogleMaps.ts';
 
 // --- FIREBASE INITIALIZATION ---
 

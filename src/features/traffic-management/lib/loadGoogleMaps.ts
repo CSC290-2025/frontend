@@ -1,4 +1,3 @@
-// src/lib/loadGoogleMaps.ts
 let googleMapsPromise: Promise<typeof google> | null = null;
 
 export function loadGoogleMaps(): Promise<typeof google> {
@@ -11,7 +10,7 @@ export function loadGoogleMaps(): Promise<typeof google> {
     }
 
     const script = document.createElement('script');
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${import.meta.env.VITE_GOOGLE_MAPS_KEY}`;
+    script.src = `https://maps.googleapis.com/maps/api/js?key=${import.meta.env.VITE_G10_GOOGLE_MAPS_API_KEY}`;
     script.async = true;
     script.defer = true;
 

@@ -1,7 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { ref, update } from 'firebase/database';
 import { database } from '@/lib/firebase';
-import { getBaseAPIURL } from '@/lib/apiClient';
 import type { EmergencyVehicle } from './useEmergencyVehicles';
 
 interface TrafficSignal {
@@ -11,7 +10,6 @@ interface TrafficSignal {
   direction?: string;
   color: string;
   online: boolean;
-  source?: 'legacy' | 'backend'; // Track if this is from junctions (legacy) or traffic_lights (backend)
 }
 
 const PROXIMITY_THRESHOLD = 200; // 200 meters
@@ -48,7 +46,7 @@ interface ProximityInfo {
 
 /**
  * Hook to automatically switch traffic lights to green when emergency vehicles approach
- * Uses both Firebase and Backend API for emergency override
+ * Uses Firebase for emergency override
  */
 export function useEmergencyTrafficControl(
   emergencyVehicles: EmergencyVehicle[],
@@ -103,7 +101,7 @@ export function useEmergencyTrafficControl(
             // If we haven't already switched this junction
             if (!switchedJunctionsRef.current.has(junctionId)) {
               console.log(
-                `🚨 Emergency vehicle ${vehicle.vehicleId} approaching junction ${junctionId} (${Math.round(distance)}m) - Switching to GREEN`
+                `Emergency vehicle ${vehicle.vehicleId} approaching junction ${junctionId} (${Math.round(distance)}m) - Switching to GREEN`
               );
 
               try {
@@ -113,57 +111,17 @@ export function useEmergencyTrafficControl(
                 for (const signal of signals) {
                   const lightPath = `teams/10/junctions/${junctionId}/lights/${signal.direction || 'default'}`;
                   firebaseUpdates[`${lightPath}/color`] = 'green';
-                  firebaseUpdates[`${lightPath}/remainingTime`] = EMERGENCY_OVERRIDE_DURATION;
+                  firebaseUpdates[`${lightPath}/remainingTime`] =
+                    EMERGENCY_OVERRIDE_DURATION;
                   firebaseUpdates[`${lightPath}/emergencyOverride`] = true;
                   firebaseUpdates[`${lightPath}/timestamp`] = Date.now();
                 }
 
                 await update(ref(database), firebaseUpdates);
 
-                // Also update via Backend API to persist the change (only for backend lights)
-                // Check if any signal in this junction is from the backend
-                const hasBackendLights = signals.some(s => s.source === 'backend');
-
-                if (hasBackendLights) {
-                  try {
-                    const response = await fetch(
-                      `${getBaseAPIURL}/traffic-lights?id=${junctionId.replace('Inter-', '')}`
-                    );
-
-                    if (response.ok) {
-                      const data = await response.json();
-                      const lights = data?.data?.trafficLights || [];
-
-                      // Update each light to green
-                      for (const light of lights) {
-                        const updatePayload = {
-                          current_color: 3, // 3 = green in the backend system
-                          auto_mode: false, // Disable auto mode during emergency
-                          status: 0, // 0 = active
-                        };
-
-                        await fetch(`${getBaseAPIURL}/traffic-lights/${light.id}`, {
-                          method: 'PUT',
-                          headers: { 'Content-Type': 'application/json' },
-                          body: JSON.stringify(updatePayload),
-                        });
-                      }
-
-                      console.log(
-                        `✅ Junction ${junctionId} switched to green (Firebase + Backend API)`
-                      );
-                    }
-                  } catch (apiError) {
-                    console.warn(
-                      `⚠️ Firebase updated but Backend API failed:`,
-                      apiError
-                    );
-                  }
-                } else {
-                  console.log(
-                    `✅ Junction ${junctionId} switched to green (Firebase only - legacy light)`
-                  );
-                }
+                console.log(
+                  `✅ Junction ${junctionId} switched to green (Firebase)`
+                );
 
                 // Mark this junction as switched
                 switchedJunctionsRef.current.add(junctionId);

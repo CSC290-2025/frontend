@@ -17,42 +17,7 @@ import { getBaseAPIURL } from '@/lib/apiClient.ts';
 import { calculateGreenDuration } from '../components/calculateGreenDuration';
 import { calculateRedDuration } from '../components/calculateRedDuration';
 import { useNavigate } from '@/router';
-
-// กำหนดค่า Firebase (แทนที่ด้วยค่าโปรเจกต์ของคุณ!)
-/*const firebaseConfig = {
-    apiKey: "AIzaSyAVriFBgCdj6tFclCqyyXxBjoCJLmvy8nk",
-    authDomain: "testapiforsmartcity.firebaseapp.com",
-    databaseURL: "https://testapiforsmartcity-default-rtdb.asia-southeast1.firebasedatabase.app", 
-    projectId: "testapiforsmartcity",
-};*/
-
-const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
-};
-
-// Initialize Firebase และ getDatabase นอก Component
-let app: FirebaseApp;
-let db: Database;
-
-// การจัดการ Initialization
-try {
-  app = initializeApp(firebaseConfig);
-  db = getDatabase(app);
-} catch (error) {
-  console.error(
-    'Firebase initialization failed or was already initialized:',
-    error
-  );
-  // ใช้ชื่ออื่นเพื่อเลี่ยง error (ใน production ควรจัดการด้วย getApp())
-  app = initializeApp(firebaseConfig, 'secondaryAppForSafety');
-  db = getDatabase(app);
-}
+import { database as db } from '@/lib/firebase';
 
 // Interfaces
 interface TrafficData {
