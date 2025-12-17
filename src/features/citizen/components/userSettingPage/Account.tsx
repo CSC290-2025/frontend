@@ -1,12 +1,60 @@
 import { CitizenSetting } from '../../types';
-import { useState } from 'react';
+import { z } from 'zod';
+import { useState, useEffect } from 'react';
 
 interface AccountPropsWithSetter extends CitizenSetting.AccountProps {
   onDataChange: (newData: any) => void;
+  onValidationChange?: (errors: Record<string, string>) => void;
   roles?: Array<{ id: number; role_name: string }>;
 }
 
-function Account({ data, onDataChange, roles = [] }: AccountPropsWithSetter) {
+const accountSchema = z.object({
+  Username: z
+    .string()
+    .min(3, 'Username must be at least 3 characters')
+    .max(30, 'Username must be less than 30 characters'),
+  Email: z
+    .string()
+    .min(1, 'Email is required')
+    .email('Please enter a valid email address')
+    .max(100, 'Email must be less than 100 characters'),
+});
+
+function Account({
+  data,
+  onDataChange,
+  onValidationChange,
+  roles = [],
+}: AccountPropsWithSetter) {
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Notify parent component when errors change
+  useEffect(() => {
+    if (onValidationChange) {
+      onValidationChange(errors);
+    }
+  }, [errors, onValidationChange]);
+
+  const validateField = (name: string, value: string) => {
+    const result = accountSchema
+      .pick({ [name]: true })
+      .safeParse({ [name]: value });
+
+    if (result.success) {
+      setErrors((prev) => {
+        const next = { ...prev };
+        delete next[name];
+        return next;
+      });
+    } else {
+      const message = result.error.errors?.[0]?.message ?? 'Invalid value';
+      setErrors((prev) => ({
+        ...prev,
+        [name]: message,
+      }));
+    }
+  };
+
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
@@ -17,11 +65,18 @@ function Account({ data, onDataChange, roles = [] }: AccountPropsWithSetter) {
     });
   };
 
-  const inputClass =
-    'w-full rounded-lg border border-gray-200 bg-white text-gray-900 px-3 py-2 text-sm transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-cyan-400 focus:border-transparent hover:border-gray-300';
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    validateField(name, value);
+  };
+
+  const inputClass = (fieldName: string) =>
+    `w-full rounded-lg border ${errors[fieldName] ? 'border-red-300 bg-red-50' : 'border-gray-200 bg-white'} text-gray-900 px-3 py-2 text-sm transition-all duration-200 focus:outline-none focus:ring-2 ${errors[fieldName] ? 'focus:ring-red-400' : 'focus:ring-cyan-400'} focus:border-transparent hover:border-gray-300`;
+
   const labelClass = 'font-medium text-gray-700 text-xs md:text-sm';
   const disabledInputClass =
     'w-full rounded-lg border border-gray-100 bg-gray-50 text-gray-500 px-3 py-2 text-sm cursor-not-allowed';
+  const errorClass = 'text-xs text-red-500 mt-1';
 
   return (
     <div className="flex w-full flex-col gap-4 md:gap-5">
@@ -36,22 +91,28 @@ function Account({ data, onDataChange, roles = [] }: AccountPropsWithSetter) {
             <input
               type="text"
               name="Username"
-              className={inputClass}
+              className={inputClass('Username')}
               value={data.Username}
               onChange={handleChange}
+              onBlur={handleBlur}
               placeholder="Enter username"
+              maxLength={30}
             />
+            {errors.Username && <p className={errorClass}>{errors.Username}</p>}
           </div>
           <div className="flex flex-col gap-1.5">
             <h2 className={labelClass}>Email</h2>
             <input
-              type="text"
+              type="email"
               name="Email"
-              className={inputClass}
+              className={inputClass('Email')}
               value={data.Email}
               onChange={handleChange}
+              onBlur={handleBlur}
               placeholder="Enter email address"
+              maxLength={100}
             />
+            {errors.Email && <p className={errorClass}>{errors.Email}</p>}
           </div>
         </div>
       </div>
