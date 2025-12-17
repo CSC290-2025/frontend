@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from '@/router'; // Ensure this path is correct based on project structure
 import { Menu, X } from 'lucide-react';
 import UserOverviewPage from '@/features/_healthcare/pages/user/UserOverviewPage';
 import UserBookingPage from '@/features/_healthcare/pages/user/UserBookingPage';
@@ -163,12 +164,43 @@ const AdminLoginView: React.FC<{
   onBack: () => void;
   onSuccess: () => void;
 }> = ({ onBack, onSuccess }) => {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = (event: React.FormEvent) => {
+  const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    onSuccess();
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch(
+        'http://localhost:3000/api/healthcare/auth/login',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Login failed');
+      }
+
+      localStorage.setItem('healthcare_token', data.data.token);
+      localStorage.setItem('healthcare_user', JSON.stringify(data.data.user));
+
+      // Redirect to Admin Page (URL change)
+      navigate('/healthcare/healthcare-admin');
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -193,6 +225,12 @@ const AdminLoginView: React.FC<{
           </p>
         </div>
 
+        {error && (
+          <div className="mt-4 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+            {error}
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <label className="block space-y-1 text-sm font-semibold text-gray-700">
             Email
@@ -202,7 +240,7 @@ const AdminLoginView: React.FC<{
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#01CCFF] focus:outline-none"
-              placeholder="staff@hospital.com"
+              placeholder="admin@healthcare.com"
             />
           </label>
           <label className="block space-y-1 text-sm font-semibold text-gray-700">
@@ -218,9 +256,10 @@ const AdminLoginView: React.FC<{
           </label>
           <button
             type="submit"
-            className="w-full rounded-lg bg-[#0091B5] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#007fa0]"
+            disabled={loading}
+            className={`w-full rounded-lg bg-[#0091B5] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#007fa0] ${loading ? 'cursor-not-allowed opacity-70' : ''}`}
           >
-            Login to Admin
+            {loading ? 'Verifying...' : 'Login to Admin'}
           </button>
         </form>
       </div>
