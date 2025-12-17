@@ -51,3 +51,41 @@ export async function getDistrictHistory(
   const history = res?.data?.data?.history;
   return history as DistrictHistory;
 }
+
+export async function getFavoriteDistricts(): Promise<District[]> {
+  console.log('Calling getFavoriteDistricts API...');
+  try {
+    const res = await api.get('/clean-air/favorites');
+    console.log('Response:', res);
+    const favorites = res?.data?.data?.favorites;
+    return favorites as District[];
+  } catch (error) {
+    console.error('API Error:', error);
+    throw error;
+  }
+}
+
+export async function addFavoriteDistrict(district: string): Promise<District> {
+  if (!district) throw new Error('district parameter is required');
+  const encoded = district;
+
+  try {
+    const res = await api.post(`/clean-air/favorites/${encoded}`);
+    const favorite = res?.data?.data?.favorite;
+    return favorite as District;
+  } catch (error: any) {
+    // Handle 409 conflict specifically
+    if (error?.response?.status === 409) {
+      console.info(`District ${district} is already in favorites`);
+      // You could either throw a custom error or fetch the current favorite
+      throw new Error(`${district} is already in your favorites`);
+    }
+    throw error;
+  }
+}
+
+export async function removeFavoriteDistrict(district: string): Promise<void> {
+  if (!district) throw new Error('district parameter is required');
+  const encoded = district;
+  await api.delete(`/clean-air/favorites/${encoded}`);
+}

@@ -36,6 +36,7 @@ export default function ProfilePage() {
                 desc="Quick access to emergency services and contacts"
                 color="bg-red-400"
                 hoverColor="hover:bg-red-500"
+                toUrl="sos"
               />
 
               <ServiceBox
@@ -44,6 +45,7 @@ export default function ProfilePage() {
                 desc="Medical records and health management tools"
                 color="bg-emerald-400"
                 hoverColor="hover:bg-emerald-500"
+                toUrl="healthcare"
               />
 
               <ServiceBox
@@ -52,6 +54,7 @@ export default function ProfilePage() {
                 desc="Quick access to emergency services and contacts"
                 color="bg-cyan-400"
                 hoverColor="hover:bg-cyan-500"
+                toUrl="waste-management"
               />
 
               <ServiceBox
@@ -60,6 +63,7 @@ export default function ProfilePage() {
                 desc="Find and join community volunteer programs"
                 color="bg-purple-400"
                 hoverColor="hover:bg-purple-500"
+                toUrl="volunteer"
               />
             </div>
           </div>
@@ -100,7 +104,10 @@ function ProfileCard({ user }: { user: typeof mockUser }) {
           <InfoRow label="Phone" value={user.phone} last />
         </div>
 
-        <button className="mt-8 flex w-full items-center justify-center gap-2 rounded-xl bg-amber-50 px-6 py-3.5 font-semibold text-blue-900 shadow-md transition hover:scale-105 hover:shadow-lg">
+        <button
+          className="mt-8 flex w-full items-center justify-center gap-2 rounded-xl bg-amber-50 px-6 py-3.5 font-semibold text-blue-900 shadow-md transition hover:scale-105 hover:shadow-lg"
+          onClick={() => (window.location.href = 'citizen/setting')}
+        >
           <svg
             width="18"
             height="18"
@@ -144,11 +151,22 @@ interface ServiceBoxProps {
   desc: string;
   color: string;
   hoverColor: string;
+  toUrl: string;
 }
 
-function ServiceBox({ icon, title, desc, color, hoverColor }: ServiceBoxProps) {
+function ServiceBox({
+  icon,
+  title,
+  desc,
+  color,
+  hoverColor,
+  toUrl,
+}: ServiceBoxProps) {
   return (
-    <div className="group cursor-pointer rounded-2xl border border-gray-100 bg-white p-6 shadow-md transition-all duration-300 hover:scale-105 hover:shadow-xl">
+    <div
+      className="group cursor-pointer rounded-2xl border border-gray-100 bg-white p-6 shadow-md transition-all duration-300 hover:scale-105 hover:shadow-xl"
+      onClick={() => (window.location.href = toUrl)}
+    >
       <div
         className={`mb-5 inline-flex h-16 w-16 items-center justify-center rounded-2xl ${color} ${hoverColor} text-white shadow-md transition-all duration-300 group-hover:scale-110`}
       >

@@ -29,7 +29,7 @@ import {
   createBookmark,
   deleteBookmark,
 } from '@/features/Event_Hub/api/Bookmark.api';
-
+import { useNavigate } from '@/router';
 interface Event {
   id: number;
   title: string;
@@ -59,7 +59,7 @@ const HomePage = () => {
   const [bookmarkedEvents, setBookmarkedEvents] = useState(new Set<number>());
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-
+  const navigate = useNavigate();
   const [events, setEvents] = useState<Event[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -303,7 +303,10 @@ const HomePage = () => {
             <div className="mb-6 flex items-center justify-between">
               <h2 className="text-3xl font-bold text-gray-800">Events</h2>
               <div className="flex gap-2">
-                <button className="flex items-center gap-2 rounded-lg bg-cyan-500 px-4 py-2.5 text-white transition-colors hover:bg-cyan-600">
+                <button
+                  onClick={() => navigate('/event_hub/CreatePage')}
+                  className="flex items-center gap-2 rounded-lg bg-cyan-500 px-4 py-2.5 text-white transition-colors hover:bg-cyan-600"
+                >
                   <Plus className="h-5 w-5" />
                   <span className="font-medium">Create</span>
                 </button>

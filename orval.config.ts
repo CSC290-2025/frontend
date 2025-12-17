@@ -1,6 +1,7 @@
 import { defineConfig } from 'orval';
+import { loadEnv } from 'vite';
 
-const BACKEND_URL = process.env.BACKEND_URL || 'http://localhost:3000';
+const env = loadEnv(process.env.NODE_ENV ?? 'development', process.cwd(), '');
 
 export default defineConfig({
   api: {
@@ -17,6 +18,8 @@ export default defineConfig({
           'Insurance Cards',
           'SCB',
           'Transactions',
+          'User',
+          'Authentication',
         ],
       },
       // target: `${BACKEND_URL}/doc`,
@@ -30,7 +33,13 @@ export default defineConfig({
       mock: false, // can be changed to true & use this guide [https://orval.dev/reference/configuration/output#mock]
       clean: true,
       prettier: true,
-      baseUrl: `${BACKEND_URL}`,
+      baseUrl: env.VITE_API_BASE_URL,
+      override: {
+        mutator: {
+          path: './src/api/client.ts',
+          name: 'request',
+        },
+      },
     },
   },
 });

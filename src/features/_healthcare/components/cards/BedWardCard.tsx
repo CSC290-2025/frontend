@@ -24,8 +24,8 @@ export const BedWardCard: React.FC<BedWardCardProps> = ({
         compact
       />
     )}
-    <div className="space-y-3">
-      {beds.slice(0, 4).map((bed) => (
+    <div className="max-h-72 space-y-3 overflow-y-auto pr-1">
+      {beds.map((bed) => (
         <BedStatus key={bed.id} bed={bed} />
       ))}
     </div>
