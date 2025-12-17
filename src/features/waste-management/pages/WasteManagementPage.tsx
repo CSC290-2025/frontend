@@ -52,9 +52,9 @@ export default function WasteManagementPage() {
           <div className="flex gap-1">
             {[
               { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
-              { id: 'bins', label: 'Bins', icon: MapPin },
+              { id: 'bins', label: 'Bins Management', icon: MapPin },
               { id: 'waste', label: 'Log Waste', icon: Trash2 },
-              { id: 'nearest', label: 'Find Nearest', icon: Navigation },
+              { id: 'nearest', label: 'Find Nearest Bins', icon: Navigation },
             ].map((item) => (
               <button
                 key={item.id}
@@ -73,19 +73,9 @@ export default function WasteManagementPage() {
         </div>
       </nav>
 
-      {/* Main Content */}
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         {renderPage()}
       </main>
-
-      {/* Footer */}
-      <footer className="mt-12 border-t border-gray-200 bg-white">
-        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-          <p className="text-center text-sm text-gray-500">
-            Waste Management System © 2025 - Built with React & TypeScript
-          </p>
-        </div>
-      </footer>
     </div>
   );
 }

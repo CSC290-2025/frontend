@@ -10,7 +10,7 @@ export default function NearestBinCard({ bin }: NearestBinCardProps) {
   return (
     <div className="absolute top-4 right-4 z-[400] max-w-xs rounded-xl border border-gray-200 bg-white/90 p-4 shadow-lg backdrop-blur-sm">
       <p className="text-xs font-bold tracking-wide text-gray-400 uppercase">
-        Nearest Location
+        Nearest Bin Location Point
       </p>
       <h3 className="mt-1 text-lg font-bold text-gray-800">{bin.name}</h3>
       <p className={`text-sm font-medium ${bin.color}`}>{bin.type}</p>
