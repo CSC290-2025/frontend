@@ -62,7 +62,7 @@ class Api {
     config?: AxiosRequestConfig<any>
   ): Promise<SuccessResponseInterface> => {
     const axiosInstance = this._getAxiosInstance(this.baseURL);
-    const response = await axiosInstance.patch(url, data, config);
+    const response = await axiosInstance.put(url, data, config);
     return response.data;
   };
 

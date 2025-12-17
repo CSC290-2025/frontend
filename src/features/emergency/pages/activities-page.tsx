@@ -123,13 +123,13 @@ export default function ActivitiesPage() {
                             <Badge className="bg-gray-100 text-gray-700">
                               {r.status}
                             </Badge>
-                            <Button
-                              size="icon"
-                              onClick={() => handleEditClick()}
-                              className="h-8 w-8 rounded-full bg-gray-200 text-gray-700 transition-colors duration-200 hover:bg-gray-300"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
+                            {/*<Button*/}
+                            {/*  size="icon"*/}
+                            {/*  onClick={() => handleEditClick()}*/}
+                            {/*  className="h-8 w-8 rounded-full bg-gray-200 text-gray-700 transition-colors duration-200 hover:bg-gray-300"*/}
+                            {/*>*/}
+                            {/*  <Edit className="h-4 w-4" />*/}
+                            {/*</Button>*/}
                           </div>
                         </div>
                       </div>
@@ -189,13 +189,13 @@ export default function ActivitiesPage() {
                             <Badge className="bg-gray-100 text-gray-700">
                               {r.status}
                             </Badge>
-                            <Button
-                              size="icon"
-                              onClick={() => handleEditClick()}
-                              className="h-8 w-8 rounded-full bg-gray-200 text-gray-700 transition-colors duration-200 hover:bg-gray-300"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
+                            {/*<Button*/}
+                            {/*  size="icon"*/}
+                            {/*  onClick={() => handleEditClick()}*/}
+                            {/*  className="h-8 w-8 rounded-full bg-gray-200 text-gray-700 transition-colors duration-200 hover:bg-gray-300"*/}
+                            {/*>*/}
+                            {/*  <Edit className="h-4 w-4" />*/}
+                            {/*</Button>*/}
                           </div>
                         </div>
                       </div>
@@ -217,35 +217,35 @@ export default function ActivitiesPage() {
         }}
       />
 
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="bg-white p-6 sm:max-w-[300px]">
-          <DialogHeader>
-            <DialogTitle className="mb-4 text-lg font-bold">
-              Update Status
-            </DialogTitle>
-          </DialogHeader>
+      {/*<Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>*/}
+      {/*  <DialogContent className="bg-white p-6 sm:max-w-[300px]">*/}
+      {/*    <DialogHeader>*/}
+      {/*      <DialogTitle className="mb-4 text-lg font-bold">*/}
+      {/*        Update Status*/}
+      {/*      </DialogTitle>*/}
+      {/*    </DialogHeader>*/}
 
-          <RadioGroup defaultValue="comfortable">
-            <div className="flex items-center gap-3">
-              <RadioGroupItem value="default" id="r1" />
-              <Label htmlFor="r1">Pending</Label>
-            </div>
-            <div className="flex items-center gap-3">
-              <RadioGroupItem value="comfortable" id="r2" />
-              <Label htmlFor="r2">Verified</Label>
-            </div>
-            <div className="flex items-center gap-3">
-              <RadioGroupItem value="compact" id="r3" />
-              <Label htmlFor="r3">Complete</Label>
-            </div>
-          </RadioGroup>
-          <DialogFooter>
-            <Button type="submit" onClick={() => setIsDialogOpen(false)}>
-              Confirm
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/*    <RadioGroup defaultValue="comfortable">*/}
+      {/*      <div className="flex items-center gap-3">*/}
+      {/*        <RadioGroupItem value="default" id="r1" />*/}
+      {/*        <Label htmlFor="r1">Pending</Label>*/}
+      {/*      </div>*/}
+      {/*      <div className="flex items-center gap-3">*/}
+      {/*        <RadioGroupItem value="comfortable" id="r2" />*/}
+      {/*        <Label htmlFor="r2">Verified</Label>*/}
+      {/*      </div>*/}
+      {/*      <div className="flex items-center gap-3">*/}
+      {/*        <RadioGroupItem value="compact" id="r3" />*/}
+      {/*        <Label htmlFor="r3">Complete</Label>*/}
+      {/*      </div>*/}
+      {/*    </RadioGroup>*/}
+      {/*    <DialogFooter>*/}
+      {/*      <Button type="submit" onClick={() => setIsDialogOpen(false)}>*/}
+      {/*        Confirm*/}
+      {/*      </Button>*/}
+      {/*    </DialogFooter>*/}
+      {/*  </DialogContent>*/}
+      {/*</Dialog>*/}
     </div>
   );
 }

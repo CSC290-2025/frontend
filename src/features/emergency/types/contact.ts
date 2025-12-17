@@ -15,7 +15,6 @@ export const ContactOmit = ContactFromSchema.omit({
 });
 
 const ContactUpdateFromSchema = z.object({
-  id: z.number().int(),
   contact_name: z.string().nullable(),
   phone: z
     .string()

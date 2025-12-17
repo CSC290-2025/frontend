@@ -20,10 +20,8 @@ export default class ContactApi {
     return response.data.data;
   }
 
-  static async updateContactById(data: ContactUpdateFrom) {
-    return await Patch('emergency/contacts', {
-      data,
-    });
+  static async updateContactById(data: ContactUpdateFrom, id: string) {
+    return await Patch(`emergency/contacts/${id}`, data);
   }
 
   static async deleteContactById(id: string) {

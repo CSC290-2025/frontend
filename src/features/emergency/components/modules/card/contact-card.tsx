@@ -15,28 +15,46 @@ import {
   DialogFooter,
   DialogClose,
 } from '@/features/emergency/components/ui/dialog';
-import { Copy, Edit, Phone } from 'lucide-react';
+import { Copy, Edit, Phone, Delete } from 'lucide-react';
 import { toast } from 'sonner';
+import { useContactForm } from '@/features/emergency/contexts/contact-from.tsx';
 
 type ContactCardProps = {
   phoneNumber: string | null;
   contactName: string;
   onUpdate?: (name: string, phone: string) => void;
+  id: number;
+  value: string;
 };
 
 const ContactCard: FC<ContactCardProps> = ({
   phoneNumber,
   contactName,
+  id,
   onUpdate,
+  value,
 }) => {
   const [editName, setEditName] = useState(contactName);
   const [editPhone, setEditPhone] = useState(phoneNumber || '');
   const [isOpen, setIsOpen] = useState(false);
 
-  const handleSave = () => {
+  const { updateContact, deleteContactById } = useContactForm();
+
+  const handleSave = async () => {
     if (onUpdate) onUpdate(editName, editPhone);
     setIsOpen(false);
+    console.log(editName, editPhone);
+
+    try {
+      await updateContact(
+        { contact_name: editName, phone: editPhone },
+        id.toString()
+      );
+    } catch (error) {
+      console.error(error);
+    }
   };
+  console.log(id);
 
   return (
     <Card className="mb-4 w-full">
@@ -64,12 +82,14 @@ const ContactCard: FC<ContactCardProps> = ({
 
               <Dialog open={isOpen} onOpenChange={setIsOpen}>
                 <DialogTrigger asChild>
-                  <Button
-                    size="icon"
-                    className="h-8 w-8 rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300"
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
+                  {value === 'family' && (
+                    <Button
+                      size="icon"
+                      className="h-8 w-8 rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                  )}
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-[425px]">
                   <DialogHeader>
@@ -118,6 +138,22 @@ const ContactCard: FC<ContactCardProps> = ({
               >
                 <Copy className="h-4 w-4" />
               </Button>
+              {value === 'family' && (
+                <Button
+                  size="icon"
+                  className="h-8 w-8 rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300"
+                  onClick={async () => {
+                    try {
+                      await deleteContactById(id.toString());
+                      toast('Contact deleted successfully');
+                    } catch (error) {
+                      console.error(error);
+                    }
+                  }}
+                >
+                  <Delete className="h-4 w-4" />
+                </Button>
+              )}
             </div>
           </div>
         </div>

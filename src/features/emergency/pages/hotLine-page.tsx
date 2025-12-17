@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { BookUser, Plus } from 'lucide-react';
 import { Input } from '@/components/ui/input.tsx';
 import {
@@ -27,6 +27,7 @@ import {
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Spinner } from '@/features/emergency/components/ui/spinner.tsx';
 import { toast } from 'sonner';
+import { apiClient } from '@/lib/apiClient.ts';
 
 interface E_num {
   id: number;
@@ -36,30 +37,39 @@ interface E_num {
 
 export default function HotlinePage() {
   const [showAdd, setShowAdd] = useState(true);
-  const { contact, isLoading, createContact } = useContactForm();
+  const { contact, isLoading, createContact, setCurrentUserId } =
+    useContactForm();
   const [open, setOpen] = useState(false);
+  const [userId, setUserId] = useState<number | null>(null);
   console.log(contact);
   const E_num: E_num[] = [
     { id: 1, name: 'police', phone: '191' },
     { id: 2, name: 'Hospital', phone: '1691' },
+    { id: 3, name: 'Fire Department', phone: '199' },
+    { id: 4, name: 'Poh Teck Tung', phone: '1418' },
   ];
+
+  useEffect(() => {
+    const fetchUserId = async () => {
+      const me = await apiClient.get('/auth/me');
+      setUserId(me.data.data.userId);
+      setCurrentUserId(me.data.data.userId.toString());
+    };
+    fetchUserId();
+  }, []);
 
   const {
     handleSubmit,
     reset,
     register,
     formState: { errors },
-  } = useForm<ContactRequestFrom>({
-    resolver: zodResolver(ContactOmit),
-    defaultValues: {
-      user_id: 1,
-    },
-  });
+  } = useForm<ContactRequestFrom>();
 
   const onSubmit = handleSubmit(async (data) => {
     try {
-      console.log(data);
+      data.user_id = userId;
       await createContact(data);
+
       reset();
       setOpen(false);
       toast('Contact add successfully', { position: 'top-right' });
@@ -96,22 +106,24 @@ export default function HotlinePage() {
                 <DialogDescription asChild>
                   <CardContent>
                     <div>
-                      <DialogTitle className="my-6">Name</DialogTitle>
-                      <Input {...register('contact_name')} />
-                      {errors.contact_name && (
-                        <p className="mt-1 text-sm text-red-600">
-                          {errors.contact_name.message}
-                        </p>
-                      )}
-
-                      <DialogTitle className="my-6">Phone number</DialogTitle>
-                      <Input {...register('phone')} />
-                      {errors.phone && (
-                        <p className="mt-1 text-sm text-red-600">
-                          {errors.phone.message}
-                        </p>
-                      )}
-
+                      <div className="mt-3">
+                        <DialogTitle className="my-3">Name</DialogTitle>
+                        <Input {...register('contact_name')} />
+                        {errors.contact_name && (
+                          <p className="mt-1 text-sm text-red-600">
+                            {errors.contact_name.message}
+                          </p>
+                        )}
+                      </div>
+                      <div className="mt-3">
+                        <DialogTitle className="my-3">Phone number</DialogTitle>
+                        <Input {...register('phone')} />
+                        {errors.phone && (
+                          <p className="mt-1 text-sm text-red-600">
+                            {errors.phone.message}
+                          </p>
+                        )}
+                      </div>
                       <div className="mt-6 flex justify-end gap-2">
                         <DialogClose asChild>
                           <Button
@@ -156,8 +168,10 @@ export default function HotlinePage() {
           {contact.map((c) => (
             <ContactCard
               key={c.id}
+              id={c.id}
               contactName={c.contact_name}
               phoneNumber={c.phone}
+              value="family"
             />
           ))}
         </TabsContent>
@@ -166,8 +180,10 @@ export default function HotlinePage() {
           {E_num.map((e) => (
             <ContactCard
               key={e.id}
+              id={e.id}
               contactName={e.name}
               phoneNumber={e.phone}
+              value="emergency"
             />
           ))}
         </TabsContent>
