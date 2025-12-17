@@ -11,3 +11,7 @@ export const BIN_TYPE_LABELS: Record<BinType, string> = {
   GENERAL: 'General',
   HAZARDOUS: 'Hazardous',
 };
+
+export const ROLES = {
+  ADMIN: 'Admin',
+} as const;

@@ -14,24 +14,7 @@ import {
 } from '@/features/G9-ApartmentListing/hooks/useApartment';
 import { Owner, Upload } from '@/features/G9-ApartmentListing/hooks/index';
 import { FollowerPointerCard } from '@/features/G9-ApartmentListing/components/following-pointer';
-
-interface Apartment {
-  apartmentId?: number;
-  id?: number;
-  apartmentName?: string;
-  name?: string;
-  apartment_location?: string;
-  address?: string;
-  apartment_phone?: string;
-  phone?: string;
-  apartment_img?: string;
-  image?: string;
-  rating?:
-    | number
-    | number[]
-    | { avg?: number; rating?: number; count?: number };
-  reviews?: number;
-}
+import type { ApartmentMutate as Apartment } from '@/features/G9-ApartmentListing/types/apartment.type';
 
 // Component to handle individual apartment with image loading
 function ApartmentCard({
@@ -57,7 +40,12 @@ function ApartmentCard({
     imageArray && imageArray.length > 0 ? imageArray[0].url : defaultImage;
 
   const name = apt.apartmentName ?? apt.name;
-  const address = apt.apartment_location ?? apt.address ?? '';
+  const addressData = apt.addresses;
+  const address = addressData
+    ? [addressData.address_line, addressData.subdistrict, addressData.district, addressData.province, addressData.postal_code]
+        .filter((part) => part && String(part).trim().length > 0)
+        .join(' ')
+    : apt.apartment_location || '';
   const phone = apt.apartment_phone ?? apt.phone ?? '';
 
   // Compute rating robustly — API may return a number, an object, or an array of ratings
