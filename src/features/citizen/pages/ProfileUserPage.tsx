@@ -33,7 +33,7 @@ export default function ProfileUserPage() {
                   desc="Quick access to emergency services and contacts"
                   color="bg-red-400"
                   hoverColor="hover:bg-red-500"
-                  onClick={() => navigate('/profile/emergency')}
+                  onClick={() => navigate('/citizen/profile/emergency')}
                 />
 
                 <ServiceBox
@@ -42,7 +42,7 @@ export default function ProfileUserPage() {
                   desc="Medical records and health management tools"
                   color="bg-emerald-400"
                   hoverColor="hover:bg-emerald-500"
-                  onClick={() => navigate('/profile/healthcare')}
+                  onClick={() => navigate('/citizen/profile/healthcare')}
                 />
 
                 <ServiceBox
@@ -51,7 +51,7 @@ export default function ProfileUserPage() {
                   desc="Waste services and history tracking"
                   color="bg-cyan-400"
                   hoverColor="hover:bg-cyan-500"
-                  onClick={() => navigate('/profile/waste')}
+                  onClick={() => navigate('/citizen/profile/waste')}
                 />
 
                 <ServiceBox
@@ -60,7 +60,7 @@ export default function ProfileUserPage() {
                   desc="Find and join community volunteer programs"
                   color="bg-purple-400"
                   hoverColor="hover:bg-purple-500"
-                  onClick={() => navigate('/profile/volunteer')}
+                  onClick={() => navigate('/citizen/profile/volunteer')}
                 />
               </div>
             </div>
