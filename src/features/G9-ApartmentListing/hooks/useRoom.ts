@@ -8,12 +8,7 @@ export function useRoom(apartmentId: number, roomId: number) {
     queryKey: ['room', apartmentId, roomId],
     queryFn: () => ROOMapi.fetchRoomById(apartmentId, roomId),
     select: (response) => {
-      // Handle the API response structure: { success: true, data: {...}, timestamp: "..." }
-      if (response.data && response.data.data) {
-        return response.data.data;
-      }
-      // Fallback to response.data if it's the direct data
-      return response.data;
+      return response.data.data;
     },
     enabled: !!apartmentId && !!roomId,
   });

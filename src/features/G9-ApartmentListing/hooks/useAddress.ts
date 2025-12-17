@@ -6,7 +6,7 @@ export const fetchAddressById = (id: number) => {
   return useQuery({
     queryKey: ['address', id],
     queryFn: () => ADDapi.fetchAddressById(id),
-    select: (data) => data.data, // Extract just the data from AxiosResponse
+    select: (data) => data.data,
     enabled: !!id,
   });
 };
