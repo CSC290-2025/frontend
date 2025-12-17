@@ -96,7 +96,7 @@ function ReportPage() {
   });
 
   return (
-    <MapInit classname="h-[calc(100vh-3rem)] lg:w-full sm:w-screen">
+    <MapInit classname="h-[calc(100vh-75px)] lg:w-full sm:w-screen overflow-hidden">
       <div className="grid h-full min-h-screen w-full grid-cols-7 grid-rows-2">
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
