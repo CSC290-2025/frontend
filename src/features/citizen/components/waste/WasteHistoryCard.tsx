@@ -1,8 +1,7 @@
 import { useDailyWasteHistory } from '../../hooks/useDailyWasteHistory';
 
 export default function WasteHistoryCard() {
-  const { data, isLoading, error, refetch, isFetching } =
-    useDailyWasteHistory();
+  const { data, isLoading, error } = useDailyWasteHistory();
 
   return (
     <div className="rounded-3xl bg-white p-8 shadow-lg">
@@ -10,19 +9,12 @@ export default function WasteHistoryCard() {
         <h2 className="text-2xl font-bold text-[#2B5991]">
           Waste History (Daily)
         </h2>
-
-        <button
-          className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-[#2B5991] transition hover:bg-gray-50 disabled:opacity-50"
-          onClick={() => refetch()}
-          disabled={isFetching}
-        >
-          {isFetching ? 'Refreshing...' : 'Refresh'}
-        </button>
       </div>
 
       {isLoading ? (
         <p className="mt-4 text-sm text-[#2B5991]">Loading...</p>
       ) : null}
+
       {error ? (
         <p className="mt-4 text-sm text-red-600">{(error as Error).message}</p>
       ) : null}

@@ -3,8 +3,10 @@ import { fetchMonthlyWasteStats } from '../api/waste.api';
 
 export function useMonthlyWasteStats() {
   return useQuery({
-    queryKey: ['waste', 'stats', 'monthly'],
+    queryKey: ['wasteMonthlyStats'],
     queryFn: fetchMonthlyWasteStats,
-    staleTime: 60_000,
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
   });
 }

@@ -1,4 +1,3 @@
-// src/features/citizen/components/VolunteerPage/UpcomingVolunteerCard.tsx
 import type { VolunteerEvent } from '../../api/volunteer.api';
 
 export default function UpcomingVolunteerCard({

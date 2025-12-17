@@ -60,9 +60,7 @@ function authHeaders() {
 export async function fetchWasteTypes(): Promise<WasteTypeItem[]> {
   const response = await apiClient.get<
     ApiSuccess<{ waste_types?: WasteTypeItem[] } | WasteTypeItem[]>
-  >('/waste-types', {
-    headers: authHeaders(),
-  });
+  >('/waste-types', { headers: authHeaders() });
 
   const payload = response.data;
   const data: any = payload.data;
@@ -75,9 +73,7 @@ export async function postWasteLog(body: LogWasteBody) {
   const response = await apiClient.post<ApiSuccess<{ id?: number }>>(
     '/waste/log',
     body,
-    {
-      headers: authHeaders(),
-    }
+    { headers: authHeaders() }
   );
   return response.data;
 }
@@ -85,9 +81,7 @@ export async function postWasteLog(body: LogWasteBody) {
 export async function fetchMonthlyWasteStats(): Promise<MonthlyStat | null> {
   const response = await apiClient.get<ApiSuccess<{ stats?: MonthlyStat }>>(
     '/waste/stats',
-    {
-      headers: authHeaders(),
-    }
+    { headers: authHeaders() }
   );
   return response.data.data?.stats ?? null;
 }
@@ -95,8 +89,7 @@ export async function fetchMonthlyWasteStats(): Promise<MonthlyStat | null> {
 export async function fetchDailyWasteStats(): Promise<DailyStat[]> {
   const response = await apiClient.get<
     ApiSuccess<{ stats?: DailyStat | DailyStat[] }>
-  >('/waste/stats/daily', {
-    headers: authHeaders(),
-  });
+  >('/waste/stats/daily', { headers: authHeaders() });
+
   return normalizeStats(response.data.data?.stats);
 }

@@ -20,13 +20,13 @@ export default function WasteMonthlyCard() {
       {isLoading ? (
         <p className="mt-4 text-sm text-[#2B5991]">Loading...</p>
       ) : null}
+
       {error ? (
         <p className="mt-4 text-sm text-red-600">{(error as Error).message}</p>
       ) : null}
 
       {data ? (
         <>
-          {/* กล่อง total โทนเดียวกับ Profile (cyan) */}
           <div className="mt-6 w-full rounded-2xl bg-[#01CCFF] px-6 py-4 text-white">
             <p className="text-sm font-medium">Total</p>
             <p className="mt-1 text-3xl font-bold">

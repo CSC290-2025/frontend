@@ -1,4 +1,4 @@
-import { httpGet } from './http';
+import { apiClient } from '@/lib/apiClient';
 
 type ApiSuccess<T> = {
   success: boolean;
@@ -22,7 +22,7 @@ type AppointmentApi = {
 
 type PrescriptionApi = {
   id?: number | string | null;
-  medicines_list?: unknown; // อาจเป็น Json
+  medicines_list?: unknown;
   status?: string | null;
 };
 
@@ -38,15 +38,27 @@ export type HealthcareVM = {
 
 export async function fetchMyHealthcare(userId: number) {
   const [patientRes, appointmentRes, prescriptionRes] = await Promise.all([
-    httpGet<ApiSuccess<{ patient?: PatientApi } | PatientApi | PatientApi[]>>(
-      `/patients/user/${userId}`
-    ).catch(() => null),
-    httpGet<ApiSuccess<{ appointments?: AppointmentApi[] } | AppointmentApi[]>>(
-      `/appointments?userId=${userId}`
-    ).catch(() => null),
-    httpGet<
-      ApiSuccess<{ prescriptions?: PrescriptionApi[] } | PrescriptionApi[]>
-    >(`/prescriptions?userId=${userId}`).catch(() => null),
+    apiClient
+      .get<ApiSuccess<{ patient?: PatientApi } | PatientApi | PatientApi[]>>(
+        `/patients/user/${userId}`
+      )
+      .then((r) => r.data)
+      .catch(() => null),
+
+    apiClient
+      .get<ApiSuccess<{ appointments?: AppointmentApi[] } | AppointmentApi[]>>(
+        `/appointments`,
+        { params: { userId } }
+      )
+      .then((r) => r.data)
+      .catch(() => null),
+
+    apiClient
+      .get<
+        ApiSuccess<{ prescriptions?: PrescriptionApi[] } | PrescriptionApi[]>
+      >(`/prescriptions`, { params: { userId } })
+      .then((r) => r.data)
+      .catch(() => null),
   ]);
 
   return normalizeHealthcare(patientRes, appointmentRes, prescriptionRes);
@@ -63,7 +75,6 @@ function normalizeHealthcare(
     { prescriptions?: PrescriptionApi[] } | PrescriptionApi[]
   > | null
 ): HealthcareVM {
-  // ---- Patient ----
   const patientPayload = patientRes?.data as any;
 
   const patient: PatientApi | undefined = Array.isArray(patientPayload)

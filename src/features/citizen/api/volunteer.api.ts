@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { apiClient } from '@/lib/apiClient';
 
 export type VolunteerEvent = {
@@ -31,6 +32,13 @@ export type ApiEnvelope<T> = {
   timestamp?: string;
 };
 
+export type ApiSuccess<T> = {
+  success: boolean;
+  data: T;
+  message?: string;
+  timestamp?: string;
+};
+
 export async function fetchVolunteerList(params?: {
   page?: number;
   limit?: number;
@@ -40,15 +48,8 @@ export async function fetchVolunteerList(params?: {
   const res = await apiClient.get<ApiEnvelope<VolunteerListData>>('/getAll', {
     params,
   });
-  return res.data.data; // ✅ สำคัญ: wrapper มี data ครอบ
+  return res.data.data;
 }
-
-export type ApiSuccess<T> = {
-  success: boolean;
-  data: T;
-  message?: string;
-  timestamp?: string;
-};
 
 export async function fetchVolunteerById(id: number): Promise<VolunteerEvent> {
   const res = await apiClient.get<ApiSuccess<VolunteerEvent>>(`/${id}`);
@@ -79,4 +80,48 @@ export async function updateVolunteer(
 export async function deleteVolunteer(id: number) {
   const res = await apiClient.delete<ApiSuccess<unknown>>(`/${id}`);
   return res.data;
+}
+
+//ประวัด
+export type VolunteerHistoryItem = {
+  id: number;
+  title: string;
+  status: 'pending' | 'in_progress' | 'complete' | 'cancelled' | string;
+  completed_at?: string | null;
+};
+
+export async function fetchMyVolunteerHistory(
+  userId: number
+): Promise<VolunteerHistoryItem[]> {
+  try {
+    const res = await apiClient.get<
+      ApiEnvelope<{ items: VolunteerHistoryItem[] }>
+    >('/history', { params: { user_id: userId } });
+
+    return res.data.data?.items ?? [];
+  } catch (err) {
+    if (axios.isAxiosError(err)) {
+      const status = err.response?.status;
+      if (status === 400 || status === 404) return [];
+    }
+    throw err;
+  }
+}
+
+export async function fetchMyFreecycleHistory(
+  userId: number
+): Promise<VolunteerHistoryItem[]> {
+  try {
+    const res = await apiClient.get<
+      ApiEnvelope<{ items: VolunteerHistoryItem[] }>
+    >('/freecycle/history', { params: { user_id: userId } });
+
+    return res.data.data?.items ?? [];
+  } catch (err) {
+    if (axios.isAxiosError(err)) {
+      const status = err.response?.status;
+      if (status === 400 || status === 404) return [];
+    }
+    throw err;
+  }
 }

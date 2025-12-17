@@ -1,9 +1,4 @@
-// src/features/citizen/api/ProfileUser.ts
 import { apiClient } from '@/lib/apiClient';
-
-/* =======================
-   API TYPES
-======================= */
 
 type ApiSuccess<T> = {
   success: boolean;
@@ -25,6 +20,11 @@ type UserProfileRowApi = {
   first_name?: string | null;
   middle_name?: string | null;
   last_name?: string | null;
+
+  profile?: string | null;
+  profile_image?: string | null;
+  avatar?: string | null;
+
   ethnicity?: string | null;
   nationality?: string | null;
   religion?: string | null;
@@ -39,10 +39,6 @@ type UserProfileApi = {
   user_profiles?: UserProfileRowApi[] | UserProfileRowApi | null;
 };
 
-/* =======================
-   VIEW MODEL
-======================= */
-
 export type ProfileVM = {
   userId: number;
   username: string;
@@ -53,6 +49,8 @@ export type ProfileVM = {
   firstName: string;
   middleName: string;
   lastName: string;
+
+  profileImage: string | null;
 
   ethnicity: string;
   nationality: string;
@@ -70,21 +68,12 @@ export type ProfileVM = {
   busCardBalance: string;
 };
 
-/* =======================
-   API CALL
-======================= */
-
-// ✅ ใช้ apiClient แทน httpGet
 export async function fetchUserProfileById(userId: number) {
   const res = await apiClient.get<ApiSuccess<{ user: UserProfileApi }>>(
     `/user/profile/${userId}`
   );
   return res.data;
 }
-
-/* =======================
-   NORMALIZE DATA
-======================= */
 
 function normalizeProfile(
   userId: number,
@@ -115,6 +104,9 @@ function normalizeProfile(
 
   const cardId = raw?.insurance_cards?.[0]?.card_number ?? 'N/A';
 
+  const profileImage =
+    profile?.profile ?? profile?.profile_image ?? profile?.avatar ?? null;
+
   return {
     userId,
     username: raw?.username ?? 'N/A',
@@ -125,6 +117,8 @@ function normalizeProfile(
     firstName: profile?.first_name ?? 'N/A',
     middleName: profile?.middle_name ?? '',
     lastName: profile?.last_name ?? 'N/A',
+
+    profileImage,
 
     ethnicity: profile?.ethnicity ?? 'N/A',
     nationality: profile?.nationality ?? 'N/A',
@@ -143,11 +137,6 @@ function normalizeProfile(
   };
 }
 
-/* =======================
-   PUBLIC FUNCTION
-======================= */
-
-// ✅ ใช้อันนี้แทน fetchMyFullProfile
 export async function fetchProfileForSettingUser(
   userId: number
 ): Promise<ProfileVM> {
