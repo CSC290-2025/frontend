@@ -20,20 +20,3 @@ export const useUserLevel = (userId: number) => {
     staleTime: 5 * 60 * 1000,
   });
 };
-
-export function useCurrentUser() {
-  const { data, isLoading, isSuccess, isFetching } = useAuthenticated();
-  const user = data?.userId
-    ? {
-        id: data.userId,
-        username: data.username,
-        email: data.email,
-      }
-    : data?.user || null;
-
-  return {
-    data: user,
-    isLoading: isLoading || isFetching,
-    isAuthenticated: isSuccess && !!user,
-  };
-}
