@@ -1,14 +1,15 @@
 import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import {
-  Plus,
   ChevronLeft,
   ChevronRight,
   Search,
-  Tag,
   CloudRain,
   Calendar,
   Clock,
+  Loader2,
 } from 'lucide-react';
+
+// API Imports
 import {
   fetchEventsByDay,
   fetchEvents,
@@ -38,11 +39,164 @@ const MonthlyPage: React.FC<MonthlyPageProps> = ({ setActiveTab }) => {
   const [monthlyEventsMap, setMonthlyEventsMap] = useState<MonthlyEventsMap>(
     {}
   );
-  const [rainLoading, setRainLoading] = useState(false);
   const [dailyRainForecast, setDailyRainForecast] = useState<RainDataMap>({});
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDayOfMonth = new Date(year, month, 1).getDay();
+
+  // --- HELPER: Safe Data Extraction ---
+  const extractArray = (res: any): any[] => {
+    // Check console to see exactly what API returns
+    console.log('Raw API Response:', res);
+
+    if (Array.isArray(res)) return res;
+    if (res?.data?.items && Array.isArray(res.data.items))
+      return res.data.items;
+    if (res?.data?.data && Array.isArray(res.data.data)) return res.data.data;
+    if (res?.data && Array.isArray(res.data)) return res.data;
+    if (res?.items && Array.isArray(res.items)) return res.items;
+
+    // Fallback for object with numbered keys (edge case)
+    if (res && typeof res === 'object') return Object.values(res);
+
+    return [];
+  };
+
+  // --- HELPER: Transform Event Data ---
+  // Handles cases where API returns 'start_date'/'start_time' instead of 'start_at'
+  const transformEvent = (e: any): EventItem | null => {
+    // Construct ISO strings if fields are separate
+    let start = e.start_at;
+    let end = e.end_at;
+
+    if (!start && e.start_date) {
+      start = `${e.start_date}T${e.start_time || '00:00:00'}`;
+    }
+    if (!end && e.end_date) {
+      end = `${e.end_date}T${e.end_time || '23:59:59'}`;
+    }
+
+    if (!start) return null; // Skip invalid events
+
+    return {
+      id: e.id?.toString() || Math.random().toString(),
+      title: e.title || 'Untitled Event',
+      start_at: start,
+      end_at: end || start, // Fallback end to start if missing
+    };
+  };
+
+  // --- API: Fetch Rain (Max 7 Days) ---
+  const fetchRainData = useCallback(async () => {
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+    const isCurrentMonth =
+      today.getMonth() === month && today.getFullYear() === year;
+    const startDate = isCurrentMonth
+      ? todayStr
+      : `${year}-${String(month + 1).padStart(2, '0')}-01`;
+
+    try {
+      const rawData = await fetchDailyRainForecast(1, startDate, 7);
+      const forecast = extractArray(rawData);
+
+      const rainMap: RainDataMap = {};
+      forecast.forEach((item: any) => {
+        if (item.date) {
+          rainMap[item.date] = item.precipitation_probability_max;
+        }
+      });
+      setDailyRainForecast(rainMap);
+    } catch (error) {
+      console.error('Rain forecast error:', error);
+    }
+  }, [year, month]);
+
+  // --- API: Fetch Monthly Overview ---
+  const fetchMonthlyEvents = useCallback(async () => {
+    const fromDate = `${year}-${String(month + 1).padStart(2, '0')}-01`;
+    const toDate = `${year}-${String(month + 1).padStart(2, '0')}-${daysInMonth}`;
+
+    try {
+      const res = await fetchEvents({ from: fromDate, to: toDate });
+      const rawList = extractArray(res);
+
+      const monthlyMap: MonthlyEventsMap = {};
+      rawList.forEach((rawEvent: any) => {
+        const event = transformEvent(rawEvent);
+        if (!event) return;
+
+        // Extract just the date part (YYYY-MM-DD)
+        const dateKey = event.start_at.split('T')[0];
+
+        if (!monthlyMap[dateKey]) monthlyMap[dateKey] = [];
+        monthlyMap[dateKey].push(event);
+      });
+      setMonthlyEventsMap(monthlyMap);
+    } catch (error) {
+      console.error('Monthly overview error:', error);
+    }
+  }, [year, month, daysInMonth]);
+
+  // --- API: Fetch Day Details ---
+  const handleDayClick = async (day: number) => {
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    setSelectedDate(dateStr);
+    setLoading(true);
+    setEvents([]);
+
+    try {
+      console.log(`Fetching events for day: ${dateStr}`);
+      const res = await fetchEventsByDay(dateStr);
+      const rawList = extractArray(res);
+
+      console.log('Raw Events List:', rawList);
+
+      const formattedEvents = rawList
+        .map(transformEvent)
+        .filter((e): e is EventItem => e !== null);
+
+      setEvents(formattedEvents);
+    } catch (error) {
+      console.error('Fetch daily events error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchRainData();
+    fetchMonthlyEvents();
+    setSelectedDate(null);
+  }, [fetchRainData, fetchMonthlyEvents]);
+
+  const filteredEvents = useMemo(() => {
+    return searchQuery
+      ? events.filter((e) =>
+          e.title.toLowerCase().includes(searchQuery.toLowerCase())
+        )
+      : events;
+  }, [events, searchQuery]);
+
+  // --- Date/Time Formatters ---
+  const formatTime = (iso: string) => {
+    try {
+      return new Date(iso).toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: false,
+      });
+    } catch {
+      return '--:--';
+    }
+  };
+
+  const calendarDays: (number | null)[] = [];
+  for (let i = 0; i < firstDayOfMonth; i++) calendarDays.push(null);
+  for (let d = 1; d <= daysInMonth; d++) calendarDays.push(d);
+  while (calendarDays.length < 42) calendarDays.push(null);
 
   const monthNames = [
     'January',
@@ -59,380 +213,146 @@ const MonthlyPage: React.FC<MonthlyPageProps> = ({ setActiveTab }) => {
     'December',
   ];
 
-  const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
-  const firstDayOfMonth = new Date(year, month, 1).getDay();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-
-  const MAX_CALENDAR_SLOTS = 42;
-  const calendarDays: (number | null)[] = [];
-
-  for (let i = 0; i < firstDayOfMonth; i++) calendarDays.push(null);
-  for (let d = 1; d <= daysInMonth; d++) calendarDays.push(d);
-  while (calendarDays.length < MAX_CALENDAR_SLOTS) calendarDays.push(null);
-
-  const previousMonth = () => setCurrentDate(new Date(year, month - 1, 1));
-  const nextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
-
-  const handleDayClick = async (day: number) => {
-    const date = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-
-    setSelectedDate(date);
-    setLoading(true);
-    setEvents([]);
-    setSearchQuery('');
-
-    const preFetchedEvents = monthlyEventsMap[date];
-    if (preFetchedEvents) {
-      setEvents(preFetchedEvents);
-      setLoading(false);
-      return;
-    }
-
-    try {
-      // fetchEventsByDay already returns the array directly
-      const rawList = await fetchEventsByDay(date);
-
-      const minimalList: EventItem[] = rawList.map((event: any) => ({
-        id: event.id.toString(),
-        title: event.title || 'Untitled Event',
-        start_at: event.start_at,
-        end_at: event.end_at,
-      }));
-
-      setEvents(minimalList);
-    } catch (error) {
-      console.error('Fetch events error:', error);
-      setEvents([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const filteredEvents = useMemo(() => {
-    if (!searchQuery) return events;
-    const lowerCaseQuery = searchQuery.toLowerCase();
-    return events.filter((event) =>
-      event.title.toLowerCase().includes(lowerCaseQuery)
-    );
-  }, [events, searchQuery]);
-
-  // Format time only (HH:MM)
-  const formatTime = (dateString: string): string => {
-    const date = new Date(dateString);
-    return date.toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-    });
-  };
-
-  // Format date (e.g., "December 17, 2025")
-  const formatDate = (dateString: string): string => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-    });
-  };
-
-  const fetchMonthlyEvents = useCallback(async () => {
-    const fromDate = `${year}-${String(month + 1).padStart(2, '0')}-01`;
-    const toDate = `${year}-${String(month + 1).padStart(2, '0')}-${String(daysInMonth).padStart(2, '0')}`;
-
-    setMonthlyEventsMap({});
-
-    try {
-      const res = await fetchEvents({ from: fromDate, to: toDate });
-
-      // Handle response - check if it's already an array or nested
-      let rawList: any[] = [];
-
-      if (Array.isArray(res)) {
-        rawList = res;
-      } else if (res?.data?.data && Array.isArray(res.data.data)) {
-        rawList = res.data.data;
-      } else if (res?.data?.items && Array.isArray(res.data.items)) {
-        // Handle paginated response
-        rawList = res.data.items;
-      } else if (res?.data && Array.isArray(res.data)) {
-        rawList = res.data;
-      }
-
-      const monthlyMap: MonthlyEventsMap = rawList.reduce((acc, event) => {
-        // Extract start and end dates from ISO strings
-        const startDateString = event.start_at.split('T')[0];
-        const endDateString = event.end_at.split('T')[0];
-
-        const currentDate = new Date(startDateString);
-        const endDate = new Date(endDateString);
-
-        // Map events to all days they span
-        while (currentDate <= endDate) {
-          const dateKey = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`;
-
-          const minimalEvent: EventItem = {
-            id: event.id.toString(),
-            title: event.title || 'Untitled Event',
-            start_at: event.start_at,
-            end_at: event.end_at,
-          };
-
-          if (!acc[dateKey]) {
-            acc[dateKey] = [];
-          }
-          acc[dateKey].push(minimalEvent);
-
-          currentDate.setDate(currentDate.getDate() + 1);
-        }
-
-        return acc;
-      }, {} as MonthlyEventsMap);
-
-      setMonthlyEventsMap(monthlyMap);
-    } catch (error) {
-      console.error('Fetch monthly events error:', error);
-      setMonthlyEventsMap({});
-    }
-  }, [year, month, daysInMonth]);
-
-  const fetchRainData = useCallback(async () => {
-    const locationId = 1;
-    const startDate = `${year}-${String(month + 1).padStart(2, '0')}-01`;
-    const daysAhead = Math.min(daysInMonth - 1, 7);
-
-    setRainLoading(true);
-    setDailyRainForecast({});
-
-    try {
-      const rawData = await fetchDailyRainForecast(
-        locationId,
-        startDate,
-        daysAhead
-      );
-
-      const rainMap: RainDataMap = rawData.reduce((acc, item: any) => {
-        acc[item.date] = item.precipitation_probability_max;
-        return acc;
-      }, {} as RainDataMap);
-
-      setDailyRainForecast(rainMap);
-    } catch (error) {
-      console.error('Fetch rain forecast error:', error);
-      setDailyRainForecast({});
-    } finally {
-      setRainLoading(false);
-    }
-  }, [year, month, daysInMonth]);
-
-  useEffect(() => {
-    fetchRainData();
-    fetchMonthlyEvents();
-    setSelectedDate(null);
-    setEvents([]);
-  }, [fetchRainData, fetchMonthlyEvents]);
-
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="mx-auto max-w-7xl">
-        {/* ✅ Removed duplicate Tabs (HomePage already renders Tabs) */}
+        {/* Controls */}
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setActiveTab('events')}
-              className="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-700 hover:bg-gray-50"
-            >
-              Back to Events
-            </button>
-          </div>
-
+          <button
+            onClick={() => setActiveTab('events')}
+            className="rounded-lg border bg-white px-5 py-2.5 text-sm font-medium hover:bg-gray-100"
+          >
+            ← Back
+          </button>
           <div className="relative">
-            <Search className="absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 text-gray-400" />
+            <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-gray-400" />
             <input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search events for selected day"
-              className="w-64 rounded-lg border border-gray-300 py-2.5 pr-4 pl-10 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
-              aria-label="Search events"
+              placeholder="Search events on selected day..."
+              className="w-full rounded-lg border border-gray-300 py-2.5 pr-4 pl-10 text-sm outline-none focus:ring-2 focus:ring-cyan-500 sm:w-80"
             />
           </div>
         </div>
 
-        {/* Header */}
-        <div className="mb-6">
-          <h2 className="text-3xl font-bold text-gray-800">Monthly Calendar</h2>
-        </div>
-
         {/* Calendar */}
-        <div className="rounded-2xl border-2 bg-white p-8 shadow-xl">
-          <div className="mb-6 flex items-center justify-center gap-4">
+        <div className="rounded-2xl border bg-white p-6 shadow-xl">
+          <div className="mb-8 flex items-center justify-center gap-8">
             <button
-              onClick={previousMonth}
-              aria-label="Previous Month"
-              className="rounded-full p-2 transition-colors hover:bg-gray-100"
+              onClick={() => setCurrentDate(new Date(year, month - 1, 1))}
+              className="rounded-full p-2 hover:bg-gray-100"
             >
-              <ChevronLeft className="h-6 w-6 text-gray-700" />
+              <ChevronLeft />
             </button>
-            <h2 className="text-2xl font-bold text-gray-800">
+            <h2 className="text-2xl font-bold">
               {monthNames[month]} {year}
             </h2>
             <button
-              onClick={nextMonth}
-              aria-label="Next Month"
-              className="rounded-full p-2 transition-colors hover:bg-gray-100"
+              onClick={() => setCurrentDate(new Date(year, month + 1, 1))}
+              className="rounded-full p-2 hover:bg-gray-100"
             >
-              <ChevronRight className="h-6 w-6 text-gray-700" />
+              <ChevronRight />
             </button>
           </div>
 
-          <div className="overflow-hidden rounded-lg border border-gray-200">
-            <div className="grid grid-cols-7 border-b bg-gray-100">
-              {daysOfWeek.map((day) => (
+          <div className="grid grid-cols-7 border-t border-l">
+            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
+              <div
+                key={d}
+                className="border-r border-b bg-gray-50 py-3 text-center text-xs font-bold text-gray-500"
+              >
+                {d}
+              </div>
+            ))}
+            {calendarDays.map((day, i) => {
+              const dateKey = day
+                ? `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+                : null;
+              const rainProb = dateKey ? dailyRainForecast[dateKey] : null;
+              const dayEventsCount = dateKey
+                ? monthlyEventsMap[dateKey]?.length || 0
+                : 0;
+
+              return (
                 <div
-                  key={day}
-                  className="p-4 text-center font-bold text-gray-600"
+                  key={i}
+                  onClick={() => day && handleDayClick(day)}
+                  className={`h-28 border-r border-b p-2 transition-all ${day ? 'cursor-pointer hover:bg-cyan-50' : 'bg-gray-50/30'} ${selectedDate === dateKey ? 'bg-cyan-50' : 'bg-white'}`}
                 >
-                  {day}
-                </div>
-              ))}
-            </div>
-
-            <div className="grid grid-cols-7 divide-x divide-y divide-gray-200">
-              {calendarDays.map((day, i) => {
-                const dateString = day
-                  ? `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
-                  : null;
-
-                const rainProb = dateString
-                  ? dailyRainForecast[dateString]
-                  : null;
-                const showRain = rainProb !== null && rainProb > 30;
-
-                const dayEvents = dateString
-                  ? monthlyEventsMap[dateString] || []
-                  : [];
-                const eventCount = dayEvents.length;
-                const firstEventTitle =
-                  eventCount > 0 ? dayEvents[0].title : null;
-
-                return (
-                  <div
-                    key={i}
-                    className="flex h-[120px] flex-col justify-between bg-white p-2 hover:bg-cyan-50"
-                  >
-                    <div className="flex items-start justify-between">
-                      {day && (
-                        <button
-                          onClick={() => handleDayClick(day)}
-                          className={`h-8 w-8 rounded-full font-semibold transition-colors ${
-                            selectedDate === dateString
-                              ? 'bg-cyan-500 text-white shadow-md'
-                              : 'text-gray-900 hover:bg-gray-200'
-                          }`}
-                          aria-label={`View events on day ${day}`}
+                  {day && (
+                    <div className="flex h-full flex-col justify-between">
+                      <div className="flex items-start justify-between">
+                        <span
+                          className={`flex h-7 w-7 items-center justify-center rounded-full text-sm font-bold ${selectedDate === dateKey ? 'bg-cyan-500 text-white' : 'text-gray-700'}`}
                         >
                           {day}
-                        </button>
-                      )}
-
-                      {day && rainLoading && (
-                        <span className="self-center text-xs text-gray-400">
-                          ...
                         </span>
-                      )}
-                      {day && !rainLoading && showRain && (
-                        <div
-                          className="flex items-center rounded-full bg-blue-50 p-1 text-sm font-medium text-blue-500"
-                          title={`Max chance of rain: ${rainProb}%`}
-                        >
-                          <CloudRain className="mr-0.5 h-4 w-4" />
-                          {rainProb}%
-                        </div>
-                      )}
+                        {rainProb !== null && rainProb > 30 && (
+                          <div className="flex items-center rounded bg-blue-50 px-1 text-[10px] font-bold text-blue-500">
+                            <CloudRain className="mr-0.5 h-3 w-3" /> {rainProb}%
+                          </div>
+                        )}
+                      </div>
+                      <div className="mt-1">
+                        {dayEventsCount > 0 && (
+                          <div className="truncate rounded bg-cyan-100 px-1.5 py-0.5 text-[10px] font-bold text-cyan-700">
+                            {dayEventsCount} Event(s)
+                          </div>
+                        )}
+                      </div>
                     </div>
-                    <div className="mt-1 truncate text-xs text-gray-500">
-                      {eventCount > 0 ? (
-                        <>
-                          <p className="font-semibold text-gray-700">
-                            {eventCount} Event{eventCount > 1 ? 's' : ''}
-                          </p>
-                          {firstEventTitle && (
-                            <p className="truncate text-gray-600">
-                              {firstEventTitle}
-                            </p>
-                          )}
-                        </>
-                      ) : (
-                        day && <p className="text-gray-400">No events</p>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
 
-          {/* Events List */}
+          {/* Event List */}
           {selectedDate && (
-            <div className="mt-6 rounded-xl border border-gray-200 bg-white p-6 shadow-md">
+            <div className="mt-8 border-t pt-6">
               <h3 className="mb-4 text-xl font-bold text-gray-800">
-                Events on {formatDate(selectedDate)}
+                Events on{' '}
+                {new Date(selectedDate).toLocaleDateString('en-US', {
+                  dateStyle: 'long',
+                })}
               </h3>
-
-              {loading && (
-                <div className="flex items-center justify-center py-8">
-                  <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-200 border-t-cyan-500"></div>
-                  <p className="ml-3 text-gray-500">Loading events...</p>
+              {loading ? (
+                <div className="flex justify-center py-10">
+                  <Loader2 className="h-8 w-8 animate-spin text-cyan-500" />
                 </div>
-              )}
-
-              {!loading && filteredEvents.length === 0 && (
-                <div className="py-8 text-center">
-                  <Calendar className="mx-auto mb-3 h-12 w-12 text-gray-300" />
-                  <p className="text-gray-500">
-                    {events.length > 0 && searchQuery
-                      ? `No events match "${searchQuery}" on this day.`
-                      : 'No events scheduled for this day.'}
-                  </p>
-                </div>
-              )}
-
-              <ul className="space-y-3">
-                {filteredEvents.map((event) => {
-                  const startTime = formatTime(event.start_at);
-
-                  return (
-                    <li
-                      key={event.id}
-                      className="flex items-center justify-between rounded-lg border border-gray-200 bg-gray-50 p-4 transition-all hover:border-cyan-300 hover:bg-cyan-50 hover:shadow-sm"
-                    >
-                      <div className="flex min-w-0 flex-1 items-center gap-3">
-                        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-cyan-100">
-                          <Calendar className="h-5 w-5 text-cyan-600" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate font-semibold text-gray-800">
-                            {event.title}
-                          </p>
-                          <div className="mt-1 flex items-center gap-1.5">
-                            <Clock className="h-3.5 w-3.5 text-gray-500" />
-                            <span className="text-sm text-gray-600">
-                              Start: {startTime}
-                            </span>
+              ) : (
+                <div className="grid gap-3">
+                  {filteredEvents.length > 0 ? (
+                    filteredEvents.map((event) => (
+                      <div
+                        key={event.id}
+                        className="flex items-center justify-between rounded-xl border p-4 hover:bg-gray-50"
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="rounded-lg bg-cyan-100 p-2">
+                            <Calendar className="h-5 w-5 text-cyan-600" />
+                          </div>
+                          <div>
+                            <p className="font-bold text-gray-800">
+                              {event.title}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              Starts: {formatTime(event.start_at)}
+                            </p>
                           </div>
                         </div>
+                        <button className="rounded-lg bg-cyan-500 px-4 py-2 text-sm font-bold text-white hover:bg-cyan-600">
+                          Details
+                        </button>
                       </div>
-                      <button
-                        className="ml-4 flex-shrink-0 rounded-lg bg-cyan-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-cyan-600"
-                        aria-label={`View details for ${event.title}`}
-                      >
-                        View Details
-                      </button>
-                    </li>
-                  );
-                })}
-              </ul>
+                    ))
+                  ) : (
+                    <p className="py-6 text-center text-gray-400">
+                      No events found for this day.
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           )}
         </div>
