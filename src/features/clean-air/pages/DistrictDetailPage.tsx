@@ -7,6 +7,7 @@ import Pm25GuideModal from '@/features/clean-air/components/Pm25GuideModal';
 import HealthTips from '@/features/clean-air/components/HealthTips';
 import Summary from '@/features/clean-air/components/Summary';
 import HistoricalTable from '@/features/clean-air/components/HistoricalTable';
+import Layout from '@/components/main/Layout';
 
 export function DistrictDetailPage() {
   const { district } = useParams('/clean-air/district-detail/:district');
@@ -40,30 +41,32 @@ export function DistrictDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white text-gray-900">
-      <div className="mx-auto flex max-w-6xl flex-col space-y-6 px-9 py-6 sm:py-10 lg:space-y-5 lg:px-[100px]">
-        <div className="text-3xl font-bold tracking-tight text-gray-800">
-          Air Quality
-        </div>
-        <div className="w-full">
-          <CurrentAqiCard onDocumentationClick={openModal} />
-        </div>
-        <div className="w-full">
-          <CurrentDataCard />
-        </div>
-        <div className="flex min-h-[300px] flex-col gap-6 md:flex-row lg:gap-5">
-          <div className="flex w-full md:w-2/3">
-            <Summary />
+    <Layout>
+      <div className="min-h-screen bg-white text-gray-900">
+        <div className="mx-auto flex max-w-6xl flex-col space-y-6 px-9 py-6 sm:py-10 lg:space-y-5 lg:px-[100px]">
+          <div className="text-3xl font-bold tracking-tight text-gray-800">
+            Air Quality
           </div>
-          <div className="flex w-full md:w-1/3">
-            <HealthTips />
+          <div className="w-full">
+            <CurrentAqiCard onDocumentationClick={openModal} />
+          </div>
+          <div className="w-full">
+            <CurrentDataCard />
+          </div>
+          <div className="flex min-h-[300px] flex-col gap-6 md:flex-row lg:gap-5">
+            <div className="flex w-full md:w-2/3">
+              <Summary />
+            </div>
+            <div className="flex w-full md:w-1/3">
+              <HealthTips />
+            </div>
+          </div>
+          <div className="w-full pt-4">
+            <HistoricalTable />
           </div>
         </div>
-        <div className="w-full pt-4">
-          <HistoricalTable />
-        </div>
+        <Pm25GuideModal isOpen={isModalOpen} onClose={closeModal} />
       </div>
-      <Pm25GuideModal isOpen={isModalOpen} onClose={closeModal} />
-    </div>
+    </Layout>
   );
 }
