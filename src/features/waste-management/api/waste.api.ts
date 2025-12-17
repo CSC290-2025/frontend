@@ -48,3 +48,8 @@ export const deleteWasteLog = async (logId: number) => {
   const response = await apiClient.delete(`/waste/log/${logId}`);
   return response.data;
 };
+
+export const fetchWasteEvents = async () => {
+  const res = await apiClient.get('/events/waste');
+  return res.data.data.data;
+};

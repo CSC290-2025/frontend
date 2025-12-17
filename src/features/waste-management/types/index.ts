@@ -28,6 +28,7 @@ export interface DailyStats {
     log_id: number;
   }[];
 }
+
 export interface Bin {
   id: number;
   bin_name: string;

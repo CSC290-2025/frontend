@@ -86,9 +86,7 @@ export default function DailyWasteLogs() {
                 <th className="px-6 py-3 text-left text-sm font-semibold text-gray-700">
                   Weight (kg)
                 </th>
-                <th className="px-6 py-3 text-center text-sm font-semibold text-gray-700">
-                  Action
-                </th>
+                <th className="px-6 py-3 text-center text-sm font-semibold text-gray-700"></th>
               </tr>
             </thead>
             <tbody>

@@ -1,9 +1,17 @@
 import { useState } from 'react';
-import { BarChart3, MapPin, Trash2, Navigation } from 'lucide-react';
+import {
+  BarChart3,
+  MapPin,
+  Trash2,
+  Navigation,
+  Recycle,
+  Delete,
+} from 'lucide-react';
 import Dashboard from '@/features/waste-management/pages/Dashboard.tsx';
 import BinsManagement from '@/features/waste-management/pages/BinsManagement';
 import WasteLogging from '@/features/waste-management/pages/WasteLogging';
 import { BinLocator } from '@/features/waste-management/pages/NearestBins';
+import WasteEventsPage from './WasteEventsPage';
 
 export default function WasteManagementPage() {
   const [currentPage, setCurrentPage] = useState('dashboard');
@@ -18,6 +26,8 @@ export default function WasteManagementPage() {
         return <WasteLogging />;
       case 'nearest':
         return <BinLocator />;
+      case 'wasteEvent':
+        return <WasteEventsPage />;
       default:
         return <Dashboard />;
     }
@@ -52,9 +62,10 @@ export default function WasteManagementPage() {
           <div className="flex gap-1">
             {[
               { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
-              { id: 'bins', label: 'Bins', icon: MapPin },
               { id: 'waste', label: 'Log Waste', icon: Trash2 },
+              { id: 'bins', label: 'Bins', icon: MapPin },
               { id: 'nearest', label: 'Find Nearest', icon: Navigation },
+              { id: 'wasteEvent', label: 'Waste Events', icon: Delete },
             ].map((item) => (
               <button
                 key={item.id}
