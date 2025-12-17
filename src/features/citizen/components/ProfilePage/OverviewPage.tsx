@@ -81,7 +81,7 @@ export default function ProfileCard({ onEditProfile }: Props) {
   return (
     <div className="rounded-3xl bg-white p-8 shadow-lg">
       <div className="flex flex-col items-center">
-        <div className="mb-6 flex h-32 w-32 items-center justify-center overflow-hidden rounded-full border-4 border-gray-200 bg-white">
+        <div className="mb-6 flex h-32 w-32 items-center justify-center overflow-hidden border-4 border-gray-200 bg-white">
           {profileImageUrl ? (
             <img
               src={profileImageUrl}
