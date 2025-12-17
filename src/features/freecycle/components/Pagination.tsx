@@ -1,4 +1,3 @@
-// Pagination component for navigating through pages of items
 export default function Pagination() {
   return (
     <main className="">
