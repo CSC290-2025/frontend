@@ -47,7 +47,7 @@ export default function ActivitiesPage() {
     long: string | null,
     id: number
   ) => {
-    if (!lat || !long || !addressMap[id]) return;
+    if (!lat || !long || addressMap[id]) return;
 
     try {
       const url = `https://api.geoapify.com/v1/geocode/reverse?lat=${lat}&lon=${long}&apiKey=${config.GEO_API_KEY}`;
