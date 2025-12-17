@@ -16,7 +16,6 @@ import {
   useCurrentUser,
 } from '@/features/freecycle/hooks/useFreecycle';
 import { useGetAuthMe } from '@/api/generated/authentication';
-import Sidebar from '@/components/main/Sidebar';
 
 interface PostItemFormData {
   item_name: string;
@@ -187,12 +186,12 @@ export default function ItemEditForm() {
     <div className="flex">
       <Sidebar />
       <div className="mx-auto max-w-3xl p-4 sm:p-6">
-        <button
+        {/* <button
           onClick={() => navigate(`/freecycle/items/${postId}` as any)}
           className="mb-6 flex items-center gap-2 font-medium text-cyan-600 hover:text-cyan-700"
         >
           <ArrowLeft className="h-5 w-5" /> Back to Detail
-        </button>
+        </button> */}
 
         <h1 className="mb-6 text-2xl font-bold text-gray-900 sm:text-3xl">
           Edit Item: {originalPost.item_name}
