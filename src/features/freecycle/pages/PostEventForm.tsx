@@ -35,6 +35,7 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
 
   const { mutateAsync: createEvent } = useCreateEvent();
   const { mutateAsync: createVolunteerEvent } = useCreateVolunteerEvent();
@@ -62,17 +63,12 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
       return;
     }
 
-    setLoading(true);
-    setError(null);
-
     if (!formData.title.trim()) {
       alert('Please enter an event title');
-      setLoading(false);
       return;
     }
     if (!formData.start_at || !formData.end_at) {
       alert('Please select both start and end dates');
-      setLoading(false);
       return;
     }
     if (
@@ -80,7 +76,6 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
       (!formData.total_seats || parseInt(formData.total_seats) < 1)
     ) {
       alert('Please enter at least 1 volunteer needed');
-      setLoading(false);
       return;
     }
 
@@ -141,9 +136,21 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
         },
       };
 
-      await createEvent(eventPayload);
+      console.log('Creating event with payload:', eventPayload);
+      const eventResult = await new Promise((resolve, reject) => {
+        createEvent(eventPayload, {
+          onSuccess: (data) => {
+            console.log('Event created response:', data);
+            resolve(data);
+          },
+          onError: reject,
+        });
+      });
+      console.log('Event created successfully');
+      console.log('volunteer_required:', formData.volunteer_required);
 
       if (formData.volunteer_required) {
+        console.log('Creating volunteer event...');
         const volunteerEventPayload = {
           title: formData.title,
           description: formData.description,
@@ -154,36 +161,47 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
           start_at: `${startDateTime.date}T${startDateTime.time}:00Z`,
           end_at: `${endDateTime.date}T${endDateTime.time}:00Z`,
           created_by_user_id: userId,
-          host_user_id: userId,
-          user_id: userId,
-          owner_id: userId,
           registration_deadline: formData.registration_deadline
             ? new Date(formData.registration_deadline).toISOString()
             : null,
           tag: 'Freecycle',
-          organization: {
-            id: 1,
-            name: 'Freecycle',
-            email: 'info@freecycle.org',
-            phone_number: '+1-800-FREECYCLE',
-          },
-          address: {
-            id: 1,
-            name: formData.description,
-          },
         };
 
-        await createVolunteerEvent(volunteerEventPayload);
+        console.log(
+          'Creating volunteer event with payload:',
+          volunteerEventPayload
+        );
+        const volunteerResult = await new Promise((resolve, reject) => {
+          createVolunteerEvent(volunteerEventPayload, {
+            onSuccess: (data) => {
+              console.log('Volunteer event created response:', data);
+              resolve(data);
+            },
+            onError: reject,
+          });
+        });
+        console.log('Volunteer event created successfully');
       }
 
-      alert('Event created successfully!');
-      navigate('/freecycle' as any);
-      _onSuccess?.();
+      // Show success modal
+      setShowSuccessModal(true);
+
+      // Delay navigation to allow user to see success message
+      setTimeout(() => {
+        navigate('/freecycle' as any);
+        _onSuccess?.();
+      }, 1500);
     } catch (err: any) {
       console.error('Process Error:', err);
+      console.error('Error details:', {
+        message: err?.message,
+        response: err?.response?.data,
+        status: err?.response?.status,
+      });
       const msg =
         err?.response?.data?.message || err?.message || 'Something went wrong';
       setError(`Failed: ${msg}`);
+      alert(`Error: ${msg}`);
     } finally {
       setLoading(false);
     }
@@ -448,6 +466,37 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
                 {loading ? 'Posting...' : 'Post'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Success Modal */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black/40 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-2xl">
+            <div className="mb-4 flex justify-center">
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
+                <svg
+                  className="h-6 w-6 text-green-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+              </div>
+            </div>
+            <h2 className="text-center text-lg font-semibold text-gray-900">
+              Event Created Successfully!
+            </h2>
+            <p className="mt-2 text-center text-sm text-gray-600">
+              Your event has been posted and is now visible to the community.
+            </p>
           </div>
         </div>
       )}
