@@ -58,7 +58,7 @@ const MapPage = () => {
         });
 
         // response: res.data.data.markerTypes
-        const types = res.data.data.markerTypes as {
+        const types = res.data.data.marker as {
           id: number;
           marker_type_icon: string;
         }[];
@@ -82,8 +82,14 @@ const MapPage = () => {
         const res = await apiClient.get('/api/markers', {
           params: { limit: 200 },
         });
+        console.log("Debug Response:", res.data);
 
-        const data = res.data.data.markers as SuccessMarker[];
+        // const data = res.data.data.marker as SuccessMarker[];
+        const data = (res.data.data.markers ||
+          res.data.data.marker ||
+          []) as SuccessMarker[];
+
+        if (!data) return;
 
         const mapped: MapMarker[] = data
           .filter((m) => m.location)
