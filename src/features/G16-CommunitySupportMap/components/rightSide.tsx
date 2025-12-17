@@ -5,12 +5,15 @@ export interface MarkerSidePanelProps {
   markers: MapMarker[];
   onDelete: (id: number) => void;
   className?: string;
+  // 1. add function onFocus
+  onFocus?: (lat: number, lng: number) => void;
 }
 
 export const MarkerSidePanel = ({
   markers,
   onDelete,
   className = '',
+  onFocus,
 }: MarkerSidePanelProps) => {
   return (
     <div
@@ -31,7 +34,9 @@ export const MarkerSidePanel = ({
         {markers.map((m) => (
           <div
             key={m.id}
-            className="flex items-start gap-2 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm"
+            // 3. Add onClick call onFocus and add cursor-pointer
+            onClick={() => onFocus?.(m.lat, m.lng)}
+            className="flex cursor-pointer items-start gap-2 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm transition hover:border-blue-200 hover:bg-blue-50"
           >
             <div className="flex-1">
               <div className="text-xs font-semibold">MARKER ID : {m.id}</div>
@@ -39,9 +44,14 @@ export const MarkerSidePanel = ({
                 {m.description || 'No description'}
               </div>
             </div>
+
             <button
               type="button"
-              onClick={() => onDelete(m.id)}
+              // 4. add e.stopPropagation()
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(m.id);
+              }}
               className="flex h-7 w-7 items-center justify-center rounded-full transition-colors hover:bg-red-100"
               title="Delete marker"
             >
