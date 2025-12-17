@@ -11,13 +11,57 @@ export default function WarningModel({
 }) {
   if (!open) return null;
 
+  // determine severity from warning text
+  const key = (warning ?? '').toLowerCase();
+  const severity: 'high' | 'moderate' | 'low' =
+    key.includes('high') || key.includes('flood')
+      ? 'high'
+      : key.includes('moderate')
+        ? 'moderate'
+        : 'low';
+
+  const headerIcon =
+    severity === 'high' ? '🌧️🌊' : severity === 'moderate' ? '🌦️' : '☀️';
+  const headerClass =
+    severity === 'high'
+      ? 'text-red-700'
+      : severity === 'moderate'
+        ? 'text-amber-700'
+        : 'text-green-700';
+  const boxClass =
+    severity === 'high'
+      ? 'border-red-200 bg-red-50'
+      : severity === 'moderate'
+        ? 'border-amber-200 bg-amber-50'
+        : 'border-green-200 bg-green-50';
+  const iconAnimation =
+    severity === 'high'
+      ? 'animate-pulse'
+      : severity === 'moderate'
+        ? 'animate-bounce'
+        : '';
+
+  const recommendation =
+    severity === 'high'
+      ? [
+          'Carry waterproof protection (umbrella/raincoat).',
+          'Avoid flood-prone or low-lying areas.',
+          'Expect sustained heavy rain and possible flash flooding.',
+        ]
+      : severity === 'moderate'
+        ? [
+            'Consider carrying an umbrella for intermittent showers.',
+            'Check local forecasts before travel.',
+          ]
+        : ['Conditions look calm. Minimal chance of rain in the next week.'];
+
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
       onClick={onClose}
     >
       <div
-        className="relative w-[480px] rounded-2xl bg-gradient-to-b from-red-50 to-white p-6 shadow-xl"
+        className={`relative w-[480px] rounded-2xl bg-gradient-to-b from-white to-white p-6 shadow-xl`}
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -27,25 +71,33 @@ export default function WarningModel({
           ✕
         </button>
 
-        <h2 className="mb-4 text-center text-2xl font-bold text-red-700">
-          ⚠️ {warning}
+        <h2 className={`mb-4 text-center text-2xl font-bold ${headerClass}`}>
+          {headerIcon} {warning}
         </h2>
 
         <div className="flex items-center justify-center">
-          <div className="animate-pulse text-7xl">⚠️</div>
+          <div className={`${iconAnimation} text-7xl`}>{headerIcon}</div>
         </div>
 
         <p className="mt-4 text-center text-lg font-semibold">{text}</p>
 
-        <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-center">
-          <p>
-            Please take necessary precautions and stay alert. Follow local
-            authorities instructions.
-          </p>
+        <div className={`mt-4 rounded-lg border p-3 text-center ${boxClass}`}>
+          <p className="mb-2 font-semibold">Recommended actions</p>
+          <ul className="list-inside list-disc text-sm">
+            {recommendation.map((r, idx) => (
+              <li key={idx}>{r}</li>
+            ))}
+          </ul>
         </div>
 
         <button
-          className="mt-6 w-full rounded-lg bg-red-500 py-2 text-white hover:bg-red-600"
+          className={`mt-6 w-full rounded-lg py-2 text-white ${
+            severity === 'high'
+              ? 'bg-red-500 hover:bg-red-600'
+              : severity === 'moderate'
+                ? 'bg-amber-500 hover:bg-amber-600'
+                : 'bg-green-600 hover:bg-green-700'
+          }`}
           onClick={onClose}
         >
           Close

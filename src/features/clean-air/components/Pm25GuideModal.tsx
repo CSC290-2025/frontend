@@ -25,8 +25,8 @@ const data: AQIData[] = [
     range: '0 - 50',
     status:
       'Good air quality. Safe for health. (Equivalent to PM 2.5 ≤ 12.0 µg/m³)',
-    color: 'bg-green-500',
-    text: 'text-green-500',
+    color: 'bg-teal-500',
+    text: 'text-teal-500',
     icon: faFaceGrinWide,
   },
   {
@@ -71,58 +71,54 @@ export default function Pm25GuideModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 backdrop-blur-sm sm:items-center"
       onClick={onClose}
       role="dialog"
       aria-modal="true"
-      aria-labelledby="modal-title"
     >
       <div
-        className="relative w-full max-w-2xl scale-100 transform overflow-hidden rounded-lg border border-gray-900 bg-white shadow-2xl transition-all duration-300"
+        className="relative mx-0 w-full max-w-2xl transform overflow-hidden rounded-t-2xl border border-gray-900 bg-white shadow-2xl transition-all duration-300 sm:mx-[100px] sm:rounded-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <button
-          className="absolute top-4 right-4 z-10 p-1 text-3xl font-bold text-gray-800 transition hover:text-red-500"
+          className="absolute top-4 right-4 z-10 p-1 text-2xl font-bold text-gray-800 transition hover:text-red-500 sm:text-3xl"
           onClick={onClose}
           aria-label="Close modal"
         >
           &times;
         </button>
 
-        <div className="overflow-hidden border-b border-gray-200 bg-gray-50 p-6">
-          <h2
-            id="modal-title"
-            className="flex items-center text-xl font-bold whitespace-nowrap text-gray-800"
-          >
+        <div className="border-b border-gray-200 bg-gray-50 px-9 py-6 sm:px-10">
+          <h2 className="flex flex-wrap items-center text-lg leading-tight font-bold text-gray-800 sm:text-xl">
             How high does <span className="mx-1 text-red-600">AQI</span> have to
             be to be dangerous?
           </h2>
         </div>
 
-        <div className="space-y-3 p-6">
+        <div className="max-h-[70vh] space-y-3 overflow-y-auto px-9 py-6 text-[14px] sm:px-10 sm:text-[16px]">
           {data.map((item, index) => (
             <div
               key={index}
-              className={`flex rounded-lg shadow-md ${item.color} text-white`}
+              className={`flex rounded-lg shadow-md ${item.color} min-h-[80px] text-white`}
             >
               <div
-                className={`flex w-16 items-center justify-center rounded-l-lg bg-white p-3 text-4xl ${item.text}`}
+                className={`flex w-14 items-center justify-center rounded-l-lg bg-white p-2 text-3xl sm:w-16 sm:p-3 sm:text-4xl ${item.text}`}
               >
                 <FontAwesomeIcon icon={item.icon} />
               </div>
 
-              <div className="border-opacity-30 flex w-1/4 items-center justify-center border-l border-white px-2 text-center text-lg font-bold">
+              <div className="border-opacity-30 flex w-20 items-center justify-center border-l border-white px-1 text-center text-base font-bold sm:w-24 sm:px-2 sm:text-lg">
                 {item.range}
               </div>
 
-              <div className="flex flex-1 items-center p-3 text-sm font-medium">
+              <div className="flex flex-1 items-center p-3 text-xs leading-snug font-medium sm:text-sm">
                 {item.status}
               </div>
             </div>
           ))}
         </div>
 
-        <div className="flex items-start border-t border-gray-200 bg-gray-50 p-6 text-xs text-gray-600">
+        <div className="flex items-start border-t border-gray-200 bg-gray-50 px-9 py-6 text-[10px] text-gray-600 sm:px-10 sm:text-xs">
           <div className="mr-2 font-semibold whitespace-nowrap text-blue-600">
             Note:
           </div>

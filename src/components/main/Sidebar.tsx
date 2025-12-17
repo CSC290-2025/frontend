@@ -71,7 +71,6 @@ export default function Sidebar() {
     { icon: Trees, label: 'Clean Air', path: '/clean-air/district-selection' },
     { icon: AlertTriangle, label: 'Harm Reports', path: '/harm' },
     { icon: Radio, label: 'Traffic', path: '/traffic' },
-    { icon: Cloud, label: 'Air Quality', path: '/weather-aqi' },
     { icon: Activity, label: 'Activity', path: '/activity' },
     { icon: MessageSquare, label: 'Chat', path: '/chat' },
     { icon: PhoneOff, label: 'Hotline', path: '/hotLine' },
