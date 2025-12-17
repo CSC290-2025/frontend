@@ -13,6 +13,7 @@ import {
   useState,
 } from 'react';
 import { useLocation } from 'react-router';
+import { apiClient } from '@/lib/apiClient.ts';
 
 type ReportFromProviderProps = {
   children: ReactNode;

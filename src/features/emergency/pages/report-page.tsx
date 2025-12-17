@@ -38,7 +38,7 @@ function ReportPage() {
   const [file, setFile] = useState<string | null>(null);
   const [userId, setUserId] = useState<number | null>(null);
 
-  const { findLocation, address } = useGeoLocation();
+  const { findLocation, address, location } = useGeoLocation();
   const { createReport, isLoading } = useReportFrom();
 
   const categories = [
@@ -69,6 +69,8 @@ function ReportPage() {
     },
   });
 
+  console.log(location);
+
   const handleFileUpload = (file: File) => {
     const reader = new FileReader();
     reader.readAsDataURL(file);
@@ -79,8 +81,8 @@ function ReportPage() {
     try {
       data.image_url = file;
       data.user_id = userId;
-      data.lat = '13.652289';
-      data.long = '100.493617';
+      data.lat = location.lat ?? '13.652289';
+      data.long = location.long ?? '100.493617';
 
       await createReport(data);
 

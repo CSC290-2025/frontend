@@ -29,6 +29,7 @@ import { Button } from '@/features/emergency/components/ui/button.tsx';
 import { Label } from '@/components/ui/label.tsx';
 import config from '@/features/emergency/config/env.ts';
 import axios from 'axios';
+import { apiClient } from '@/lib/apiClient.ts';
 
 export default function ActivitiesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -49,6 +50,29 @@ export default function ActivitiesPage() {
       setAddress(formatted);
     });
   }, [report]);
+
+  const verifiedReports = report.filter((r) => r.status === 'verified');
+
+  useEffect(() => {
+    if (verifiedReports.length === 0) return;
+
+    const createMarkers = async () => {
+      for (const r of verifiedReports) {
+        const data = {
+          marker_type_id: 4,
+          description: r.description,
+          marker_type_icon: 'string',
+          location: {
+            lat: Number(r.lat),
+            lng: Number(r.long),
+          },
+        };
+        return await apiClient.post('/api/marker-types', data);
+      }
+    };
+    console.log(createMarkers());
+    createMarkers();
+  }, [verifiedReports]);
 
   const handleEditClick = () => {
     setIsDialogOpen(true);
