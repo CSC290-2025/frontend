@@ -2,10 +2,12 @@ import { useNavigate } from '@/router';
 import { Pencil, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import DeleteConfirmModal from './DeletePopup';
+import EditCourseModal from './EditCourse';
 
 export default function AdminCard({ course }: { course: any }) {
   const navigate = useNavigate();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
 
   const handleClick = () => {
     navigate('/Know-AI/:course/:id', {
@@ -18,8 +20,15 @@ export default function AdminCard({ course }: { course: any }) {
 
   const handleEdit = (e: React.MouseEvent) => {
     e.stopPropagation();
-    // Add edit logic here
+    setShowEditModal(true);
     console.log('Edit:', course.id);
+  };
+  const handleConfirmEdit = () => {
+    // Edit API call here Chokun add hereeee
+
+    console.log('Edit course:', course.id);
+    // Example: approveCourse(course.id);
+    setShowEditModal(false);
   };
 
   const handleDelete = (e: React.MouseEvent) => {
@@ -100,6 +109,13 @@ export default function AdminCard({ course }: { course: any }) {
         isOpen={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
         onConfirm={handleConfirmDelete}
+      />
+      {/* Edit Confirmation Modal */}
+      <EditCourseModal
+        isOpen={showEditModal}
+        onClose={() => setShowEditModal(false)}
+        course={course}
+        onSave={handleConfirmEdit}
       />
     </>
   );
