@@ -67,6 +67,7 @@ export const getTransitLines = async (origin: string, destination: string) => {
 export const getAllCourses = async () => {
   try {
     const response = await apiClient.get(`/courses`);
+    console.log('courses : ', response.data.data.courses);
     return response.data.data.courses;
   } catch (error) {
     console.error('Failed to fetch all courses: ', error);

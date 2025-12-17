@@ -23,7 +23,6 @@ export default function CourseCard({ course }: { course: any }) {
       onClick={handleClick}
       className="grid h-full w-full cursor-pointer grid-rows-[auto_1fr] overflow-hidden rounded-2xl bg-white shadow-lg transition-all duration-200 hover:opacity-90 active:scale-95 active:brightness-90"
     >
-      {/* Cover Image */}
       <div className="relative h-40 w-full bg-gray-200 sm:h-48 md:h-56 lg:h-64">
         {course.cover_image ? (
           <img
@@ -38,7 +37,6 @@ export default function CourseCard({ course }: { course: any }) {
         )}
       </div>
 
-      {/* Content */}
       <div className="flex flex-col gap-y-2 p-4 sm:p-5 md:p-6">
         <h1 className="line-clamp-1 text-base font-bold text-gray-900 sm:text-lg md:text-xl">
           {course.course_name}

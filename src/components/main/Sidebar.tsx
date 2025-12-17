@@ -56,7 +56,7 @@ export default function Sidebar() {
       label: 'Healthcare',
       path: '/healthcare/healthcare-user',
     },
-    { icon: BookText, label: 'Learn AI', path: '/Know-AI/createCourse' },
+    { icon: BookText, label: 'Learn AI', path: '/Know-AI/courses' },
   ];
 
   // Additional services with dropdown
