@@ -5,3 +5,4 @@ export * as Booking from './useBooking';
 export * as Upload from './useUpload';
 export * as Address from './useAddress';
 export * as Owner from './userApartmentOwner';
+export * as LocationIQ from './useLocationIQ';
