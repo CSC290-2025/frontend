@@ -40,14 +40,30 @@ export default function ActivitiesPage() {
 
   const { report, isLoading, totalPage, setStatus } = useReportFrom();
 
-  const [address, setAddress] = useState('');
+  const [addressMap, setAddressMap] = useState<Record<string, string>>({});
+
+  const convertPo = async (
+    lat: string | null,
+    long: string | null,
+    id: number
+  ) => {
+    if (!lat || !long || !addressMap[id]) return;
+
+    try {
+      const url = `https://api.geoapify.com/v1/geocode/reverse?lat=${lat}&lon=${long}&apiKey=${config.GEO_API_KEY}`;
+      const res = await axios.get(url);
+      const formatted =
+        res.data?.features?.[0]?.properties?.formatted ?? 'Unknown location';
+
+      setAddressMap((prev) => ({ ...prev, [id]: formatted }));
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   useEffect(() => {
-    report.forEach(async (r) => {
-      const url = `https://api.geoapify.com/v1/geocode/reverse?lat=${r.lat}&lon=${r.long}&apiKey=${config.GEO_API_KEY}`;
-      const res = await axios.get(url);
-      const formatted = res.data?.features?.[0]?.properties?.formatted ?? '';
-      setAddress(formatted);
+    report.forEach((r) => {
+      convertPo(r.lat, r.long, r.id);
     });
   }, [report]);
 
@@ -140,7 +156,7 @@ export default function ActivitiesPage() {
                             {r.description}
                           </div>
                           <div className="text-xs text-gray-500">
-                            {address || 'Fetching address...'}
+                            {addressMap[r.id] || 'Fetching address...'}
                           </div>
 
                           <div className="mt-auto flex items-center gap-2">
@@ -206,7 +222,7 @@ export default function ActivitiesPage() {
                             {r.description}
                           </div>
                           <div className="text-xs text-gray-500">
-                            {address || 'Fetching address...'}
+                            {addressMap[r.id] || 'Fetching address...'}
                           </div>
 
                           <div className="mt-auto flex items-center gap-2">

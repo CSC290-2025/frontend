@@ -81,8 +81,8 @@ function ReportPage() {
     try {
       data.image_url = file;
       data.user_id = userId;
-      data.lat = location.lat ?? '13.652289';
-      data.long = location.long ?? '100.493617';
+      data.lat = location.lat || '13.652289';
+      data.long = location.long || '100.493617';
 
       await createReport(data);
 
