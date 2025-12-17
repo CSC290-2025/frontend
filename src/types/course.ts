@@ -35,3 +35,8 @@ export interface AddressData {
   subdistrict: string;
   postal_code: string;
 }
+
+export interface EnrollCourse {
+  onsite_id: number | null;
+  user_id: number | null;
+}

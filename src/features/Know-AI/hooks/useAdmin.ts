@@ -1,5 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getPending, getApprove, changeApprove } from '../api/adminAi.api';
+import {
+  getPending,
+  getApprove,
+  changeApprove,
+  deleteCourse,
+} from '../api/adminAi.api';
 
 export function usePendingCourses() {
   return useQuery({
@@ -29,6 +34,22 @@ export function useApproveCourse() {
     },
     onError: (error) => {
       console.error('Failed to approve course:', error);
+    },
+  });
+}
+
+export function useDeleteCourse() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: number) => deleteCourse(id),
+    onSuccess: () => {
+      // Invalidate and refetch pending courses and all courses
+      queryClient.invalidateQueries({ queryKey: ['courses', 'pending'] });
+      queryClient.invalidateQueries({ queryKey: ['courses'] });
+    },
+    onError: (error) => {
+      console.error('Failed to delete course:', error);
     },
   });
 }

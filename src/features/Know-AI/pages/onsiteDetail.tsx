@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { useParams } from '@/router';
-import { useCourseById } from '../hooks/useCourse';
+import { useCourseById, useEnrollCourse } from '../hooks/useCourse';
 import { useTravelDuration } from '../hooks/useTravelTime';
 import { useAddress } from '../hooks/useAddress';
 import { formatAddressToString } from '../api/knowAi.api';
-import EnrollmentPopup from '../components/EnrollmentPopup';
+import EnrollCourseModal from '../components/EnrollmentPopup';
 
 export default function OnsiteDetail() {
   const { id } = useParams('/Know-AI/:course/:id');
@@ -12,6 +12,32 @@ export default function OnsiteDetail() {
 
   const [showTransportation, setShowTransportation] = useState(false);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
+
+  const [showEnrollModal, setShowEnrollModal] = useState(false);
+  const { mutate: enrollCourse } = useEnrollCourse();
+
+  const courseDetail = {
+    id: course.id,
+    course_name: course.course_name,
+    teacher: 'Worrapratch Chokun',
+    time: '18:00 - 20:00',
+    place: 'Siam Paragon Hall (1.3)',
+  };
+
+  const userDetail = {
+    firstname: 'Noteelon',
+    lastname: 'Buepprasert',
+    phone_number: '0801234567',
+    email: 'noteelon@gmail.com',
+  };
+
+  const handleConfirmEnroll = () => {
+    enrollCourse(course.id, {
+      onSuccess: () => {
+        console.log('Enrolled successfully!');
+      },
+    });
+  };
 
   const userAddressId = 33; // Mock User ID
   const session = course?.onsite_sessions?.[0];
@@ -129,7 +155,7 @@ export default function OnsiteDetail() {
           </div>
 
           <button
-            onClick={() => setIsPopupOpen(true)}
+            onClick={() => setShowEnrollModal(true)}
             className="rounded-full bg-[#7FFF7F] px-12 py-4 text-lg font-semibold text-white shadow-md transition-colors duration-200 hover:bg-[#6FEF6F]"
           >
             Enroll now!
@@ -233,15 +259,13 @@ export default function OnsiteDetail() {
 
       {/* Popup */}
       {isPopupOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div
-            className="absolute inset-0 bg-black/50"
-            onClick={() => setIsPopupOpen(false)}
-          />
-          <div className="relative z-10">
-            <EnrollmentPopup />
-          </div>
-        </div>
+        <EnrollCourseModal
+          isOpen={showEnrollModal}
+          onClose={() => setShowEnrollModal(false)}
+          courseDetail={courseDetail}
+          userDetail={userDetail}
+          onConfirmEnroll={handleConfirmEnroll}
+        />
       )}
     </div>
   );

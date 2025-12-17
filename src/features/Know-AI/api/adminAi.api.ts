@@ -29,3 +29,13 @@ export const changeApprove = async (id: number) => {
     throw error;
   }
 };
+
+export const deleteCourse = async (id: number) => {
+  try {
+    const response = await apiClient.delete(`/course/${id}`);
+    return response.data.data.courses;
+  } catch (error) {
+    console.error('Failed to delete course: ', error);
+    throw error;
+  }
+};
