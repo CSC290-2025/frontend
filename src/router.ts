@@ -30,8 +30,6 @@ export type Path =
   | `/event_hub`
   | `/event_hub/CreatePage`
   | `/example/:id`
-  | `/healthcare/healthcare-admin`
-  | `/healthcare/healthcare-user`
   | `/financial`
   | `/financial/insurance`
   | `/financial/insurance/info/:id`
@@ -46,7 +44,8 @@ export type Path =
   | `/freecycle/post-item`
   | `/harm`
   | `/harm/:id`
-  | `/healthcare`
+  | `/healthcare/healthcare-admin`
+  | `/healthcare/healthcare-user`
   | `/hotLine`
   | `/login`
   | `/map`

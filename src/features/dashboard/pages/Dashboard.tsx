@@ -71,7 +71,7 @@ export default function Dashboard() {
       statusColor: 'bg-blue-100 text-blue-700',
       borderColor: 'border-blue-500',
       bgColor: 'bg-white',
-      onClick: () => navigate('/weather-aqi/overview/main'),
+      onClick: () => navigate('/weather-aqi/overview/Thung Khru'),
     },
     {
       icon: <BusFront className="h-6 w-6 text-green-600" />,
