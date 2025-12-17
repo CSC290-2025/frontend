@@ -75,6 +75,7 @@ export default function ProfileCard({ onEditProfile }: Props) {
 
   const updating = profileQ.isFetching || cardsQ.isFetching;
 
+  console.log(profile.profileImage);
   const profileImageUrl = resolveProfileImage(profile.profileImage);
 
   return (

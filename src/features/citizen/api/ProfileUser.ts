@@ -22,7 +22,7 @@ type UserProfileRowApi = {
   last_name?: string | null;
 
   profile?: string | null;
-  profile_image?: string | null;
+  profile_picture?: string | null;
   avatar?: string | null;
 
   ethnicity?: string | null;
@@ -104,8 +104,7 @@ function normalizeProfile(
 
   const cardId = raw?.insurance_cards?.[0]?.card_number ?? 'N/A';
 
-  const profileImage =
-    profile?.profile ?? profile?.profile_image ?? profile?.avatar ?? null;
+  const profileImage = profile?.profile_picture ?? profile?.avatar ?? null;
 
   return {
     userId,
