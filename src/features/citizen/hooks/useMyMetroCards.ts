@@ -12,10 +12,10 @@ export type MetroCardApi = {
 
 async function fetchMyMetroCards(): Promise<MetroCardApi[]> {
   const res =
-    await apiClient.get<ApiSuccess<{ cards?: MetroCardApi[] }>>(
+    await apiClient.get<ApiSuccess<{ metroCards?: MetroCardApi[] }>>(
       '/metro-cards/me'
     );
-  return res.data.data.cards ?? [];
+  return res.data.data.metroCards ?? [];
 }
 
 export function useMyMetroCards() {

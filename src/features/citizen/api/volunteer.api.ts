@@ -38,6 +38,31 @@ export type ApiSuccess<T> = {
   message?: string;
   timestamp?: string;
 };
+function isUpcoming(startAt: string): boolean {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const startDate = new Date(startAt);
+  startDate.setHours(0, 0, 0, 0);
+
+  return startDate >= today;
+}
+export async function fetchUpcomingVolunteerList(params?: {
+  page?: number;
+  limit?: number;
+  search?: string;
+  department_id?: number;
+}): Promise<VolunteerListData> {
+  const res = await apiClient.get<ApiEnvelope<VolunteerListData>>('/getAll', {
+    params,
+  });
+
+  const data = res.data.data;
+
+  return {
+    ...data,
+    events: data.events.filter((event) => isUpcoming(event.start_at)),
+  };
+}
 
 export async function fetchVolunteerList(params?: {
   page?: number;
@@ -80,48 +105,4 @@ export async function updateVolunteer(
 export async function deleteVolunteer(id: number) {
   const res = await apiClient.delete<ApiSuccess<unknown>>(`/${id}`);
   return res.data;
-}
-
-//ประวัด
-export type VolunteerHistoryItem = {
-  id: number;
-  title: string;
-  status: 'pending' | 'in_progress' | 'complete' | 'cancelled' | string;
-  completed_at?: string | null;
-};
-
-export async function fetchMyVolunteerHistory(
-  userId: number
-): Promise<VolunteerHistoryItem[]> {
-  try {
-    const res = await apiClient.get<
-      ApiEnvelope<{ items: VolunteerHistoryItem[] }>
-    >('/history', { params: { user_id: userId } });
-
-    return res.data.data?.items ?? [];
-  } catch (err) {
-    if (axios.isAxiosError(err)) {
-      const status = err.response?.status;
-      if (status === 400 || status === 404) return [];
-    }
-    throw err;
-  }
-}
-
-export async function fetchMyFreecycleHistory(
-  userId: number
-): Promise<VolunteerHistoryItem[]> {
-  try {
-    const res = await apiClient.get<
-      ApiEnvelope<{ items: VolunteerHistoryItem[] }>
-    >('/freecycle/history', { params: { user_id: userId } });
-
-    return res.data.data?.items ?? [];
-  } catch (err) {
-    if (axios.isAxiosError(err)) {
-      const status = err.response?.status;
-      if (status === 400 || status === 404) return [];
-    }
-    throw err;
-  }
 }
