@@ -30,7 +30,7 @@ const getStatusAndStyle = (category: string): StatusDetails => {
     typeof category
   ); // Debug
   switch (category.toUpperCase()) {
-    case 'HEALTHY':
+    case 'GOOD':
       return {
         status: 'HEALTHY',
         style: 'bg-green-500 text-white',
