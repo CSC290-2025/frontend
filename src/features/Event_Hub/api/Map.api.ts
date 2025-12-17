@@ -8,5 +8,5 @@ export const createMarker = (data: {
     lng: number;
   } | null;
 }) => {
-  return apiClient.post('/markers', data);
+  return apiClient.post('api/markers', data);
 };

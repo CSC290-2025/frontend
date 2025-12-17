@@ -1,25 +1,23 @@
 import { apiClient } from '@/lib/apiClient';
-
-// Fetch all bookmarked events for the current user
+// Fetch all bookmarked events (auth)
 export const fetchUserBookmarks = (params?: {
   page?: number;
   limit?: number;
-  q?: string;
 }) => {
   return apiClient.get('/bookmarks', { params });
 };
 
-// Check if a specific event is bookmarked by the current user
+// Check if user bookmarked specific event (auth)
 export const checkBookmarkStatus = (eventId: number) => {
   return apiClient.get(`/bookmarks/status/${eventId}`);
 };
 
-// Create a new bookmark
-export const createBookmark = (eventId: number) => {
-  return apiClient.post('/bookmarks', { event_id: eventId });
+// Create bookmark (auth)
+export const createBookmark = (data: { event_id: number }) => {
+  return apiClient.post('/bookmarks', data);
 };
 
-// Delete a bookmark
+// Delete bookmark (auth)
 export const deleteBookmark = (eventId: number) => {
   return apiClient.delete(`/bookmarks/${eventId}`);
 };

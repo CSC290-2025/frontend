@@ -66,12 +66,7 @@ const CreateEventPage = () => {
       }
 
       // 2. Extract User ID safely
-      const hostUserId = (user as any).id || (user as any).user?.id;
-
-      if (!hostUserId) {
-        throw new Error('User session invalid. Please log in again.');
-      }
-
+      const hostUserId = user.userId;
       // 3. Prepare Payload
       const eventData = {
         host_user_id: hostUserId,

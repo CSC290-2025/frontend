@@ -269,21 +269,6 @@ const EventDetailModal: React.FC<EventDetailModalProps> = ({
 
           {/* Footer with ONLY Bookmark Button */}
           <div className="sticky bottom-0 flex justify-center rounded-b-2xl border-t border-gray-200 bg-white p-6">
-            <button
-              onClick={onToggleBookmark}
-              className={`flex w-64 items-center justify-center gap-2 rounded-lg px-6 py-3 font-medium transition-colors ${
-                isBookmarked
-                  ? 'border-2 border-cyan-600 bg-cyan-50 text-cyan-600 hover:bg-cyan-100'
-                  : 'border-2 border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
-              }`}
-              aria-label={isBookmarked ? 'Remove bookmark' : 'Add bookmark'}
-            >
-              <Bookmark
-                className={`h-5 w-5 ${isBookmarked ? 'fill-cyan-600' : ''}`}
-                aria-hidden="true"
-              />
-              {isBookmarked ? 'Bookmarked' : 'Bookmark'}
-            </button>
             {/* REMOVED: The second button (Register Now) was here */}
           </div>
         </div>
