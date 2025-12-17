@@ -59,7 +59,7 @@ export default function DailyWasteLogs() {
   }
 
   return (
-    <div className="mx-auto">
+    <div className="w-full">
       <div className="rounded-lg bg-white shadow">
         {/* Header */}
         <div className="flex items-center justify-between border-b border-gray-200 p-6">
@@ -76,7 +76,7 @@ export default function DailyWasteLogs() {
         </div>
 
         {/* Table */}
-        <div className="overflow-x-auto">
+        <div className="max-h-[calc(75vh-16rem)] overflow-auto">
           <table className="w-full border-collapse">
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50">

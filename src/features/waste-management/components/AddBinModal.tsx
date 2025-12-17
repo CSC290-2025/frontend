@@ -405,12 +405,12 @@ export default function AddBinModal({ onClose, onSuccess }: AddBinModalProps) {
                 type="button"
                 onClick={handleLocateUser}
                 disabled={locatingUser}
-                className="mb-3 flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-blue-500 to-cyan-500 px-4 py-2 text-sm font-semibold text-white transition hover:from-blue-600 hover:to-cyan-600 disabled:opacity-50"
+                className="mb-3 flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-blue-500 to-cyan-500 px-4 py-2 text-sm font-semibold text-white transition hover:from-green-600 hover:to-cyan-600 disabled:opacity-50"
               >
                 {locatingUser ? (
                   <>
                     <span className="animate-spin">...</span>
-                    Locating...
+                    Searching...
                   </>
                 ) : (
                   <>
@@ -443,7 +443,7 @@ export default function AddBinModal({ onClose, onSuccess }: AddBinModalProps) {
                 </MapContainer>
               </div>
               <p className="mt-2 text-xs text-gray-500">
-                💡 Click anywhere on the map to select the bin location
+                Click anywhere on the map to select the bin location
               </p>
             </div>
           </div>
@@ -461,7 +461,7 @@ export default function AddBinModal({ onClose, onSuccess }: AddBinModalProps) {
               disabled={loading}
               className="flex-1 rounded-lg bg-gradient-to-r from-green-500 to-emerald-500 px-4 py-3 font-semibold text-white transition hover:from-green-600 hover:to-emerald-600 disabled:opacity-50"
             >
-              {loading ? '🔄 Creating...' : '✓ Add Bin'}
+              {loading ? ' Creating...' : ' Add Bin'}
             </button>
           </div>
         </form>

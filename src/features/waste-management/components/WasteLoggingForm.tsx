@@ -93,7 +93,7 @@ export default function WasteLoggingForm() {
               onValueChange={setWasteType}
               disabled={isLoading}
             >
-              <SelectTrigger className="h-11 border-purple-200 text-base focus:ring-purple-500">
+              <SelectTrigger className="h-11 border-green-200 text-base focus:ring-green-500">
                 <SelectValue
                   placeholder={isLoading ? 'Loading...' : 'Select waste type'}
                 />
@@ -155,7 +155,7 @@ export default function WasteLoggingForm() {
           <Button
             onClick={handleSubmit}
             disabled={logWasteMutation.isPending || !wasteType || !weight}
-            className="h-11 w-full bg-linear-to-r from-purple-600 to-pink-600 text-base hover:from-purple-700 hover:to-pink-700"
+            className="h-11 w-full bg-linear-to-r from-green-600 to-green-600 text-base hover:from-green-700 hover:to-green-700"
           >
             {logWasteMutation.isPending ? 'Submitting...' : 'Submit'}
           </Button>

@@ -1,9 +1,9 @@
 import { useState } from 'react';
-
 import {
   StatisticsTable,
   WasteCharts,
   ViewSelector,
+  FreeCycleCTA,
 } from '@/features/waste-management/components';
 import {
   useMonthlyStats,
@@ -36,7 +36,10 @@ export default function Dashboard() {
 
   const getDescription = () => {
     if (viewType === 'monthly') {
-      return `${new Date(2025, parseInt(selectedMonth) - 1).toLocaleString('default', { month: 'long' })} ${selectedYear}`;
+      return `${new Date(2025, parseInt(selectedMonth) - 1).toLocaleString(
+        'default',
+        { month: 'long' }
+      )} ${selectedYear}`;
     }
     return selectedDate;
   };
@@ -44,16 +47,20 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen from-purple-50 via-pink-50 to-blue-50 p-6">
       <div className="space-y-6 lg:col-span-3">
-        <ViewSelector
-          viewType={viewType}
-          onViewTypeChange={setViewType}
-          selectedMonth={selectedMonth}
-          selectedYear={selectedYear}
-          selectedDate={selectedDate}
-          onMonthChange={setSelectedMonth}
-          onYearChange={setSelectedYear}
-          onDateChange={setSelectedDate}
-        />
+        {/* 🔼 Freecycle CTA at the top */}
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <ViewSelector
+            viewType={viewType}
+            onViewTypeChange={setViewType}
+            selectedMonth={selectedMonth}
+            selectedYear={selectedYear}
+            selectedDate={selectedDate}
+            onMonthChange={setSelectedMonth}
+            onYearChange={setSelectedYear}
+            onDateChange={setSelectedDate}
+          />
+          <FreeCycleCTA />
+        </div>
 
         {isLoading ? (
           <div className="py-12 text-center text-gray-600">
