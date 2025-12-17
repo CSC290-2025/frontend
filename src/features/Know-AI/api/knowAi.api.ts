@@ -3,6 +3,7 @@ import type {
   CourseType,
   CreateCoursePayload,
   AddressData,
+  EnrollCourse,
 } from '@/types/course';
 
 export const formatAddressToString = (addr: any) => {
@@ -135,6 +136,16 @@ export const uploadFile = async (file: File) => {
     return response.data.data.url;
   } catch (error) {
     console.error('Failed to upload file: ', error);
+    throw error;
+  }
+};
+
+export const enrollCourse = async (data: EnrollCourse) => {
+  try {
+    const response = await apiClient.post(`/createEnrollment`, data);
+    return response.data;
+  } catch (error) {
+    console.error('Failed to enroll course: ', error);
     throw error;
   }
 };

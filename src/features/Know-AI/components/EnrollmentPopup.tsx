@@ -1,106 +1,246 @@
-export default function EnrollmentPopup() {
+import { useState } from 'react';
+import { X } from 'lucide-react';
+
+interface CourseDetail {
+  id: number;
+  course_name: string;
+  teacher: string;
+  time: string;
+  place: string;
+}
+
+interface UserDetail {
+  firstname: string;
+  lastname: string;
+  phone_number: string;
+  email: string;
+}
+
+interface EnrollCourseModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  courseDetail: CourseDetail;
+  userDetail: UserDetail;
+  onConfirmEnroll: () => void;
+}
+
+export default function EnrollCourseModal({
+  isOpen,
+  onClose,
+  courseDetail,
+  userDetail,
+  onConfirmEnroll,
+}: EnrollCourseModalProps) {
+  const [isConfirmed, setIsConfirmed] = useState(false);
+
+  if (!isOpen) return null;
+
+  const handleEnrollNow = () => {
+    setIsConfirmed(true);
+    onConfirmEnroll();
+  };
+
+  const handleClose = () => {
+    setIsConfirmed(false);
+    onClose();
+  };
+
   return (
-    <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black p-4">
-      <div className="relative w-full max-w-2xl rounded-3xl bg-white p-8 shadow-2xl">
-        <button className="absolute top-6 right-6 text-gray-400 transition-colors hover:text-gray-600">
-          <svg
-            className="h-6 w-6"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+      onClick={handleClose}
+    >
+      <div
+        className="relative w-full max-w-md rounded-2xl bg-white p-8 shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Close Button */}
+        <button
+          onClick={handleClose}
+          className="absolute top-4 right-4 text-gray-400 transition-colors hover:text-gray-600"
+        >
+          <X className="h-6 w-6" />
         </button>
 
-        <h2 className="mb-8 text-center text-3xl font-bold text-gray-900">
-          Enroll Course
-        </h2>
+        {/* Content */}
+        {!isConfirmed ? (
+          // Enrollment Form
+          <div>
+            <h2 className="mb-6 text-center text-2xl font-bold text-gray-900">
+              Enroll Course
+            </h2>
 
-        <div className="space-y-6">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div>
-              <label className="mb-2 block font-medium text-gray-900">
-                Firstname
-              </label>
-              <input
-                type="text"
-                defaultValue="Nateetan"
-                className="w-full rounded-full bg-gray-200 px-4 py-3 text-gray-900 focus:ring-2 focus:ring-[#01CCFF] focus:outline-none"
-              />
-            </div>
-            <div>
-              <label className="mb-2 block font-medium text-gray-900">
-                Lastname
-              </label>
-              <input
-                type="text"
-                defaultValue="Buapasert"
-                className="w-full rounded-full bg-gray-200 px-4 py-3 text-gray-900 focus:ring-2 focus:ring-[#01CCFF] focus:outline-none"
-              />
+            <div className="space-y-4">
+              {/* User Information */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">
+                    Firstname
+                  </label>
+                  <input
+                    type="text"
+                    value={userDetail.firstname}
+                    disabled
+                    className="w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-gray-700"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">
+                    Lastname
+                  </label>
+                  <input
+                    type="text"
+                    value={userDetail.lastname}
+                    disabled
+                    className="w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-gray-700"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">
+                    Phone Number
+                  </label>
+                  <input
+                    type="text"
+                    value={userDetail.phone_number}
+                    disabled
+                    className="w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-gray-700"
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">
+                    Email
+                  </label>
+                  <input
+                    type="text"
+                    value={userDetail.email}
+                    disabled
+                    className="w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-gray-700"
+                  />
+                </div>
+              </div>
+
+              {/* Course Details */}
+              <div className="mt-6 space-y-2 border-t pt-4">
+                <h3 className="font-semibold text-gray-900">Detail</h3>
+                <div className="space-y-1 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Course:</span>
+                    <span className="font-medium text-cyan-500">
+                      {courseDetail.course_name}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Teacher:</span>
+                    <span className="font-medium text-cyan-500">
+                      {courseDetail.teacher}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Time:</span>
+                    <span className="font-medium text-cyan-500">
+                      {courseDetail.time}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Place:</span>
+                    <span className="font-medium text-cyan-500">
+                      {courseDetail.place}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Enroll Button */}
+              <button
+                onClick={handleEnrollNow}
+                className="mt-6 w-full rounded-full bg-green-400 py-3 text-lg font-medium text-white transition-colors hover:bg-green-500 active:scale-95"
+              >
+                Enroll now!
+              </button>
             </div>
           </div>
+        ) : (
+          // Confirmation View
+          <div>
+            <h2 className="mb-6 text-center text-2xl font-bold text-gray-900">
+              Confirmed Enroll
+            </h2>
 
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div>
-              <label className="mb-2 block font-medium text-gray-900">
-                Phone Number
-              </label>
-              <input
-                type="tel"
-                defaultValue="0897895678"
-                className="w-full rounded-full bg-gray-200 px-4 py-3 text-gray-900 focus:ring-2 focus:ring-[#01CCFF] focus:outline-none"
-              />
-            </div>
-            <div>
-              <label className="mb-2 block font-medium text-gray-900">
-                Email
-              </label>
-              <input
-                type="email"
-                defaultValue="nateetan@gmail.com"
-                className="w-full rounded-full bg-gray-200 px-4 py-3 text-gray-900 focus:ring-2 focus:ring-[#01CCFF] focus:outline-none"
-              />
+            <div className="space-y-4">
+              {/* Attendee Information */}
+              <div>
+                <h3 className="mb-3 font-semibold text-gray-900">Attendee</h3>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Firstname:</span>
+                    <span className="font-medium text-cyan-500">
+                      {userDetail.firstname}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Lastname:</span>
+                    <span className="font-medium text-cyan-500">
+                      {userDetail.lastname}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Phone Number:</span>
+                    <span className="font-medium text-cyan-500">
+                      {userDetail.phone_number}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Email:</span>
+                    <span className="font-medium text-cyan-500">
+                      {userDetail.email}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Course Details */}
+              <div className="border-t pt-4">
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Course:</span>
+                    <span className="font-medium text-cyan-500">
+                      {courseDetail.course_name}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Teacher:</span>
+                    <span className="font-medium text-cyan-500">
+                      {courseDetail.teacher}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Time:</span>
+                    <span className="font-medium text-cyan-500">
+                      {courseDetail.time}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Place:</span>
+                    <span className="font-medium text-cyan-500">
+                      {courseDetail.place}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Done Button */}
+              <button
+                onClick={handleClose}
+                className="mt-6 w-full rounded-full bg-green-400 py-3 text-lg font-medium text-white transition-colors hover:bg-green-500 active:scale-95"
+              >
+                Enroll now!
+              </button>
             </div>
           </div>
-
-          <div className="space-y-3 rounded-2xl bg-gray-50 p-6">
-            <h3 className="mb-4 text-xl font-bold text-gray-900">Detail</h3>
-
-            <div className="flex gap-2">
-              <span className="font-medium text-gray-900">Course:</span>
-              <span className="font-medium text-[#01CCFF]">What is AI?</span>
-            </div>
-
-            <div className="flex gap-2">
-              <span className="font-medium text-gray-900">Teacher:</span>
-              <span className="font-medium text-[#01CCFF]">
-                Warrapratch Chokun
-              </span>
-            </div>
-
-            <div className="flex gap-2">
-              <span className="font-medium text-gray-900">Time:</span>
-              <span className="font-medium text-[#01CCFF]">18:00 - 20:00</span>
-            </div>
-
-            <div className="flex gap-2">
-              <span className="font-medium text-gray-900">Place:</span>
-              <span className="font-medium text-[#01CCFF]">
-                Siam Paragon Hall (FI.3)
-              </span>
-            </div>
-          </div>
-
-          <button className="w-full rounded-full bg-[#7FFF7F] py-4 text-xl font-bold text-white shadow-md transition-colors duration-200 hover:bg-[#6FEF6F]">
-            Enroll now!
-          </button>
-        </div>
+        )}
       </div>
     </div>
   );
