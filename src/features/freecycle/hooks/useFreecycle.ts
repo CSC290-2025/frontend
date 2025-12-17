@@ -17,8 +17,10 @@ import {
   fetchPostById,
   fetchPostRequests,
   type ReceiverRequest,
+  fetchMyPosts,
 } from '@/features/freecycle/api/freecycle.api';
 import type { ApiPost, Category } from '@/types/postItem';
+import { useAuthenticated } from '@/hooks/useAuthenticated';
 
 // --- Posts and Basic Actions Hooks ---
 
@@ -216,7 +218,13 @@ export function useUserRequests() {
 export function useCreateRequest() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: createRequest,
+    mutationFn: ({
+      postId,
+      receiverId,
+    }: {
+      postId: number;
+      receiverId: number;
+    }) => createRequest(postId, receiverId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['requests', 'user'] });
     },
@@ -229,6 +237,7 @@ export function useCancelRequest() {
     mutationFn: cancelRequest,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['requests', 'user'] });
+      queryClient.invalidateQueries({ queryKey: ['posts'] });
     },
   });
 }
@@ -244,36 +253,27 @@ export function useUpdateRequestStatus() {
       status: 'pending' | 'accepted' | 'rejected';
     }) => updateRequestStatus(id, status),
     onSuccess: () => {
-      // Invalidate both user requests and post requests to refresh UI globally
       queryClient.invalidateQueries({ queryKey: ['requests', 'user'] });
-      // Note: We should ideally also invalidate the specific ['posts', postId, 'requests'] query
-      // but that requires passing postId to the mutation hook call, which is handled in ItemDetailPage.tsx's onSuccess callback.
     },
   });
 }
 
 // --- Other Hooks ---
 
-export function usePostsByUserId(userId?: number) {
-  return useQuery({
-    queryKey: ['posts', 'user', userId],
-    queryFn: () => fetchPostsByUserId(userId!),
-    enabled: Number.isFinite(userId),
-    retry: 2,
-    meta: {
-      errorMessage: 'Failed to load user posts',
-    },
-  });
-}
-
-/**
- * Hook Mock User ID = 23
- */
 export function useCurrentUser() {
-  const MOCK_CURRENT_USER_ID = 23; // mock User ID
+  const { data, isLoading, isSuccess, isFetching } = useAuthenticated();
+  const user = data?.userId
+    ? {
+        id: data.userId,
+        username: data.username,
+        email: data.email,
+      }
+    : data?.user || null;
+
   return {
-    data: { id: MOCK_CURRENT_USER_ID, name: 'CurrentUser' },
-    isLoading: false,
+    data: user,
+    isLoading: isLoading || isFetching,
+    isAuthenticated: isSuccess && !!user,
   };
 }
 
@@ -285,6 +285,29 @@ export function usePostById(postId: number) {
     retry: 2,
     meta: {
       errorMessage: 'Failed to load item details',
+    },
+  });
+}
+
+export function usePostsByUserId(userId?: number) {
+  return useQuery({
+    queryKey: ['posts', 'user', userId],
+    queryFn: () => fetchPostsByUserId(userId!),
+    enabled: Number.isFinite(userId) && userId! > 0,
+    retry: 2,
+    meta: {
+      errorMessage: 'Failed to load user posts',
+    },
+  });
+}
+
+export function useMyPosts() {
+  return useQuery({
+    queryKey: ['posts', 'me'],
+    queryFn: fetchMyPosts,
+    retry: 2,
+    meta: {
+      errorMessage: 'Failed to load your posts',
     },
   });
 }
