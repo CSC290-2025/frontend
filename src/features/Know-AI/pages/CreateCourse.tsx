@@ -9,6 +9,7 @@ import type {
   AddressData,
 } from '@/types/course';
 import type { CreateCourseVideo } from '@/types/course';
+import Layout from '@/components/main/Layout';
 
 interface VideoFormState extends CreateCourseVideo {
   id: number;
@@ -217,254 +218,258 @@ export default function CreateCourse() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-white p-6 md:p-10 lg:p-16">
-      <h1 className="mb-8 text-center text-3xl font-bold md:text-4xl lg:text-left">
-        Create Course
-      </h1>
-      <div className="mx-auto flex max-w-7xl flex-col gap-8 lg:flex-row lg:items-start">
-        <div className="flex w-full justify-center lg:w-1/2">
-          <CourseCoverUpload
-            currentImageUrl={coverImage}
-            onUploadComplete={setCoverImage}
-          />
-        </div>
-
-        <div className="flex w-full flex-col gap-6 lg:w-1/2">
-          <div className="space-y-2">
-            <label className="text-lg font-medium">Course Title</label>
-            <input
-              type="text"
-              className="input-field h-12 px-6"
-              value={basicInfo.course_name}
-              onChange={(e) =>
-                setBasicInfo({ ...basicInfo, course_name: e.target.value })
-              }
-            />
-          </div>
-          <div className="space-y-2">
-            <label className="text-lg font-medium">Description</label>
-            <textarea
-              rows={4}
-              className="input-field rounded-2xl p-5"
-              value={basicInfo.course_description}
-              onChange={(e) =>
-                setBasicInfo({
-                  ...basicInfo,
-                  course_description: e.target.value,
-                })
-              }
+    <Layout>
+      <div className="min-h-screen w-full bg-white p-6 md:p-10 lg:p-16">
+        <h1 className="mb-8 text-center text-3xl font-bold md:text-4xl lg:text-left">
+          Create Course
+        </h1>
+        <div className="mx-auto flex max-w-7xl flex-col gap-8 lg:flex-row lg:items-start">
+          <div className="flex w-full justify-center lg:w-1/2">
+            <CourseCoverUpload
+              currentImageUrl={coverImage}
+              onUploadComplete={setCoverImage}
             />
           </div>
 
-          <div className="space-y-3">
-            <label className="text-lg font-medium">Course Type</label>
-            <div className="flex gap-4">
+          <div className="flex w-full flex-col gap-6 lg:w-1/2">
+            <div className="space-y-2">
+              <label className="text-lg font-medium">Course Title</label>
+              <input
+                type="text"
+                className="input-field h-12 px-6"
+                value={basicInfo.course_name}
+                onChange={(e) =>
+                  setBasicInfo({ ...basicInfo, course_name: e.target.value })
+                }
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-lg font-medium">Description</label>
+              <textarea
+                rows={4}
+                className="input-field rounded-2xl p-5"
+                value={basicInfo.course_description}
+                onChange={(e) =>
+                  setBasicInfo({
+                    ...basicInfo,
+                    course_description: e.target.value,
+                  })
+                }
+              />
+            </div>
+
+            <div className="space-y-3">
+              <label className="text-lg font-medium">Course Type</label>
+              <div className="flex gap-4">
+                <button
+                  onClick={() => setCourseType('online')}
+                  className={`rounded-full px-6 py-2 font-semibold ${courseType === 'online' ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-200 text-gray-500 hover:bg-gray-300'}`}
+                >
+                  Online
+                </button>
+                <button
+                  onClick={() => setCourseType('onsite')}
+                  className={`rounded-full px-6 py-2 font-semibold ${courseType === 'onsite' ? 'bg-orange-500 text-white shadow-md' : 'bg-gray-200 text-gray-500 hover:bg-gray-300'}`}
+                >
+                  Onsite
+                </button>
+              </div>
+            </div>
+
+            <div className="rounded-2xl border bg-gray-50 p-5 md:p-8">
+              {courseType === 'online' ? (
+                <div className="space-y-6">
+                  <h3 className="text-xl font-bold text-blue-600">
+                    Video Lessons ({videoList.length})
+                  </h3>
+                  {videoList.map((video) => (
+                    <VideoInputForm
+                      key={video.id}
+                      video={video}
+                      updateVideoField={updateVideoField}
+                    />
+                  ))}
+                  <button
+                    onClick={addVideo}
+                    className="rounded-full bg-blue-500 px-6 py-2 text-sm font-semibold text-white hover:bg-blue-600"
+                  >
+                    + Add Another Video
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-5">
+                  <h3 className="text-xl font-bold text-orange-600">
+                    Location & Session
+                  </h3>
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div className="col-span-2 space-y-2">
+                      <label className="text-sm font-medium">
+                        Address Line
+                      </label>
+                      <input
+                        type="text"
+                        className="input-field"
+                        value={addressForm.address_line}
+                        onChange={(e) =>
+                          setAddressForm({
+                            ...addressForm,
+                            address_line: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Subdistrict</label>
+                      <input
+                        type="text"
+                        className="input-field"
+                        value={addressForm.subdistrict}
+                        onChange={(e) =>
+                          setAddressForm({
+                            ...addressForm,
+                            subdistrict: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">District</label>
+                      <input
+                        type="text"
+                        className="input-field"
+                        value={addressForm.district}
+                        onChange={(e) =>
+                          setAddressForm({
+                            ...addressForm,
+                            district: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Province</label>
+                      <input
+                        type="text"
+                        className="input-field"
+                        value={addressForm.province}
+                        onChange={(e) =>
+                          setAddressForm({
+                            ...addressForm,
+                            province: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Postal Code</label>
+                      <input
+                        type="text"
+                        className="input-field"
+                        value={addressForm.postal_code}
+                        onChange={(e) =>
+                          setAddressForm({
+                            ...addressForm,
+                            postal_code: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 gap-4 border-t pt-4 md:grid-cols-2">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">
+                        Event Date
+                      </label>
+                      <input
+                        type="datetime-local"
+                        className="input-field"
+                        onChange={(e) =>
+                          setOnsiteData({
+                            ...onsiteData,
+                            event_at: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">
+                        Reg. Deadline
+                      </label>
+                      <input
+                        type="datetime-local"
+                        className="input-field"
+                        onChange={(e) =>
+                          setOnsiteData({
+                            ...onsiteData,
+                            registration_deadline: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="font-medium text-gray-700">
+                        Duration (Hrs)
+                      </label>
+                      <input
+                        type="number"
+                        step="0.5"
+                        className="input-field"
+                        onChange={(e) =>
+                          setOnsiteData({
+                            ...onsiteData,
+                            duration_hours: parseFloat(e.target.value) || 0,
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">
+                        Total Course Seats
+                      </label>
+                      <input
+                        type="number"
+                        className="input-field"
+                        min="1"
+                        onChange={(e) =>
+                          setOnsiteData({
+                            ...onsiteData,
+                            total_seats: parseInt(e.target.value) || 1,
+                          })
+                        }
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">
+                        Volunteer Need
+                      </label>
+                      <input
+                        type="number"
+                        className="input-field"
+                        min="0"
+                        value={volunteerNeed}
+                        onChange={(e) =>
+                          setVolunteerNeed(parseInt(e.target.value) || 0)
+                        }
+                        placeholder="Specify amount if needed"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className="flex justify-end pt-4 pb-10 lg:pb-0">
               <button
-                onClick={() => setCourseType('online')}
-                className={`rounded-full px-6 py-2 font-semibold ${courseType === 'online' ? 'bg-blue-500 text-white shadow-md' : 'bg-gray-200 text-gray-500 hover:bg-gray-300'}`}
+                onClick={handleSubmit}
+                disabled={isPending}
+                className={`rounded-2xl px-10 py-3 text-xl font-bold text-white shadow-lg transition-transform hover:scale-105 active:scale-95 ${isPending ? 'bg-gray-400' : 'bg-green-400 hover:bg-green-500'}`}
               >
-                Online
-              </button>
-              <button
-                onClick={() => setCourseType('onsite')}
-                className={`rounded-full px-6 py-2 font-semibold ${courseType === 'onsite' ? 'bg-orange-500 text-white shadow-md' : 'bg-gray-200 text-gray-500 hover:bg-gray-300'}`}
-              >
-                Onsite
+                {isPending ? 'Creating...' : 'create!'}
               </button>
             </div>
           </div>
-
-          <div className="rounded-2xl border bg-gray-50 p-5 md:p-8">
-            {courseType === 'online' ? (
-              <div className="space-y-6">
-                <h3 className="text-xl font-bold text-blue-600">
-                  Video Lessons ({videoList.length})
-                </h3>
-                {videoList.map((video) => (
-                  <VideoInputForm
-                    key={video.id}
-                    video={video}
-                    updateVideoField={updateVideoField}
-                  />
-                ))}
-                <button
-                  onClick={addVideo}
-                  className="rounded-full bg-blue-500 px-6 py-2 text-sm font-semibold text-white hover:bg-blue-600"
-                >
-                  + Add Another Video
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-5">
-                <h3 className="text-xl font-bold text-orange-600">
-                  Location & Session
-                </h3>
-                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div className="col-span-2 space-y-2">
-                    <label className="text-sm font-medium">Address Line</label>
-                    <input
-                      type="text"
-                      className="input-field"
-                      value={addressForm.address_line}
-                      onChange={(e) =>
-                        setAddressForm({
-                          ...addressForm,
-                          address_line: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Subdistrict</label>
-                    <input
-                      type="text"
-                      className="input-field"
-                      value={addressForm.subdistrict}
-                      onChange={(e) =>
-                        setAddressForm({
-                          ...addressForm,
-                          subdistrict: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">District</label>
-                    <input
-                      type="text"
-                      className="input-field"
-                      value={addressForm.district}
-                      onChange={(e) =>
-                        setAddressForm({
-                          ...addressForm,
-                          district: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Province</label>
-                    <input
-                      type="text"
-                      className="input-field"
-                      value={addressForm.province}
-                      onChange={(e) =>
-                        setAddressForm({
-                          ...addressForm,
-                          province: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Postal Code</label>
-                    <input
-                      type="text"
-                      className="input-field"
-                      value={addressForm.postal_code}
-                      onChange={(e) =>
-                        setAddressForm({
-                          ...addressForm,
-                          postal_code: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 gap-4 border-t pt-4 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">
-                      Event Date
-                    </label>
-                    <input
-                      type="datetime-local"
-                      className="input-field"
-                      onChange={(e) =>
-                        setOnsiteData({
-                          ...onsiteData,
-                          event_at: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">
-                      Reg. Deadline
-                    </label>
-                    <input
-                      type="datetime-local"
-                      className="input-field"
-                      onChange={(e) =>
-                        setOnsiteData({
-                          ...onsiteData,
-                          registration_deadline: e.target.value,
-                        })
-                      }
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="font-medium text-gray-700">
-                      Duration (Hrs)
-                    </label>
-                    <input
-                      type="number"
-                      step="0.5"
-                      className="input-field"
-                      onChange={(e) =>
-                        setOnsiteData({
-                          ...onsiteData,
-                          duration_hours: parseFloat(e.target.value) || 0,
-                        })
-                      }
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">
-                      Total Course Seats
-                    </label>
-                    <input
-                      type="number"
-                      className="input-field"
-                      min="1"
-                      onChange={(e) =>
-                        setOnsiteData({
-                          ...onsiteData,
-                          total_seats: parseInt(e.target.value) || 1,
-                        })
-                      }
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">
-                      Volunteer Need
-                    </label>
-                    <input
-                      type="number"
-                      className="input-field"
-                      min="0"
-                      value={volunteerNeed}
-                      onChange={(e) =>
-                        setVolunteerNeed(parseInt(e.target.value) || 0)
-                      }
-                      placeholder="Specify amount if needed"
-                    />
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
-          <div className="flex justify-end pt-4 pb-10 lg:pb-0">
-            <button
-              onClick={handleSubmit}
-              disabled={isPending}
-              className={`rounded-2xl px-10 py-3 text-xl font-bold text-white shadow-lg transition-transform hover:scale-105 active:scale-95 ${isPending ? 'bg-gray-400' : 'bg-green-400 hover:bg-green-500'}`}
-            >
-              {isPending ? 'Creating...' : 'create!'}
-            </button>
-          </div>
         </div>
+        <style>{`.input-field { width: 100%; border-radius: 9999px; background-color: white; border: 1px solid #e5e7eb; padding: 0.5rem 1rem; outline: none; } .input-field:focus { border-color: #01CCFF; }`}</style>
       </div>
-      <style>{`.input-field { width: 100%; border-radius: 9999px; background-color: white; border: 1px solid #e5e7eb; padding: 0.5rem 1rem; outline: none; } .input-field:focus { border-color: #01CCFF; }`}</style>
-    </div>
+    </Layout>
   );
 }
