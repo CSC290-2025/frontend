@@ -309,13 +309,13 @@ const MapPage = () => {
               sideOffset={10}
               className="w-48 rounded-2xl bg-[#2749C9] p-3 text-white shadow-xl"
             >
-              <DropdownMenuItem
+              {/* <DropdownMenuItem
                 onClick={() => handleSelectTypeId(1)}
                 className="flex cursor-pointer items-center gap-2 px-3 py-2 hover:bg-[#1f3db1]"
               >
                 <Wind className="h-6 w-6 text-white" strokeWidth={2} />
                 <span className="text-base">Impure Air</span>
-              </DropdownMenuItem>
+              </DropdownMenuItem> */}
 
               {/* mobile */}
               <DropdownMenuItem
@@ -379,7 +379,7 @@ const MapPage = () => {
               sideOffset={10}
               className="w-54 rounded-2xl bg-[#2749C9] p-3 text-white shadow-xl"
             >
-              <DropdownMenuItem
+              {/* <DropdownMenuItem
                 onClick={() => handleSelectTypeId(1)}
                 className="group flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 transition hover:bg-white hover:text-black"
               >
@@ -390,7 +390,7 @@ const MapPage = () => {
                 <span className="text-base group-hover:text-black">
                   Impure Air
                 </span>
-              </DropdownMenuItem>
+              </DropdownMenuItem> */}
 
               {/* desktop */}
               <DropdownMenuItem
