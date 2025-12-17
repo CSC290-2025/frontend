@@ -760,6 +760,7 @@ export default function TrafficControlPage() {
             status: 0,
             autoON: true,
             timestamp: new Date().toISOString(),
+            marker_id: lightKey,
           },
         };
 
@@ -780,40 +781,80 @@ export default function TrafficControlPage() {
         const interid = parseInt(junctionId.replace('Inter-', ''));
         const lightKey = `inter${interid}_road${roadId}`;
 
-        // Get existing lights in this intersection to calculate proper timing
-        const intersections = groupLightsByIntersection(trafficLightsData);
-        const existingLights = intersections[interid] || [];
-        const sortedLights = sortLightsByRoadId(existingLights);
+        const updates: Record<string, any> = {};
 
-        // Calculate red time for new light (it starts red)
-        const lightDurations = calculateIntersectionLightDurations([
-          ...sortedLights,
-          { key: lightKey, green_duration: 27, yellow_duration: 3 },
-        ]);
-        const newLightIndex = sortedLights.length;
-        const redTime = calculateRedLightRemainingTime(
-          lightDurations,
-          0,
-          newLightIndex
-        );
-
-        const updates: Record<string, any> = {
-          [`teams/10/traffic_lights/${lightKey}`]: {
-            interid,
-            roadid: roadId,
-            lat,
-            lng,
-            color: COLOR_RED,
-            remaintime: redTime,
-            green_duration: 27,
-            yellow_duration: 3,
-            status: 0,
-            autoON: true,
-            timestamp: new Date().toISOString(),
-          },
+        // First, add the new light
+        updates[`teams/10/traffic_lights/${lightKey}`] = {
+          interid,
+          roadid: roadId,
+          lat,
+          lng,
+          color: COLOR_RED,
+          remaintime: 0,
+          green_duration: 27,
+          yellow_duration: 3,
+          status: 0,
+          autoON: true,
+          timestamp: new Date().toISOString(),
+          marker_id: lightKey,
         };
 
+        // Write the new light first
         await update(ref(database), updates);
+
+        // Now stop and restart the intersection cycle with the new light included
+        // This ensures proper timing calculations
+        const stopUpdates: Record<string, any> = {
+          [`teams/10/stopped-intersections/${interid}`]: true,
+        };
+        await update(ref(database), stopUpdates);
+
+        // Small delay to ensure stop is processed
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        // Restart with all lights (including new one)
+        const restartUpdates: Record<string, any> = {
+          [`teams/10/stopped-intersections/${interid}`]: null,
+        };
+
+        // Re-fetch to include the new light we just added
+        const intersections = groupLightsByIntersection({
+          ...trafficLightsData,
+          [lightKey]: {
+            interid,
+            roadid: roadId,
+            green_duration: 27,
+            yellow_duration: 3,
+          },
+        });
+        const allLights = intersections[interid];
+
+        if (allLights && allLights.length > 0) {
+          const sortedLights = sortLightsByRoadId(allLights);
+          const firstLight = sortedLights[0];
+          const lightDurations =
+            calculateIntersectionLightDurations(sortedLights);
+          const { greenDuration, yellowDuration } =
+            getLightDuration(firstLight);
+
+          // Set first light to green, others to red with proper stacked times
+          sortedLights.forEach((light, idx) => {
+            const isActive = idx === 0;
+            const redTime = isActive
+              ? 0
+              : calculateRedLightRemainingTime(lightDurations, 0, idx);
+
+            restartUpdates[`teams/10/traffic_lights/${light.key}/color`] =
+              isActive ? COLOR_GREEN : COLOR_RED;
+            restartUpdates[`teams/10/traffic_lights/${light.key}/remaintime`] =
+              isActive ? greenDuration + yellowDuration : redTime;
+            restartUpdates[`teams/10/traffic_lights/${light.key}/timestamp`] =
+              new Date().toISOString();
+          });
+        }
+
+        await update(ref(database), restartUpdates);
+
         setShowAddLightDialog(false);
         setAddLightJunctionId('');
         setPickedPosition(null);
@@ -919,14 +960,22 @@ export default function TrafficControlPage() {
 
   const handleEmergencyStopAll = useCallback(async () => {
     try {
-      await update(ref(database), {
+      const updates: Record<string, any> = {
         'teams/10/emergency-stop': true,
+      };
+
+      // Set all traffic lights to red
+      Object.keys(trafficLightsData).forEach((lightKey) => {
+        updates[`teams/10/traffic_lights/${lightKey}/color`] = COLOR_RED;
+        updates[`teams/10/traffic_lights/${lightKey}/remaintime`] = 0;
       });
+
+      await update(ref(database), updates);
       setEmergencyStopAll(true);
     } catch (err) {
       console.error('Failed to set emergency stop:', err);
     }
-  }, []);
+  }, [trafficLightsData]);
 
   const handleStartAll = useCallback(async () => {
     try {
@@ -974,18 +1023,35 @@ export default function TrafficControlPage() {
     }
   }, [trafficLightsData]);
 
-  const handleStopJunction = useCallback(async (junctionId: string) => {
-    try {
-      // Extract interid from junctionId (e.g., "Inter-3" -> 3)
-      const interid = junctionId.replace('Inter-', '');
-      await update(ref(database), {
-        [`teams/10/stopped-intersections/${interid}`]: true,
-      });
-      setStoppedJunctions((prev) => new Set(prev).add(junctionId));
-    } catch (err) {
-      console.error('Failed to stop junction:', err);
-    }
-  }, []);
+  const handleStopJunction = useCallback(
+    async (junctionId: string) => {
+      try {
+        // Extract interid from junctionId (e.g., "Inter-3" -> 3)
+        const interid = parseInt(junctionId.replace('Inter-', ''));
+
+        const updates: Record<string, any> = {
+          [`teams/10/stopped-intersections/${interid}`]: true,
+        };
+
+        // Set all lights in this intersection to red
+        const intersections = groupLightsByIntersection(trafficLightsData);
+        const lights = intersections[interid];
+
+        if (lights && lights.length > 0) {
+          lights.forEach((light) => {
+            updates[`teams/10/traffic_lights/${light.key}/color`] = COLOR_RED;
+            updates[`teams/10/traffic_lights/${light.key}/remaintime`] = 0;
+          });
+        }
+
+        await update(ref(database), updates);
+        setStoppedJunctions((prev) => new Set(prev).add(junctionId));
+      } catch (err) {
+        console.error('Failed to stop junction:', err);
+      }
+    },
+    [trafficLightsData]
+  );
 
   const handleStartJunction = useCallback(
     async (junctionId: string) => {

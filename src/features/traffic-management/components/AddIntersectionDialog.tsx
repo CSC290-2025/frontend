@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Plus, MapPin, MousePointer2, ChevronUp } from 'lucide-react';
+import { X, Plus, MapPin, MousePointer2, ChevronUp, Check } from 'lucide-react';
 
 interface AddIntersectionDialogProps {
   open: boolean;
@@ -26,6 +26,7 @@ export default function AddIntersectionDialog({
   const [lat, setLat] = useState<string>('13.647372');
   const [lng, setLng] = useState<string>('100.495536');
   const [error, setError] = useState<string>('');
+  const [isMyPickingMode, setIsMyPickingMode] = useState<boolean>(false);
 
   // Calculate next available intersection ID
   useEffect(() => {
@@ -45,44 +46,63 @@ export default function AddIntersectionDialog({
       setLat(pickedPosition.lat.toFixed(6));
       setLng(pickedPosition.lng.toFixed(6));
       setError('');
-      // Auto-stop picking after a position is selected
-      onStopPickingPosition?.();
     }
-  }, [pickedPosition, onStopPickingPosition]);
+  }, [pickedPosition]);
 
   // Stop picking when dialog closes
   useEffect(() => {
-    if (!open && isPickingPosition && onStopPickingPosition) {
-      onStopPickingPosition();
+    if (!open && isMyPickingMode) {
+      setIsMyPickingMode(false);
+      if (isPickingPosition && onStopPickingPosition) {
+        onStopPickingPosition();
+      }
     }
-  }, [open, isPickingPosition, onStopPickingPosition]);
+  }, [open, isMyPickingMode, isPickingPosition, onStopPickingPosition]);
 
-  // Show picking mode UI even if dialog is "closed" - this takes precedence
-  if (isPickingPosition) {
+  // Only show picking mode UI if THIS dialog initiated it
+  // This prevents conflicts when multiple dialogs share the same picking state
+  if (isMyPickingMode && isPickingPosition) {
     return (
       <div className="fixed top-4 left-1/2 z-50 -translate-x-1/2">
-        <div className="flex items-center gap-4 rounded-xl bg-blue-600 px-6 py-4 text-white shadow-2xl">
-          <MousePointer2 className="h-6 w-6 animate-pulse" />
-          <div>
-            <p className="font-semibold">Click on the map to select position</p>
-            <p className="text-sm text-blue-100">
+        <div className="flex items-center gap-2 rounded-lg border-2 border-gray-300 bg-white px-4 py-3 shadow-xl">
+          <MousePointer2 className="h-5 w-5 text-gray-600" />
+          <div className="flex-1">
+            <p className="text-sm font-medium text-gray-900">
+              Click on the map to select position
+            </p>
+            <p className="text-xs text-gray-500">
               Creating Inter-{intersectionId}
+              {pickedPosition &&
+                ` • ${pickedPosition.lat.toFixed(6)}, ${pickedPosition.lng.toFixed(6)}`}
             </p>
           </div>
-          <button
-            onClick={() => onStopPickingPosition?.()}
-            className="ml-4 flex items-center gap-2 rounded-lg bg-white/20 px-4 py-2 text-sm font-medium transition hover:bg-white/30"
-          >
-            <ChevronUp className="h-4 w-4" />
-            Cancel
-          </button>
-        </div>
-        {pickedPosition && (
-          <div className="mt-2 rounded-lg bg-white px-4 py-2 text-center text-sm text-gray-700 shadow-lg">
-            Selected: {pickedPosition.lat.toFixed(6)},{' '}
-            {pickedPosition.lng.toFixed(6)}
+          <div className="flex items-center gap-2">
+            {pickedPosition && (
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMyPickingMode(false);
+                  onStopPickingPosition?.();
+                }}
+                className="flex items-center gap-1 rounded-md bg-slate-800 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-slate-700"
+              >
+                <Check className="h-3.5 w-3.5" />
+                Confirm
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                setIsMyPickingMode(false);
+                onStopPickingPosition?.();
+              }}
+              className="flex items-center gap-1 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-50"
+            >
+              <X className="h-3.5 w-3.5" />
+              Cancel
+            </button>
           </div>
-        )}
+        </div>
       </div>
     );
   }
@@ -130,47 +150,27 @@ export default function AddIntersectionDialog({
     onClose();
   };
 
-  const handlePickFromMap = () => {
-    if (isPickingPosition) {
+  const handlePickFromMap = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (isMyPickingMode) {
+      setIsMyPickingMode(false);
       onStopPickingPosition?.();
     } else {
+      setIsMyPickingMode(true);
       onStartPickingPosition?.();
     }
   };
 
-  // When picking position, show minimized floating bar instead of full dialog
-  if (isPickingPosition) {
-    return (
-      <div className="fixed top-4 left-1/2 z-50 -translate-x-1/2">
-        <div className="flex items-center gap-4 rounded-xl bg-blue-600 px-6 py-4 text-white shadow-2xl">
-          <MousePointer2 className="h-6 w-6 animate-pulse" />
-          <div>
-            <p className="font-semibold">Click on the map to select position</p>
-            <p className="text-sm text-blue-100">
-              Creating Inter-{intersectionId}
-            </p>
-          </div>
-          <button
-            onClick={handlePickFromMap}
-            className="ml-4 flex items-center gap-2 rounded-lg bg-white/20 px-4 py-2 text-sm font-medium transition hover:bg-white/30"
-          >
-            <ChevronUp className="h-4 w-4" />
-            Cancel
-          </button>
-        </div>
-        {pickedPosition && (
-          <div className="mt-2 rounded-lg bg-white px-4 py-2 text-center text-sm text-gray-700 shadow-lg">
-            Selected: {pickedPosition.lat.toFixed(6)},{' '}
-            {pickedPosition.lng.toFixed(6)}
-          </div>
-        )}
-      </div>
-    );
-  }
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="w-full max-w-md rounded-xl bg-white shadow-2xl">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+      onClick={handleClose}
+    >
+      <div
+        className="w-full max-w-md rounded-xl bg-white shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
           <div>
@@ -228,6 +228,7 @@ export default function AddIntersectionDialog({
             {/* Pick from Map Button */}
             {onStartPickingPosition && (
               <button
+                type="button"
                 onClick={handlePickFromMap}
                 className="mb-3 flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-300 px-4 py-3 text-sm font-medium text-gray-600 transition hover:border-blue-400 hover:bg-blue-50 hover:text-blue-700"
               >

@@ -202,7 +202,10 @@ function MapContent({
   // Update circle center and radius separately to avoid recreation
   useEffect(() => {
     if (circleRef.current && settings.showProximityCircle) {
-      circleRef.current.setCenter({ lat: vehiclePosition.lat, lng: vehiclePosition.lng });
+      circleRef.current.setCenter({
+        lat: vehiclePosition.lat,
+        lng: vehiclePosition.lng,
+      });
     }
   }, [vehiclePosition.lat, vehiclePosition.lng, settings.showProximityCircle]);
 
@@ -224,28 +227,32 @@ function MapContent({
     }
   }, [map, settings.showProximityCircle]);
 
+  // Track if marker is mounted
+  const [markerMounted, setMarkerMounted] = useState(false);
+
   // Set up real-time drag listener on the marker
   useEffect(() => {
     const marker = markerRef.current;
-    if (!marker) return;
+    if (!marker || !markerMounted) return;
 
-    const dragListener = marker.addListener('drag', () => {
-      const position = marker.position;
-      if (position) {
-        const lat =
-          typeof position.lat === 'function' ? position.lat() : position.lat;
-        const lng =
-          typeof position.lng === 'function' ? position.lng() : position.lng;
-        if (lat !== undefined && lng !== undefined) {
-          onVehicleMove(lat, lng);
+    const dragListener = marker.addListener(
+      'drag',
+      (event: google.maps.MapMouseEvent) => {
+        const position = event.latLng;
+        if (position) {
+          const lat = position.lat();
+          const lng = position.lng();
+          if (lat !== undefined && lng !== undefined) {
+            onVehicleMove(lat, lng);
+          }
         }
       }
-    });
+    );
 
     return () => {
       google.maps.event.removeListener(dragListener);
     };
-  }, [onVehicleMove]);
+  }, [onVehicleMove, markerMounted]);
 
   const handleCenterOnVehicle = useCallback(() => {
     if (map) {
@@ -264,6 +271,7 @@ function MapContent({
   const handleMarkerRef = useCallback(
     (marker: google.maps.marker.AdvancedMarkerElement | null) => {
       markerRef.current = marker;
+      setMarkerMounted(marker !== null);
     },
     []
   );
@@ -323,8 +331,9 @@ function MapContent({
         const isStopped =
           emergencyStopAll || stoppedIntersections.has(light.interid);
         // Show "--" for ALL controlled intersections (both direction and all-red modes)
-        const isEmergencyControlled =
-          emergencyControlledIntersections.has(light.interid);
+        const isEmergencyControlled = emergencyControlledIntersections.has(
+          light.interid
+        );
         const showDash = isStopped || isEmergencyControlled;
 
         return (
@@ -420,8 +429,10 @@ export default function EmergencyTrackingPage() {
     new Set()
   );
   const [emergencyMode, setEmergencyMode] = useState<string | null>(null);
-  const [emergencyControlledIntersections, setEmergencyControlledIntersections] =
-    useState<Set<number>>(new Set());
+  const [
+    emergencyControlledIntersections,
+    setEmergencyControlledIntersections,
+  ] = useState<Set<number>>(new Set());
 
   // Track which intersections have been controlled
   const controlledIntersectionsRef = useRef<Set<number>>(new Set());
@@ -429,8 +440,49 @@ export default function EmergencyTrackingPage() {
   // Touch tracking for mobile swipe
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
-  // Save position to Firebase
+  // Throttle Firebase writes to avoid too many updates
+  const lastFirebaseUpdateRef = useRef<number>(0);
+  const pendingUpdateRef = useRef<{ lat: number; lng: number } | null>(null);
+  const firebaseUpdateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
+
+  // Save position to Firebase (throttled)
   const saveToFirebase = useCallback(async (lat: number, lng: number) => {
+    const now = Date.now();
+    const timeSinceLastUpdate = now - lastFirebaseUpdateRef.current;
+
+    // Store the pending update
+    pendingUpdateRef.current = { lat, lng };
+
+    // If it's been less than 100ms since last update, debounce
+    if (timeSinceLastUpdate < 100) {
+      // Clear existing timeout
+      if (firebaseUpdateTimeoutRef.current) {
+        clearTimeout(firebaseUpdateTimeoutRef.current);
+      }
+      // Schedule update
+      firebaseUpdateTimeoutRef.current = setTimeout(() => {
+        if (pendingUpdateRef.current) {
+          const pos = pendingUpdateRef.current;
+          try {
+            const path = ref(database, 'teams/13/ambulance_car');
+            set(path, {
+              lat: pos.lat,
+              lng: pos.lng,
+              updatedAt: Date.now(),
+            });
+            lastFirebaseUpdateRef.current = Date.now();
+            pendingUpdateRef.current = null;
+          } catch (err) {
+            // Silently handle Firebase errors
+          }
+        }
+      }, 100);
+      return;
+    }
+
+    // Otherwise, update immediately
     try {
       const path = ref(database, 'teams/13/ambulance_car');
       await set(path, {
@@ -438,6 +490,8 @@ export default function EmergencyTrackingPage() {
         lng,
         updatedAt: Date.now(),
       });
+      lastFirebaseUpdateRef.current = now;
+      pendingUpdateRef.current = null;
     } catch (err) {
       // Silently handle Firebase errors
     }
@@ -446,13 +500,21 @@ export default function EmergencyTrackingPage() {
   // Sync ambulance position from Firebase on load
   useEffect(() => {
     const ambulanceRef = ref(database, 'teams/13/ambulance_car');
-    const unsubscribe = onValue(ambulanceRef, (snapshot) => {
-      const data = snapshot.val();
-      if (data && typeof data.lat === 'number' && typeof data.lng === 'number') {
-        setVehiclePosition({ lat: data.lat, lng: data.lng });
-        prevPositionRef.current = { lat: data.lat, lng: data.lng };
-      }
-    }, { onlyOnce: true }); // Only sync once on load, not continuously
+    const unsubscribe = onValue(
+      ambulanceRef,
+      (snapshot) => {
+        const data = snapshot.val();
+        if (
+          data &&
+          typeof data.lat === 'number' &&
+          typeof data.lng === 'number'
+        ) {
+          setVehiclePosition({ lat: data.lat, lng: data.lng });
+          prevPositionRef.current = { lat: data.lat, lng: data.lng };
+        }
+      },
+      { onlyOnce: true }
+    ); // Only sync once on load, not continuously
 
     return () => unsubscribe();
   }, []);
@@ -707,8 +769,10 @@ export default function EmergencyTrackingPage() {
       if (lights.length === 0 || interid === 0) return;
 
       // Calculate center of intersection (average of all light positions)
-      const centerLat = lights.reduce((sum, l) => sum + l.lat, 0) / lights.length;
-      const centerLng = lights.reduce((sum, l) => sum + l.lng, 0) / lights.length;
+      const centerLat =
+        lights.reduce((sum, l) => sum + l.lat, 0) / lights.length;
+      const centerLng =
+        lights.reduce((sum, l) => sum + l.lng, 0) / lights.length;
 
       const distance = calculateDistance(
         vehiclePosition.lat,
@@ -727,8 +791,10 @@ export default function EmergencyTrackingPage() {
 
         // Control traffic light if not already controlled locally
         // Also re-control if Firebase shows controlled but local ref doesn't (page refresh scenario)
-        const isControlledLocally = controlledIntersectionsRef.current.has(interid);
-        const isControlledInFirebase = emergencyControlledIntersections.has(interid);
+        const isControlledLocally =
+          controlledIntersectionsRef.current.has(interid);
+        const isControlledInFirebase =
+          emergencyControlledIntersections.has(interid);
 
         // Always add to local ref when in range
         if (!isControlledLocally) {
@@ -742,7 +808,8 @@ export default function EmergencyTrackingPage() {
 
           // Store emergency mode at system level (all-red mode)
           updates['teams/10/emergency-mode'] = 'all-red';
-          updates[`teams/10/emergency-controlled-intersections/${interid}`] = true;
+          updates[`teams/10/emergency-controlled-intersections/${interid}`] =
+            true;
 
           // All-red mode: All lights go red for safety
           lights.forEach((light) => {
@@ -755,20 +822,24 @@ export default function EmergencyTrackingPage() {
       } else {
         // Vehicle has passed this intersection - reset and restart cycle
         // Check both local ref AND Firebase state to ensure restart happens
-        const isControlledLocally = controlledIntersectionsRef.current.has(interid);
-        const isControlledInFirebase = emergencyControlledIntersections.has(interid);
+        const isControlledLocally =
+          controlledIntersectionsRef.current.has(interid);
+        const isControlledInFirebase =
+          emergencyControlledIntersections.has(interid);
 
         if (isControlledLocally || isControlledInFirebase) {
           controlledIntersectionsRef.current.delete(interid);
 
-
           const updates: Record<string, any> = {};
 
           // Remove from controlled intersections
-          updates[`teams/10/emergency-controlled-intersections/${interid}`] = null;
+          updates[`teams/10/emergency-controlled-intersections/${interid}`] =
+            null;
 
           // Check if any intersections are still controlled
-          const stillControlled = Array.from(controlledIntersectionsRef.current);
+          const stillControlled = Array.from(
+            controlledIntersectionsRef.current
+          );
           if (stillControlled.length === 0) {
             updates['teams/10/emergency-mode'] = null;
           }
@@ -782,16 +853,21 @@ export default function EmergencyTrackingPage() {
 
             if (idx === 0) {
               // First light starts green
-              updates[`teams/10/traffic_lights/${light.key}/color`] = COLOR_GREEN;
-              updates[`teams/10/traffic_lights/${light.key}/remaintime`] = greenDur + yellowDur;
+              updates[`teams/10/traffic_lights/${light.key}/color`] =
+                COLOR_GREEN;
+              updates[`teams/10/traffic_lights/${light.key}/remaintime`] =
+                greenDur + yellowDur;
             } else {
               // Other lights start red, calculate wait time
               let waitTime = 0;
               for (let i = 0; i < idx; i++) {
-                waitTime += (sortedLights[i].green_duration || 27) + (sortedLights[i].yellow_duration || 3);
+                waitTime +=
+                  (sortedLights[i].green_duration || 27) +
+                  (sortedLights[i].yellow_duration || 3);
               }
               updates[`teams/10/traffic_lights/${light.key}/color`] = COLOR_RED;
-              updates[`teams/10/traffic_lights/${light.key}/remaintime`] = waitTime;
+              updates[`teams/10/traffic_lights/${light.key}/remaintime`] =
+                waitTime;
             }
           });
 
@@ -870,7 +946,8 @@ export default function EmergencyTrackingPage() {
               <div className="flex items-center gap-1 sm:gap-2">
                 <MapPin className="h-3 w-3 text-gray-600 sm:h-4 sm:w-4" />
                 <span className="text-xs font-medium text-gray-700 sm:text-sm">
-                  {vehiclePosition.lat.toFixed(5)}, {vehiclePosition.lng.toFixed(5)}
+                  {vehiclePosition.lat.toFixed(5)},{' '}
+                  {vehiclePosition.lng.toFixed(5)}
                 </span>
               </div>
               {movementDirection && (

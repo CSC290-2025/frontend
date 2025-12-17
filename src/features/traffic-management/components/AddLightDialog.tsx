@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { X, Plus, MapPin, MousePointer2, Check, ChevronUp } from 'lucide-react';
+import { X, Plus, MapPin, MousePointer2, ChevronUp, Check } from 'lucide-react';
 
 interface AddLightDialogProps {
   open: boolean;
@@ -39,6 +39,7 @@ export default function AddLightDialog({
   const [lat, setLat] = useState<string>('');
   const [lng, setLng] = useState<string>('');
   const [error, setError] = useState<string>('');
+  const [isMyPickingMode, setIsMyPickingMode] = useState<boolean>(false);
 
   // Track if we've initialized coordinates for this dialog session
   const initializedRef = useRef(false);
@@ -84,17 +85,66 @@ export default function AddLightDialog({
       setLat(pickedPosition.lat.toFixed(6));
       setLng(pickedPosition.lng.toFixed(6));
       setError('');
-      // Auto-stop picking after a position is selected
-      onStopPickingPosition?.();
     }
-  }, [pickedPosition, onStopPickingPosition]);
+  }, [pickedPosition]);
 
   // Stop picking when dialog closes
   useEffect(() => {
-    if (!open && isPickingPosition && onStopPickingPosition) {
-      onStopPickingPosition();
+    if (!open && isMyPickingMode) {
+      setIsMyPickingMode(false);
+      if (isPickingPosition && onStopPickingPosition) {
+        onStopPickingPosition();
+      }
     }
-  }, [open, isPickingPosition, onStopPickingPosition]);
+  }, [open, isMyPickingMode, isPickingPosition, onStopPickingPosition]);
+
+  // Only show picking mode UI if THIS dialog initiated it
+  // This prevents conflicts when multiple dialogs share the same picking state
+  if (isMyPickingMode && isPickingPosition) {
+    return (
+      <div className="fixed top-4 left-1/2 z-50 -translate-x-1/2">
+        <div className="flex items-center gap-2 rounded-lg border-2 border-gray-300 bg-white px-4 py-3 shadow-xl">
+          <MousePointer2 className="h-5 w-5 text-gray-600" />
+          <div className="flex-1">
+            <p className="text-sm font-medium text-gray-900">
+              Click on the map to select position
+            </p>
+            <p className="text-xs text-gray-500">
+              Adding light to {junctionId}
+              {pickedPosition &&
+                ` • ${pickedPosition.lat.toFixed(6)}, ${pickedPosition.lng.toFixed(6)}`}
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            {pickedPosition && (
+              <button
+                type="button"
+                onClick={() => {
+                  setIsMyPickingMode(false);
+                  onStopPickingPosition?.();
+                }}
+                className="flex items-center gap-1 rounded-md bg-slate-800 px-3 py-1.5 text-xs font-medium text-white transition hover:bg-slate-700"
+              >
+                <Check className="h-3.5 w-3.5" />
+                Confirm
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                setIsMyPickingMode(false);
+                onStopPickingPosition?.();
+              }}
+              className="flex items-center gap-1 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition hover:bg-gray-50"
+            >
+              <X className="h-3.5 w-3.5" />
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!open) return null;
 
@@ -134,10 +184,14 @@ export default function AddLightDialog({
     onClose();
   };
 
-  const handlePickFromMap = () => {
-    if (isPickingPosition) {
+  const handlePickFromMap = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (isMyPickingMode) {
+      setIsMyPickingMode(false);
       onStopPickingPosition?.();
     } else {
+      setIsMyPickingMode(true);
       onStartPickingPosition?.();
     }
   };
@@ -151,39 +205,15 @@ export default function AddLightDialog({
     setError('');
   };
 
-  // When picking position, show minimized floating bar instead of full dialog
-  if (isPickingPosition) {
-    return (
-      <div className="fixed top-4 left-1/2 z-50 -translate-x-1/2">
-        <div className="flex items-center gap-4 rounded-xl bg-green-600 px-6 py-4 text-white shadow-2xl">
-          <MousePointer2 className="h-6 w-6 animate-pulse" />
-          <div>
-            <p className="font-semibold">Click on the map to select position</p>
-            <p className="text-sm text-green-100">
-              Adding light to {junctionId}
-            </p>
-          </div>
-          <button
-            onClick={handlePickFromMap}
-            className="ml-4 flex items-center gap-2 rounded-lg bg-white/20 px-4 py-2 text-sm font-medium transition hover:bg-white/30"
-          >
-            <ChevronUp className="h-4 w-4" />
-            Cancel
-          </button>
-        </div>
-        {pickedPosition && (
-          <div className="mt-2 rounded-lg bg-white px-4 py-2 text-center text-sm text-gray-700 shadow-lg">
-            Selected: {pickedPosition.lat.toFixed(6)},{' '}
-            {pickedPosition.lng.toFixed(6)}
-          </div>
-        )}
-      </div>
-    );
-  }
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="w-full max-w-md rounded-xl bg-white shadow-2xl">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
+      onClick={handleClose}
+    >
+      <div
+        className="w-full max-w-md rounded-xl bg-white shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
           <div>
@@ -239,6 +269,7 @@ export default function AddLightDialog({
             {/* Pick from Map Button */}
             {onStartPickingPosition && (
               <button
+                type="button"
                 onClick={handlePickFromMap}
                 className="mb-3 flex w-full items-center justify-center gap-2 rounded-lg border-2 border-dashed border-gray-300 px-4 py-3 text-sm font-medium text-gray-600 transition hover:border-green-400 hover:bg-green-50 hover:text-green-700"
               >

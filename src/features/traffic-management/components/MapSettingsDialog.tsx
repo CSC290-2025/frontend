@@ -78,7 +78,7 @@ export default function MapSettingsDialog({
       fullscreenControl: false,
       scaleControl: false,
       rotateControl: false,
-      minZoom: 3,
+      minZoom: 15,
       maxZoom: 21,
       enableClustering: true,
     });

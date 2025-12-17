@@ -66,27 +66,30 @@ export default function EmergencyVehicleMarker({
       position={{ lat: vehicle.lat, lng: vehicle.lng }}
       title={`${vehicle.type.toUpperCase()} - ${vehicle.vehicleId}`}
     >
-      <div className="relative flex cursor-pointer flex-col items-center">
-        {/* Pulsing animation ring */}
-        <div
-          className="absolute inset-0 animate-ping rounded-full opacity-75"
-          style={{
-            backgroundColor: vehicleColors[vehicle.type],
-            width: '56px',
-            height: '56px',
-          }}
-        />
+      <div className="flex cursor-pointer flex-col items-center">
+        {/* Main marker with pulsing background */}
+        <div className="relative">
+          {/* Pulsing animation ring - centered on marker */}
+          <div
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 animate-ping rounded-full opacity-75"
+            style={{
+              backgroundColor: vehicleColors[vehicle.type],
+              width: '56px',
+              height: '56px',
+            }}
+          />
 
-        {/* Main marker */}
-        <div
-          className="relative flex items-center justify-center rounded-full border-4 border-white shadow-2xl"
-          style={{
-            backgroundColor: vehicleColors[vehicle.type],
-            width: '56px',
-            height: '56px',
-          }}
-        >
-          {vehicleIcons[vehicle.type]}
+          {/* Main marker */}
+          <div
+            className="relative flex items-center justify-center rounded-full border-4 border-white shadow-2xl"
+            style={{
+              backgroundColor: vehicleColors[vehicle.type],
+              width: '56px',
+              height: '56px',
+            }}
+          >
+            {vehicleIcons[vehicle.type]}
+          </div>
         </div>
 
         {/* Label */}

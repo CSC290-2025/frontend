@@ -8,8 +8,7 @@ import {
 import { ref, onValue } from 'firebase/database';
 import { database } from '@/lib/firebase';
 import { MarkerClusterer } from '@googlemaps/markerclusterer';
-import { Navigation } from 'lucide-react';
-import ControlPanel from '../components/ControlPanel';
+import { Navigation, Settings } from 'lucide-react';
 import MapSettingsDialog from '../components/MapSettingsDialog';
 import EmergencyVehicleMarker from '../components/EmergencyVehicleMarker';
 import TrafficLegend from '../components/TrafficLegend';
@@ -343,6 +342,7 @@ interface MapContentProps {
   emergencyStopAll?: boolean;
   stoppedIntersections?: Set<number>;
   emergencyControlledIntersections?: Set<number>;
+  onMapSettingsClick?: () => void;
 }
 
 function MapContent({
@@ -359,6 +359,7 @@ function MapContent({
   emergencyStopAll = false,
   stoppedIntersections = new Set(),
   emergencyControlledIntersections = new Set(),
+  onMapSettingsClick,
 }: MapContentProps) {
   const map = useMap();
   const [isGettingLocation, setIsGettingLocation] = useState(false);
@@ -532,6 +533,7 @@ function MapContent({
   const clustererUpdateTimeoutRef = useRef<ReturnType<
     typeof setTimeout
   > | null>(null);
+  const lastClustererUpdateRef = useRef<number>(0);
 
   const setMarkerRef = useCallback(
     (marker: google.maps.marker.AdvancedMarkerElement | null, key: string) => {
@@ -542,19 +544,27 @@ function MapContent({
       }
 
       // Debounce clusterer update when markers change (if clustering is enabled)
+      // Only update if markers are actually added/removed, not on every render
       if (map && settings.enableClustering && clustererRef.current) {
+        const now = Date.now();
+        // Skip frequent updates - only update once per second max
+        if (now - lastClustererUpdateRef.current < 1000) {
+          return;
+        }
+
         // Clear any pending update
         if (clustererUpdateTimeoutRef.current) {
           clearTimeout(clustererUpdateTimeoutRef.current);
         }
-        // Schedule update after a short delay
+        // Schedule update after a longer delay to batch changes
         clustererUpdateTimeoutRef.current = setTimeout(() => {
           if (clustererRef.current) {
             const markerArray = Object.values(markersMapRef.current);
             clustererRef.current.clearMarkers();
             clustererRef.current.addMarkers(markerArray);
+            lastClustererUpdateRef.current = Date.now();
           }
-        }, 100);
+        }, 300);
       }
     },
     [map, settings.enableClustering]
@@ -591,7 +601,7 @@ function MapContent({
               selectedSignal?.direction === signal.direction
             }
             onClick={() => onSignalClick(signal)}
-            setMarkerRef={setMarkerRef}
+            setMarkerRef={settings.enableClustering ? setMarkerRef : undefined}
             isStopped={isStopped}
             isEmergencyControlled={isEmergencyControlled}
           />
@@ -616,20 +626,35 @@ function MapContent({
         onToggleVisibility={onToggleLegend}
       />
 
-      {/* Jump to Current Location Button */}
-      <button
-        onClick={handleJumpToLocation}
-        disabled={isGettingLocation}
-        className="absolute right-4 bottom-4 z-10 flex items-center gap-2 rounded-lg border border-gray-200 bg-white/95 px-4 py-3 shadow-lg backdrop-blur-sm transition hover:bg-white disabled:opacity-50"
-        title="Jump to my location"
-      >
-        <Navigation
-          className={`h-5 w-5 text-slate-600 ${isGettingLocation ? 'animate-pulse' : ''}`}
-        />
-        <span className="text-sm font-medium text-gray-700">
-          {isGettingLocation ? 'Getting location...' : 'My Location'}
-        </span>
-      </button>
+      {/* Map Settings and My Location Buttons */}
+      <div className="absolute right-4 bottom-4 z-10 flex flex-col gap-2">
+        {/* Map Settings Button */}
+        {onMapSettingsClick && (
+          <button
+            onClick={onMapSettingsClick}
+            className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white/95 px-4 py-3 shadow-lg backdrop-blur-sm transition hover:bg-white"
+            title="Map settings"
+          >
+            <Settings className="h-5 w-5 text-slate-600" />
+            <span className="text-sm font-medium text-gray-700">Settings</span>
+          </button>
+        )}
+
+        {/* Jump to Current Location Button */}
+        <button
+          onClick={handleJumpToLocation}
+          disabled={isGettingLocation}
+          className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white/95 px-4 py-3 shadow-lg backdrop-blur-sm transition hover:bg-white disabled:opacity-50"
+          title="Jump to my location"
+        >
+          <Navigation
+            className={`h-5 w-5 text-slate-600 ${isGettingLocation ? 'animate-pulse' : ''}`}
+          />
+          <span className="text-sm font-medium text-gray-700">
+            {isGettingLocation ? 'Getting location...' : 'My Location'}
+          </span>
+        </button>
+      </div>
     </>
   );
 }
@@ -935,16 +960,12 @@ export default function TrafficMapPage() {
                   emergencyControlledIntersections={
                     emergencyControlledIntersections
                   }
+                  onMapSettingsClick={handleMapSettingsClick}
                 />
               </Map>
             </APIProvider>
           </div>
         </div>
-
-        <ControlPanel
-          className="top-0"
-          onMapSettingsClick={handleMapSettingsClick}
-        />
 
         <MapSettingsDialog
           open={showSettings}
