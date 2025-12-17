@@ -23,18 +23,22 @@ export default function DiscoverBanner() {
   }, []);
 
   return (
-    <div className="mb-8">
-      {' '}
+    <div className="mb-2">
       <div
         ref={bannerRef}
-        className="scrollbar-hide w-full snap-x snap-mandatory overflow-x-auto rounded-2xl shadow-lg"
+        className="scrollbar-hide w-full snap-x snap-mandatory overflow-x-auto rounded-3xl shadow-lg"
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
         <div className="flex">
           {banners.map((banner, index) => (
             <div
               key={index}
-              className={`h-56 min-w-full bg-gradient-to-r ${banner.gradient} flex snap-start items-center justify-center`}
+              className={`relative flex h-64 min-w-full snap-start items-center justify-center overflow-hidden rounded-3xl`}
+              style={{
+                backgroundImage: `linear-gradient(rgba(0, 0, 0, 0), rgba(0, 0, 0, 0)), url('${banner.imageUrl}')`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+              }}
             >
               <div className="p-4 text-center text-black">
                 <h2 className="mb-2 text-3xl font-bold">{banner.title}</h2>
@@ -44,8 +48,9 @@ export default function DiscoverBanner() {
           ))}
         </div>
       </div>
+
       {/* Banner Indicators */}
-      <div className="flex justify-center gap-2 py-4">
+      <div className="flex justify-center gap-2 pt-6 pb-2">
         {banners.map((_, index) => (
           <div
             key={index}
@@ -55,6 +60,7 @@ export default function DiscoverBanner() {
           />
         ))}
       </div>
+
       <style>{`
           .scrollbar-hide::-webkit-scrollbar {
             display: none;
