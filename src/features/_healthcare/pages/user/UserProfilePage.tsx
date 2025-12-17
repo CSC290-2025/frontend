@@ -4,11 +4,13 @@ import { User } from 'lucide-react';
 interface Props {
   emergencyContact: string;
   onContactChange: (val: string) => void;
+  onAdminLoginRequest: () => void;
 }
 
 const UserProfilePage: React.FC<Props> = ({
   emergencyContact,
   onContactChange,
+  onAdminLoginRequest,
 }) => (
   <div className="space-y-6">
     <section className="rounded-2xl border border-gray-200 bg-white p-6">
@@ -50,6 +52,25 @@ const UserProfilePage: React.FC<Props> = ({
         </div>
         <button className="rounded-lg bg-[#01CCFF] px-4 py-2 text-sm font-semibold text-white hover:bg-[#0091B5]">
           Save contact
+        </button>
+      </div>
+    </section>
+
+    <section className="rounded-2xl border border-dashed border-[#01CCFF]/30 bg-white p-6">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-lg font-bold text-gray-900">
+            Healthcare Staff Access
+          </h2>
+          <p className="text-sm text-gray-600">
+            Sign in with staff credentials to manage hospitals and teams.
+          </p>
+        </div>
+        <button
+          onClick={onAdminLoginRequest}
+          className="mt-2 inline-flex items-center justify-center rounded-lg bg-[#0091B5] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#007fa0] sm:mt-0"
+        >
+          Login as Healthcare Staff
         </button>
       </div>
     </section>
