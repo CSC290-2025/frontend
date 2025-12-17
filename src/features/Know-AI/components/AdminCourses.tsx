@@ -20,7 +20,7 @@ export default function AdminCard({ course }: { course: any }) {
   };
 
   const { mutate: updateCourseAction } = useUpdateCourse();
-  const { mutate: deleteCourseAction } = useDeleteCourse();
+  const { mutate: deleteCourse } = useDeleteCourse();
 
   const handleEdit = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -43,7 +43,7 @@ export default function AdminCard({ course }: { course: any }) {
 
   const handleConfirmDelete = () => {
     // Delte API call here
-
+    deleteCourse(course.id);
     console.log('Deleted course:', course.id);
     // Example: approveCourse(course.id);
     setShowDeleteModal(false);
