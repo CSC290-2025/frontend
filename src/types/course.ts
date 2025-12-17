@@ -9,6 +9,17 @@ export interface CreateCourseVideo {
   video_file_path?: string | null;
 }
 
+export interface CourseVideo {
+  id?: number | undefined;
+  video_name: string;
+  video_description: string | null;
+  duration_minutes: number;
+  video_order: number;
+  video_file_path: string | null;
+  created_at?: Date | undefined;
+  updated_at?: Date | undefined;
+}
+
 export interface CreateOnsiteSession {
   address_id?: number | null;
   duration_hours?: number | null;

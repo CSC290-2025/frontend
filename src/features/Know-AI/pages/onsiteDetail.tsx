@@ -3,6 +3,7 @@ import { useParams } from '@/router';
 import { useCourseById } from '../hooks/useCourse';
 import { useTravelDuration } from '../hooks/useTravelTime';
 import { useAddress } from '../hooks/useAddress';
+import { useTransitLines } from '../hooks/useTransitLines';
 import { formatAddressToString } from '../api/knowAi.api';
 import EnrollmentPopup from '../components/EnrollmentPopup';
 
@@ -13,7 +14,7 @@ export default function OnsiteDetail() {
   const [showTransportation, setShowTransportation] = useState(false);
   const [isPopupOpen, setIsPopupOpen] = useState(false);
 
-  const userAddressId = 33; // Mock User ID
+  const userAddressId = 19;
   const session = course?.onsite_sessions?.[0];
   const courseAddressId = session?.address_id;
 
@@ -26,12 +27,19 @@ export default function OnsiteDetail() {
   const { data: addressData, isLoading: isAddressLoading } =
     useAddress(courseAddressId);
 
+  const { data: transitLines, isLoading: isTransitLoading } = useTransitLines(
+    userAddressId,
+    courseAddressId,
+    showTransportation
+  );
+
   if (isLoading)
     return (
       <div className="flex h-screen items-center justify-center text-lg">
         Loading course details...
       </div>
     );
+
   if (isError || !course)
     return (
       <div className="flex h-screen items-center justify-center text-lg text-red-500">
@@ -47,6 +55,7 @@ export default function OnsiteDetail() {
         year: 'numeric',
       })
     : '-';
+
   const startTime = eventDate
     ? eventDate.toLocaleTimeString('en-US', {
         hour: '2-digit',
@@ -69,7 +78,6 @@ export default function OnsiteDetail() {
 
   return (
     <div className="flex flex-col gap-y-6 p-10">
-      {/* Cover Image */}
       <div className="flex justify-start gap-x-4">
         <div className="h-100 w-full overflow-hidden rounded-4xl bg-gray-200">
           {course.cover_image ? (
@@ -87,7 +95,6 @@ export default function OnsiteDetail() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        {/* Left Column - Course Info */}
         <div className="rounded-3xl border border-gray-100 bg-white p-8 shadow-sm">
           <h1 className="mb-4 text-3xl font-bold text-gray-900 md:text-4xl">
             {course.course_name}
@@ -104,11 +111,11 @@ export default function OnsiteDetail() {
               </h2>
             </div>
 
-            <div>
-              <p className="text-gray-900">
+            <div className="text-gray-900">
+              <p>
                 <span className="font-medium">Date:</span> {dateString}
               </p>
-              <p className="mt-1 text-gray-900">
+              <p className="mt-1">
                 <span className="font-medium">Time:</span> {startTime} -{' '}
                 {endTime}
                 <span className="ml-2 text-[#01CCFF]">
@@ -118,25 +125,24 @@ export default function OnsiteDetail() {
             </div>
 
             <div>
-              <p className="text-gray-900">
-                <span className="font-medium">Total Seats:</span>
+              <p className="font-medium text-gray-900">
+                Total Seats:
                 <span className="ml-2 text-xl font-bold text-[#01CCFF]">
                   {session?.total_seats || 0}
-                </span>
-                <span className="ml-1">seats</span>
+                </span>{' '}
+                seats
               </p>
             </div>
           </div>
 
           <button
             onClick={() => setIsPopupOpen(true)}
-            className="rounded-full bg-[#7FFF7F] px-12 py-4 text-lg font-semibold text-white shadow-md transition-colors duration-200 hover:bg-[#6FEF6F]"
+            className="rounded-full bg-[#7FFF7F] px-12 py-4 text-lg font-semibold text-white shadow-md transition-colors hover:bg-[#6FEF6F]"
           >
             Enroll now!
           </button>
         </div>
 
-        {/* Right Column - Location Info */}
         <div className="rounded-3xl border border-gray-100 bg-white p-8 shadow-sm">
           <h1 className="mb-4 text-3xl font-bold text-gray-900 md:text-4xl">
             Location Details
@@ -166,6 +172,7 @@ export default function OnsiteDetail() {
           </h2>
 
           <div className="space-y-6">
+            {/* รถส่วนตัว */}
             <div className="flex flex-col gap-1">
               <div className="flex items-center gap-4">
                 <span className="w-40 font-medium text-gray-900">
@@ -190,11 +197,6 @@ export default function OnsiteDetail() {
                   </span>
                 )}
               </div>
-              {showTransportation && !isCalculating && duration && (
-                <p className="ml-44 text-[10px] text-gray-400">
-                  (From user address ID: {userAddressId})
-                </p>
-              )}
             </div>
 
             <div>
@@ -205,25 +207,30 @@ export default function OnsiteDetail() {
               {!showTransportation ? (
                 <button
                   onClick={() => setShowTransportation(true)}
-                  className="rounded-full bg-[#01CCFF] px-6 py-3 font-semibold text-white transition-colors duration-200 hover:bg-[#00B8E6]"
+                  className="rounded-full bg-[#01CCFF] px-6 py-3 font-semibold text-white transition-colors hover:bg-[#00B8E6]"
                 >
                   Share your location
                 </button>
               ) : (
                 <div className="flex flex-wrap gap-3">
-                  <div className="min-w-20 rounded-full bg-[#01CCFF] px-6 py-3 text-center font-bold text-white">
-                    21E
-                  </div>
-                  <div className="flex min-w-20 flex-col items-center rounded-full bg-[#01CCFF] px-6 py-3 text-center leading-tight font-bold text-white">
-                    <div className="text-xs">BTS</div>
-                    <div>Siam</div>
-                  </div>
-                  <div className="min-w-20 rounded-full bg-[#01CCFF] px-6 py-3 text-center font-bold text-white">
-                    Taxi
-                  </div>
-                  <div className="min-w-20 rounded-full bg-[#01CCFF] px-6 py-3 text-center font-bold text-white">
-                    Ferry
-                  </div>
+                  {isTransitLoading ? (
+                    <span className="animate-pulse text-sm text-gray-400">
+                      Finding transit lines...
+                    </span>
+                  ) : transitLines && transitLines.length > 0 ? (
+                    transitLines.map((line, index) => (
+                      <div
+                        key={index}
+                        className="flex min-w-20 items-center justify-center rounded-full bg-[#01CCFF] px-5 py-3 text-center text-xs font-bold text-white shadow-sm"
+                      >
+                        {line}
+                      </div>
+                    ))
+                  ) : (
+                    <span className="text-sm text-gray-400 italic">
+                      No transit lines found for this route.
+                    </span>
+                  )}
                 </div>
               )}
             </div>
@@ -231,7 +238,6 @@ export default function OnsiteDetail() {
         </div>
       </div>
 
-      {/* Popup */}
       {isPopupOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div

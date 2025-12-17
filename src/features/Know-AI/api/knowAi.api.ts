@@ -48,6 +48,21 @@ export const calculateDistance = async (
   }
 };
 
+export const getTransitLines = async (origin: string, destination: string) => {
+  try {
+    const response = await apiClient.get(`/api/routes/lines`, {
+      params: {
+        originText: origin,
+        destinationText: destination,
+      },
+    });
+    return response.data.data as string[];
+  } catch (error) {
+    console.error('Failed to fetch transit lines', error);
+    throw error;
+  }
+};
+
 export const getAllCourses = async () => {
   try {
     const response = await apiClient.get(`/courses`);
@@ -71,12 +86,19 @@ export const getCoursesByType = async (type: CourseType) => {
 export const getCourseById = async (id: string | number) => {
   try {
     const response = await apiClient.get(`/course/${id}`);
-    console.log(response.data.data);
-    console.log(response.data);
-
     return response.data.data.course;
   } catch (error) {
     console.error(`Failed to fetch course id ${id}: `, error);
+    throw error;
+  }
+};
+
+export const createAddress = async (data: AddressData) => {
+  try {
+    const response = await apiClient.post(`/address`, data);
+    return response.data.data;
+  } catch (error) {
+    console.error('Failed to create address:', error);
     throw error;
   }
 };
@@ -87,6 +109,16 @@ export const createCourse = async (data: CreateCoursePayload) => {
     return response.data;
   } catch (error) {
     console.error('Failed to create course: ', error);
+    throw error;
+  }
+};
+
+export const createVolunteerEvent = async (data: any) => {
+  try {
+    const response = await apiClient.post(`/api/v1/volunteer/create`, data);
+    return response.data;
+  } catch (error) {
+    console.error('Failed to create volunteer event:', error);
     throw error;
   }
 };
