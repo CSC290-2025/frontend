@@ -1,14 +1,21 @@
 import React, { useEffect, useMemo } from 'react';
-import { GoogleMap, useJsApiLoader, Marker } from '@react-google-maps/api';
+import {
+  GoogleMap,
+  useJsApiLoader,
+  Marker,
+  Polyline,
+} from '@react-google-maps/api';
 
 interface MapViewProps {
   origin?: { lat: number; lng: number };
   destination?: { lat: number; lng: number };
   onMapClick?: (lat: number, lng: number) => void;
+  routePolyline?: string;
 }
 
 const libraries: ('places' | 'drawing' | 'geometry' | 'visualization')[] = [
   'places',
+  'geometry',
 ];
 
 const containerStyle = {
@@ -22,7 +29,12 @@ const defaultCenter = {
   lng: 100.493,
 };
 
-const MapView = ({ origin, destination, onMapClick }: MapViewProps) => {
+const MapView = ({
+  origin,
+  destination,
+  onMapClick,
+  routePolyline,
+}: MapViewProps) => {
   const [map, setMap] = React.useState<google.maps.Map | null>(null);
 
   const { isLoaded, loadError } = useJsApiLoader({
@@ -78,6 +90,14 @@ const MapView = ({ origin, destination, onMapClick }: MapViewProps) => {
     }
   };
 
+  // 🟢 แปลง Encoded Polyline เป็น Array ของ LatLng Objects
+  const path = useMemo(() => {
+    if (routePolyline && isLoaded && window.google?.maps?.geometry?.encoding) {
+      return window.google.maps.geometry.encoding.decodePath(routePolyline);
+    }
+    return [];
+  }, [routePolyline, isLoaded]);
+
   if (loadError) return <div>Map Load Error: {loadError.message}</div>;
   if (!isLoaded) return <div style={containerStyle}>Loading Map...</div>;
 
@@ -92,6 +112,18 @@ const MapView = ({ origin, destination, onMapClick }: MapViewProps) => {
     >
       {origin && <Marker position={origin} label="A" />}
       {destination && <Marker position={destination} label="B" />}
+
+      {/* 🟢 วาด Polyline */}
+      {path.length > 0 && (
+        <Polyline
+          path={path}
+          options={{
+            strokeColor: '#1E90FF',
+            strokeOpacity: 0.8,
+            strokeWeight: 4,
+          }}
+        />
+      )}
     </GoogleMap>
   );
 };
