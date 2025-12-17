@@ -5,7 +5,8 @@ import Header from '@/features/emergency/components/modules/navbar/header.tsx';
 import { useNotification } from '@/features/emergency/contexts/notification.tsx';
 import { cn } from '@/lib/utils.ts';
 import { AppSidebar } from '@/features/emergency/components/modules/sidebar/app-sidebar.tsx';
-
+import { ref, remove } from 'firebase/database';
+import { database } from '@/lib/firebase';
 type MainLayoutProps = {
   overlap?: boolean;
   children: ReactNode;
