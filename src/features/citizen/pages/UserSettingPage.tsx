@@ -158,7 +158,7 @@ function UserSettingPage() {
   };
 
   const handleBackButton = () => {
-    navigate('/profile');
+    navigate('/citizen/profile');
   };
 
   if (!user) {

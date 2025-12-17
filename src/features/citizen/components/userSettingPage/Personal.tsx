@@ -75,13 +75,6 @@ function Personal({
 }: PersonalPropsWithSetter) {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Notify parent component when errors change
-  useEffect(() => {
-    if (onValidationChange) {
-      onValidationChange(errors);
-    }
-  }, [errors, onValidationChange]);
-
   const validateField = (name: string, value: string) => {
     const result = personalSchema
       .pick({ [name]: true })
@@ -309,16 +302,6 @@ function Personal({
             {errors.PhoneNumber && (
               <p className={errorClass}>{errors.PhoneNumber}</p>
             )}
-          </div>
-
-          <div className="flex flex-col gap-1.5">
-            <h2 className={labelClass}>Emergency Contact</h2>
-            <input
-              type="text"
-              disabled
-              className={disabledInputClass}
-              value={data.EmergencyContact || 'No emergency contact set'}
-            />
           </div>
         </div>
       </div>

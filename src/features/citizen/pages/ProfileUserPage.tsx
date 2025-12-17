@@ -2,69 +2,54 @@ import React from 'react';
 import { useNavigate } from '@/router';
 import { Heart, Recycle, HandHeart, AlertCircle } from 'lucide-react';
 import ProfileCard from '../components/ProfilePage/OverviewPage';
+import Layout from '@/components/main/Layout';
 
 export default function ProfileUserPage() {
   const navigate = useNavigate();
 
   return (
-    <main className="flex min-h-screen justify-center bg-gradient-to-br px-4 py-10">
-      <div className="w-full max-w-7xl rounded-3xl bg-white p-8 shadow-2xl md:p-12">
-        <div className="grid grid-cols-1 gap-10 lg:grid-cols-3">
-          <div className="lg:col-span-1">
-            <ProfileCard onEditProfile={() => navigate('/citizen/setting')} />
-          </div>
-
-          <div className="lg:col-span-2">
-            <div className="mb-8">
-              <h2 className="mb-3 text-4xl font-bold text-[#2B5991]">
-                Your Services
-              </h2>
-              <p className="text-lg text-[#2B5991]">
-                Access and manage your community services
-              </p>
+    <Layout>
+      <main className="flex justify-center bg-gradient-to-br px-4 py-9">
+        <div className="w-full max-w-7xl rounded-3xl bg-white p-8 shadow-2xl md:p-12">
+          <div className="grid grid-cols-1 gap-10 lg:grid-cols-3">
+            <div className="lg:col-span-1">
+              <ProfileCard onEditProfile={() => navigate('/citizen/setting')} />
             </div>
 
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-              <ServiceBox
-                icon={<AlertCircle className="h-full w-full" />}
-                title="Emergency"
-                desc="Quick access to emergency services and contacts"
-                color="bg-red-400"
-                hoverColor="hover:bg-red-500"
-                onClick={() => navigate('/citizen/profile/emergency')}
-              />
+            <div className="lg:col-span-2">
+              <div className="mb-8">
+                <h2 className="mb-3 text-4xl font-bold text-[#2B5991]">
+                  Your Services
+                </h2>
+                <p className="text-lg text-[#2B5991]">
+                  Access and manage your community services
+                </p>
+              </div>
 
-              <ServiceBox
-                icon={<Heart className="h-full w-full" />}
-                title="Healthcare"
-                desc="Medical records and health management tools"
-                color="bg-emerald-400"
-                hoverColor="hover:bg-emerald-500"
-                onClick={() => navigate('/citizen/profile/healthcare')}
-              />
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                <ServiceBox
+                  icon={<Recycle className="h-full w-full" />}
+                  title="Waste Management"
+                  desc="Waste services and history tracking"
+                  color="bg-cyan-400"
+                  hoverColor="hover:bg-cyan-500"
+                  onClick={() => navigate('/citizen/profile/waste')}
+                />
 
-              <ServiceBox
-                icon={<Recycle className="h-full w-full" />}
-                title="Waste Management"
-                desc="Waste services and history tracking"
-                color="bg-cyan-400"
-                hoverColor="hover:bg-cyan-500"
-                onClick={() => navigate('/citizen/profile/waste')}
-              />
-
-              <ServiceBox
-                icon={<HandHeart className="h-full w-full" />}
-                title="Volunteer"
-                desc="Find and join community volunteer programs"
-                color="bg-purple-400"
-                hoverColor="hover:bg-purple-500"
-                onClick={() => navigate('/citizen/profile/volunteer')}
-              />
+                <ServiceBox
+                  icon={<HandHeart className="h-full w-full" />}
+                  title="Volunteer"
+                  desc="Find and join community volunteer programs"
+                  color="bg-purple-400"
+                  hoverColor="hover:bg-purple-500"
+                  onClick={() => navigate('/citizen/profile/volunteer')}
+                />
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </main>
+      </main>
+    </Layout>
   );
 }
 

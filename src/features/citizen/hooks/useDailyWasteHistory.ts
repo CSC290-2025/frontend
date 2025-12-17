@@ -3,8 +3,10 @@ import { fetchDailyWasteStats } from '../api/waste.api';
 
 export function useDailyWasteHistory() {
   return useQuery({
-    queryKey: ['waste', 'stats', 'daily'],
+    queryKey: ['wasteDailyStats'],
     queryFn: fetchDailyWasteStats,
-    staleTime: 60_000,
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
   });
 }

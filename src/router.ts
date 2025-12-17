@@ -25,6 +25,7 @@ export type Path =
   | `/activity`
   | `/chat`
   | `/citizen/profile`
+  | `/citizen/profile/emergency`
   | `/citizen/profile/healthcare`
   | `/citizen/profile/volunteer`
   | `/citizen/profile/waste`

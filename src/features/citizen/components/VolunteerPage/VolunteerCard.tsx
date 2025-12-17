@@ -1,4 +1,3 @@
-// src/features/citizen/components/VolunteerPage/VolunteerCard.tsx
 import type { VolunteerEvent } from '../../api/volunteer.api';
 
 type Props = {
@@ -13,7 +12,7 @@ export default function VolunteerCard({ event }: Props) {
       <p className="mt-1 text-sm text-gray-600">{event.description}</p>
 
       <div className="mt-3 text-sm text-gray-500">
-        👥 {event.current_participants}/{event.total_seats}
+        {event.current_participants}/{event.total_seats}
       </div>
     </div>
   );

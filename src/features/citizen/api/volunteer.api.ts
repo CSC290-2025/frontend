@@ -1,3 +1,4 @@
+import axios from 'axios';
 import { apiClient } from '@/lib/apiClient';
 
 export type VolunteerEvent = {
@@ -31,6 +32,38 @@ export type ApiEnvelope<T> = {
   timestamp?: string;
 };
 
+export type ApiSuccess<T> = {
+  success: boolean;
+  data: T;
+  message?: string;
+  timestamp?: string;
+};
+function isUpcoming(startAt: string): boolean {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const startDate = new Date(startAt);
+  startDate.setHours(0, 0, 0, 0);
+
+  return startDate >= today;
+}
+export async function fetchUpcomingVolunteerList(params?: {
+  page?: number;
+  limit?: number;
+  search?: string;
+  department_id?: number;
+}): Promise<VolunteerListData> {
+  const res = await apiClient.get<ApiEnvelope<VolunteerListData>>('/getAll', {
+    params,
+  });
+
+  const data = res.data.data;
+
+  return {
+    ...data,
+    events: data.events.filter((event) => isUpcoming(event.start_at)),
+  };
+}
+
 export async function fetchVolunteerList(params?: {
   page?: number;
   limit?: number;
@@ -40,15 +73,8 @@ export async function fetchVolunteerList(params?: {
   const res = await apiClient.get<ApiEnvelope<VolunteerListData>>('/getAll', {
     params,
   });
-  return res.data.data; // ✅ สำคัญ: wrapper มี data ครอบ
+  return res.data.data;
 }
-
-export type ApiSuccess<T> = {
-  success: boolean;
-  data: T;
-  message?: string;
-  timestamp?: string;
-};
 
 export async function fetchVolunteerById(id: number): Promise<VolunteerEvent> {
   const res = await apiClient.get<ApiSuccess<VolunteerEvent>>(`/${id}`);

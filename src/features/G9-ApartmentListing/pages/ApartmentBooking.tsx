@@ -6,7 +6,7 @@ import RoomDetailIcon from '@/features/G9-ApartmentListing/assets/RoomDetailIcon
 import { APT, Owner, Room } from '@/features/G9-ApartmentListing/hooks/index';
 import type { roomTypes } from '@/features/G9-ApartmentListing/types';
 import { useCreateBooking } from '@/features/G9-ApartmentListing/hooks/useBooking';
-import { useUserProfileDetails } from '@/features/citizen/hooks/ProfileUser';
+import { useMyProfile } from '@/features/citizen/hooks/ProfileUser';
 import { useUserById } from '@/features/G9-ApartmentListing/hooks/userApartmentOwner';
 
 export default function ApartmentBooking() {

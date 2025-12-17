@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { useMyProfile } from '../../hooks/ProfileUser';
 import { useMyMetroCards } from '../../hooks/useMyMetroCards';
 import { useGetAuthMe } from '@/api/generated/authentication';
+import { resolveProfileImage } from '../../api/resolveProfileImage';
 
 interface Props {
   onEditProfile: () => void;
@@ -9,6 +10,7 @@ interface Props {
 
 export default function ProfileCard({ onEditProfile }: Props) {
   const userID = useGetAuthMe().data?.data?.userId;
+
   const profileQ = useMyProfile(userID);
   const cardsQ = useMyMetroCards();
 
@@ -35,7 +37,6 @@ export default function ProfileCard({ onEditProfile }: Props) {
       window.removeEventListener('focus', onFocus);
       document.removeEventListener('visibilitychange', onVisibility);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loading = profileQ.isLoading || cardsQ.isLoading;
@@ -74,14 +75,28 @@ export default function ProfileCard({ onEditProfile }: Props) {
 
   const updating = profileQ.isFetching || cardsQ.isFetching;
 
+  console.log(profile.profileImage);
+  const profileImageUrl = resolveProfileImage(profile.profileImage);
+
   return (
     <div className="rounded-3xl bg-white p-8 shadow-lg">
       <div className="flex flex-col items-center">
-        <div className="mb-6 flex h-32 w-32 items-center justify-center rounded-full border-4 border-gray-200 bg-white">
-          <svg width="80" height="80" viewBox="0 0 100 100" fill="none">
-            <circle cx="50" cy="35" r="20" fill="#6B7280" />
-            <path d="M20 85 Q20 60 50 60 Q80 60 80 85" fill="#6B7280" />
-          </svg>
+        <div className="mb-6 flex h-32 w-32 items-center justify-center overflow-hidden border-4 border-gray-200 bg-white">
+          {profileImageUrl ? (
+            <img
+              src={profileImageUrl}
+              alt="Profile"
+              className="h-full w-full object-cover"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+              }}
+            />
+          ) : (
+            <svg width="80" height="80" viewBox="0 0 100 100" fill="none">
+              <circle cx="50" cy="35" r="20" fill="#6B7280" />
+              <path d="M20 85 Q20 60 50 60 Q80 60 80 85" fill="#6B7280" />
+            </svg>
+          )}
         </div>
 
         <div className="mb-2 flex items-center gap-2">
@@ -93,7 +108,6 @@ export default function ProfileCard({ onEditProfile }: Props) {
           )}
         </div>
 
-        {/* ✅ Metro card จาก API จริง /metro-cards/me */}
         <div className="mb-6 w-full rounded-2xl bg-[#01CCFF] px-6 py-4 text-center">
           {metroCard ? (
             <>
@@ -144,7 +158,9 @@ function Row({
 }) {
   return (
     <div
-      className={`flex justify-between ${!last ? 'border-b border-gray-100 pb-2' : 'pb-2'}`}
+      className={`flex justify-between ${
+        !last ? 'border-b border-gray-100 pb-2' : 'pb-2'
+      }`}
     >
       <span className="font-medium text-[#2B5991]">{label}</span>
       <span className="text-right text-[#2B5991]">{value}</span>

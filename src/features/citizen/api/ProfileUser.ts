@@ -1,9 +1,5 @@
-// src/features/citizen/api/ProfileUser.ts
-import { apiClient } from '@/lib/apiClient';
 
-/* =======================
-   API TYPES
-======================= */
+import { apiClient } from '@/lib/apiClient';
 
 type ApiSuccess<T> = {
   success: boolean;
@@ -25,23 +21,15 @@ type UserProfileRowApi = {
   first_name?: string | null;
   middle_name?: string | null;
   last_name?: string | null;
+
+  profile?: string | null;
+  profile_picture?: string | null;
+  avatar?: string | null;
+
   ethnicity?: string | null;
   nationality?: string | null;
   religion?: string | null;
   addresses?: AddressApi[] | AddressApi | null;
-};
-
-type UserProfileApi = {
-  username?: string;
-  phone?: string | null;
-  email?: string;
-  insurance_cards?: Array<{ card_number?: string | null }> | null;
-  user_profiles?: UserProfileRowApi[] | UserProfileRowApi | null;
-};
-
-/* =======================
-   VIEW MODEL
-======================= */
 
 export type ProfileVM = {
   userId: number;
@@ -70,11 +58,48 @@ export type ProfileVM = {
   busCardBalance: string;
 };
 
-/* =======================
    API CALL
-======================= */
 
 // ✅ ใช้ apiClient แทน httpGet
+};
+
+type UserProfileApi = {
+  username?: string;
+  phone?: string | null;
+  email?: string;
+  insurance_cards?: Array<{ card_number?: string | null }> | null;
+  user_profiles?: UserProfileRowApi[] | UserProfileRowApi | null;
+};
+
+export type ProfileVM = {
+  userId: number;
+  username: string;
+  phone: string;
+  email: string;
+
+  idCardNumber: string;
+  firstName: string;
+  middleName: string;
+  lastName: string;
+
+  profileImage: string | null;
+
+  ethnicity: string;
+  nationality: string;
+  religion: string;
+
+  addressLine: string;
+  province: string;
+  district: string;
+  subdistrict: string;
+  postalCode: string;
+
+  address: string;
+
+  cardId: string;
+  busCardBalance: string;
+};
+
 export async function fetchUserProfileById(userId: number) {
   const res = await apiClient.get<ApiSuccess<{ user: UserProfileApi }>>(
     `/user/profile/${userId}`
@@ -82,9 +107,6 @@ export async function fetchUserProfileById(userId: number) {
   return res.data;
 }
 
-/* =======================
-   NORMALIZE DATA
-======================= */
 
 function normalizeProfile(
   userId: number,
@@ -115,6 +137,8 @@ function normalizeProfile(
 
   const cardId = raw?.insurance_cards?.[0]?.card_number ?? 'N/A';
 
+  const profileImage = profile?.profile_picture ?? profile?.avatar ?? null;
+
   return {
     userId,
     username: raw?.username ?? 'N/A',
@@ -125,6 +149,8 @@ function normalizeProfile(
     firstName: profile?.first_name ?? 'N/A',
     middleName: profile?.middle_name ?? '',
     lastName: profile?.last_name ?? 'N/A',
+
+    profileImage,
 
     ethnicity: profile?.ethnicity ?? 'N/A',
     nationality: profile?.nationality ?? 'N/A',
@@ -143,9 +169,6 @@ function normalizeProfile(
   };
 }
 
-/* =======================
-   PUBLIC FUNCTION
-======================= */
 
 // ✅ ใช้อันนี้แทน fetchMyFullProfile
 export async function fetchProfileForSettingUser(
