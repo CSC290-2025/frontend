@@ -1,8 +1,6 @@
-// API functions for fetching Freecycle data from the backend
 import { apiClient } from '@/lib/apiClient';
 import type { ApiPost, Category, CategoryWithName } from '@/types/postItem';
 
-// Response types matching backend structure
 interface ApiResponseWrapper<T> {
   success: boolean;
   data: T;
@@ -44,6 +42,12 @@ export interface ReceiverRequest {
   status: 'pending' | 'accepted' | 'rejected';
   created_at: string;
   updated_at: string;
+
+  users: {
+    username: string;
+    email: string;
+    phone: string | null;
+  };
 }
 
 interface RequestsData {
@@ -53,6 +57,17 @@ interface RequestsData {
 interface RequestData {
   request: ReceiverRequest;
 }
+
+interface PostsResponse {
+  data: {
+    posts: ApiPost[];
+  };
+}
+
+export const fetchMyPosts = async (): Promise<ApiPost[]> => {
+  const response = await apiClient.get<PostsResponse>('/posts/me');
+  return response.data.data.posts;
+};
 
 export const fetchAllPosts = async (): Promise<ApiPost[]> => {
   const response = await apiClient.get<ApiResponseWrapper<PostsData>>('/posts');
@@ -226,17 +241,19 @@ export const fetchRequestById = async (
 };
 
 export const createRequest = async (
-  postId: number
+  postId: number,
+  receiverId: number
 ): Promise<ReceiverRequest> => {
   const response = await apiClient.post<ApiResponseWrapper<RequestData>>(
     '/requests',
-    { post_id: postId }
+    { post_id: postId, receiver_id: receiverId }
   );
   return response.data.data.request;
 };
 
-export const cancelRequest = async (id: number): Promise<void> => {
-  await apiClient.delete(`/requests/${id}`);
+export const cancelRequest = async (requestId: number) => {
+  const { data } = await apiClient.delete(`/requests/${requestId}`);
+  return data;
 };
 
 export const updateRequestStatus = async (
@@ -248,4 +265,15 @@ export const updateRequestStatus = async (
     { status }
   );
   return response.data.data.request;
+};
+
+export const uploadImage = async (file: File) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  const response = await apiClient.post('/upload', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  });
+  return response.data;
 };
