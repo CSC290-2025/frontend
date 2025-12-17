@@ -7,7 +7,11 @@ interface Props {
 
 export default function CurrentWeatherCard({ data, onClick }: Props) {
   const Wrapper = onClick ? 'button' : 'div';
-  const containerClass = `${'mb-6 w-full rounded-2xl border bg-white p-6 text-left shadow-sm'}${onClick ? ' cursor-pointer' : ''}`;
+  const containerClass = `mb-6 w-full rounded-2xl border bg-white p-6 text-left shadow-lg transition-all duration-200 ${
+    onClick
+      ? 'cursor-pointer hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] active:shadow-md'
+      : ''
+  }`;
 
   return (
     //component การ์ด แสดงสภาพอากาศปัจจุบัน
