@@ -30,6 +30,7 @@ import type {
   DepartmentPayload,
   CreateDoctorPayload,
   UpdateDoctorPayload,
+  UpdateAppointmentPayload,
 } from '@/features/_healthcare/types';
 
 const sanitizeParams = (
@@ -195,6 +196,17 @@ export const createAppointment = async (payload: CreateAppointmentPayload) => {
 
     throw error;
   }
+};
+
+export const updateAppointment = async (
+  id: number,
+  payload: UpdateAppointmentPayload
+) => {
+  const { data } = await apiClient.put<
+    ApiSuccess<{ appointment: PaginatedAppointments['appointments'][number] }>
+  >(`/appointments/${id}`, payload);
+
+  return data.data.appointment;
 };
 
 export const fetchMedicineInventory = async (

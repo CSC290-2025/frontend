@@ -9,17 +9,21 @@ import {
   PlusCircle,
   Edit,
   Trash2,
+  X,
 } from 'lucide-react';
 import {
   useAppointments,
   useBeds,
   useFacilities,
   usePatients,
+  useDoctors,
+  useDepartments,
 } from '@/features/_healthcare/hooks/useHealthcareData';
 import {
   createBed,
   updateBed,
   deleteBed,
+  updateAppointment,
 } from '@/features/_healthcare/api/healthcare.api';
 import { SummaryCard } from '@/features/_healthcare/components/cards/SummaryCard';
 import { BedWardCard } from '@/features/_healthcare/components/cards/BedWardCard';
@@ -27,32 +31,64 @@ import { AppointmentCard } from '@/features/_healthcare/components/cards/Appoint
 import { PatientCard } from '@/features/_healthcare/components/cards/PatientCard';
 import { DataState } from '@/features/_healthcare/components/common/DataState';
 import { categorizeBeds, summarizeBeds } from '@/features/_healthcare/utils';
-import type { Facility, BedPayload, Bed } from '@/features/_healthcare/types';
+import type {
+  Facility,
+  BedPayload,
+  Bed,
+  Appointment,
+  Doctor,
+  Department,
+  UpdateAppointmentPayload,
+  Patient,
+} from '@/features/_healthcare/types';
 
-const emptyBedForm = {
-  facilityId: '' as number | '' | null,
-  bedNumber: '',
-  bedType: '',
-  status: 'Available',
-  patientId: '' as number | '' | null,
-};
+const HOURS = Array.from({ length: 13 }, (_, i) => 7 + i); // 7am-7pm
 
 const AdminHospitalPage: React.FC = () => {
   const queryClient = useQueryClient();
   const [selectedFacilityId, setSelectedFacilityId] = useState<number | 'all'>(
     'all'
   );
-  const [bedForm, setBedForm] = useState<typeof emptyBedForm>(emptyBedForm);
+  const [bedForm, setBedForm] = useState<{
+    facilityId: number | '' | null;
+    bedNumber: string;
+    bedType: string;
+    status: string;
+    patientId: number | '' | null;
+  }>({
+    facilityId: '' as number | '' | null,
+    bedNumber: '',
+    bedType: '',
+    status: 'Available',
+    patientId: '' as number | '' | null,
+  });
   const [editingBedId, setEditingBedId] = useState<number | null>(null);
+  const [editingAppointment, setEditingAppointment] =
+    useState<Appointment | null>(null);
 
   const bedsQuery = useBeds({ limit: 50, sortBy: 'createdAt' });
   const facilitiesQuery = useFacilities({ limit: 30, sortBy: 'name' });
   const appointmentsQuery = useAppointments({
-    limit: 10,
+    limit: 30,
     sortBy: 'appointmentAt',
     sortOrder: 'asc',
+    facilityId: selectedFacilityId === 'all' ? undefined : selectedFacilityId,
   });
   const patientsQuery = usePatients({ limit: 20, sortBy: 'createdAt' });
+  const doctorsQuery = useDoctors({
+    limit: 100,
+    sortBy: 'specialization',
+    sortOrder: 'asc',
+  });
+  const departmentsQuery = useDepartments({ limit: 100, sortBy: 'name' });
+
+  const patientLookup = useMemo(() => {
+    const lookup = new Map<number, Patient>();
+    patientsQuery.data?.patients.forEach((patient) =>
+      lookup.set(patient.id, patient)
+    );
+    return lookup;
+  }, [patientsQuery.data]);
 
   const facilityLookup = useMemo(() => {
     const lookup = new Map<number, Facility>();
@@ -61,6 +97,22 @@ const AdminHospitalPage: React.FC = () => {
     );
     return lookup;
   }, [facilitiesQuery.data]);
+
+  const doctorLookup = useMemo(() => {
+    const lookup = new Map<number, Doctor>();
+    doctorsQuery.data?.doctors.forEach((doctor) =>
+      lookup.set(doctor.id, doctor)
+    );
+    return lookup;
+  }, [doctorsQuery.data]);
+
+  const departmentLookup = useMemo(() => {
+    const lookup = new Map<number, Department>();
+    departmentsQuery.data?.departments.forEach((dept) =>
+      lookup.set(dept.id, dept)
+    );
+    return lookup;
+  }, [departmentsQuery.data]);
 
   const selectedFacility =
     selectedFacilityId === 'all'
@@ -80,8 +132,22 @@ const AdminHospitalPage: React.FC = () => {
 
   const bedStats = useMemo(() => summarizeBeds(filteredBeds), [filteredBeds]);
 
+  const appointmentList = useMemo(() => {
+    const list = appointmentsQuery.data?.appointments ?? [];
+    if (selectedFacility?.id) {
+      return list.filter((appt) => appt.facilityId === selectedFacility.id);
+    }
+    return list;
+  }, [appointmentsQuery.data, selectedFacility]);
+
   const resetForm = () => {
-    setBedForm(emptyBedForm);
+    setBedForm({
+      facilityId: '' as number | '' | null,
+      bedNumber: '',
+      bedType: '',
+      status: 'Available',
+      patientId: '' as number | '' | null,
+    });
     setEditingBedId(null);
   };
 
@@ -106,6 +172,20 @@ const AdminHospitalPage: React.FC = () => {
   const deleteMutation = useMutation({
     mutationFn: (id: number) => deleteBed(id),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['beds'] }),
+  });
+
+  const updateAppointmentMutation = useMutation({
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: number;
+      payload: UpdateAppointmentPayload;
+    }) => updateAppointment(id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['appointments'] });
+      setEditingAppointment(null);
+    },
   });
 
   const handleSubmit = (event: React.FormEvent) => {
@@ -138,6 +218,11 @@ const AdminHospitalPage: React.FC = () => {
     });
   };
 
+  const handleAppointmentSave = (payload: UpdateAppointmentPayload) => {
+    if (!editingAppointment) return;
+    updateAppointmentMutation.mutate({ id: editingAppointment.id, payload });
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap gap-4">
@@ -165,7 +250,7 @@ const AdminHospitalPage: React.FC = () => {
         <SummaryCard
           label="Beds tracked"
           value={bedStats.total}
-          subtext={`${bedStats.available} ready • ${bedStats.occupied} occupied`}
+          subtext={`${bedStats.available} ready | ${bedStats.occupied} occupied`}
           icon={Activity}
           accent="emerald"
         />
@@ -371,11 +456,11 @@ const AdminHospitalPage: React.FC = () => {
                       <span className="text-xs text-gray-500">#{bed.id}</span>
                     </p>
                     <p className="text-xs text-gray-600">
-                      Facility #{bed.facilityId ?? '—'} • Patient #
+                      Facility #{bed.facilityId ?? '—'} | Patient #
                       {bed.patientId ?? '—'}
                     </p>
                     <p className="text-[11px] text-gray-500">
-                      Type: {bed.bedType ?? '—'} • Status: {bed.status ?? '—'}
+                      Type: {bed.bedType ?? '—'} | Status: {bed.status ?? '—'}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -421,25 +506,239 @@ const AdminHospitalPage: React.FC = () => {
         <h2 className="text-lg font-bold text-gray-900">
           Upcoming Appointments
         </h2>
-        <div className="mt-4 space-y-3">
+        <div className="mt-4 max-h-[420px] space-y-3 overflow-y-auto pr-1">
           {appointmentsQuery.isLoading && (
             <DataState message="Loading appointments..." accent="cyan" />
           )}
-          {!appointmentsQuery.isLoading &&
-            (appointmentsQuery.data?.appointments.length ?? 0) === 0 && (
-              <DataState message="No appointments scheduled" />
-            )}
-          {appointmentsQuery.data?.appointments.map((appointment) => (
+          {!appointmentsQuery.isLoading && appointmentList.length === 0 && (
+            <DataState message="No appointments scheduled" />
+          )}
+          {appointmentList.map((appointment) => (
             <AppointmentCard
               key={appointment.id}
               appointment={appointment}
               facilityLookup={facilityLookup}
+              doctorLookup={doctorLookup}
+              departmentLookup={departmentLookup}
+              patientLookup={patientLookup}
+              onEdit={setEditingAppointment}
             />
           ))}
         </div>
       </section>
+
+      {editingAppointment && (
+        <AppointmentEditorModal
+          appointment={editingAppointment}
+          facilities={facilitiesQuery.data?.facilities ?? []}
+          doctors={doctorsQuery.data?.doctors ?? []}
+          onClose={() => setEditingAppointment(null)}
+          onSave={handleAppointmentSave}
+          isSaving={updateAppointmentMutation.isPending}
+        />
+      )}
     </div>
   );
 };
 
 export default AdminHospitalPage;
+
+type AppointmentEditorModalProps = {
+  appointment: Appointment;
+  facilities: Facility[];
+  doctors: Doctor[];
+  onClose: () => void;
+  onSave: (payload: UpdateAppointmentPayload) => void;
+  isSaving?: boolean;
+};
+
+const AppointmentEditorModal: React.FC<AppointmentEditorModalProps> = ({
+  appointment,
+  facilities,
+  doctors,
+  onClose,
+  onSave,
+  isSaving,
+}) => {
+  const initialDate = appointment.appointmentAt
+    ? new Date(appointment.appointmentAt)
+    : null;
+
+  const [facilityId, setFacilityId] = useState<number | null>(
+    appointment.facilityId ?? null
+  );
+  const [doctorId, setDoctorId] = useState<number | null>(
+    appointment.doctorId ?? null
+  );
+  const [dateValue, setDateValue] = useState<string>(
+    initialDate ? initialDate.toISOString().slice(0, 10) : ''
+  );
+  const [selectedHour, setSelectedHour] = useState<number | null>(
+    initialDate ? initialDate.getUTCHours() : null
+  );
+  const [type, setType] = useState<string>(appointment.type ?? '');
+
+  const selectedDoctor = doctorId
+    ? (doctors.find((doc) => doc.id === doctorId) ?? null)
+    : null;
+
+  const saveDisabled =
+    !facilityId || !doctorId || !dateValue || selectedHour === null;
+
+  const handleSave = () => {
+    if (saveDisabled) return;
+    const [year, month, day] = dateValue.split('-').map(Number);
+    const appointmentAt = new Date(
+      Date.UTC(year, month - 1, day, selectedHour ?? 0)
+    ).toISOString();
+
+    const payload: UpdateAppointmentPayload = {
+      facilityId,
+      doctorId,
+      appointmentAt,
+      type: type || undefined,
+      patientId: appointment.patientId ?? undefined,
+      consultationFee: selectedDoctor?.consultationFee ?? undefined,
+    };
+
+    onSave(payload);
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+      <div className="w-full max-w-3xl rounded-2xl bg-white p-6 shadow-2xl">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-xs font-semibold text-gray-500">
+              Editing appointment #{appointment.id}
+            </p>
+            <h3 className="text-lg font-bold text-gray-900">
+              Adjust schedule & facility
+            </h3>
+          </div>
+          <button
+            onClick={onClose}
+            className="rounded-full p-2 text-gray-500 hover:bg-gray-100"
+            aria-label="Close editor"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="mt-4 grid gap-4 lg:grid-cols-3">
+          <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+            <p className="text-sm font-semibold text-gray-900">
+              Choose facility
+            </p>
+            <div className="mt-3 max-h-[240px] space-y-2 overflow-y-auto pr-1">
+              {facilities.map((facility) => (
+                <button
+                  key={facility.id}
+                  onClick={() => {
+                    setFacilityId(facility.id);
+                  }}
+                  className={`flex w-full items-center justify-between rounded-lg border px-3 py-2 text-left text-sm ${
+                    facilityId === facility.id
+                      ? 'border-[#01CCFF] bg-[#01CCFF] text-white'
+                      : 'border-gray-200 bg-white text-gray-700 hover:border-[#0091B5]'
+                  }`}
+                >
+                  <span>{facility.name}</span>
+                  <span className="text-[11px] opacity-80">
+                    Dept #{facility.departmentId ?? '—'}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+            <p className="text-sm font-semibold text-gray-900">Doctor</p>
+            <select
+              className="mt-3 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              value={doctorId ?? ''}
+              onChange={(e) =>
+                setDoctorId(e.target.value ? Number(e.target.value) : null)
+              }
+            >
+              <option value="">Select doctor</option>
+              {doctors.map((doctor) => (
+                <option key={doctor.id} value={doctor.id}>
+                  {doctor.doctorName ?? `Doctor #${doctor.id}`}{' '}
+                  {doctor.specialization ? `(${doctor.specialization})` : ''}
+                </option>
+              ))}
+            </select>
+            <label className="mt-3 block text-sm font-semibold text-gray-700">
+              Appointment type
+              <input
+                className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                value={type}
+                onChange={(e) => setType(e.target.value)}
+                placeholder="General, Cardiology..."
+              />
+            </label>
+          </div>
+
+          <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
+            <p className="text-sm font-semibold text-gray-900">
+              Date & time (UTC)
+            </p>
+            <input
+              type="date"
+              className="mt-3 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+              value={dateValue}
+              onChange={(e) => setDateValue(e.target.value)}
+            />
+            <div className="mt-3 grid grid-cols-3 gap-2">
+              {HOURS.map((hour) => (
+                <button
+                  key={hour}
+                  onClick={() => setSelectedHour(hour)}
+                  className={`rounded-lg border px-2 py-2 text-sm font-semibold ${
+                    selectedHour === hour
+                      ? 'border-[#01CCFF] bg-[#01CCFF] text-white'
+                      : 'border-gray-200 bg-white text-gray-700 hover:border-[#0091B5]'
+                  }`}
+                >
+                  {hour}:00
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-4 flex flex-col gap-2 border-t border-gray-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="text-sm text-gray-600">
+            Patient ID is locked at{' '}
+            <span className="font-semibold text-gray-800">
+              #{appointment.patientId ?? '—'}
+            </span>
+            .
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={onClose}
+              className="rounded-lg px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-100"
+              type="button"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={saveDisabled || isSaving}
+              className={`rounded-lg px-4 py-2 text-sm font-semibold text-white ${
+                saveDisabled || isSaving
+                  ? 'cursor-not-allowed bg-gray-300'
+                  : 'bg-[#0091B5] hover:bg-[#007fa0]'
+              }`}
+              type="button"
+            >
+              {isSaving ? 'Saving...' : 'Save changes'}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};

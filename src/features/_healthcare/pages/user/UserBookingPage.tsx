@@ -17,6 +17,7 @@ const FALLBACK_SPECIALTIES = [
   'Emergency',
 ];
 const HOURS = Array.from({ length: 13 }, (_, i) => 7 + i); // 7am-7pm (7..19)
+const PROFILE_STORAGE_KEY = 'healthcare_patient_profile';
 
 const isSameUtcDay = (a: Date, b: Date) =>
   a.getUTCFullYear() === b.getUTCFullYear() &&
@@ -55,6 +56,21 @@ const UserBookingPage: React.FC = () => {
     type: 'success' | 'error';
     message: string;
   } | null>(null);
+  const [patientId, setPatientId] = useState<number | null>(null);
+
+  React.useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const stored = localStorage.getItem(PROFILE_STORAGE_KEY);
+    if (!stored) return;
+    try {
+      const parsed = JSON.parse(stored) as { patientId?: number };
+      if (parsed.patientId) {
+        setPatientId(parsed.patientId);
+      }
+    } catch {
+      // ignore bad cache
+    }
+  }, []);
 
   const filteredFacilities =
     facilitiesQuery.data?.facilities.filter((f) =>
@@ -167,6 +183,7 @@ const UserBookingPage: React.FC = () => {
       appointmentAt,
       type: selectedSpecialty,
       consultationFee: selectedDoctor.consultationFee ?? undefined,
+      patientId: patientId ?? undefined,
     };
   }, [
     selectedFacilityId,
@@ -174,6 +191,7 @@ const UserBookingPage: React.FC = () => {
     selectedSpecialty,
     selectedDate,
     selectedHour,
+    patientId,
   ]);
 
   const bookingDetails = useMemo(() => {

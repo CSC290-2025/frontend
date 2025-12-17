@@ -165,6 +165,15 @@ export interface CreateAppointmentPayload {
   consultationFee?: number;
 }
 
+export interface UpdateAppointmentPayload {
+  patientId?: number | null;
+  facilityId?: number | null;
+  doctorId?: number | null;
+  appointmentAt?: string | null;
+  type?: string | null;
+  consultationFee?: number | null;
+}
+
 export interface MedicineInventory {
   id: number;
   facilityId: Nullable<number>;
