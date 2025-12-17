@@ -88,6 +88,10 @@ export class BinApiService {
         typeof bin.total_collected_weight === 'string'
           ? Number(bin.total_collected_weight)
           : bin.total_collected_weight,
+      created_by_user_id:
+        bin.created_by_user_id !== undefined && bin.created_by_user_id !== null
+          ? Number(bin.created_by_user_id)
+          : null,
     }));
   }
 
@@ -96,7 +100,35 @@ export class BinApiService {
     const payload =
       response.data && response.data.data ? response.data.data : response.data;
 
-    return payload?.bin ?? payload;
+    const bin = payload?.bin ?? payload;
+
+    if (!bin) {
+      throw new Error('Bin not found');
+    }
+
+    return {
+      ...bin,
+      latitude:
+        typeof bin.latitude === 'string' ? Number(bin.latitude) : bin.latitude,
+      longitude:
+        typeof bin.longitude === 'string'
+          ? Number(bin.longitude)
+          : bin.longitude,
+      capacity_kg:
+        bin.capacity_kg !== undefined && bin.capacity_kg !== null
+          ? typeof bin.capacity_kg === 'string'
+            ? Number(bin.capacity_kg)
+            : bin.capacity_kg
+          : bin.capacity !== undefined && bin.capacity !== null
+            ? typeof bin.capacity === 'string'
+              ? Number(bin.capacity)
+              : bin.capacity
+            : null,
+      created_by_user_id:
+        bin.created_by_user_id !== undefined && bin.created_by_user_id !== null
+          ? Number(bin.created_by_user_id)
+          : null,
+    } as BackendBin;
   }
 
   static async createBin(binData: CreateBinData): Promise<BackendBin> {
@@ -125,9 +157,37 @@ export class BinApiService {
     try {
       const response = await apiClient.post('/bins', payload);
 
-      return response.data && response.data.data
-        ? response.data.data
-        : response.data;
+      const result =
+        response.data && response.data.data
+          ? response.data.data
+          : response.data;
+
+      return {
+        ...result,
+        latitude:
+          typeof result.latitude === 'string'
+            ? Number(result.latitude)
+            : result.latitude,
+        longitude:
+          typeof result.longitude === 'string'
+            ? Number(result.longitude)
+            : result.longitude,
+        capacity_kg:
+          result.capacity_kg !== undefined && result.capacity_kg !== null
+            ? typeof result.capacity_kg === 'string'
+              ? Number(result.capacity_kg)
+              : result.capacity_kg
+            : result.capacity !== undefined && result.capacity !== null
+              ? typeof result.capacity === 'string'
+                ? Number(result.capacity)
+                : result.capacity
+              : null,
+        created_by_user_id:
+          result.created_by_user_id !== undefined &&
+          result.created_by_user_id !== null
+            ? Number(result.created_by_user_id)
+            : null,
+      } as BackendBin;
     } catch (error: any) {
       const errorMessage =
         error?.response?.data?.message ||
@@ -146,7 +206,16 @@ export class BinApiService {
   }
 
   static async deleteBin(id: number): Promise<void> {
-    await apiClient.delete(`/bins/${id}`);
+    try {
+      await apiClient.delete(`/bins/${id}`);
+    } catch (error: any) {
+      const errorMessage =
+        error?.response?.data?.message ||
+        error?.response?.data?.error?.message ||
+        error?.message ||
+        'Failed to delete bin';
+      throw new Error(errorMessage);
+    }
   }
 
   static async recordCollection(
