@@ -59,13 +59,6 @@ function Health({
 }: HealthPropsWithSetter) {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Notify parent component when errors change
-  useEffect(() => {
-    if (onValidationChange) {
-      onValidationChange(errors);
-    }
-  }, [errors, onValidationChange]);
-
   const validateField = (name: string, value: any) => {
     const result = healthSchema
       .pick({ [name]: true })

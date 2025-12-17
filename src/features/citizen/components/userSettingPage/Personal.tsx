@@ -75,13 +75,6 @@ function Personal({
 }: PersonalPropsWithSetter) {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Notify parent component when errors change
-  useEffect(() => {
-    if (onValidationChange) {
-      onValidationChange(errors);
-    }
-  }, [errors, onValidationChange]);
-
   const validateField = (name: string, value: string) => {
     const result = personalSchema
       .pick({ [name]: true })
