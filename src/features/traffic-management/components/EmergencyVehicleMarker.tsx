@@ -12,13 +12,21 @@ export default function EmergencyVehicleMarker({
     ambulance: (
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        width="32"
-        height="32"
+        width="24"
+        height="24"
         viewBox="0 0 24 24"
-        fill="currentColor"
-        className="text-white"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="icon icon-tabler icons-tabler-outline icon-tabler-ambulance size-9 text-white"
       >
-        <path d="M18 18.5a1.5 1.5 0 0 1-1 1.415V21a1 1 0 0 1-2 0v-1h-2v1a1 1 0 0 1-2 0v-1H9v1a1 1 0 0 1-2 0v-1.085A1.5 1.5 0 0 1 6 18.5H2v-3h1.5a.5.5 0 0 0 .5-.5v-2H2v-2h2.05c.16-.57.41-1.11.73-1.61L3.55 8.15 5 6.7l2.37 2.37A6 6 0 0 1 12 7c1.86 0 3.5.84 4.63 2.15L19 6.7l1.45 1.45-1.23 1.23c.32.5.57 1.04.73 1.62H22v2h-2v2a.5.5 0 0 0 .5.5H22v3h-4zM12 9c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3zm0 2c.55 0 1 .45 1 1s-.45 1-1 1-1-.45-1-1 .45-1 1-1z" />
+        <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+        <path d="M7 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
+        <path d="M17 17m-2 0a2 2 0 1 0 4 0a2 2 0 1 0 -4 0" />
+        <path d="M5 17h-2v-11a1 1 0 0 1 1 -1h9v12m-4 0h6m4 0h2v-6h-8m0 -5h5l3 5" />
+        <path d="M6 10h4m-2 -2v4" />
       </svg>
     ),
     fire: (

@@ -229,7 +229,9 @@ const TrafficSignalMarker = memo(
       signal.status === 1 ? 'BROKEN' : signal.status === 2 ? 'FIXING' : '';
 
     // Determine background color - gray for broken/fixing, normal color otherwise
-    const backgroundColor = isBrokenOrFixing ? '#6b7280' : colorMap[signal.color];
+    const backgroundColor = isBrokenOrFixing
+      ? '#6b7280'
+      : colorMap[signal.color];
 
     // Show "--" for stopped, broken/fixing, or emergency all-red mode lights
     const showDash = isStopped || isBrokenOrFixing || isEmergencyAllRed;
@@ -357,8 +359,9 @@ function MapContent({
         const isStopped =
           emergencyStopAll || stoppedJunctions?.has(signal.junctionId);
         // Check if this intersection is under emergency control (any mode)
-        const isEmergencyControlled =
-          emergencyControlledIntersections?.has(signal.junctionId);
+        const isEmergencyControlled = emergencyControlledIntersections?.has(
+          signal.junctionId
+        );
         return (
           <TrafficSignalMarker
             key={`${signal.junctionId}-${signal.direction}`}
@@ -456,8 +459,10 @@ export default function TrafficControlPage() {
 
   // Emergency ambulance control state
   const [emergencyMode, setEmergencyMode] = useState<string | null>(null);
-  const [emergencyControlledIntersections, setEmergencyControlledIntersections] =
-    useState<Set<string>>(new Set());
+  const [
+    emergencyControlledIntersections,
+    setEmergencyControlledIntersections,
+  ] = useState<Set<string>>(new Set());
 
   // Ref for auto-scrolling to selected light in sidebar
   const lightItemsRef = useRef<Record<string, HTMLDivElement | null>>({});
@@ -605,10 +610,10 @@ export default function TrafficControlPage() {
         const roadid = parseInt(lightData?.roadid) || 0;
         const supportMarkerId = lightData?.support_marker_id;
 
-
         const updates: Record<string, any> = {
           [`teams/10/traffic_lights/${lightKey}/green_duration`]: greenDuration,
-          [`teams/10/traffic_lights/${lightKey}/yellow_duration`]: yellowDuration,
+          [`teams/10/traffic_lights/${lightKey}/yellow_duration`]:
+            yellowDuration,
           [`teams/10/traffic_lights/${lightKey}/status`]: status,
         };
 
@@ -623,13 +628,14 @@ export default function TrafficControlPage() {
               location: { lat, lng },
             });
 
-            const markerId = response.data?.data?.marker?.id;
+            // API returns { success, data: { id, ... }, message }
+            const markerId = response.data?.data?.id;
             if (markerId) {
-              updates[`teams/10/traffic_lights/${lightKey}/support_marker_id`] = markerId;
+              updates[`teams/10/traffic_lights/${lightKey}/support_marker_id`] =
+                markerId;
             }
           } catch (markerErr) {
             console.error('Failed to create support marker:', markerErr);
-            // Continue with the update even if marker creation fails
           }
         }
 
@@ -638,9 +644,10 @@ export default function TrafficControlPage() {
           if (supportMarkerId) {
             try {
               await apiClient.delete(`/api/markers/${supportMarkerId}`);
-              updates[`teams/10/traffic_lights/${lightKey}/support_marker_id`] = null;
+              updates[`teams/10/traffic_lights/${lightKey}/support_marker_id`] =
+                null;
             } catch (markerErr) {
-              // Continue with the update even if marker deletion fails
+              console.error('Failed to delete support marker:', markerErr);
             }
           }
         }
@@ -724,7 +731,6 @@ export default function TrafficControlPage() {
           calculateIntersectionLightDurations(sortedLights);
         const { greenDuration, yellowDuration } = getLightDuration(firstLight);
 
-
         // Set first light to green, others to red with stacked times
         sortedLights.forEach((light, idx) => {
           const isActive = idx === 0;
@@ -784,7 +790,6 @@ export default function TrafficControlPage() {
             calculateIntersectionLightDurations(sortedLights);
           const { greenDuration, yellowDuration } =
             getLightDuration(firstLight);
-
 
           // Set first light to green, others to red with stacked times
           sortedLights.forEach((light, idx) => {
@@ -983,7 +988,6 @@ export default function TrafficControlPage() {
               <p className="mt-1 text-xs text-gray-600">Broken / Fixing</p>
             </div>
           </div>
-
         </div>
 
         {/* Title */}
@@ -1161,7 +1165,8 @@ export default function TrafficControlPage() {
                             key={idx}
                             ref={(el) => {
                               if (signal.trafficLightId) {
-                                lightItemsRef.current[signal.trafficLightId] = el;
+                                lightItemsRef.current[signal.trafficLightId] =
+                                  el;
                               }
                             }}
                             className={`rounded-lg border p-3 transition ${
@@ -1250,7 +1255,9 @@ export default function TrafficControlPage() {
               emergencyStopAll={emergencyStopAll}
               stoppedJunctions={stoppedJunctions}
               emergencyMode={emergencyMode}
-              emergencyControlledIntersections={emergencyControlledIntersections}
+              emergencyControlledIntersections={
+                emergencyControlledIntersections
+              }
             />
           </Map>
         </APIProvider>

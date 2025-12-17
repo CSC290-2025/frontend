@@ -253,7 +253,9 @@ const TrafficSignalMarker = memo(
       signal.status === 1 ? 'BROKEN' : signal.status === 2 ? 'FIXING' : '';
 
     // Determine background color - gray for broken/fixing, normal color otherwise
-    const backgroundColor = isBrokenOrFixing ? '#6b7280' : colorMap[signal.color];
+    const backgroundColor = isBrokenOrFixing
+      ? '#6b7280'
+      : colorMap[signal.color];
 
     // Show "--" for stopped, broken/fixing, or emergency controlled lights
     const showDash = isStopped || isBrokenOrFixing || isEmergencyControlled;
@@ -557,7 +559,9 @@ function MapContent({
   }, [map, selectedSignal]);
 
   // Debounce clusterer update to prevent flickering
-  const clustererUpdateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const clustererUpdateTimeoutRef = useRef<ReturnType<
+    typeof setTimeout
+  > | null>(null);
 
   const setMarkerRef = useCallback(
     (marker: google.maps.marker.AdvancedMarkerElement | null, key: string) => {
@@ -605,7 +609,8 @@ function MapContent({
         // Extract interid from junctionId (e.g., "Inter-3" -> 3)
         const interid = parseInt(signal.junctionId.replace('Inter-', '')) || 0;
         const isStopped = emergencyStopAll || stoppedIntersections.has(interid);
-        const isEmergencyControlled = emergencyControlledIntersections.has(interid);
+        const isEmergencyControlled =
+          emergencyControlledIntersections.has(interid);
 
         return (
           <TrafficSignalMarker
@@ -634,8 +639,12 @@ function MapContent({
 
       <TrafficLegend
         totalLights={signals.length}
-        activeLights={visibleSignals.filter((s) => s.online && s.status === 0).length}
-        brokenLights={signals.filter((s) => s.status === 1 || s.status === 2).length}
+        activeLights={
+          visibleSignals.filter((s) => s.online && s.status === 0).length
+        }
+        brokenLights={
+          signals.filter((s) => s.status === 1 || s.status === 2).length
+        }
         emergencyVehicles={emergencyVehicles.length}
         junctionsOverridden={switchedJunctions.length}
         isVisible={legendVisible}
@@ -823,7 +832,8 @@ export default function TrafficAdminpage() {
   });
 
   // Fetch traffic signals from Firebase
-  const { signals, loading, error, trafficLightsData } = useTeam10TrafficSignals();
+  const { signals, loading, error, trafficLightsData } =
+    useTeam10TrafficSignals();
 
   // Manage traffic light cycles with Firebase sync (only one controller across all instances)
   useTrafficLightCycle();
@@ -833,8 +843,10 @@ export default function TrafficAdminpage() {
   const [stoppedIntersections, setStoppedIntersections] = useState<Set<number>>(
     new Set()
   );
-  const [emergencyControlledIntersections, setEmergencyControlledIntersections] =
-    useState<Set<number>>(new Set());
+  const [
+    emergencyControlledIntersections,
+    setEmergencyControlledIntersections,
+  ] = useState<Set<number>>(new Set());
 
   // Light editor state
   const [editingLight, setEditingLight] = useState<SignalWithMeta | null>(null);
@@ -995,7 +1007,8 @@ export default function TrafficAdminpage() {
 
         const updates: Record<string, any> = {
           [`teams/10/traffic_lights/${lightKey}/green_duration`]: greenDuration,
-          [`teams/10/traffic_lights/${lightKey}/yellow_duration`]: yellowDuration,
+          [`teams/10/traffic_lights/${lightKey}/yellow_duration`]:
+            yellowDuration,
           [`teams/10/traffic_lights/${lightKey}/status`]: status,
         };
 
@@ -1009,9 +1022,11 @@ export default function TrafficAdminpage() {
               location: { lat, lng },
             });
 
-            const markerId = response.data?.data?.marker?.id;
+            // API returns { success, data: { id, ... }, message }
+            const markerId = response.data?.data?.id;
             if (markerId) {
-              updates[`teams/10/traffic_lights/${lightKey}/support_marker_id`] = markerId;
+              updates[`teams/10/traffic_lights/${lightKey}/support_marker_id`] =
+                markerId;
             }
           } catch (markerErr) {
             console.error('Failed to create support marker:', markerErr);
@@ -1023,7 +1038,8 @@ export default function TrafficAdminpage() {
           if (supportMarkerId) {
             try {
               await apiClient.delete(`/api/markers/${supportMarkerId}`);
-              updates[`teams/10/traffic_lights/${lightKey}/support_marker_id`] = null;
+              updates[`teams/10/traffic_lights/${lightKey}/support_marker_id`] =
+                null;
             } catch (markerErr) {
               console.error('Failed to delete support marker:', markerErr);
             }
@@ -1152,7 +1168,9 @@ export default function TrafficAdminpage() {
                   onUserLocationUpdate={handleUserLocationUpdate}
                   emergencyStopAll={emergencyStopAll}
                   stoppedIntersections={stoppedIntersections}
-                  emergencyControlledIntersections={emergencyControlledIntersections}
+                  emergencyControlledIntersections={
+                    emergencyControlledIntersections
+                  }
                 />
               </Map>
             </APIProvider>
@@ -1370,7 +1388,6 @@ export default function TrafficAdminpage() {
           onSave={handleSaveSettings}
           currentSettings={settings}
         />
-
         {/* Light Editor Dialog */}
         {editingLight && (
           <LightEditorDialog
@@ -1385,7 +1402,8 @@ export default function TrafficAdminpage() {
               editingLight.trafficLightId &&
               trafficLightsData[editingLight.trafficLightId]
                 ? parseInt(
-                    trafficLightsData[editingLight.trafficLightId].green_duration
+                    trafficLightsData[editingLight.trafficLightId]
+                      .green_duration
                   ) || 27
                 : 27
             }
@@ -1393,7 +1411,8 @@ export default function TrafficAdminpage() {
               editingLight.trafficLightId &&
               trafficLightsData[editingLight.trafficLightId]
                 ? parseInt(
-                    trafficLightsData[editingLight.trafficLightId].yellow_duration
+                    trafficLightsData[editingLight.trafficLightId]
+                      .yellow_duration
                   ) || 3
                 : 3
             }
