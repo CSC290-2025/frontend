@@ -5,18 +5,32 @@ type Props = {
 };
 
 export default function WarningBox({ warning, detail, onClick }: Props) {
+  const isWarning =
+    (warning?.toLowerCase().includes('alert') ||
+      warning?.toLowerCase().includes('warning')) ??
+    false;
+
   if (!warning) return null;
 
   return (
     <div
-      className="cursor-pointer rounded-2xl border border-red-300 bg-red-50 p-6 shadow-sm"
       onClick={onClick}
+      className={`rounded-2xl border p-6 shadow-lg transition-all duration-200 ${
+        isWarning ? 'border-red-200 bg-red-50' : 'border-green-200 bg-green-50'
+      } ${
+        onClick
+          ? 'cursor-pointer hover:scale-[1.02] hover:shadow-xl active:scale-[0.98] active:shadow-md'
+          : ''
+      }`}
     >
-      <div className="mb-2 flex items-center gap-2 text-lg font-bold text-red-700">
-        ⚠️ {warning}
-      </div>
-
-      <div className="leading-snug font-semibold text-red-500">{detail}</div>
+      <h2
+        className={`mb-2 text-xl font-bold ${
+          isWarning ? 'text-red-700' : 'text-green-700'
+        }`}
+      >
+        {isWarning ? '⚠️' : '✅'} {warning}
+      </h2>
+      <p className="text-sm text-gray-600">{detail}</p>
     </div>
   );
 }

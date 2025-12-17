@@ -1,20 +1,23 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 import { useNavigate } from '@/router';
 import { apiClient } from '@/lib/apiClient';
 import {
   ArrowLeft,
-  Upload,
   X,
   MapPin,
   Calendar,
   Clock,
   Users,
   Plus,
-  Image,
+  Image as ImageIcon,
+  CheckCircle,
+  LayoutTemplate,
+  Building2,
+  FileText,
 } from 'lucide-react';
+import { useGetAuthMe } from '@/api/generated/authentication';
 
-// This is the shape of the data the API *expects*
+// --- Interfaces ---
 interface ApiPayload {
   title: string;
   description: string;
@@ -25,11 +28,36 @@ interface ApiPayload {
   created_by_user_id: number;
   department_id: number;
   address_id: number;
+  tag?: string;
   image_url?: string;
 }
 
 export default function CreateVolunteerPost() {
-  const navigate = useNavigate(); // Hook for navigation
+  const navigate = useNavigate();
+  const userId = useGetAuthMe().data?.data?.userId.toString() ?? '';
+
+  // State
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const postTag = [
+    'Environment',
+    'Freecycle',
+    'Weather',
+    'Education',
+    'Funding',
+    'Disability/Elderly Support',
+    'Community & Social',
+  ];
+
+  const [selectedCategory, setSelectedCategory] = useState<string | undefined>(
+    undefined
+  );
+  const [uploadedImage, setUploadedImage] = useState<
+    string | ArrayBuffer | null
+  >(null);
+
   const [formData, setFormData] = useState({
     title: '',
     organization: '',
@@ -43,33 +71,29 @@ export default function CreateVolunteerPost() {
     description: '',
     activities: [''],
     requirements: [''],
+    tag: '',
   });
-  const [uploadedImage, setUploadedImage] = useState<
-    string | ArrayBuffer | null
-  >(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+
+  // --- Handlers ---
+
+  const toggleCategory = (category: string) => {
+    setSelectedCategory((prev) => (prev === category ? undefined : category));
+    handleInputChange('tag', category);
+  };
 
   const handleInputChange = (field: string, value: string) => {
-    // START OF MODIFICATION
     if (field === 'maxVolunteers') {
       const numValue = parseInt(value, 10);
-
-      // Allow empty string to clear the field, but enforce minimum 1 if a number is entered
       if (value === '' || (numValue > 0 && !isNaN(numValue))) {
         setFormData((prev) => ({ ...prev, [field]: value }));
       } else if (numValue <= 0 && value !== '') {
-        // Optional: Set a specific error or default to 1
         setError('Max Volunteers must be a positive number (minimum 1).');
-        // Prevent setting the state to an invalid number, keep the previous value or set to a valid one
-        // setFormData((prev) => ({ ...prev, [field]: '1' }));
         return;
       }
     } else {
-      // END OF MODIFICATION
       setFormData((prev) => ({ ...prev, [field]: value }));
     }
-    // Clear the error if the user starts typing a valid value after an error
+
     if (error && field === 'maxVolunteers' && parseInt(value, 10) > 0) {
       setError(null);
     }
@@ -101,10 +125,8 @@ export default function CreateVolunteerPost() {
     const file = e.target.files && e.target.files[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setUploadedImage(reader.result);
-      };
-      reader.readAsDataURL(file); // This gives a base64 string
+      reader.onloadend = () => setUploadedImage(reader.result);
+      reader.readAsDataURL(file);
     }
   };
 
@@ -127,7 +149,6 @@ export default function CreateVolunteerPost() {
       requirements,
     } = formData;
 
-    // Enhanced validation: check for required fields AND maxVolunteers > 0
     const totalSeats = parseInt(maxVolunteers, 10);
     if (
       !title ||
@@ -137,22 +158,32 @@ export default function CreateVolunteerPost() {
       !maxVolunteers ||
       totalSeats <= 0
     ) {
-      setError(
-        'Title, Date, Start Time, End Time, and Max Volunteers (must be > 0) are required.'
-      );
+      setError('Please fill in all required fields marked with *');
       setIsLoading(false);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
-    // API expects full ISO strings for dates
     const start_at = `${date}T${startTime}:00`;
-    const end_at = `${date}T${endTime}:00`;
-    // Assumes deadline is end of day for the selected date. Adjust if API expects time.
+    let end_at = `${date}T${endTime}:00`;
+
+    if (endTime < startTime) {
+      const [year, month, day] = date.split('-').map(Number);
+
+      const nextDate = new Date(year, month - 1, day + 1);
+
+      const nextY = nextDate.getFullYear();
+      const nextM = String(nextDate.getMonth() + 1).padStart(2, '0');
+      const nextD = String(nextDate.getDate()).padStart(2, '0');
+      const nextDateStr = `${nextY}-${nextM}-${nextD}`;
+
+      end_at = `${nextDateStr}T${endTime}:00`;
+    }
+
     const registration_deadline_at = registration_deadline
       ? `${registration_deadline}T23:59:59`
       : undefined;
 
-    // Combine form data into a single description field
     const fullDescription = `
 **Purpose:**
 ${description}
@@ -181,14 +212,12 @@ ${requirements
       start_at: start_at,
       end_at: end_at,
       registration_deadline: registration_deadline_at,
-      // Use the validated totalSeats
       total_seats: totalSeats,
-      image_url: typeof uploadedImage === 'string' ? uploadedImage : undefined, // Send base64 string or undefined
-
-      // testing with static IDs - replace with actual dynamic values (e.g., from auth context)
-      created_by_user_id: 1,
+      image_url: typeof uploadedImage === 'string' ? uploadedImage : undefined,
+      created_by_user_id: Number(userId),
       department_id: 1,
       address_id: 1,
+      tag: selectedCategory,
     };
 
     try {
@@ -198,147 +227,173 @@ ${requirements
       );
 
       if (response.data.success) {
-        alert('Event created successfully!');
-        navigate('/volunteer/board'); // Redirect on success
+        setShowSuccessModal(true);
       } else {
-        // Use a more specific error message from the API if available
         throw new Error(response.data.message || 'API returned an error');
       }
     } catch (err: any) {
-      console.error('Error creating event:', err.response?.data || err.message);
+      console.error('Error creating event:', err);
       setError(
         err.response?.data?.message ||
           err.message ||
           'An unknown error occurred.'
       );
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
       setIsLoading(false);
     }
   };
 
+  const renderSectionHeader = (icon: React.ReactNode, title: string) => (
+    <h2 className="mb-6 flex items-center gap-2 text-lg font-bold text-gray-800">
+      <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
+        {icon}
+      </span>
+      {title}
+    </h2>
+  );
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50/50 pb-20 font-sans">
       {/* Header */}
-      <div className="border-b border-gray-200 bg-white">
-        <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-4 sm:px-8">
+      <div className="sticky top-0 z-20 border-b border-gray-200 bg-white/80 backdrop-blur-md">
+        <div className="mx-auto flex max-w-4xl items-center justify-between px-4 py-4 sm:px-6 lg:px-8">
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-800"
+            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900"
           >
-            <ArrowLeft className="h-5 w-5" />
-            <span className="hidden font-medium sm:inline">Back</span>
+            <ArrowLeft className="h-4 w-4" />
+            Back
           </button>
-          <h1 className="text-lg font-bold text-gray-800 sm:text-xl">
+          <h1 className="text-lg font-bold text-gray-900">
             Create Opportunity
           </h1>
-          <div className="w-10 sm:w-20"></div> {/* Space placeholder */}
+          <div className="w-16"></div>
         </div>
       </div>
 
-      {/* Main Content */}
-      {/* Reduced padding on mobile: px-4 */}
-      <div className="mx-auto max-w-5xl px-4 py-8 sm:px-8">
-        <div className="space-y-6">
-          {/* Image Upload Section */}
-          <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-6">
-            <h2 className="mb-4 text-lg font-bold text-gray-800">
-              Cover Image
-            </h2>
-            <div className="relative">
-              {uploadedImage ? (
-                <div className="relative">
-                  <img
-                    src={
-                      typeof uploadedImage === 'string'
-                        ? uploadedImage
-                        : undefined
-                    }
-                    alt="Uploaded"
-                    className="h-48 w-full rounded-xl object-cover sm:h-64"
-                  />
-                  <button
-                    onClick={() => setUploadedImage(null)}
-                    className="absolute top-4 right-4 rounded-full bg-white p-2 shadow-lg hover:bg-gray-100"
-                  >
-                    <X className="h-5 w-5 text-gray-600" />
-                  </button>
-                </div>
-              ) : (
-                <label className="flex h-48 w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 transition-colors hover:border-blue-400 hover:bg-blue-50 sm:h-64">
-                  <Image className="mb-3 h-10 w-10 text-gray-400 sm:h-12 sm:w-12" />
-                  <span className="px-4 text-center font-medium text-gray-600">
-                    Click to upload cover image
-                  </span>
-                  <span className="mt-1 text-sm text-gray-400">
-                    PNG, JPG up to 10MB
-                  </span>
-                  <input
-                    type="file"
-                    className="hidden"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                  />
-                </label>
-              )}
+      {/* Main Form Content */}
+      <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+        {error && (
+          <div className="animate-in fade-in slide-in-from-top-2 mb-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-600">
+            <div className="flex items-center gap-2 font-semibold">
+              <X className="h-4 w-4" />
+              Submission Error
             </div>
+            <p className="mt-1 ml-6">{error}</p>
           </div>
+        )}
 
-          {/* Basic Information */}
-          <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-6">
-            <h2 className="mb-4 text-lg font-bold text-gray-800">
-              Basic Information
-            </h2>
-            <div className="space-y-4">
-              {/* Title, Organization, Category fields remain full width (good for mobile) */}
+        <div className="space-y-8">
+          {/* Cover Image */}
+          <section className="overflow-hidden rounded-2xl bg-white shadow-sm ring-1 ring-gray-200 transition-shadow hover:shadow-md">
+            <div className="p-6">
+              {renderSectionHeader(
+                <ImageIcon className="h-5 w-5" />,
+                'Cover Image'
+              )}
+              <div className="relative">
+                {uploadedImage ? (
+                  <div className="group relative overflow-hidden rounded-xl border border-gray-200">
+                    <img
+                      src={
+                        typeof uploadedImage === 'string'
+                          ? uploadedImage
+                          : undefined
+                      }
+                      alt="Uploaded"
+                      className="h-64 w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-black/20 opacity-0 transition-opacity group-hover:opacity-100" />
+                    <button
+                      onClick={() => setUploadedImage(null)}
+                      className="absolute top-4 right-4 rounded-full bg-white/90 p-2 text-gray-700 shadow-lg backdrop-blur-sm transition-transform hover:scale-110 hover:text-red-600"
+                    >
+                      <X className="h-5 w-5" />
+                    </button>
+                  </div>
+                ) : (
+                  <label className="flex h-64 w-full cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 transition-all hover:border-blue-400 hover:bg-blue-50/50">
+                    <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 text-blue-600">
+                      <Plus className="h-6 w-6" />
+                    </div>
+                    <span className="text-lg font-medium text-gray-700">
+                      Upload cover photo
+                    </span>
+                    <span className="mt-1 text-sm text-gray-500">
+                      PNG, JPG up to 10MB
+                    </span>
+                    <input
+                      type="file"
+                      className="hidden"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                    />
+                  </label>
+                )}
+              </div>
+            </div>
+          </section>
+
+          {/* Basic Info */}
+          <section className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-200">
+            {renderSectionHeader(
+              <LayoutTemplate className="h-5 w-5" />,
+              'Basic Information'
+            )}
+            <div className="grid gap-6">
               <div>
-                <label className="mb-2 block text-sm font-medium text-gray-700">
+                <label className="mb-1.5 block text-sm font-medium text-gray-700">
                   Opportunity Title *
                 </label>
                 <input
                   type="text"
                   value={formData.title}
                   onChange={(e) => handleInputChange('title', e.target.value)}
-                  placeholder="e.g., Teaching Volunteer Program"
-                  className="w-full rounded-xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                  placeholder="e.g. Teaching English for Kids"
+                  className="w-full rounded-xl border-gray-200 bg-gray-50 px-4 py-3 text-gray-900 transition-all outline-none placeholder:text-gray-400 focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-200"
                 />
               </div>
-
               <div>
-                <label className="mb-2 block text-sm font-medium text-gray-700">
+                <label className="mb-1.5 block text-sm font-medium text-gray-700">
                   Organization Name *
                 </label>
-                <input
-                  type="text"
-                  value={formData.organization}
-                  onChange={(e) =>
-                    handleInputChange('organization', e.target.value)
-                  }
-                  placeholder="e.g., Community Education Center"
-                  className="w-full rounded-xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:outline-none"
-                />
+                <div className="relative">
+                  <Building2 className="absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    value={formData.organization}
+                    onChange={(e) =>
+                      handleInputChange('organization', e.target.value)
+                    }
+                    placeholder="e.g. Red Cross"
+                    className="w-full rounded-xl border-gray-200 bg-gray-50 py-3 pr-4 pl-10 text-gray-900 transition-all outline-none placeholder:text-gray-400 focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-200"
+                  />
+                </div>
               </div>
             </div>
-          </div>
+          </section>
 
-          <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-6">
-            {/* key responsive change: grid-cols-1 on mobile, md:grid-cols-2 on medium screens */}
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          {/* Schedule & Capacity */}
+          <section className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-200">
+            {renderSectionHeader(
+              <Calendar className="h-5 w-5" />,
+              'Schedule & Capacity'
+            )}
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               <div>
-                <label className="mb-2 block text-sm font-medium text-gray-700">
-                  <Calendar className="mr-1 inline h-4 w-4" />
-                  Date *
+                <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                  Event Date *
                 </label>
                 <input
                   type="date"
                   value={formData.date}
                   onChange={(e) => handleInputChange('date', e.target.value)}
-                  className="w-full rounded-xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                  className="w-full rounded-xl border-gray-200 bg-gray-50 px-4 py-3 text-gray-900 transition-all outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-200"
                 />
               </div>
-
               <div>
-                <label className="mb-2 block text-sm font-medium text-gray-700">
-                  <Calendar className="mr-1 inline h-4 w-4" />
+                <label className="mb-1.5 block text-sm font-medium text-gray-700">
                   Registration Deadline *
                 </label>
                 <input
@@ -347,69 +402,70 @@ ${requirements
                   onChange={(e) =>
                     handleInputChange('registration_deadline', e.target.value)
                   }
-                  className="w-full rounded-xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                  className="w-full rounded-xl border-gray-200 bg-gray-50 px-4 py-3 text-gray-900 transition-all outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-200"
                 />
               </div>
-
               <div>
-                <label className="mb-2 block text-sm font-medium text-gray-700">
-                  <Users className="mr-1 inline h-4 w-4" />
-                  Max Volunteers *
-                </label>
-                <input
-                  type="number"
-                  value={formData.maxVolunteers}
-                  onChange={(e) =>
-                    handleInputChange('maxVolunteers', e.target.value)
-                  }
-                  placeholder="55"
-                  className="w-full rounded-xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:outline-none"
-                  // Added min attribute for better UI experience
-                  min="1"
-                />
-              </div>
-
-              <div>
-                <label className="mb-2 block text-sm font-medium text-gray-700">
-                  <Clock className="mr-1 inline h-4 w-4" />
+                <label className="mb-1.5 block text-sm font-medium text-gray-700">
                   Start Time *
                 </label>
-                <input
-                  type="time"
-                  value={formData.startTime}
-                  onChange={(e) =>
-                    handleInputChange('startTime', e.target.value)
-                  }
-                  className="w-full rounded-xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:outline-none"
-                />
+                <div className="relative">
+                  <Clock className="absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="time"
+                    value={formData.startTime}
+                    onChange={(e) =>
+                      handleInputChange('startTime', e.target.value)
+                    }
+                    className="w-full rounded-xl border-gray-200 bg-gray-50 py-3 pr-4 pl-10 text-gray-900 transition-all outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-200"
+                  />
+                </div>
               </div>
-
-              <div className="md:col-span-2">
-                {' '}
-                {/* Added for cleaner alignment */}
-                <label className="mb-2 block text-sm font-medium text-gray-700">
-                  <Clock className="mr-1 inline h-4 w-4" />
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-gray-700">
                   End Time *
                 </label>
-                <input
-                  type="time"
-                  value={formData.endTime}
-                  onChange={(e) => handleInputChange('endTime', e.target.value)}
-                  className="w-full rounded-xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:outline-none"
-                />
+                <div className="relative">
+                  <Clock className="absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="time"
+                    value={formData.endTime}
+                    onChange={(e) =>
+                      handleInputChange('endTime', e.target.value)
+                    }
+                    className="w-full rounded-xl border-gray-200 bg-gray-50 py-3 pr-4 pl-10 text-gray-900 transition-all outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-200"
+                  />
+                </div>
+              </div>
+              <div className="md:col-span-2">
+                <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                  Max Volunteers *
+                </label>
+                <div className="relative">
+                  <Users className="absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="number"
+                    min="1"
+                    value={formData.maxVolunteers}
+                    onChange={(e) =>
+                      handleInputChange('maxVolunteers', e.target.value)
+                    }
+                    className="w-full rounded-xl border-gray-200 bg-gray-50 py-3 pr-4 pl-10 text-gray-900 transition-all outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-200"
+                  />
+                </div>
               </div>
             </div>
-          </div>
+          </section>
 
           {/* Location */}
-          <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-6">
-            <h2 className="mb-4 text-lg font-bold text-gray-800">
-              <MapPin className="mr-2 inline h-5 w-5" />
-              Location
-            </h2>
-            <div className="space-y-4">
+          <section className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-200">
+            {renderSectionHeader(
+              <MapPin className="h-5 w-5" />,
+              'Location Details'
+            )}
+            <div className="space-y-6">
               <div>
-                <label className="mb-2 block text-sm font-medium text-gray-700">
+                <label className="mb-1.5 block text-sm font-medium text-gray-700">
                   Venue Name *
                 </label>
                 <input
@@ -418,142 +474,210 @@ ${requirements
                   onChange={(e) =>
                     handleInputChange('location', e.target.value)
                   }
-                  placeholder="e.g., Community Education Center"
-                  className="w-full rounded-xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                  placeholder="e.g. Central Library Hall"
+                  className="w-full rounded-xl border-gray-200 bg-gray-50 px-4 py-3 text-gray-900 transition-all outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-200"
                 />
               </div>
-
               <div>
-                <label className="mb-2 block text-sm font-medium text-gray-700">
+                <label className="mb-1.5 block text-sm font-medium text-gray-700">
                   Full Address *
                 </label>
                 <textarea
+                  rows={3}
                   value={formData.address}
                   onChange={(e) => handleInputChange('address', e.target.value)}
-                  placeholder="123 Learning Street, Central District, Bangkok, Thailand 10100"
-                  rows={3}
-                  className="w-full rounded-xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:outline-none"
+                  placeholder="Enter full address including postal code"
+                  className="w-full resize-none rounded-xl border-gray-200 bg-gray-50 px-4 py-3 text-gray-900 transition-all outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-200"
                 />
               </div>
             </div>
-          </div>
+          </section>
 
-          {/* Description */}
-          <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-6">
-            <h2 className="mb-4 text-lg font-bold text-gray-800">
-              Description
-            </h2>
-            <textarea
-              value={formData.description}
-              onChange={(e) => handleInputChange('description', e.target.value)}
-              placeholder="Describe the volunteer opportunity, its purpose, and what volunteers can expect..."
-              rows={6}
-              className="w-full rounded-xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:outline-none"
-            />
-          </div>
+          {/* Details & Tags */}
+          <section className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-200">
+            {renderSectionHeader(<FileText className="h-5 w-5" />, 'Details')}
+            <div className="space-y-6">
+              <div>
+                <label className="mb-1.5 block text-sm font-medium text-gray-700">
+                  Description
+                </label>
+                <textarea
+                  rows={6}
+                  value={formData.description}
+                  onChange={(e) =>
+                    handleInputChange('description', e.target.value)
+                  }
+                  placeholder="Describe the mission and what volunteers will do..."
+                  className="w-full resize-none rounded-xl border-gray-200 bg-gray-50 px-4 py-3 text-gray-900 transition-all outline-none focus:border-blue-500 focus:bg-white focus:ring-2 focus:ring-blue-200"
+                />
+              </div>
 
-          {/* Activities */}
-          <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-6">
-            <div className="mb-4 flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
-              <h2 className="text-lg font-bold text-gray-800">Activities</h2>
-              <button
-                type="button"
-                onClick={() => addArrayItem('activities')}
-                className="flex items-center gap-2 rounded-full bg-blue-100 px-4 py-2 font-medium text-blue-600 hover:bg-blue-200"
-              >
-                <Plus className="h-4 w-4" />
-                Add Activity
-              </button>
-            </div>
-            <div className="space-y-3">
-              {formData.activities.map((activity, index) => (
-                <div key={index} className="flex items-start gap-3">
-                  <div className="mt-2 flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-lime-400 font-semibold text-gray-800">
-                    {index + 1}
+              {/* Dynamic Lists (Activities & Requirements) */}
+              <div className="grid gap-6 md:grid-cols-2">
+                {/* Activities */}
+                <div className="rounded-xl border border-gray-100 bg-gray-50/50 p-4">
+                  <div className="mb-3 flex items-center justify-between">
+                    <label className="text-sm font-bold text-gray-700">
+                      Activities
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => addArrayItem('activities')}
+                      className="text-xs font-medium text-blue-600 hover:text-blue-800"
+                    >
+                      + Add
+                    </button>
                   </div>
-                  <input
-                    type="text"
-                    value={activity}
-                    onChange={(e) =>
-                      handleArrayChange('activities', index, e.target.value)
-                    }
-                    placeholder="e.g., Assist with classroom activities"
-                    className="flex-1 rounded-xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:outline-none"
-                  />
-                  {formData.activities.length > 1 && (
+                  <div className="space-y-2">
+                    {formData.activities.map((act, idx) => (
+                      <div key={idx} className="flex gap-2">
+                        <input
+                          value={act}
+                          onChange={(e) =>
+                            handleArrayChange('activities', idx, e.target.value)
+                          }
+                          className="flex-1 rounded-lg border-gray-200 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                          placeholder={`Activity ${idx + 1}`}
+                        />
+                        {formData.activities.length > 1 && (
+                          <button
+                            onClick={() => removeArrayItem('activities', idx)}
+                            className="text-gray-400 hover:text-red-500"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Requirements */}
+                <div className="rounded-xl border border-gray-100 bg-gray-50/50 p-4">
+                  <div className="mb-3 flex items-center justify-between">
+                    <label className="text-sm font-bold text-gray-700">
+                      Requirements
+                    </label>
                     <button
                       type="button"
-                      onClick={() => removeArrayItem('activities', index)}
-                      className="flex-shrink-0 rounded-xl p-3 text-red-500 hover:bg-red-50"
+                      onClick={() => addArrayItem('requirements')}
+                      className="text-xs font-medium text-blue-600 hover:text-blue-800"
                     >
-                      <X className="h-5 w-5" />
+                      + Add
                     </button>
-                  )}
+                  </div>
+                  <div className="space-y-2">
+                    {formData.requirements.map((req, idx) => (
+                      <div key={idx} className="flex gap-2">
+                        <input
+                          value={req}
+                          onChange={(e) =>
+                            handleArrayChange(
+                              'requirements',
+                              idx,
+                              e.target.value
+                            )
+                          }
+                          className="flex-1 rounded-lg border-gray-200 px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                          placeholder={`Requirement ${idx + 1}`}
+                        />
+                        {formData.requirements.length > 1 && (
+                          <button
+                            onClick={() => removeArrayItem('requirements', idx)}
+                            className="text-gray-400 hover:text-red-500"
+                          >
+                            <X className="h-4 w-4" />
+                          </button>
+                        )}
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              ))}
-            </div>
-          </div>
+              </div>
 
-          {/* Requirements (Similar changes to Activities) */}
-          <div className="rounded-2xl border border-gray-200 bg-white p-4 sm:p-6">
-            <div className="mb-4 flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
-              <h2 className="text-lg font-bold text-gray-800">Requirements</h2>
-              <button
-                type="button"
-                onClick={() => addArrayItem('requirements')}
-                className="flex items-center gap-2 rounded-full bg-blue-100 px-4 py-2 font-medium text-blue-600 hover:bg-blue-200"
-              >
-                <Plus className="h-4 w-4" />
-                Add Requirement
-              </button>
-            </div>
-            <div className="space-y-3">
-              {formData.requirements.map((requirement, index) => (
-                <div key={index} className="flex items-start gap-3">
-                  <div className="mt-4 h-2 w-2 flex-shrink-0 rounded-full bg-blue-500" />
-                  <input
-                    type="text"
-                    value={requirement}
-                    onChange={(e) =>
-                      handleArrayChange('requirements', index, e.target.value)
-                    }
-                    placeholder="e.g., Age 18 or above"
-                    className="flex-1 rounded-xl border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-blue-400 focus:outline-none"
-                  />
-                  {formData.requirements.length > 1 && (
+              {/* Tags */}
+              <div>
+                <label className="mb-3 block text-sm font-medium text-gray-700">
+                  Category Tag
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {postTag.map((tag) => (
                     <button
+                      key={tag}
                       type="button"
-                      onClick={() => removeArrayItem('requirements', index)}
-                      className="flex-shrink-0 rounded-xl p-3 text-red-500 hover:bg-red-50"
+                      onClick={() => toggleCategory(tag)}
+                      className={`rounded-full px-4 py-2 text-sm font-medium transition-all ${
+                        selectedCategory === tag
+                          ? 'bg-blue-600 text-white shadow-md ring-2 shadow-blue-200 ring-blue-600 ring-offset-1'
+                          : 'border border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+                      }`}
                     >
-                      <X className="h-5 w-5" />
+                      {tag}
                     </button>
-                  )}
+                  ))}
                 </div>
-              ))}
+              </div>
             </div>
-          </div>
+          </section>
 
-          {/* Error Message */}
-          {error && (
-            <div className="rounded-lg border border-red-300 bg-red-100 p-3 text-red-800">
-              <strong>Error:</strong> {error}
-            </div>
-          )}
-
-          {/* Action Buttons (Responsive: Stacks on mobile, aligned right on desktop) */}
-          <div className="flex flex-col-reverse justify-end gap-3 pt-4 sm:flex-row sm:gap-4">
+          {/* Submit Button */}
+          <div className="flex justify-end pt-4">
             <button
               type="submit"
               onClick={handleSubmit}
               disabled={isLoading}
-              className="w-full rounded-full bg-lime-400 px-8 py-3 font-medium text-gray-800 hover:bg-lime-500 disabled:opacity-50 sm:w-auto"
+              className="w-full rounded-xl bg-lime-400 px-8 py-4 text-base font-bold text-gray-900 shadow-lg shadow-lime-200/50 transition-all hover:-translate-y-1 hover:bg-lime-500 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 md:w-auto"
             >
-              {isLoading ? 'Publishing...' : 'Publish Opportunity'}
+              {isLoading ? (
+                <span className="flex items-center justify-center gap-2">
+                  <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-800 border-t-transparent"></div>
+                  Publishing...
+                </span>
+              ) : (
+                'Publish Opportunity'
+              )}
             </button>
           </div>
         </div>
       </div>
+
+      {/* --- Success Modal --- */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          {/* Backdrop with blur */}
+          <div className="absolute inset-0 bg-gray-900/60 backdrop-blur-sm transition-opacity" />
+
+          {/* Modal Content */}
+          <div className="animate-in zoom-in-95 relative w-full max-w-sm scale-100 transform overflow-hidden rounded-3xl bg-white p-8 text-center shadow-2xl transition-all duration-200">
+            <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-green-100 ring-8 ring-green-50">
+              <CheckCircle className="h-10 w-10 text-green-600" />
+            </div>
+
+            <h3 className="mb-2 text-2xl font-bold text-gray-900">
+              Published Successfully!
+            </h3>
+            <p className="mb-8 text-gray-500">
+              Your volunteer opportunity is now live and visible to the
+              community.
+            </p>
+
+            <div className="flex flex-col gap-3">
+              <button
+                onClick={() => navigate('/volunteer/board')}
+                className="w-full rounded-xl bg-gray-900 py-3.5 font-semibold text-white transition-transform hover:scale-[1.02] active:scale-95"
+              >
+                Go to Board
+              </button>
+              <button
+                onClick={() => window.location.reload()}
+                className="w-full rounded-xl border border-gray-200 bg-white py-3.5 font-semibold text-gray-700 transition-colors hover:bg-gray-50"
+              >
+                Create Another
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
