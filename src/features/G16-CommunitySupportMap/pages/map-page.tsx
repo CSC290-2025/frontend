@@ -1,10 +1,15 @@
-// src/pages/MapPage.tsx
-import { useEffect, useRef, useState } from 'react';
+// // src/pages/MapPage.tsx
+import { useEffect, useMemo, useRef, useState } from 'react';
 import initMapAndMarkers from '../config/google-map';
 import type { SuccessMarker, MapMarker } from '../interfaces/api';
 import { MarkerSidePanel } from '../components/rightSide';
 import { apiClient } from '@/lib/apiClient';
-import Layout from '@/components/main/Layout';
+// import Layout from '@/components/main/Layout';
+
+// import Layout from '../components/layout';
+
+// import Layout from '@/features/G16-CommunitySupportMap/components/layout';
+import Layout from '@/features/G16-CommunitySupportMap/components/layout';
 
 // area of map with 4 district
 const MAP_BOUNDS = {
@@ -39,6 +44,14 @@ const MapPage = () => {
     Record<number, string>
   >({});
 
+  // null = show all, number = filter by marker_type_id
+  const [selectedTypeId, setSelectedTypeId] = useState<number | null>(null);
+
+  // ===== NEW: receive filter from Header via Layout =====
+  const handleSelectTypeId = (id: number) => {
+    setSelectedTypeId((prev) => (prev === id ? null : id));
+  };
+
   async function handleDeleteMarker(id: number) {
     try {
       await apiClient.delete(`/api/markers/${id}`);
@@ -49,7 +62,6 @@ const MapPage = () => {
   }
 
   // marker types (id to marker_type_icon)
-
   useEffect(() => {
     async function loadMarkerTypes() {
       try {
@@ -148,12 +160,19 @@ const MapPage = () => {
     loadMarkers();
   }, []);
 
+  // filter markers (zone + marker_type_id) =====
+  const filteredMarkers = markers
+    .filter(isInAnyZone)
+    .filter((m) =>
+      selectedTypeId === null ? true : m.marker_type_id === selectedTypeId
+    );
+
   // Render Google Map whenever markers change
   useEffect(() => {
     if (!mapRef.current) return;
 
-    // Only markers inside the 4 target districts
-    const filtered = markers.filter(isInAnyZone);
+    // const filtered = markers.filter(isInAnyZone);
+    const filtered = filteredMarkers;
 
     // Center of the whole area
     const center = {
@@ -169,15 +188,6 @@ const MapPage = () => {
         strictBounds: true,
       },
     };
-
-    // const markerOptions = filtered.map((m) => ({
-    //   position: { lat: m.lat, lng: m.lng },
-    //   title: m.description ?? `Marker #${m.id}`,
-
-    // markerTypeId: m.marker_type_id ?? 1,
-
-    //   markerTypeIconKey: markerTypeIconById[m.marker_type_id ?? 1],
-    // }));
 
     const markerOptions = filtered.map((m) => ({
       position: { lat: m.lat, lng: m.lng },
@@ -195,13 +205,23 @@ const MapPage = () => {
       mapOptions,
       markerOptions,
     });
-    // }, [markers]);
-  }, [markers, markerTypeIconById]);
 
-  const panelMarkers = markers.filter(isInAnyZone);
+    // old
+    // }, [markers, markerTypeIconById]);
+  }, [markers, markerTypeIconById, filteredMarkers]);
+
+  // old
+  // const panelMarkers = markers.filter(isInAnyZone);
+
+  // new = sidepanel use same filtered markers
+  const panelMarkers = filteredMarkers;
 
   return (
-    <Layout>
+    <Layout
+      onSelectTypeId={
+        (id) => setSelectedTypeId((prev) => (prev === id ? null : id)) // กดซ้ำ = ยกเลิกฟิลเตอร์ (แทน All)
+      }
+    >
       <div className="w-full space-y-4">
         {loading && <p className="text-sm text-gray-500">Loading markers...</p>}
 

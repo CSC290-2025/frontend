@@ -17,7 +17,13 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-function Header() {
+type HeaderProps = {
+  onSelectTypeId?: (id: number) => void;
+};
+
+// function Header() {
+
+function Header({ onSelectTypeId }: HeaderProps) {
   return (
     <div className="font-poppins mx-auto w-full max-w-[1200px] px-5 pt-6 pb-4">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4">
@@ -64,6 +70,7 @@ function Header() {
         </button>
       </div>
 
+      {/* ===== MOBILE ===== */}
       <div className="mt-5 flex w-full justify-center md:hidden">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -72,44 +79,84 @@ function Header() {
               <ChevronDown className="h-4 w-4" strokeWidth={4} />
             </Button>
           </DropdownMenuTrigger>
+
           <DropdownMenuContent
             align="end"
             sideOffset={10}
             className="w-48 rounded-2xl bg-[#2749C9] p-3 text-white shadow-xl"
           >
-            <DropdownMenuItem className="flex cursor-pointer items-center gap-2 px-3 py-2 hover:bg-[#1f3db1]">
-              <BusFront className="h-6 w-6 text-white" strokeWidth={2} />
-              <span className="text-base">Transportation</span>
-            </DropdownMenuItem>
+            {/* 
+                remove All 
+                marker_type_id mapping:
+                1 Impure_air
+                2 Traffics
+                3 Events
+                4 Emergency_request
+                5 Danger_area
+                6 Injured_area
+                7 Trash_area
+            */}
 
-            <DropdownMenuItem className="flex cursor-pointer items-center gap-2 px-3 py-2 hover:bg-[#1f3db1]">
+            <DropdownMenuItem
+              className="flex cursor-pointer items-center gap-2 px-3 py-2 hover:bg-[#1f3db1]"
+              onClick={() => onSelectTypeId?.(1)}
+            >
               <Wind className="h-6 w-6 text-white" strokeWidth={2} />
               <span className="text-base">Impure Air</span>
             </DropdownMenuItem>
 
-            <DropdownMenuItem className="flex cursor-pointer items-center gap-2 px-3 py-2 hover:bg-[#1f3db1]">
+            <DropdownMenuItem
+              className="flex cursor-pointer items-center gap-2 px-3 py-2 hover:bg-[#1f3db1]"
+              onClick={() => onSelectTypeId?.(2)}
+            >
               <TrafficCone className="h-6 w-6 text-white" strokeWidth={2} />
               <span className="text-base">Traffics</span>
             </DropdownMenuItem>
 
-            <DropdownMenuItem className="flex cursor-pointer items-center gap-2 px-3 py-2 hover:bg-[#1f3db1]">
+            <DropdownMenuItem
+              className="flex cursor-pointer items-center gap-2 px-3 py-2 hover:bg-[#1f3db1]"
+              onClick={() => onSelectTypeId?.(3)}
+            >
               <Trophy className="h-6 w-6 text-white" strokeWidth={2} />
               <span className="text-base">Events</span>
             </DropdownMenuItem>
 
-            <DropdownMenuItem className="flex cursor-pointer items-center gap-2 px-3 py-2 hover:bg-[#1f3db1]">
+            <DropdownMenuItem
+              className="flex cursor-pointer items-center gap-2 px-3 py-2 hover:bg-[#1f3db1]"
+              onClick={() => onSelectTypeId?.(4)}
+            >
               <Siren className="h-6 w-6 text-white" strokeWidth={2} />
               <span className="text-base">Emergency Request</span>
             </DropdownMenuItem>
 
-            <DropdownMenuItem className="flex cursor-pointer items-center gap-2 px-3 py-2 hover:bg-[#1f3db1]">
+            <DropdownMenuItem
+              className="flex cursor-pointer items-center gap-2 px-3 py-2 hover:bg-[#1f3db1]"
+              onClick={() => onSelectTypeId?.(5)}
+            >
               <TriangleAlert className="h-6 w-6 text-white" strokeWidth={2} />
               <span className="text-base">Danger Area</span>
+            </DropdownMenuItem>
+
+            <DropdownMenuItem
+              className="flex cursor-pointer items-center gap-2 px-3 py-2 hover:bg-[#1f3db1]"
+              onClick={() => onSelectTypeId?.(6)}
+            >
+              <HeartPlus className="h-6 w-6 text-white" strokeWidth={2} />
+              <span className="text-base">Injured Area</span>
+            </DropdownMenuItem>
+
+            <DropdownMenuItem
+              className="flex cursor-pointer items-center gap-2 px-3 py-2 hover:bg-[#1f3db1]"
+              onClick={() => onSelectTypeId?.(7)}
+            >
+              <Trash2 className="h-6 w-6 text-white" strokeWidth={2} />
+              <span className="text-base">Trash Area</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
 
+      {/* ===== DESKTOP ===== */}
       <div className="mt-5 hidden w-full justify-end md:flex lg:mr-20">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -118,12 +165,16 @@ function Header() {
               <ChevronDown className="h-4 w-4" strokeWidth={4} />
             </Button>
           </DropdownMenuTrigger>
+
           <DropdownMenuContent
             align="end"
             sideOffset={10}
             className="w-54 rounded-2xl bg-[#2749C9] p-3 text-white shadow-xl"
           >
-            <DropdownMenuItem className="group flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 transition hover:bg-white hover:text-black">
+            <DropdownMenuItem
+              className="group flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 transition hover:bg-white hover:text-black"
+              onClick={() => onSelectTypeId?.(1)}
+            >
               <Wind
                 className="h-6 w-6 text-white group-hover:text-black"
                 strokeWidth={2}
@@ -133,7 +184,10 @@ function Header() {
               </span>
             </DropdownMenuItem>
 
-            <DropdownMenuItem className="group flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 transition hover:bg-white hover:text-black">
+            <DropdownMenuItem
+              className="group flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 transition hover:bg-white hover:text-black"
+              onClick={() => onSelectTypeId?.(2)}
+            >
               <TrafficCone
                 className="h-6 w-6 text-white group-hover:text-black"
                 strokeWidth={2}
@@ -141,7 +195,10 @@ function Header() {
               <span className="text-base group-hover:text-black">Traffics</span>
             </DropdownMenuItem>
 
-            <DropdownMenuItem className="group flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 transition hover:bg-white hover:text-black">
+            <DropdownMenuItem
+              className="group flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 transition hover:bg-white hover:text-black"
+              onClick={() => onSelectTypeId?.(3)}
+            >
               <Trophy
                 className="h-6 w-6 text-white group-hover:text-black"
                 strokeWidth={2}
@@ -149,7 +206,10 @@ function Header() {
               <span className="text-base group-hover:text-black">Events</span>
             </DropdownMenuItem>
 
-            <DropdownMenuItem className="group flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 transition hover:bg-white hover:text-black">
+            <DropdownMenuItem
+              className="group flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 transition hover:bg-white hover:text-black"
+              onClick={() => onSelectTypeId?.(4)}
+            >
               <Siren
                 className="h-6 w-6 text-white group-hover:text-black"
                 strokeWidth={2}
@@ -159,7 +219,10 @@ function Header() {
               </span>
             </DropdownMenuItem>
 
-            <DropdownMenuItem className="group flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 transition hover:bg-white hover:text-black">
+            <DropdownMenuItem
+              className="group flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 transition hover:bg-white hover:text-black"
+              onClick={() => onSelectTypeId?.(5)}
+            >
               <TriangleAlert
                 className="h-6 w-6 text-white group-hover:text-black"
                 strokeWidth={2}
@@ -169,7 +232,10 @@ function Header() {
               </span>
             </DropdownMenuItem>
 
-            <DropdownMenuItem className="group flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 transition hover:bg-white hover:text-black">
+            <DropdownMenuItem
+              className="group flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 transition hover:bg-white hover:text-black"
+              onClick={() => onSelectTypeId?.(6)}
+            >
               <HeartPlus
                 className="h-6 w-6 text-white group-hover:text-black"
                 strokeWidth={2}
@@ -179,7 +245,10 @@ function Header() {
               </span>
             </DropdownMenuItem>
 
-            <DropdownMenuItem className="group flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 transition hover:bg-white hover:text-black">
+            <DropdownMenuItem
+              className="group flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 transition hover:bg-white hover:text-black"
+              onClick={() => onSelectTypeId?.(7)}
+            >
               <Trash2
                 className="h-6 w-6 text-white group-hover:text-black"
                 strokeWidth={2}
@@ -194,4 +263,5 @@ function Header() {
     </div>
   );
 }
+
 export default Header;

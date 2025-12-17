@@ -1,5 +1,5 @@
 import { Trash2 } from 'lucide-react';
-import type { MapMarker } from '../interfaces/api'; // ** อย่าลืมเช็ค path ให้ตรงกับโปรเจกต์ของคุณ
+import type { MapMarker } from '../interfaces/api';
 
 export interface MarkerSidePanelProps {
   markers: MapMarker[];
