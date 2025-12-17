@@ -1,3 +1,4 @@
+import React from 'react';
 import type { Category } from '@/types/postItem';
 
 interface CategoryFilterProps {
@@ -6,11 +7,11 @@ interface CategoryFilterProps {
   onToggleCategory: (categoryId: number) => void;
 }
 
-export default function CategoryFilter({
+const CategoryFilter: React.FC<CategoryFilterProps> = ({
   categories,
   selectedCategories,
   onToggleCategory,
-}: CategoryFilterProps) {
+}) => {
   return (
     <div className="flex flex-wrap gap-2">
       {categories.map((category) => {
@@ -31,4 +32,6 @@ export default function CategoryFilter({
       })}
     </div>
   );
-}
+};
+
+export default React.memo(CategoryFilter);
