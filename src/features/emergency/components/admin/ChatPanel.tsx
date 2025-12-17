@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import type { ChatMessage } from '@/features/emergency/interfaces/incident.ts';
+import type { ChatMessage } from '@/features/emergency/types/incident.ts';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';

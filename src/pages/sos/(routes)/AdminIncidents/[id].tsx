@@ -10,7 +10,7 @@ import { MapView } from '@/features/emergency/components/admin/MapView';
 import type {
   IncidentStatus,
   ChatMessage,
-} from '@/features/emergency/interfaces/incident';
+} from '@/features/emergency/types/incident';
 
 import { Button } from '@/features/emergency/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
@@ -85,48 +85,20 @@ export default function IncidentDetailPage() {
     <div className="flex h-auto flex-col lg:h-[calc(100vh-4rem)]">
       {/* Header */}
       <div className="border-border bg-card flex shrink-0 items-center gap-4 border-b p-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => navigate(-1)}
-          className="rounded-xl"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
         <div>
           <h1 className="text-foreground text-lg font-semibold">
-            CASE#{incident.id}
+            CASE {incident.id}
           </h1>
-          <p className="text-muted-foreground text-sm">{incident.address}</p>
         </div>
       </div>
 
-      {/* Content - Stacks on Mobile, 3 cols on Desktop */}
-      <div className="grid grow grid-cols-1 overflow-hidden lg:grid-cols-3">
-        {/* Left: Details */}
-        <div className="border-border bg-background min-h-[500px] overflow-y-auto border-r p-4 lg:col-span-1 lg:min-h-0">
-          <IncidentDetail
-            incident={incident}
-            onStatusChange={handleStatusChange}
-            onBroadcast={handleBroadcast}
-          />
-        </div>
-
-        {/* Middle: Map */}
-        <div className="border-border bg-background min-h-[400px] border-r p-4 lg:col-span-1 lg:min-h-0">
-          <div className="card-elevated h-full overflow-hidden">
-            <MapView incidents={[incident]} />
-          </div>
-        </div>
-
-        {/* Right: Chat */}
-        <div className="border-border flex min-h-[500px] flex-col border-t lg:col-span-1 lg:min-h-0 lg:border-t-0">
-          <ChatPanel
-            messages={messages}
-            incidentId={incident.id}
-            onSendMessage={handleSendMessage}
-          />
-        </div>
+      {/* Left: Details */}
+      <div className="border-border bg-background min-h-[500px] overflow-y-auto border-r p-4">
+        <IncidentDetail
+          incident={incident}
+          onStatusChange={handleStatusChange}
+          onBroadcast={handleBroadcast}
+        />
       </div>
 
       {/* Broadcast Dialog */}
@@ -151,7 +123,7 @@ export default function IncidentDetailPage() {
             <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmBroadcast}
-              className="bg-warning text-warning-foreground rounded-xl"
+              className="cursor-pointer rounded-xl text-white"
             >
               Send Alert
             </AlertDialogAction>

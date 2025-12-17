@@ -31,6 +31,7 @@ import {
   Cloud,
   Navigation,
 } from 'lucide-react';
+import { apiClient } from '@/lib/apiClient.ts';
 
 export default function Sidebar() {
   const [expandedSections, setExpandedSections] = useState({
@@ -45,6 +46,16 @@ export default function Sidebar() {
       [section]: !prev[section],
     }));
   };
+
+  const [role, setRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchUserId = async () => {
+      const me = await apiClient.get('/auth/me');
+      setRole(me.data.data.role);
+    };
+    fetchUserId();
+  }, []);
 
   // Main services - compact for sidebar
   const mainRoutes = [
@@ -63,7 +74,11 @@ export default function Sidebar() {
   const additionalRoutes = [
     { icon: Zap, label: 'Power BI', path: '/power-bi' },
     { icon: Leaf, label: 'Waste Mgmt', path: '/waste-management' },
-    { icon: Shield, label: 'Emergency', path: '/sos' },
+    {
+      icon: Shield,
+      label: 'Emergency',
+      path: role === 'Admin' ? 'sos/admindashboard' : 'sos',
+    },
     { icon: Users, label: 'Volunteer', path: '/volunteer/board' },
     { icon: MapPin, label: 'Map', path: '/map' },
     { icon: House, label: 'Apartments', path: '/ApartmentHomepage' },

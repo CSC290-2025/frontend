@@ -1,7 +1,7 @@
 import type {
   Incident,
   IncidentStatus,
-} from '@/features/emergency/interfaces/incident.ts';
+} from '@/features/emergency/types/incident.ts';
 import { cn } from '@/lib/utils';
 import { Plus, Minus, Navigation, MapPin } from 'lucide-react'; // Added icons for map controls
 

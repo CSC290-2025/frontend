@@ -4,7 +4,7 @@ import { mockIncidents } from '@/features/emergency/data/mockData.ts';
 import type {
   IncidentStatus,
   IncidentCategory,
-} from '@/features/emergency/interfaces/incident';
+} from '@/features/emergency/types/incident';
 import { Button } from '@/features/emergency/components/ui/button';
 import { Badge } from '@/features/emergency/components/ui/badge';
 import { Input } from '@/features/emergency/components/ui/input';
@@ -34,7 +34,6 @@ import {
 import { format } from 'date-fns';
 import { enUS } from 'date-fns/locale';
 
-// ปรับปรุง Config สีของสถานะ (ใช้ bg และ text เพื่อทำ Badge สวยๆ)
 const statusConfig: Record<
   IncidentStatus,
   { label: string; icon: typeof Clock; style: string }
@@ -108,14 +107,7 @@ export default function AdminIncidents() {
   });
 
   return (
-    <div className="min-h-screen space-y-6 bg-slate-50/50 p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">All Reports</h1>
-          <p className="text-slate-500">Manage and track emergency reports</p>
-        </div>
-      </div>
-
+    <div className="mt-15 min-h-screen space-y-6 bg-slate-50/50">
       <div className="flex flex-wrap gap-4 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm">
         <div className="relative min-w-[200px] flex-1">
           <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-slate-400" />
