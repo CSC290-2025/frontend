@@ -529,7 +529,9 @@ function MapContent({
   }, [map, selectedSignal]);
 
   // Debounce clusterer update to prevent flickering
-  const clustererUpdateTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const clustererUpdateTimeoutRef = useRef<ReturnType<
+    typeof setTimeout
+  > | null>(null);
 
   const setMarkerRef = useCallback(
     (marker: google.maps.marker.AdvancedMarkerElement | null, key: string) => {
@@ -750,8 +752,10 @@ export default function TrafficMapPage() {
   const [stoppedIntersections, setStoppedIntersections] = useState<Set<number>>(
     new Set()
   );
-  const [emergencyControlledIntersections, setEmergencyControlledIntersections] =
-    useState<Set<number>>(new Set());
+  const [
+    emergencyControlledIntersections,
+    setEmergencyControlledIntersections,
+  ] = useState<Set<number>>(new Set());
 
   // Listen to emergency stop state from Firebase
   useEffect(() => {
@@ -813,10 +817,6 @@ export default function TrafficMapPage() {
 
   const handleMapSettingsClick = () => {
     setShowSettings(true);
-  };
-
-  const handleEmergencyClick = () => {
-    alert('Emergency request sent to traffic control center');
   };
 
   const handleCloseSettings = () => {
@@ -932,7 +932,9 @@ export default function TrafficMapPage() {
                   onUserLocationUpdate={handleUserLocationUpdate}
                   emergencyStopAll={emergencyStopAll}
                   stoppedIntersections={stoppedIntersections}
-                  emergencyControlledIntersections={emergencyControlledIntersections}
+                  emergencyControlledIntersections={
+                    emergencyControlledIntersections
+                  }
                 />
               </Map>
             </APIProvider>
@@ -940,8 +942,8 @@ export default function TrafficMapPage() {
         </div>
 
         <ControlPanel
+          className="top-0"
           onMapSettingsClick={handleMapSettingsClick}
-          onEmergencyClick={handleEmergencyClick}
         />
 
         <MapSettingsDialog
