@@ -23,12 +23,6 @@ interface StatusDetails {
 }
 
 const getStatusAndStyle = (category: string): StatusDetails => {
-  console.log(
-    'CurrentAqiCard received category:',
-    category,
-    'Type:',
-    typeof category
-  ); // Debug
   switch (category.toUpperCase()) {
     case 'GOOD':
       return {
