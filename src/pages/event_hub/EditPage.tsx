@@ -1,1 +1,1 @@
-export { default } from '@/features/Event_Hub/pages/EditPage.tsx';
+export { default } from '@/features/Event_Hub/pages/EditPage';

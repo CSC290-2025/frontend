@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Calendar,
   MapPin,
@@ -15,22 +15,21 @@ import {
   Phone,
   Eraser,
 } from 'lucide-react';
-import Sidebar from '@/features/Event_Hub/component/Sidebar';
-import TopBar from '@/features/Event_Hub/component/Topbar';
-import { useNavigate, useParams } from '@/router';
+import { useNavigate, useParams } from 'react-router';
 
-// >>> REAL API IMPORTS <<<
+import Layout from '@/components/main/Layout';
+import TopBar from '@/features/Event_Hub/component/Topbar';
 import {
   fetchEventById,
   updateEvent,
 } from '@/features/Event_Hub/api/Event.api';
 
 // --------------------------------------------------------------------------
-// INTERFACE DEFINITIONS & HELPERS
+// Types
 // --------------------------------------------------------------------------
 
 interface Address {
-  id?: number; // Added ID for potential address updates
+  id?: number;
   address_line?: string;
   province?: string;
   district?: string;
@@ -38,19 +37,17 @@ interface Address {
   postal_code?: string;
 }
 
-// Interface for the data fetched from the API
 interface ApiEventData {
   id: number;
   title: string;
   description: string;
-  start_at: string; // ISO string
-  end_at: string; // ISO string
+  start_at: string; // ISO
+  end_at: string; // ISO
   image_url: string;
-  address: Address;
-  event_tag: { event_tag_name: { name: string } };
+  address?: Address;
+  event_tag?: { event_tag_name?: { name?: string } };
 }
 
-// Interface for the local form state
 interface EventForm {
   title: string;
   description: string;
@@ -59,16 +56,18 @@ interface EventForm {
   end_date: string; // YYYY-MM-DD
   end_time: string; // HH:MM
   category: string;
+
   imageUrl: string;
+
   addressLine: string;
   province: string;
   district: string;
   subdistrict: string;
   postalCode: string;
-  address_id?: number; // To pass back to the update API if needed
+
+  address_id?: number;
 }
 
-// Initial state for a new form, used as a reset point
 const initialFormState: EventForm = {
   title: '',
   description: '',
@@ -85,104 +84,134 @@ const initialFormState: EventForm = {
   postalCode: '',
 };
 
-// Helper function to transform API data to form data
-const transformApiToForm = (
-  apiData: ApiEventData,
-  addressId: number | undefined
-): EventForm => {
+// Helper: format date/time for form inputs
+const toLocalDateInput = (d: Date) => d.toISOString().split('T')[0];
+const toLocalTimeInput = (d: Date) =>
+  d.toLocaleTimeString('en-US', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
+
+const transformApiToForm = (apiData: ApiEventData): EventForm => {
   const start = new Date(apiData.start_at);
   const end = new Date(apiData.end_at);
 
-  // Function to format Date to 'YYYY-MM-DD'
-  const getLocalDate = (date: Date) => date.toISOString().split('T')[0];
-  // Function to format Date to 'HH:MM'
-  const getLocalTime = (date: Date) =>
-    date.toLocaleTimeString('en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false,
-    });
-
   return {
-    title: apiData.title,
-    description: apiData.description,
-    start_date: getLocalDate(start),
-    start_time: getLocalTime(start),
-    end_date: getLocalDate(end),
-    end_time: getLocalTime(end),
+    title: apiData.title ?? '',
+    description: apiData.description ?? '',
+    start_date: toLocalDateInput(start),
+    start_time: toLocalTimeInput(start),
+    end_date: toLocalDateInput(end),
+    end_time: toLocalTimeInput(end),
     category: apiData.event_tag?.event_tag_name?.name || 'events',
     imageUrl: apiData.image_url || '',
+
     addressLine: apiData.address?.address_line || '',
     province: apiData.address?.province || '',
     district: apiData.address?.district || '',
     subdistrict: apiData.address?.subdistrict || '',
     postalCode: apiData.address?.postal_code || '',
-    address_id: addressId,
+
+    address_id: apiData.address?.id,
   };
 };
 
 const categories = [
-  { id: 'dashboard', icon: Building2, label: 'City Insights' },
-  { id: 'transport', icon: BusFront, label: 'Transport' },
-  { id: 'events', icon: Calendar, label: 'Events' },
-  { id: 'weather', icon: Cloud, label: 'Weather reports' },
-  { id: 'healthcare', icon: Hospital, label: 'Healthcare' },
-  { id: 'ai', icon: BookMarked, label: 'Know Ai' },
-  { id: 'contact', icon: Phone, label: 'Contact us' },
-  { id: 'cycle', icon: BusFront, label: 'Free cycle' },
-  { id: 'volunteer', icon: BusFront, label: 'Volunteer' },
-  { id: 'waste', icon: BusFront, label: 'Waste Management' },
+  {
+    id: 'dashboard',
+    icon: Building2,
+    label: 'City Insights',
+    subtitle: 'Explore City',
+  },
+  {
+    id: 'transport',
+    icon: BusFront,
+    label: 'Transport',
+    subtitle: 'Move around',
+  },
+  {
+    id: 'events',
+    icon: Calendar,
+    label: 'Events',
+    subtitle: 'Local activities',
+  },
+  {
+    id: 'weather',
+    icon: Cloud,
+    label: 'Weather reports',
+    subtitle: 'Forecast',
+  },
+  {
+    id: 'healthcare',
+    icon: Hospital,
+    label: 'Healthcare',
+    subtitle: 'Medical centers',
+  },
+  { id: 'ai', icon: BookMarked, label: 'Know Ai', subtitle: 'Assistant' },
+  { id: 'contact', icon: Phone, label: 'Contact us', subtitle: 'Get help' },
+  { id: 'cycle', icon: BusFront, label: 'Free cycle', subtitle: 'Reuse items' },
+  { id: 'volunteer', icon: BusFront, label: 'Volunteer', subtitle: 'Join' },
+  {
+    id: 'waste',
+    icon: BusFront,
+    label: 'Waste Management',
+    subtitle: 'Cleanup',
+  },
 ];
-// --------------------------------------------------------------------------
 
 const EditPage = () => {
-  const { id: eventIdParam } = useParams();
-  const eventId = eventIdParam ? parseInt(eventIdParam, 10) : null;
-
   const navigate = useNavigate();
+  const params = useParams();
+  const eventId = params.id ? Number(params.id) : null;
+
   const [formData, setFormData] = useState<EventForm>(initialFormState);
+  const [originalData, setOriginalData] = useState<ApiEventData | null>(null);
+
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState('events');
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [originalData, setOriginalData] = useState<ApiEventData | null>(null);
 
-  // --- Data Fetching Effect ---
+  const eventCategories = useMemo(() => {
+    return categories.filter((c) =>
+      ['events', 'cycle', 'volunteer', 'waste'].includes(c.id)
+    );
+  }, []);
+
+  // Fetch event
   useEffect(() => {
-    if (!eventId) {
+    if (!eventId || Number.isNaN(eventId)) {
       setError('Invalid event ID provided.');
       setIsLoading(false);
       return;
     }
 
-    const loadEventData = async () => {
+    const load = async () => {
       setIsLoading(true);
       setError(null);
       try {
         const response = await fetchEventById(eventId);
         const apiData: ApiEventData =
-          response.data?.data || response.data || response;
-
-        // Extract address ID if present in the fetched structure
-        const addressId = (apiData.address as any)?.id as number | undefined;
+          (response as any).data?.data || (response as any).data || response;
 
         setOriginalData(apiData);
-        const transformedData = transformApiToForm(apiData, addressId);
-        setFormData(transformedData);
-        setSelectedCategory(transformedData.category);
+        setFormData(transformApiToForm(apiData));
       } catch (err: any) {
         console.error(
           'Error fetching event for edit:',
-          err.response?.data || err
+          err?.response?.data || err
         );
-        setError(err.response?.data?.message || 'Failed to load event data.');
+        setError(
+          err?.response?.data?.message ||
+            err?.message ||
+            'Failed to load event data.'
+        );
       } finally {
         setIsLoading(false);
       }
     };
 
-    loadEventData();
+    load();
   }, [eventId]);
 
   const handleChange = useCallback(
@@ -198,16 +227,14 @@ const EditPage = () => {
   );
 
   const handleReset = useCallback(() => {
+    if (!originalData) return;
+
     if (
-      confirm(
+      window.confirm(
         'Are you sure you want to reset all changes to the last saved version?'
       )
     ) {
-      if (originalData) {
-        const addressId = (originalData.address as any)?.id;
-        setFormData(transformApiToForm(originalData, addressId));
-        alert('Changes reset successfully.');
-      }
+      setFormData(transformApiToForm(originalData));
     }
   }, [originalData]);
 
@@ -218,38 +245,33 @@ const EditPage = () => {
         setError('Cannot submit: Event ID is missing.');
         return;
       }
+
       setIsSubmitting(true);
       setError(null);
 
-      // 1. Combine Date and Time fields into ISO 8601 format
-      const startAtISO = `${formData.start_date}T${formData.start_time}:00`;
-      const endAtISO = `${formData.end_date}T${formData.end_time}:00`;
-
-      // 2. Prepare the update payload for the main event object
-      const eventUpdatePayload: Parameters<typeof updateEvent>[1] = {
-        title: formData.title,
-        description: formData.description,
-        image_url: formData.imageUrl,
-        start_at: startAtISO,
-        end_at: endAtISO,
-        address_id: formData.address_id,
-        // NOTE: Other fields like organization_id, total_seats would also be included here
-        // if they were part of the form.
-      };
+      const start_at = `${formData.start_date}T${formData.start_time}:00`;
+      const end_at = `${formData.end_date}T${formData.end_time}:00`;
 
       try {
-        // >>> USE REAL UPDATE API FUNCTION <<<
-        await updateEvent(eventId, eventUpdatePayload);
+        await updateEvent(eventId, {
+          title: formData.title,
+          description: formData.description,
+          image_url: formData.imageUrl,
+          start_at,
+          end_at,
+          address_id: formData.address_id,
+        });
 
         alert('Event updated successfully!');
         navigate('/event_hub');
       } catch (err: any) {
         console.error(
           'Error submitting event update:',
-          err.response?.data || err
+          err?.response?.data || err
         );
         setError(
-          err.response?.data?.message ||
+          err?.response?.data?.message ||
+            err?.message ||
             'Failed to update event. Please check the details and try again.'
         );
       } finally {
@@ -259,62 +281,54 @@ const EditPage = () => {
     [eventId, formData, navigate]
   );
 
-  const eventCategories = useMemo(() => {
-    return categories.filter((c) =>
-      ['events', 'cycle', 'volunteer', 'waste'].includes(c.id)
-    );
-  }, []);
-
   if (isLoading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-gray-50">
-        <Loader2 className="h-10 w-10 animate-spin text-cyan-500" />
-        <p className="ml-3 text-lg text-gray-700">Loading event data...</p>
-      </div>
+      <Layout>
+        <div className="flex h-screen items-center justify-center bg-gray-50">
+          <Loader2 className="h-10 w-10 animate-spin text-cyan-500" />
+          <p className="ml-3 text-lg text-gray-700">Loading event data...</p>
+        </div>
+      </Layout>
     );
   }
 
   if (error && !isSubmitting) {
     return (
-      <div className="flex h-screen flex-col items-center justify-center bg-gray-50 p-4">
-        <p className="mb-4 text-xl font-semibold text-red-500">{error}</p>
-        <button
-          onClick={() => navigate('/event_hub')}
-          className="flex items-center rounded-lg bg-cyan-500 px-6 py-2 text-white transition-colors hover:bg-cyan-600"
-        >
-          <ChevronLeft className="mr-2 h-5 w-5" /> Back to Events
-        </button>
-      </div>
+      <Layout>
+        <div className="flex h-screen flex-col items-center justify-center bg-gray-50 p-4">
+          <p className="mb-4 text-xl font-semibold text-red-500">{error}</p>
+          <button
+            onClick={() => navigate('/event_hub')}
+            className="flex items-center rounded-lg bg-cyan-500 px-6 py-2 text-white transition-colors hover:bg-cyan-600"
+          >
+            <ChevronLeft className="mr-2 h-5 w-5" /> Back to Events
+          </button>
+        </div>
+      </Layout>
     );
   }
 
   if (!eventId) {
     return (
-      <div className="flex h-screen flex-col items-center justify-center bg-gray-50 p-4">
-        <p className="mb-4 text-xl font-semibold text-red-500">
-          Error: No Event ID was provided for editing.
-        </p>
-        <button
-          onClick={() => navigate('/event_hub')}
-          className="flex items-center rounded-lg bg-cyan-500 px-6 py-2 text-white transition-colors hover:bg-cyan-600"
-        >
-          <ChevronLeft className="mr-2 h-5 w-5" /> Back to Events
-        </button>
-      </div>
+      <Layout>
+        <div className="flex h-screen flex-col items-center justify-center bg-gray-50 p-4">
+          <p className="mb-4 text-xl font-semibold text-red-500">
+            Error: No Event ID was provided for editing.
+          </p>
+          <button
+            onClick={() => navigate('/event_hub')}
+            className="flex items-center rounded-lg bg-cyan-500 px-6 py-2 text-white transition-colors hover:bg-cyan-600"
+          >
+            <ChevronLeft className="mr-2 h-5 w-5" /> Back to Events
+          </button>
+        </div>
+      </Layout>
     );
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <Sidebar
-        sidebarOpen={sidebarOpen}
-        setSidebarOpen={setSidebarOpen}
-        selectedCategory={selectedCategory}
-        setSelectedCategory={setSelectedCategory}
-        categories={categories}
-      />
-
-      <div className="flex-1 overflow-y-auto">
+    <Layout>
+      <div className="min-h-screen bg-gray-50">
         <TopBar topCategories={eventCategories} />
 
         <div className="mx-auto max-w-5xl p-6">
@@ -342,13 +356,12 @@ const EditPage = () => {
               </div>
             )}
 
-            {/* Event Details Section */}
             <div className="rounded-xl border border-gray-200 bg-white p-8 shadow-lg">
               <h2 className="mb-6 border-b pb-2 text-2xl font-semibold text-gray-800">
                 Basic Event Information
               </h2>
+
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                {/* Title */}
                 <div className="md:col-span-2">
                   <label
                     htmlFor="title"
@@ -367,7 +380,6 @@ const EditPage = () => {
                   />
                 </div>
 
-                {/* Category */}
                 <div>
                   <label
                     htmlFor="category"
@@ -391,7 +403,6 @@ const EditPage = () => {
                   </select>
                 </div>
 
-                {/* Image URL */}
                 <div>
                   <label
                     htmlFor="imageUrl"
@@ -413,7 +424,6 @@ const EditPage = () => {
                   </div>
                 </div>
 
-                {/* Preview Image */}
                 {formData.imageUrl && (
                   <div className="md:col-span-2">
                     <p className="mb-2 text-sm font-medium text-gray-700">
@@ -432,7 +442,6 @@ const EditPage = () => {
                   </div>
                 )}
 
-                {/* Description */}
                 <div className="md:col-span-2">
                   <label
                     htmlFor="description"
@@ -453,13 +462,12 @@ const EditPage = () => {
               </div>
             </div>
 
-            {/* Time and Date Section */}
             <div className="rounded-xl border border-gray-200 bg-white p-8 shadow-lg">
               <h2 className="mb-6 border-b pb-2 text-2xl font-semibold text-gray-800">
                 Date & Time
               </h2>
+
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-4">
-                {/* Start Date */}
                 <div>
                   <label
                     htmlFor="start_date"
@@ -481,7 +489,6 @@ const EditPage = () => {
                   </div>
                 </div>
 
-                {/* Start Time */}
                 <div>
                   <label
                     htmlFor="start_time"
@@ -503,7 +510,6 @@ const EditPage = () => {
                   </div>
                 </div>
 
-                {/* End Date */}
                 <div>
                   <label
                     htmlFor="end_date"
@@ -525,7 +531,6 @@ const EditPage = () => {
                   </div>
                 </div>
 
-                {/* End Time */}
                 <div>
                   <label
                     htmlFor="end_time"
@@ -549,13 +554,12 @@ const EditPage = () => {
               </div>
             </div>
 
-            {/* Location Section */}
             <div className="rounded-xl border border-gray-200 bg-white p-8 shadow-lg">
               <h2 className="mb-6 border-b pb-2 text-2xl font-semibold text-gray-800">
                 Event Location
               </h2>
+
               <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                {/* Address Line */}
                 <div className="md:col-span-2">
                   <label
                     htmlFor="addressLine"
@@ -579,7 +583,6 @@ const EditPage = () => {
                   </div>
                 </div>
 
-                {/* Province/State */}
                 <div>
                   <label
                     htmlFor="province"
@@ -598,7 +601,6 @@ const EditPage = () => {
                   />
                 </div>
 
-                {/* District */}
                 <div>
                   <label
                     htmlFor="district"
@@ -617,7 +619,6 @@ const EditPage = () => {
                   />
                 </div>
 
-                {/* Subdistrict */}
                 <div>
                   <label
                     htmlFor="subdistrict"
@@ -635,7 +636,6 @@ const EditPage = () => {
                   />
                 </div>
 
-                {/* Postal Code */}
                 <div>
                   <label
                     htmlFor="postalCode"
@@ -655,13 +655,12 @@ const EditPage = () => {
               </div>
             </div>
 
-            {/* Submission Buttons */}
             <div className="flex justify-end gap-4 pt-4">
               <button
                 type="button"
                 onClick={handleReset}
                 className="flex items-center gap-2 rounded-lg border border-gray-300 bg-white px-6 py-3 font-medium text-gray-700 transition-colors hover:bg-gray-100 disabled:opacity-50"
-                disabled={isSubmitting}
+                disabled={isSubmitting || !originalData}
               >
                 <Eraser className="h-5 w-5" />
                 Reset Changes
@@ -688,7 +687,7 @@ const EditPage = () => {
           </form>
         </div>
       </div>
-    </div>
+    </Layout>
   );
 };
 

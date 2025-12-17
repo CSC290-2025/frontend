@@ -71,13 +71,9 @@ export const deleteEvent = (id: number) => {
 };
 
 export const fetchEventsByDay = async (date: string) => {
-  const formattedDate = date;
-
-  const res = await apiClient.get('/events/by-day', {
-    params: { date: formattedDate },
+  return apiClient.get('/events/by-day', {
+    params: { date }, // This sends ?date=2025-12-17
   });
-
-  return Array.isArray(res.data?.data) ? res.data.data : [];
 };
 export const fetchPastBookmarkedEvents = (params?: {
   page?: number;

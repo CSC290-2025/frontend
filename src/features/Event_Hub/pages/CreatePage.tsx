@@ -1,9 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { createEvent } from '@/features/Event_Hub/api/Event.api';
+import { createMarker } from '@/features/Event_Hub/api/Map.api';
 import { useNavigate } from '@/router';
+import { useGetAuthMe } from '@/api/generated/authentication';
 
 const CreateEventPage = () => {
   const navigate = useNavigate();
+  const { data: authData, isLoading: isAuthLoading } = useGetAuthMe();
+  const user = authData?.data;
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -12,6 +16,7 @@ const CreateEventPage = () => {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
+    image_url: '',
     total_seats: '',
     start_date: '',
     start_time: '',
@@ -26,83 +31,119 @@ const CreateEventPage = () => {
     subdistrict: '',
     postal_code: '',
     event_tag_name: '',
+    lat: '',
+    lng: '',
   });
+
+  useEffect(() => {
+    if (!isAuthLoading && !user) {
+      navigate('/login');
+    }
+  }, [user, isAuthLoading, navigate]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) return;
+
     setIsSubmitting(true);
     setError(null);
     setSuccess(false);
 
     try {
-      // Prepare Payload
-      const eventData: any = {
-        host_user_id: 1, // Note: You might want to get this from Auth Context later
+      // 1. Validate Dates
+      const start = new Date(`${formData.start_date}T${formData.start_time}`);
+      const end = new Date(`${formData.end_date}T${formData.end_time}`);
+
+      if (end <= start) {
+        throw new Error('End time must be strictly after the start time.');
+      }
+
+      // 2. Extract User ID safely
+      const hostUserId = (user as any).id || (user as any).user?.id;
+
+      if (!hostUserId) {
+        throw new Error('User session invalid. Please log in again.');
+      }
+
+      // 3. Prepare Payload
+      const eventData = {
+        host_user_id: hostUserId,
         title: formData.title,
         description: formData.description || undefined,
+        image_url: formData.image_url || undefined,
         total_seats: formData.total_seats
-          ? parseInt(formData.total_seats)
+          ? parseInt(formData.total_seats, 10)
           : undefined,
         start_date: formData.start_date,
         start_time: formData.start_time,
         end_date: formData.end_date,
         end_time: formData.end_time,
-      };
-
-      if (
-        formData.organization_name ||
-        formData.organization_email ||
-        formData.organization_phone
-      ) {
-        eventData.organization = {
-          name: formData.organization_name || undefined,
-          email: formData.organization_email || undefined,
-          phone_number: formData.organization_phone || undefined,
-        };
-      }
-
-      if (
-        formData.address_line ||
-        formData.province ||
-        formData.district ||
-        formData.subdistrict ||
-        formData.postal_code
-      ) {
-        eventData.address = {
+        organization: {
+          name: formData.organization_name,
+          email: formData.organization_email,
+          phone_number: formData.organization_phone,
+        },
+        address: {
           address_line: formData.address_line || undefined,
           province: formData.province || undefined,
           district: formData.district || undefined,
           subdistrict: formData.subdistrict || undefined,
           postal_code: formData.postal_code || undefined,
-        };
-      }
+        },
+        event_tag_name: formData.event_tag_name || undefined,
+      };
 
-      if (formData.event_tag_name) {
-        eventData.event_tag_name = formData.event_tag_name;
-      }
-
+      // 4. Create Event
       await createEvent(eventData);
+
+      // 5. Create Marker (Non-blocking: event is created even if marker fails)
+      const latNum = parseFloat(formData.lat);
+      const lngNum = parseFloat(formData.lng);
+      if (!isNaN(latNum) && !isNaN(lngNum)) {
+        try {
+          await createMarker({
+            marker_type_id: 3,
+            description: `Location for: ${formData.title}`,
+            location: { lat: latNum, lng: lngNum },
+          });
+        } catch (markerErr) {
+          console.error('Marker creation failed', markerErr);
+        }
+      }
+
       setSuccess(true);
-      window.scrollTo(0, 0); // Scroll top to see message
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+
+      // Redirect after short delay
+      setTimeout(() => navigate('/event_hub'), 2000);
     } catch (err: any) {
-      setError(err.message || 'Failed to create event');
-      window.scrollTo(0, 0);
+      setError(
+        err.message || 'Failed to create event. Please check your inputs.'
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // --- UI Helpers ---
+  if (isAuthLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-gray-50">
+        <div className="animate-pulse font-medium text-gray-500">
+          Checking authentication...
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) return null;
+
   const inputClass =
     'mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 sm:text-sm';
   const labelClass = 'block text-sm font-medium text-gray-700';
@@ -112,55 +153,37 @@ const CreateEventPage = () => {
   return (
     <div className="min-h-screen bg-gray-50 px-4 py-8 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-4xl">
-        {/* Header / Navigation */}
-        <div className="mb-6 flex items-center justify-between">
+        <div className="mb-6">
           <button
-            type="button"
             onClick={() => navigate('/event_hub')}
             className="flex items-center text-gray-600 transition-colors hover:text-gray-900"
           >
-            <span className="mr-2 text-xl">←</span> Back to Hub
+            <span className="mr-2">←</span> Back to Hub
           </button>
         </div>
 
         <div className="overflow-hidden rounded-lg bg-white shadow-xl">
-          {/* Form Title Banner */}
           <div className="bg-blue-600 px-6 py-4">
             <h1 className="text-2xl font-bold text-white">Create New Event</h1>
-            <p className="mt-1 text-sm text-blue-100">
-              Fill in the details below to host your next event.
-            </p>
           </div>
 
           <div className="p-6 sm:p-8">
-            {/* Feedback Messages */}
             {error && (
               <div className="mb-6 border-l-4 border-red-500 bg-red-50 p-4 text-red-700">
-                <p className="font-medium">Error</p>
-                <p className="text-sm">{error}</p>
+                {error}
               </div>
             )}
-
             {success && (
-              <div className="mb-6 border-l-4 border-green-500 bg-green-50 p-4 text-green-700">
-                <p className="font-medium">Success!</p>
-                <p className="text-sm">
-                  Event created successfully.{' '}
-                  <span
-                    className="cursor-pointer underline"
-                    onClick={() => navigate('/event_hub')}
-                  >
-                    Return to hub?
-                  </span>
-                </p>
+              <div className="mb-6 border-l-4 border-green-500 bg-green-50 p-4 font-medium text-green-700">
+                Event created successfully! Redirecting...
               </div>
             )}
 
             <form onSubmit={handleSubmit} className="space-y-8">
-              {/* 1. Basic Information */}
-              <div>
+              {/* Basic Information */}
+              <section>
                 <h3 className={sectionHeaderClass}>Basic Information</h3>
-                <div className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-6">
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-6">
                   <div className="sm:col-span-4">
                     <label className={labelClass}>Event Title *</label>
                     <input
@@ -170,22 +193,40 @@ const CreateEventPage = () => {
                       onChange={handleChange}
                       required
                       className={inputClass}
-                      placeholder="e.g. Annual Tech Meetup"
                     />
                   </div>
-
                   <div className="sm:col-span-2">
-                    <label className={labelClass}>Tag</label>
+                    <label className={labelClass}>Tag (Category)</label>
                     <input
                       type="text"
                       name="event_tag_name"
                       value={formData.event_tag_name}
                       onChange={handleChange}
                       className={inputClass}
-                      placeholder="e.g. Technology"
+                      placeholder="e.g. waste"
                     />
                   </div>
-
+                  <div className="sm:col-span-3">
+                    <label className={labelClass}>Total Seats (Optional)</label>
+                    <input
+                      type="number"
+                      name="total_seats"
+                      value={formData.total_seats}
+                      onChange={handleChange}
+                      className={inputClass}
+                    />
+                  </div>
+                  <div className="sm:col-span-6">
+                    <label className={labelClass}>Image URL</label>
+                    <input
+                      type="url"
+                      name="image_url"
+                      value={formData.image_url}
+                      onChange={handleChange}
+                      className={inputClass}
+                      placeholder="https://..."
+                    />
+                  </div>
                   <div className="sm:col-span-6">
                     <label className={labelClass}>Description</label>
                     <textarea
@@ -194,99 +235,64 @@ const CreateEventPage = () => {
                       value={formData.description}
                       onChange={handleChange}
                       className={inputClass}
-                      placeholder="What is this event about?"
-                    />
-                  </div>
-
-                  <div className="sm:col-span-2">
-                    <label className={labelClass}>Total Seats</label>
-                    <input
-                      type="number"
-                      name="total_seats"
-                      value={formData.total_seats}
-                      onChange={handleChange}
-                      className={inputClass}
-                      placeholder="0"
                     />
                   </div>
                 </div>
-              </div>
+              </section>
 
-              {/* 2. Date & Time */}
-              <div>
+              {/* Schedule */}
+              <section>
                 <h3 className={sectionHeaderClass}>Schedule</h3>
-                <div className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                   <div className="rounded-lg bg-gray-50 p-4">
-                    <label className="mb-3 block text-xs font-bold text-gray-500 uppercase">
-                      Starts
+                    <label className="text-xs font-bold text-gray-500 uppercase">
+                      Starts *
                     </label>
-                    <div className="space-y-3">
-                      <div>
-                        <label className={labelClass}>Date *</label>
-                        <input
-                          type="date"
-                          name="start_date"
-                          value={formData.start_date}
-                          onChange={handleChange}
-                          required
-                          className={inputClass}
-                        />
-                      </div>
-                      <div>
-                        <label className={labelClass}>Time *</label>
-                        <input
-                          type="time"
-                          name="start_time"
-                          value={formData.start_time}
-                          onChange={handleChange}
-                          required
-                          className={inputClass}
-                        />
-                      </div>
-                    </div>
+                    <input
+                      type="date"
+                      name="start_date"
+                      value={formData.start_date}
+                      onChange={handleChange}
+                      required
+                      className={inputClass}
+                    />
+                    <input
+                      type="time"
+                      name="start_time"
+                      value={formData.start_time}
+                      onChange={handleChange}
+                      required
+                      className={`${inputClass} mt-2`}
+                    />
                   </div>
-
                   <div className="rounded-lg bg-gray-50 p-4">
-                    <label className="mb-3 block text-xs font-bold text-gray-500 uppercase">
-                      Ends
+                    <label className="text-xs font-bold text-gray-500 uppercase">
+                      Ends *
                     </label>
-                    <div className="space-y-3">
-                      <div>
-                        <label className={labelClass}>Date *</label>
-                        <input
-                          type="date"
-                          name="end_date"
-                          value={formData.end_date}
-                          onChange={handleChange}
-                          required
-                          className={inputClass}
-                        />
-                      </div>
-                      <div>
-                        <label className={labelClass}>Time *</label>
-                        <input
-                          type="time"
-                          name="end_time"
-                          value={formData.end_time}
-                          onChange={handleChange}
-                          required
-                          className={inputClass}
-                        />
-                      </div>
-                    </div>
+                    <input
+                      type="date"
+                      name="end_date"
+                      value={formData.end_date}
+                      onChange={handleChange}
+                      required
+                      className={inputClass}
+                    />
+                    <input
+                      type="time"
+                      name="end_time"
+                      value={formData.end_time}
+                      onChange={handleChange}
+                      required
+                      className={`${inputClass} mt-2`}
+                    />
                   </div>
                 </div>
-              </div>
+              </section>
 
-              {/* 3. Location */}
-              <div>
-                <h3 className={sectionHeaderClass}>
-                  Location{' '}
-                  <span className="ml-2 text-sm font-normal text-gray-400">
-                    (Optional)
-                  </span>
-                </h3>
-                <div className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-6">
+              {/* Location */}
+              <section>
+                <h3 className={sectionHeaderClass}>Location Details</h3>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-6">
                   <div className="sm:col-span-6">
                     <label className={labelClass}>Address Line</label>
                     <input
@@ -295,33 +301,9 @@ const CreateEventPage = () => {
                       value={formData.address_line}
                       onChange={handleChange}
                       className={inputClass}
-                      placeholder="Street address, floor, etc."
                     />
                   </div>
-
-                  <div className="sm:col-span-3">
-                    <label className={labelClass}>Subdistrict</label>
-                    <input
-                      type="text"
-                      name="subdistrict"
-                      value={formData.subdistrict}
-                      onChange={handleChange}
-                      className={inputClass}
-                    />
-                  </div>
-
-                  <div className="sm:col-span-3">
-                    <label className={labelClass}>District</label>
-                    <input
-                      type="text"
-                      name="district"
-                      value={formData.district}
-                      onChange={handleChange}
-                      className={inputClass}
-                    />
-                  </div>
-
-                  <div className="sm:col-span-3">
+                  <div className="sm:col-span-2">
                     <label className={labelClass}>Province</label>
                     <input
                       type="text"
@@ -331,8 +313,51 @@ const CreateEventPage = () => {
                       className={inputClass}
                     />
                   </div>
-
-                  <div className="sm:col-span-3">
+                  <div className="sm:col-span-2">
+                    <label className={labelClass}>District</label>
+                    <input
+                      type="text"
+                      name="district"
+                      value={formData.district}
+                      onChange={handleChange}
+                      className={inputClass}
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className={labelClass}>Subdistrict</label>
+                    <input
+                      type="text"
+                      name="subdistrict"
+                      value={formData.subdistrict}
+                      onChange={handleChange}
+                      className={inputClass}
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className={labelClass}>Latitude</label>
+                    <input
+                      type="number"
+                      step="any"
+                      name="lat"
+                      value={formData.lat}
+                      onChange={handleChange}
+                      className={inputClass}
+                      placeholder="13.7563"
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
+                    <label className={labelClass}>Longitude</label>
+                    <input
+                      type="number"
+                      step="any"
+                      name="lng"
+                      value={formData.lng}
+                      onChange={handleChange}
+                      className={inputClass}
+                      placeholder="100.5018"
+                    />
+                  </div>
+                  <div className="sm:col-span-2">
                     <label className={labelClass}>Postal Code</label>
                     <input
                       type="text"
@@ -343,94 +368,57 @@ const CreateEventPage = () => {
                     />
                   </div>
                 </div>
-              </div>
+              </section>
 
-              {/* 4. Organization */}
-              <div>
+              {/* Organization */}
+              <section>
                 <h3 className={sectionHeaderClass}>
-                  Organization Info{' '}
-                  <span className="ml-2 text-sm font-normal text-gray-400">
-                    (Optional)
-                  </span>
+                  Organization Information *
                 </h3>
-                <div className="grid grid-cols-1 gap-x-4 gap-y-6 sm:grid-cols-3">
-                  <div className="sm:col-span-1">
-                    <label className={labelClass}>Org Name</label>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                  <div>
+                    <label className={labelClass}>Name</label>
                     <input
                       type="text"
                       name="organization_name"
                       value={formData.organization_name}
                       onChange={handleChange}
+                      required
                       className={inputClass}
-                      placeholder="Company/Club"
                     />
                   </div>
-                  <div className="sm:col-span-1">
-                    <label className={labelClass}>Org Email</label>
+                  <div>
+                    <label className={labelClass}>Email</label>
                     <input
                       type="email"
                       name="organization_email"
                       value={formData.organization_email}
                       onChange={handleChange}
+                      required
                       className={inputClass}
-                      placeholder="contact@org.com"
                     />
                   </div>
-                  <div className="sm:col-span-1">
-                    <label className={labelClass}>Org Phone</label>
+                  <div>
+                    <label className={labelClass}>Phone</label>
                     <input
                       type="text"
                       name="organization_phone"
                       value={formData.organization_phone}
                       onChange={handleChange}
+                      required
                       className={inputClass}
-                      placeholder="+66..."
                     />
                   </div>
                 </div>
-              </div>
+              </section>
 
-              {/* Footer Actions */}
-              <div className="flex justify-end space-x-4 border-t border-gray-200 pt-6">
-                <button
-                  type="button"
-                  onClick={() => navigate('/event_hub')}
-                  className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:ring-2 focus:ring-blue-500 focus:outline-none"
-                >
-                  Cancel
-                </button>
+              <div className="flex justify-end border-t border-gray-200 pt-6">
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className={`rounded-md border border-transparent bg-blue-600 px-6 py-2 text-sm font-medium text-white shadow-sm hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 focus:outline-none ${isSubmitting ? 'cursor-not-allowed opacity-70' : ''}`}
+                  className="rounded-md bg-blue-600 px-8 py-2 font-medium text-white shadow-md transition-all hover:bg-blue-700 disabled:opacity-50"
                 >
-                  {isSubmitting ? (
-                    <span className="flex items-center">
-                      <svg
-                        className="mr-2 -ml-1 h-4 w-4 animate-spin text-white"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        ></circle>
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        ></path>
-                      </svg>
-                      Creating...
-                    </span>
-                  ) : (
-                    'Create Event'
-                  )}
+                  {isSubmitting ? 'Creating...' : 'Create Event'}
                 </button>
               </div>
             </form>

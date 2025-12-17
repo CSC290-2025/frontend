@@ -236,25 +236,15 @@ const MonthlyPage: React.FC<MonthlyPageProps> = ({ setActiveTab }) => {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="mx-auto max-w-7xl">
-        {/* Tabs + Search */}
+        {/* ✅ Removed duplicate Tabs (HomePage already renders Tabs) */}
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-wrap gap-2">
-            {['Events', 'History', 'Contact', 'Monthly', 'Bookmark'].map(
-              (tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab.toLowerCase())}
-                  className={`rounded-full px-6 py-2.5 font-medium transition-colors ${
-                    tab === 'Monthly'
-                      ? 'bg-cyan-500 text-white'
-                      : 'border border-gray-300 bg-white text-gray-600 hover:bg-gray-50'
-                  }`}
-                  aria-pressed={tab === 'Monthly'}
-                >
-                  {tab}
-                </button>
-              )
-            )}
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setActiveTab('events')}
+              className="rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-gray-700 hover:bg-gray-50"
+            >
+              Back to Events
+            </button>
           </div>
 
           <div className="relative">

@@ -6,26 +6,20 @@ import {
   Search,
   ChevronLeft,
   ChevronRight,
-  BookmarkMinus,
   BookMarked,
-  X,
-  User,
-  Mail,
-  Phone,
+  Loader2,
   Bookmark,
 } from 'lucide-react';
 import EventDetailModal from '@/features/Event_Hub/component/EventDetailModel';
-import { fetchEvents } from '@/features/Event_Hub/api/Event.api';
 import {
-  checkBookmarkStatus,
-  createBookmark,
+  fetchUserBookmarks,
   deleteBookmark,
-  // NOTE: fetchBookmarkedEvents is a function we're assuming exists
-  // but we'll mock its behavior by filtering all events for now.
 } from '@/features/Event_Hub/api/Bookmark.api';
+import { useGetAuthMe } from '@/api/generated/authentication';
 
-// --- Interfaces and Utility Functions (Adapted for self-containment) ---
-
+// --------------------------------------------------------------------------
+// TYPE DEFINITIONS
+// --------------------------------------------------------------------------
 interface Address {
   address_line?: string;
   province?: string;
@@ -52,6 +46,9 @@ interface Event {
   category: string;
 }
 
+// --------------------------------------------------------------------------
+// UTILITY FUNCTIONS
+// --------------------------------------------------------------------------
 const getEventStatus = (
   startAtISO: string,
   endAtISO: string
@@ -60,22 +57,36 @@ const getEventStatus = (
   const start = new Date(startAtISO);
   const end = new Date(endAtISO);
 
-  if (now > end) {
-    return 'Ended';
-  } else if (now >= start && now <= end) {
-    return 'Ongoing';
-  } else {
-    return 'Available';
-  }
+  if (now > end) return 'Ended';
+  if (now >= start && now <= end) return 'Ongoing';
+  return 'Available';
 };
 
-const transformApiEvent = (event: any): Event => {
-  let startObj: Date, endObj: Date;
+const getStatusClasses = (status: Event['status']) => {
+  const statusMap = {
+    Available: {
+      badge: 'bg-green-50 text-green-700 border-green-200',
+      dot: 'bg-green-500',
+    },
+    Ongoing: {
+      badge: 'bg-blue-50 text-blue-700 border-blue-200',
+      dot: 'bg-blue-500',
+    },
+    Ended: {
+      badge: 'bg-gray-50 text-gray-700 border-gray-200',
+      dot: 'bg-gray-500',
+    },
+  };
+  return statusMap[status];
+};
+
+const transformApiEvent = (bookmark: any): Event | null => {
+  const event = bookmark.event || bookmark;
+  if (!event || !event.id) return null;
+
   let startAtISO: string, endAtISO: string;
 
   if (event.start_at && event.end_at) {
-    startObj = new Date(event.start_at);
-    endObj = new Date(event.end_at);
     startAtISO = event.start_at;
     endAtISO = event.end_at;
   } else if (
@@ -86,33 +97,36 @@ const transformApiEvent = (event: any): Event => {
   ) {
     startAtISO = `${event.start_date}T${event.start_time}:00`;
     endAtISO = `${event.end_date}T${event.end_time}:00`;
-    startObj = new Date(startAtISO);
-    endObj = new Date(endAtISO);
   } else {
-    startObj = new Date();
-    endObj = new Date();
-    startAtISO = startObj.toISOString();
-    endAtISO = endObj.toISOString();
+    return null;
   }
 
+  const startObj = new Date(startAtISO);
+  const endObj = new Date(endAtISO);
   const status = getEventStatus(startAtISO, endAtISO);
-  const rawAddress: Address = event.address || event.addresses;
-  const org = event.organization || event.event_organization;
+
+  const rawAddress: Address =
+    event.address ||
+    event.addresses ||
+    event.address_detail ||
+    event.location ||
+    {};
+  const org =
+    event.organization ||
+    event.event_organization ||
+    event.organizer ||
+    event.org ||
+    null;
 
   let addressDisplayStr = 'Location TBD';
-  if (rawAddress) {
-    const parts = [
-      rawAddress.address_line,
-      rawAddress.subdistrict,
-      rawAddress.district,
-      rawAddress.province,
-      rawAddress.postal_code,
-    ].filter(Boolean);
+  const parts = [
+    rawAddress.address_line,
+    rawAddress.subdistrict,
+    rawAddress.district,
+    rawAddress.province,
+  ].filter(Boolean);
+  if (parts.length > 0) addressDisplayStr = parts.join(', ');
 
-    if (parts.length > 0) addressDisplayStr = parts.join(', ');
-  }
-
-  // Updated logic to handle nested event_tag structure
   const categoryName =
     event.event_tag?.event_tag_name?.name || event.event_tag_name || 'events';
 
@@ -121,7 +135,7 @@ const transformApiEvent = (event: any): Event => {
     title: event.title,
     description: event.description,
     imageUrl: event.image_url || undefined,
-    address: rawAddress || {},
+    address: rawAddress,
     addressDisplay: addressDisplayStr,
     start_at: startAtISO,
     end_at: endAtISO,
@@ -139,48 +153,34 @@ const transformApiEvent = (event: any): Event => {
       minute: '2-digit',
       hour12: false,
     })}`,
-    organizerName: org?.name || 'Unknown Organizer',
-    organizerEmail: org?.email || 'N/A',
-    organizerPhone: org?.phone_number || 'N/A',
-    status: status,
+    organizerName:
+      org?.name ||
+      org?.organization_name ||
+      event.organizer_name ||
+      'Unknown Organizer',
+    organizerEmail: org?.email || event.organizer_email || 'N/A',
+    organizerPhone:
+      org?.phone_number || org?.phone || event.organizer_phone || 'N/A',
+    status,
     category: categoryName,
   };
 };
 
-const getStatusClasses = (status: Event['status']) => {
-  switch (status) {
-    case 'Available':
-      return {
-        badge: 'bg-green-50 text-green-700 border-green-200',
-        dot: 'bg-green-500',
-      };
-    case 'Ongoing':
-      return {
-        badge: 'bg-blue-50 text-blue-700 border-blue-200',
-        dot: 'bg-blue-500',
-      };
-    case 'Ended':
-      return {
-        badge: 'bg-gray-100 text-gray-500 border-gray-200',
-        dot: 'bg-gray-400',
-      };
-    default:
-      return {
-        badge: 'bg-gray-50 text-gray-700 border-gray-200',
-        dot: 'bg-gray-500',
-      };
-  }
-};
-
-// --- Component Implementation ---
-
+// --------------------------------------------------------------------------
+// COMPONENT
+// --------------------------------------------------------------------------
 interface BookmarkPageProps {
   setActiveTab: (tab: string) => void;
 }
 
 const BookmarkPage: React.FC<BookmarkPageProps> = ({ setActiveTab }) => {
+  const { data: authMeData } = useGetAuthMe({
+    query: { staleTime: Infinity, retry: 1 },
+  });
+
   const [bookmarkedEvents, setBookmarkedEvents] = useState<Event[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -189,20 +189,19 @@ const BookmarkPage: React.FC<BookmarkPageProps> = ({ setActiveTab }) => {
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Local state to manage the bookmark status for cards on this page
-  const [isBookmarkedSet, setIsBookmarkedSet] = useState(new Set<number>());
-
+  const isAuthenticated = !!authMeData?.data;
   const itemsPerPage = 12;
 
-  // Function to load bookmarked events
   const loadBookmarkedEvents = useCallback(async () => {
+    if (!isAuthenticated) {
+      setError('Please log in to view your bookmarks');
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
     try {
-      // NOTE: Since a dedicated fetchBookmarkedEvents API is not provided,
-      // we are using fetchEvents and then manually filtering based on checkBookmarkStatus.
-      // This is for demonstration; a production app should use a dedicated endpoint.
-      const response = await fetchEvents({
+      const response = await fetchUserBookmarks({
         page: currentPage,
         limit: itemsPerPage,
         q: searchQuery || undefined,
@@ -216,38 +215,13 @@ const BookmarkPage: React.FC<BookmarkPageProps> = ({ setActiveTab }) => {
           ? payload
           : [];
 
-      // Check bookmark status for all events to simulate API filtering
-      const eventIds = items.map((item) => item.id);
-      const bookmarkedIds = new Set<number>();
-
-      await Promise.all(
-        eventIds.map(async (eventId) => {
-          try {
-            const bookmarkStatusResponse = await checkBookmarkStatus(eventId);
-            if (
-              bookmarkStatusResponse.data?.bookmarked ||
-              bookmarkStatusResponse.data?.data?.bookmarked
-            ) {
-              bookmarkedIds.add(eventId);
-            }
-          } catch (err) {
-            // Ignore not bookmarked errors
-          }
-        })
-      );
-
-      const transformedEvents: Event[] = items
+      const transformedEvents = items
         .map(transformApiEvent)
-        .filter((event) => bookmarkedIds.has(event.id));
+        .filter((event): event is Event => event !== null);
 
-      // Update local bookmark set for event cards
-      setIsBookmarkedSet(bookmarkedIds);
-
-      // Simple pagination based on the locally filtered list size for the mock
-      const totalFiltered = transformedEvents.length;
-      setTotalEvents(totalFiltered);
-      setTotalPages(Math.ceil(totalFiltered / itemsPerPage));
-
+      const total = payload.total ?? transformedEvents.length;
+      setTotalEvents(total);
+      setTotalPages(Math.ceil(total / itemsPerPage));
       setBookmarkedEvents(transformedEvents);
     } catch (err: any) {
       console.error('Error fetching bookmarked events:', err);
@@ -255,47 +229,39 @@ const BookmarkPage: React.FC<BookmarkPageProps> = ({ setActiveTab }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [currentPage, searchQuery, itemsPerPage]);
+  }, [currentPage, searchQuery, itemsPerPage, isAuthenticated]);
 
   useEffect(() => {
     loadBookmarkedEvents();
   }, [loadBookmarkedEvents]);
 
-  const toggleBookmark = useCallback(
-    async (id: number) => {
-      try {
-        const isCurrentlyBookmarked = isBookmarkedSet.has(id);
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery]);
 
-        if (isCurrentlyBookmarked) {
-          await deleteBookmark(id);
-          // Remove from local set and state, then reload data
-          setIsBookmarkedSet((prev) => {
-            const updated = new Set(prev);
-            updated.delete(id);
-            return updated;
-          });
-          setBookmarkedEvents((prev) =>
-            prev.filter((event) => event.id !== id)
-          );
-          // Reload the page to fix pagination/count
-          loadBookmarkedEvents();
+  const handleRemoveBookmark = useCallback(
+    async (eventId: number) => {
+      setIsDeleting(true);
+      try {
+        await deleteBookmark(eventId);
+        setBookmarkedEvents((prev) =>
+          prev.filter((event) => event.id !== eventId)
+        );
+        setTotalEvents((prev) => Math.max(0, prev - 1));
+
+        if (bookmarkedEvents.length === 1 && currentPage > 1) {
+          setCurrentPage((prev) => prev - 1);
         } else {
-          // Add bookmark (should not happen frequently on this dedicated page, but keeps it functional)
-          await createBookmark({ event_id: id });
-          setIsBookmarkedSet((prev) => {
-            const updated = new Set(prev);
-            updated.add(id);
-            return updated;
-          });
-          // Reload to show the newly bookmarked item (if API supports it)
           loadBookmarkedEvents();
         }
       } catch (err) {
-        console.error('Error toggling bookmark:', err);
-        alert('Failed to update bookmark. Please try again.');
+        console.error('Error removing bookmark:', err);
+        alert('Failed to remove bookmark. Please try again.');
+      } finally {
+        setIsDeleting(false);
       }
     },
-    [isBookmarkedSet, loadBookmarkedEvents]
+    [bookmarkedEvents.length, currentPage, loadBookmarkedEvents]
   );
 
   const handleOpenModal = useCallback((event: Event) => {
@@ -318,123 +284,88 @@ const BookmarkPage: React.FC<BookmarkPageProps> = ({ setActiveTab }) => {
     [totalPages]
   );
 
-  const renderPaginationButtons = () => {
-    const pages = [];
-    const maxVisiblePages = 5;
+  const renderPaginationButtons = useMemo(() => {
+    const pages: (number | '...')[] = [];
+    const maxPagesToShow = 5;
 
-    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
-    const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+    if (totalPages <= maxPagesToShow) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else {
+      const startPage = Math.max(1, currentPage - 2);
+      const endPage = Math.min(totalPages, currentPage + 2);
 
-    if (endPage - startPage < maxVisiblePages - 1) {
-      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+      if (startPage > 1) {
+        pages.push(1);
+        if (startPage > 2) pages.push('...');
+      }
+
+      for (let i = startPage; i <= endPage; i++) pages.push(i);
+
+      if (endPage < totalPages) {
+        if (endPage < totalPages - 1) pages.push('...');
+        pages.push(totalPages);
+      }
     }
 
-    if (startPage > 1) {
-      pages.push(
-        <button
-          key={1}
-          onClick={() => handlePageChange(1)}
-          className="h-10 w-10 rounded-lg border border-gray-300 bg-white font-medium text-gray-800 transition-colors hover:bg-gray-50"
-          aria-label="Go to page 1"
-        >
-          1
-        </button>
-      );
-
-      if (startPage > 2) {
-        pages.push(
+    return pages.map((page, index) => {
+      if (page === '...') {
+        return (
           <span
-            key="ellipsis-1"
+            key={`ellipsis-${index}`}
             className="flex h-10 w-10 items-center justify-center text-gray-500"
           >
             ...
           </span>
         );
       }
-    }
-
-    for (let i = startPage; i <= endPage; i++) {
-      pages.push(
+      return (
         <button
-          key={i}
-          onClick={() => handlePageChange(i)}
+          key={page}
+          onClick={() => handlePageChange(page as number)}
           className={`h-10 w-10 rounded-lg font-medium transition-colors ${
-            currentPage === i
+            currentPage === page
               ? 'bg-cyan-500 text-white'
               : 'border border-gray-300 bg-white text-gray-800 hover:bg-gray-50'
           }`}
-          aria-label={`Go to page ${i}`}
-          aria-current={currentPage === i ? 'page' : undefined}
+          aria-label={`Go to page ${page}`}
+          aria-current={currentPage === page ? 'page' : undefined}
         >
-          {i}
+          {page}
         </button>
       );
-    }
-
-    if (endPage < totalPages) {
-      if (endPage < totalPages - 1) {
-        pages.push(
-          <span
-            key="ellipsis-2"
-            className="flex h-10 w-10 items-center justify-center text-gray-500"
-          >
-            ...
-          </span>
-        );
-      }
-
-      pages.push(
-        <button
-          key={totalPages}
-          onClick={() => handlePageChange(totalPages)}
-          className="h-10 w-10 rounded-lg border border-gray-300 bg-white font-medium text-gray-800 transition-colors hover:bg-gray-50"
-          aria-label={`Go to page ${totalPages}`}
-        >
-          {totalPages}
-        </button>
-      );
-    }
-
-    return pages;
-  };
+    });
+  }, [currentPage, totalPages, handlePageChange]);
 
   return (
-    <div className="mx-auto max-w-7xl p-6">
-      <div className="mb-6 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
-        <div className="flex flex-wrap gap-2">
-          {['Events', 'History', 'Contact', 'Monthly', 'Bookmark'].map(
-            (tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab.toLowerCase())}
-                className={`rounded-full px-6 py-2.5 font-medium transition-colors ${
-                  'bookmark' === tab.toLowerCase()
-                    ? 'bg-cyan-500 text-white'
-                    : 'border border-gray-300 bg-white text-gray-600 hover:bg-gray-50'
-                }`}
-                aria-pressed={'bookmark' === tab.toLowerCase()}
-              >
-                {tab}
-              </button>
-            )
-          )}
-        </div>
-
-        <div className="flex gap-2">
-          <div className="relative">
-            <Search className="absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search bookmarked items"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-64 rounded-lg border border-gray-300 py-2.5 pr-4 pl-10 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
-              aria-label="Search bookmarked events"
-            />
+    <div className="w-full">
+      {/* Loading Overlay */}
+      {isDeleting && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+          <div className="flex flex-col items-center rounded-xl bg-white p-6 shadow-2xl">
+            <Loader2 className="h-10 w-10 animate-spin text-cyan-500" />
+            <p className="mt-4 font-semibold text-gray-700">
+              Removing bookmark...
+            </p>
           </div>
+        </div>
+      )}
+
+      {/* Search (NO tabs here; HomePage renders tabs already) */}
+      <div className="mb-6 flex flex-col items-start justify-between gap-4 sm:flex-row sm:items-center">
+        <div className="relative">
+          <Search className="pointer-events-none absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search bookmarked items"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-64 rounded-lg border border-gray-300 py-2.5 pr-4 pl-10 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
+            aria-label="Search bookmarked events"
+          />
         </div>
       </div>
 
+      {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <div>
           <h2 className="text-3xl font-bold text-gray-800">
@@ -454,6 +385,7 @@ const BookmarkPage: React.FC<BookmarkPageProps> = ({ setActiveTab }) => {
         </div>
       </div>
 
+      {/* Content */}
       {isLoading ? (
         <div className="py-12 text-center">
           <div className="mx-auto mb-4 h-16 w-16 animate-spin rounded-full border-4 border-gray-200 border-t-cyan-500"></div>
@@ -470,8 +402,26 @@ const BookmarkPage: React.FC<BookmarkPageProps> = ({ setActiveTab }) => {
             Retry
           </button>
         </div>
+      ) : bookmarkedEvents.length === 0 ? (
+        <div className="py-12 text-center">
+          <BookMarked className="mx-auto mb-4 h-16 w-16 text-gray-300" />
+          <p className="text-lg text-gray-500">
+            {searchQuery
+              ? 'No bookmarked events found matching your search'
+              : 'You have no bookmarked events yet'}
+          </p>
+          {!searchQuery && (
+            <button
+              onClick={() => setActiveTab('events')}
+              className="mt-4 rounded-lg bg-cyan-500 px-6 py-2 text-white hover:bg-cyan-600"
+            >
+              Browse Events
+            </button>
+          )}
+        </div>
       ) : (
         <>
+          {/* Events Grid */}
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
             {bookmarkedEvents.map((event) => {
               const statusClasses = getStatusClasses(event.status);
@@ -485,8 +435,9 @@ const BookmarkPage: React.FC<BookmarkPageProps> = ({ setActiveTab }) => {
                     {event.imageUrl ? (
                       <img
                         src={event.imageUrl}
-                        alt={`Image for ${event.title}`}
+                        alt={event.title}
                         className="h-full w-full object-cover"
+                        loading="lazy"
                       />
                     ) : (
                       <div className="flex h-full items-center justify-center text-gray-400">
@@ -497,16 +448,14 @@ const BookmarkPage: React.FC<BookmarkPageProps> = ({ setActiveTab }) => {
 
                   <div className="p-6">
                     <div className="mb-4 flex items-start justify-between">
-                      <div>
-                        <h3 className="text-xl font-bold text-gray-800">
+                      <div className="min-w-0 flex-1 pr-2">
+                        <h3 className="truncate text-xl font-bold text-gray-800">
                           {event.title}
                         </h3>
                         <div className="mt-1 flex flex-wrap items-center gap-2">
-                          {/* Category Tag */}
                           <span className="rounded-full border border-cyan-200 bg-cyan-50 px-3 py-1 text-sm font-medium text-cyan-700">
                             {event.category}
                           </span>
-                          {/* Existing Status Tag */}
                           <span
                             className={`inline-flex items-center gap-1 rounded-full border px-3 py-1 text-sm font-medium ${statusClasses.badge}`}
                           >
@@ -518,35 +467,35 @@ const BookmarkPage: React.FC<BookmarkPageProps> = ({ setActiveTab }) => {
                         </div>
                       </div>
                       <button
-                        onClick={() => toggleBookmark(event.id)}
-                        className="rounded-lg p-2 transition-colors hover:bg-gray-100"
-                        aria-label={
-                          isBookmarkedSet.has(event.id)
-                            ? 'Remove bookmark'
-                            : 'Add bookmark'
-                        }
+                        onClick={() => handleRemoveBookmark(event.id)}
+                        className="flex-shrink-0 rounded-lg p-2 transition-colors hover:bg-gray-100"
+                        aria-label="Remove bookmark"
+                        disabled={isDeleting}
                       >
-                        <BookmarkMinus
-                          className={`h-5 w-5 ${
-                            isBookmarkedSet.has(event.id)
-                              ? 'fill-cyan-500 text-cyan-500'
-                              : 'text-gray-400'
-                          }`}
-                        />
+                        <Bookmark className="h-5 w-5 fill-cyan-500 text-cyan-500" />
                       </button>
                     </div>
 
                     <div className="mb-6 space-y-3">
                       <div className="flex items-center gap-3 text-gray-600">
-                        <Calendar className="h-5 w-5 flex-shrink-0" />
+                        <Calendar
+                          className="h-5 w-5 flex-shrink-0"
+                          aria-hidden="true"
+                        />
                         <span className="font-medium">{event.date}</span>
                       </div>
                       <div className="flex items-center gap-3 text-gray-600">
-                        <Clock className="h-5 w-5 flex-shrink-0" />
+                        <Clock
+                          className="h-5 w-5 flex-shrink-0"
+                          aria-hidden="true"
+                        />
                         <span className="font-medium">{event.time}</span>
                       </div>
                       <div className="flex items-start gap-3 text-gray-600">
-                        <MapPin className="mt-0.5 h-5 w-5 flex-shrink-0" />
+                        <MapPin
+                          className="mt-0.5 h-5 w-5 flex-shrink-0"
+                          aria-hidden="true"
+                        />
                         <span className="line-clamp-2 font-medium">
                           {event.addressDisplay}
                         </span>
@@ -555,16 +504,9 @@ const BookmarkPage: React.FC<BookmarkPageProps> = ({ setActiveTab }) => {
 
                     <button
                       onClick={() => handleOpenModal(event)}
-                      className={`w-full rounded-lg py-3 font-medium text-white transition-colors ${
-                        event.status === 'Ended'
-                          ? 'cursor-not-allowed bg-gray-400'
-                          : 'bg-cyan-500 hover:bg-cyan-600'
-                      }`}
-                      disabled={event.status === 'Ended'}
+                      className="w-full rounded-lg bg-cyan-500 py-3 font-medium text-white transition-colors hover:bg-cyan-600"
                     >
-                      {event.status === 'Ended'
-                        ? 'Event Ended'
-                        : 'More Details'}
+                      More Details
                     </button>
                   </div>
                 </div>
@@ -572,45 +514,35 @@ const BookmarkPage: React.FC<BookmarkPageProps> = ({ setActiveTab }) => {
             })}
           </div>
 
-          {bookmarkedEvents.length === 0 && !isLoading && (
-            <div className="py-12 text-center">
-              <BookMarked className="mx-auto mb-4 h-16 w-16 text-gray-300" />
-              <p className="text-lg text-gray-500">
-                {searchQuery
-                  ? 'No bookmarked events found matching your search'
-                  : 'You have no bookmarked events yet.'}
-              </p>
-            </div>
-          )}
-
+          {/* Pagination */}
           {totalPages > 1 && (
-            <div className="mt-8 flex items-center justify-center gap-2">
-              <button
-                onClick={() => handlePageChange(currentPage - 1)}
-                disabled={currentPage === 1}
-                className="rounded-lg border border-gray-300 bg-white p-2 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-                aria-label="Previous page"
-              >
-                <ChevronLeft className="h-5 w-5" />
-              </button>
+            <>
+              <div className="mt-8 flex items-center justify-center gap-2">
+                <button
+                  onClick={() => handlePageChange(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className="rounded-lg border border-gray-300 bg-white p-2 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  aria-label="Previous page"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
 
-              <div className="flex gap-1">{renderPaginationButtons()}</div>
+                <div className="flex gap-1">{renderPaginationButtons}</div>
 
-              <button
-                onClick={() => handlePageChange(currentPage + 1)}
-                disabled={currentPage === totalPages}
-                className="rounded-lg border border-gray-300 bg-white p-2 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
-                aria-label="Next page"
-              >
-                <ChevronRight className="h-5 w-5" />
-              </button>
-            </div>
-          )}
+                <button
+                  onClick={() => handlePageChange(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className="rounded-lg border border-gray-300 bg-white p-2 transition-colors hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  aria-label="Next page"
+                >
+                  <ChevronRight className="h-5 w-5" />
+                </button>
+              </div>
 
-          {totalPages > 1 && (
-            <div className="mt-4 text-center text-sm text-gray-500">
-              Page {currentPage} of {totalPages}
-            </div>
+              <div className="mt-4 text-center text-sm text-gray-500">
+                Page {currentPage} of {totalPages}
+              </div>
+            </>
           )}
         </>
       )}
@@ -619,11 +551,9 @@ const BookmarkPage: React.FC<BookmarkPageProps> = ({ setActiveTab }) => {
         isOpen={isModalOpen}
         onClose={handleCloseModal}
         event={selectedEvent}
-        isBookmarked={
-          selectedEvent ? isBookmarkedSet.has(selectedEvent.id) : false
-        }
+        isBookmarked={true}
         onToggleBookmark={() =>
-          selectedEvent && toggleBookmark(selectedEvent.id)
+          selectedEvent && handleRemoveBookmark(selectedEvent.id)
         }
       />
     </div>
