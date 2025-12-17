@@ -6,9 +6,9 @@ import Picture from '../components/userSettingPage/Picture';
 import { UserAPI } from '../api';
 import { ChevronLeft } from 'lucide-react';
 import { useNavigate } from '@/router';
-
+import { useGetAuthMe } from '@/api/generated/authentication';
 function UserSettingPage() {
-  const userID = 7;
+  const userID = useGetAuthMe().data?.data?.userId;
   const [user, setUser] = useState<any>(null);
   const [specialists, setSpecialists] = useState<any[]>([]);
   const [userRoles, setUserRoles] = useState<any[]>([]);
