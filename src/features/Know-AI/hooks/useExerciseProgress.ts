@@ -1,5 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
-import { fetchProgressByLevel, fetchLevel } from '../api/exercise.api';
+import {
+  fetchProgressByLevel,
+  fetchLevel,
+} from '@/features/Know-AI/api/exercise.api';
+import { useAuthenticated } from '@/hooks/useAuthenticated';
 
 export const useExerciseProgress = (level: number, userId: number) => {
   return useQuery({
@@ -16,3 +20,20 @@ export const useUserLevel = (userId: number) => {
     staleTime: 5 * 60 * 1000,
   });
 };
+
+export function useCurrentUser() {
+  const { data, isLoading, isSuccess, isFetching } = useAuthenticated();
+  const user = data?.userId
+    ? {
+        id: data.userId,
+        username: data.username,
+        email: data.email,
+      }
+    : data?.user || null;
+
+  return {
+    data: user,
+    isLoading: isLoading || isFetching,
+    isAuthenticated: isSuccess && !!user,
+  };
+}
