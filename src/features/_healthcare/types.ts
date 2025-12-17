@@ -280,6 +280,7 @@ export type UpdatePrescriptionPayload = {
 
 export interface Doctor {
   id: number;
+  doctorName: Nullable<string>;
   specialization: Nullable<string>;
   currentStatus: Nullable<string>;
   consultationFee: Nullable<number>;
@@ -308,6 +309,7 @@ export interface DoctorListParams {
 }
 
 export interface CreateDoctorPayload {
+  doctorName?: string;
   specialization?: string;
   currentStatus?: string;
   consultationFee?: number;
