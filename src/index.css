@@ -1,6 +1,26 @@
 @import 'tailwindcss';
 @import 'tw-animate-css';
 
+@import '@fontsource/poppins/300.css';
+@import '@fontsource/poppins/400.css';
+@import '@fontsource/poppins/500.css';
+@import '@fontsource/poppins/600.css';
+@import '@fontsource/poppins/700.css';
+
+@layer base {
+  body {
+    font-family: 'Poppins', system-ui, sans-serif;
+    font-size: 14px;
+  }
+
+  @media (min-width: 1024px) {
+    body {
+      font-family: 'Poppins', system-ui, sans-serif;
+      font-size: 16px;
+    }
+  }
+}
+
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
