@@ -5,6 +5,7 @@ import type { SuccessMarker, MapMarker } from '../interfaces/api';
 import { MarkerSidePanel } from '../components/rightSide';
 import { apiClient } from '@/lib/apiClient';
 import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router';
 import {
   ChevronDown,
   Wind,
@@ -50,6 +51,10 @@ function isInAnyZone(m: MapMarker): boolean {
 
 const MapPage = () => {
   const mapRef = useRef<HTMLDivElement>(null);
+
+  // 1. add variable for Google Map Instance
+  const mapInstanceRef = useRef<google.maps.Map | null>(null);
+
   const [markers, setMarkers] = useState<MapMarker[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -60,17 +65,20 @@ const MapPage = () => {
 
   // null = show all, number = filter by marker_type_id
   const [selectedTypeId, setSelectedTypeId] = useState<number | null>(null);
+  const navigate = useNavigate();
+
+  // 2. Focus function
+  const handleFocusMarker = (lat: number, lng: number) => {
+    if (mapInstanceRef.current) {
+      mapInstanceRef.current.panTo({ lat, lng }); // move to it
+      mapInstanceRef.current.setZoom(18); // zoom
+    }
+  };
 
   const handleSelectTypeId = (id: number) => {
     console.log('=== handleSelectTypeId called ===');
     console.log('Clicked ID:', id);
-    console.log('Previous selectedTypeId:', selectedTypeId);
-
-    setSelectedTypeId((prev) => {
-      const newValue = prev === id ? null : id;
-      console.log('New selectedTypeId will be:', newValue);
-      return newValue;
-    });
+    setSelectedTypeId((prev) => (prev === id ? null : id));
   };
 
   async function handleDeleteMarker(id: number) {
@@ -90,17 +98,18 @@ const MapPage = () => {
           params: { limit: 200 },
         });
 
-        // response: res.data.data.markerTypes
-        const types = res.data.data.marker as {
+        // response: res.data.data.markerTypes or marker by your API
+        const types = (res.data.data.markerTypes || res.data.data.marker) as {
           id: number;
           marker_type_icon: string;
         }[];
 
-        const typeMap = Object.fromEntries(
-          types.map((t) => [t.id, t.marker_type_icon])
-        );
-        console.log('Loaded marker types:', typeMap);
-        setMarkerTypeIconById(typeMap);
+        if (types) {
+          const typeMap = Object.fromEntries(
+            types.map((t) => [t.id, t.marker_type_icon])
+          );
+          setMarkerTypeIconById(typeMap);
+        }
       } catch (err) {
         console.error('Load marker types failed:', err);
       }
@@ -117,9 +126,7 @@ const MapPage = () => {
         const res = await apiClient.get('/api/markers', {
           params: { limit: 200 },
         });
-        console.log('Debug Response:', res.data);
 
-        // const data = res.data.data.marker as SuccessMarker[];
         const data = (res.data.data.markers ||
           res.data.data.marker ||
           []) as SuccessMarker[];
@@ -174,7 +181,6 @@ const MapPage = () => {
           })
           .filter((m): m is MapMarker => m !== null);
 
-        console.log('Loaded markers:', mapped.length);
         setMarkers(mapped);
       } finally {
         setLoading(false);
@@ -186,42 +192,25 @@ const MapPage = () => {
 
   // filter markers (zone + marker_type_id)
   const filteredMarkers = useMemo(() => {
-    console.log('=== Filtering markers ===');
-    console.log('Total markers:', markers.length);
-    console.log('Current selectedTypeId:', selectedTypeId);
-
     // Step 1: Filter by zone
     const inZone = markers.filter(isInAnyZone);
-    console.log('Markers in zone:', inZone.length);
 
     // Step 2: Filter by marker_type_id
     const result = inZone.filter((m) => {
-      //if isnt use filter = null = ahow all
       if (selectedTypeId === null) {
         return true;
       }
-
-      //change to
       const markerTypeId = Number(m.marker_type_id);
       const selectedId = Number(selectedTypeId);
-
       return markerTypeId === selectedId;
     });
-
-    console.log('Filtered result:', result.length);
 
     return result;
   }, [markers, selectedTypeId]);
 
   // Render Google Map whenever filteredMarkers changes
   useEffect(() => {
-    console.log('=== Rendering map ===');
-    console.log('filteredMarkers length:', filteredMarkers.length);
-
-    if (!mapRef.current) {
-      console.log('mapRef.current is null');
-      return;
-    }
+    if (!mapRef.current) return;
 
     const filtered = filteredMarkers;
 
@@ -246,12 +235,13 @@ const MapPage = () => {
       markerTypeIconKey: markerTypeIconById[m.marker_type_id ?? 1],
     }));
 
-    console.log('Creating map with markers:', markerOptions.length);
-
+    // 3. recive Map Instance in Ref when finish Init
     initMapAndMarkers({
       mapEl: mapRef.current,
       mapOptions,
       markerOptions,
+    }).then((map) => {
+      mapInstanceRef.current = map;
     });
   }, [filteredMarkers, markerTypeIconById]);
 
@@ -259,22 +249,13 @@ const MapPage = () => {
 
   return (
     <main className="min-h-screen overflow-hidden bg-white">
-      {/* Header with 4 cards */}
+      {/* Header with 3 cards */}
       <div className="font-poppins mx-auto w-full max-w-[1200px] px-5 pt-6 pb-4">
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-4">
-          <button className="flex items-center gap-3 rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-left hover:shadow-sm">
-            <BusFront className="h-6 w-6" />
-            <div className="leading-tight">
-              <div className="text-sm font-semibold md:text-base">
-                Transport
-              </div>
-              <div className="text-xs text-neutral-500 md:text-sm">
-                Bus timing and routes
-              </div>
-            </div>
-          </button>
-
-          <button className="flex items-center gap-3 rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-left hover:shadow-sm">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3">
+          <button
+            onClick={() => navigate('/traffic')}
+            className="flex items-center gap-3 rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-left transition-all hover:shadow-sm active:scale-95"
+          >
             <TrafficCone className="h-6 w-8" />
             <div className="leading-tight">
               <div className="text-sm font-semibold md:text-base">Traffics</div>
@@ -284,7 +265,10 @@ const MapPage = () => {
             </div>
           </button>
 
-          <button className="flex items-center gap-3 rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-left hover:shadow-sm">
+          <button
+            onClick={() => navigate('/volunteer/board')}
+            className="flex items-center gap-3 rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-left hover:shadow-sm"
+          >
             <MapPin className="h-6 w-6" />
             <div className="leading-tight">
               <div className="text-sm font-semibold md:text-base">Nearby</div>
@@ -294,7 +278,10 @@ const MapPage = () => {
             </div>
           </button>
 
-          <button className="flex items-center gap-3 rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-left hover:shadow-sm">
+          <button
+            onClick={() => navigate('/map')}
+            className="flex items-center gap-3 rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-left hover:shadow-sm"
+          >
             <MessageCircle className="h-6 w-6" />
             <div className="leading-tight">
               <div className="text-sm font-semibold md:text-base">
@@ -330,6 +317,7 @@ const MapPage = () => {
                 <span className="text-base">Impure Air</span>
               </DropdownMenuItem>
 
+              {/* mobile */}
               <DropdownMenuItem
                 onClick={() => handleSelectTypeId(2)}
                 className="flex cursor-pointer items-center gap-2 px-3 py-2 hover:bg-[#1f3db1]"
@@ -337,7 +325,6 @@ const MapPage = () => {
                 <TrafficCone className="h-6 w-6 text-white" strokeWidth={2} />
                 <span className="text-base">Traffics</span>
               </DropdownMenuItem>
-
               <DropdownMenuItem
                 onClick={() => handleSelectTypeId(3)}
                 className="flex cursor-pointer items-center gap-2 px-3 py-2 hover:bg-[#1f3db1]"
@@ -345,7 +332,6 @@ const MapPage = () => {
                 <Trophy className="h-6 w-6 text-white" strokeWidth={2} />
                 <span className="text-base">Events</span>
               </DropdownMenuItem>
-
               <DropdownMenuItem
                 onClick={() => handleSelectTypeId(4)}
                 className="flex cursor-pointer items-center gap-2 px-3 py-2 hover:bg-[#1f3db1]"
@@ -353,7 +339,6 @@ const MapPage = () => {
                 <Siren className="h-6 w-6 text-white" strokeWidth={2} />
                 <span className="text-base">Emergency Request</span>
               </DropdownMenuItem>
-
               <DropdownMenuItem
                 onClick={() => handleSelectTypeId(5)}
                 className="flex cursor-pointer items-center gap-2 px-3 py-2 hover:bg-[#1f3db1]"
@@ -361,7 +346,6 @@ const MapPage = () => {
                 <TriangleAlert className="h-6 w-6 text-white" strokeWidth={2} />
                 <span className="text-base">Danger Area</span>
               </DropdownMenuItem>
-
               <DropdownMenuItem
                 onClick={() => handleSelectTypeId(6)}
                 className="flex cursor-pointer items-center gap-2 px-3 py-2 hover:bg-[#1f3db1]"
@@ -369,7 +353,6 @@ const MapPage = () => {
                 <HeartPlus className="h-6 w-6 text-white" strokeWidth={2} />
                 <span className="text-base">Injured Area</span>
               </DropdownMenuItem>
-
               <DropdownMenuItem
                 onClick={() => handleSelectTypeId(7)}
                 className="flex cursor-pointer items-center gap-2 px-3 py-2 hover:bg-[#1f3db1]"
@@ -409,6 +392,7 @@ const MapPage = () => {
                 </span>
               </DropdownMenuItem>
 
+              {/* desktop */}
               <DropdownMenuItem
                 onClick={() => handleSelectTypeId(2)}
                 className="group flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 transition hover:bg-white hover:text-black"
@@ -421,7 +405,6 @@ const MapPage = () => {
                   Traffics
                 </span>
               </DropdownMenuItem>
-
               <DropdownMenuItem
                 onClick={() => handleSelectTypeId(3)}
                 className="group flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 transition hover:bg-white hover:text-black"
@@ -432,7 +415,6 @@ const MapPage = () => {
                 />
                 <span className="text-base group-hover:text-black">Events</span>
               </DropdownMenuItem>
-
               <DropdownMenuItem
                 onClick={() => handleSelectTypeId(4)}
                 className="group flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 transition hover:bg-white hover:text-black"
@@ -445,7 +427,6 @@ const MapPage = () => {
                   Emergency Request
                 </span>
               </DropdownMenuItem>
-
               <DropdownMenuItem
                 onClick={() => handleSelectTypeId(5)}
                 className="group flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 transition hover:bg-white hover:text-black"
@@ -458,7 +439,6 @@ const MapPage = () => {
                   Danger Area
                 </span>
               </DropdownMenuItem>
-
               <DropdownMenuItem
                 onClick={() => handleSelectTypeId(6)}
                 className="group flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 transition hover:bg-white hover:text-black"
@@ -471,7 +451,6 @@ const MapPage = () => {
                   Injured Area
                 </span>
               </DropdownMenuItem>
-
               <DropdownMenuItem
                 onClick={() => handleSelectTypeId(7)}
                 className="group flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 transition hover:bg-white hover:text-black"
@@ -496,7 +475,6 @@ const MapPage = () => {
             <p className="text-sm text-gray-500">Loading markers...</p>
           )}
 
-          {/* Debug info */}
           <div className="text-sm text-gray-600">
             <span>
               Selected Filter:{' '}
@@ -516,9 +494,11 @@ const MapPage = () => {
               />
             </div>
 
+            {/* send onFocus function to sidebar */}
             <MarkerSidePanel
               markers={panelMarkers}
               onDelete={handleDeleteMarker}
+              onFocus={handleFocusMarker}
             />
           </div>
         </div>
