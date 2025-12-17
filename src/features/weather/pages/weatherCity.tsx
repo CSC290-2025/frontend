@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const CITIES = [
+export const CITIES = [
   { id: 1, name: 'ThungKhru' },
   { id: 2, name: 'Ratburana' },
   { id: 3, name: 'Thonburi' },
