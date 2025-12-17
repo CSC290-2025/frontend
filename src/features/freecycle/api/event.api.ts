@@ -9,6 +9,7 @@ export const createEvent = (data: {
   start_time: string;
   end_date: string;
   end_time: string;
+  image_url: string;
   organization: {
     id: number;
     name: string;
