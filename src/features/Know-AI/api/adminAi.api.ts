@@ -39,3 +39,13 @@ export const deleteCourse = async (id: number) => {
     throw error;
   }
 };
+
+export const updateCourse = async (id: number, data: any) => {
+  try {
+    const response = await apiClient.put(`/course/${id}`, data);
+    return response.data;
+  } catch (error) {
+    console.error('Failed to update course:', error);
+    throw error;
+  }
+};
