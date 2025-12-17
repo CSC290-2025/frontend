@@ -25,7 +25,6 @@ export type Path =
   | `/citizen/setting`
   | `/clean-air/district-detail/:district`
   | `/clean-air/district-selection`
-  | `/demo-tracking`
   | `/event_hub`
   | `/event_hub/CreatePage`
   | `/example/:id`
@@ -63,11 +62,9 @@ export type Path =
   | `/sos/report/:id`
   | `/traffic`
   | `/traffic/AddLight`
-  | `/traffic/Manual-Manage`
   | `/traffic/admin`
   | `/traffic/control`
-  | `/traffic/mock`
-  | `/traffic/test`
+  | `/traffic/tracking`
   | `/users`
   | `/volunteer/board`
   | `/volunteer/createpost`
