@@ -51,3 +51,36 @@ export interface EnrollCourse {
   onsite_id: number | null;
   user_id: number | null;
 }
+
+export interface OnsiteSession {
+  id: number;
+  course_id: number | null;
+  address_id: number | null;
+  duration_hours: number | null;
+  event_at: Date;
+  registration_deadline: Date;
+  total_seats: number;
+}
+
+export interface Course {
+  id: number;
+  author_id: number | null;
+  course_name: string;
+  course_description: string | null;
+  course_type: CourseType;
+  course_status: CourseStatus;
+  cover_image: string | null;
+  created_at: Date;
+  updated_at?: Date;
+  course_videos?: CourseVideo[];
+  onsite_sessions?: OnsiteSession[];
+  address?: string;
+}
+
+export interface UpdateCoursePayload {
+  course_name?: string;
+  course_description?: string | null;
+  course_type?: CourseType;
+  course_status?: CourseStatus;
+  cover_image?: string | null;
+}

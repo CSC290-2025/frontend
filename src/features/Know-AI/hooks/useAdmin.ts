@@ -4,6 +4,7 @@ import {
   getApprove,
   changeApprove,
   deleteCourse,
+  updateCourse,
 } from '../api/adminAi.api';
 
 export function usePendingCourses() {
@@ -50,6 +51,25 @@ export function useDeleteCourse() {
     },
     onError: (error) => {
       console.error('Failed to delete course:', error);
+    },
+  });
+}
+
+export function useUpdateCourse() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: number; data: any }) =>
+      updateCourse(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['courses'] });
+      queryClient.invalidateQueries({ queryKey: ['courses', 'pending'] });
+      queryClient.invalidateQueries({ queryKey: ['courses', 'approve'] });
+      alert('Course updated successfully!');
+    },
+    onError: (error) => {
+      console.error('Failed to update course:', error);
+      alert('Error updating course');
     },
   });
 }
