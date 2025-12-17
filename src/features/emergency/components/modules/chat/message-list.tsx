@@ -13,6 +13,7 @@ type MessageListProps = {
 
 const MessageList = ({ onSelectUserId, onSelectRoomId }: MessageListProps) => {
   const [userId, setUserId] = useState<number | null>(null);
+  const [dataUser, setDataUser] = useState();
   console.log(onSelectUserId);
   console.log(onSelectRoomId);
 

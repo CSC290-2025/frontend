@@ -70,7 +70,6 @@ const statusConfig: Record<
   },
 };
 
-// เพิ่มสีให้กับ Categories
 const categoryConfig: Record<
   IncidentCategory,
   { label: string; icon: typeof Flame; color: string }

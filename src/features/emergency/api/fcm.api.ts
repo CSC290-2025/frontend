@@ -7,9 +7,9 @@ import type {
 
 export default class FCMApi {
   static async sendAllNotification(
-    data: NotificationT
+    notification: NotificationT
   ): Promise<SuccessResponseInterface<NotificationT>> {
-    return await Post('emergency/fcm/all', { data });
+    return await Post('emergency/fcm/all', { notification });
   }
 
   static async sendTokenNotification(

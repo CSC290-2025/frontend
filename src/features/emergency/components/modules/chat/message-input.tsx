@@ -3,7 +3,8 @@ import { Button } from '@/features/emergency/components/ui/button.tsx';
 import { v4 as uuid } from 'uuid';
 import { sendMessage } from '@/features/emergency/utils/chat.ts';
 import { useAuth } from '@/features/auth';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { apiClient } from '@/lib/apiClient.ts';
 
 type MessageInputProps = {
   selectRoom?: number | null;

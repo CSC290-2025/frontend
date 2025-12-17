@@ -29,6 +29,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog';
+import { useNotification } from '@/features/emergency/contexts/notification.tsx';
 
 interface IncidentDetailProps {
   incident: Incident;
@@ -61,6 +62,7 @@ export function IncidentDetail({
   const currentStatusIndex = statusFlow.findIndex(
     (s) => s.status === incident.status
   );
+  const { sendAllNotification } = useNotification();
   const activeStepIndex =
     incident.status === 'false_alarm' ? -1 : currentStatusIndex;
 
@@ -200,30 +202,12 @@ export function IncidentDetail({
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {incident.status === 'pending' && (
-                    <Button
-                      onClick={() => onStatusChange('verified')}
-                      className="h-9 w-full bg-blue-600 text-sm"
-                    >
-                      <CheckCircle className="mr-2 h-3.5 w-3.5" /> Verify
-                    </Button>
-                  )}
-                  {incident.status === 'verified' && (
-                    <Button
-                      onClick={() => onStatusChange('dispatched')}
-                      className="h-9 w-full bg-red-600 text-sm"
-                    >
-                      <Truck className="mr-2 h-3.5 w-3.5" /> Dispatch
-                    </Button>
-                  )}
-                  {incident.status === 'dispatched' && (
-                    <Button
-                      onClick={() => onStatusChange('resolved')}
-                      className="h-9 w-full bg-emerald-600 text-sm"
-                    >
-                      <CheckCircle className="mr-2 h-3.5 w-3.5" /> Resolve
-                    </Button>
-                  )}
+                  <Button
+                    onClick={() => sendAllNotification('Test5', 'jjjjddd')}
+                    className="h-9 w-full bg-blue-600 text-sm"
+                  >
+                    <CheckCircle className="mr-2 h-3.5 w-3.5" /> Verify
+                  </Button>
                 </div>
               )}
             </div>
