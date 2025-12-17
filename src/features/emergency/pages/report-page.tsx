@@ -27,14 +27,16 @@ import {
   type ReportRequestFrom,
 } from '@/features/emergency/types/report';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm, Controller } from 'react-hook-form';
 import { toast } from 'sonner';
+import { apiClient } from '@/lib/apiClient.ts';
 
 function ReportPage() {
   const [showDetail, setShowDetail] = useState(false);
   const [open, setOpen] = useState(false);
   const [file, setFile] = useState<string | null>(null);
+  const [userId, setUserId] = useState<number | null>(null);
 
   const { findLocation, address } = useGeoLocation();
   const { createReport, isLoading } = useReportFrom();
@@ -45,6 +47,15 @@ function ReportPage() {
     { name: 'Disaster', label: 'disaster', icon: <Waves size={32} /> },
   ];
 
+  //
+  useEffect(() => {
+    const fetchUserId = async () => {
+      const me = await apiClient.get('/auth/me');
+      setUserId(me.data.data.userId);
+    };
+    fetchUserId();
+  }, []);
+
   const {
     control,
     register,
@@ -52,10 +63,8 @@ function ReportPage() {
     reset,
     formState: { errors },
   } = useForm<ReportRequestFrom>({
-    resolver: zodResolver(ReportOmit),
     defaultValues: {
       title: 'test',
-      user_id: null,
       ambulance_service: false,
     },
   });
@@ -69,6 +78,10 @@ function ReportPage() {
   const onSubmit = handleSubmit(async (data) => {
     try {
       data.image_url = file;
+      data.user_id = userId;
+      data.lat = '13.652289';
+      data.long = '100.493617';
+
       await createReport(data);
 
       reset();
@@ -83,7 +96,7 @@ function ReportPage() {
   });
 
   return (
-    <MapInit classname="h-[calc(100svh-56px)] lg:w-full sm:w-screen">
+    <MapInit classname="h-[calc(100vh-3rem)] lg:w-full sm:w-screen">
       <div className="grid h-full min-h-screen w-full grid-cols-7 grid-rows-2">
         <Dialog open={open} onOpenChange={setOpen}>
           <DialogTrigger asChild>
@@ -268,7 +281,7 @@ function ReportPage() {
                     </Button>
                   </DialogClose>
 
-                  <Button type="submit" disabled={isLoading}>
+                  <Button type="submit">
                     {isLoading ? (
                       <>
                         <Spinner /> Sending...

@@ -16,6 +16,7 @@ import {
   DialogClose,
 } from '@/features/emergency/components/ui/dialog';
 import { Copy, Edit, Phone } from 'lucide-react';
+import { toast } from 'sonner';
 
 type ContactCardProps = {
   phoneNumber: string | null;
@@ -109,7 +110,10 @@ const ContactCard: FC<ContactCardProps> = ({
                 size="icon"
                 className="h-8 w-8 rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300"
                 onClick={() => {
-                  if (phoneNumber) navigator.clipboard.writeText(phoneNumber);
+                  if (phoneNumber) {
+                    navigator.clipboard.writeText(phoneNumber);
+                    toast('Phone number copied!'); // หรือใช้ toast notification
+                  }
                 }}
               >
                 <Copy className="h-4 w-4" />

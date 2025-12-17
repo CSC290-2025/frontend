@@ -51,6 +51,7 @@ export function GeoLocationProvider({ children }: { children: ReactNode }) {
           try {
             const url = `https://api.geoapify.com/v1/geocode/reverse?lat=${lat}&lon=${long}&apiKey=${config.GEO_API_KEY}`;
             const res = await axios.get(url);
+            console.log(res);
             const formatted =
               res.data?.features?.[0]?.properties?.formatted ?? '';
             setAddress(formatted);

@@ -19,15 +19,22 @@ export function AppSidebar() {
   const { msgLocal } = useNotification();
   return (
     <Sidebar variant="floating">
-      <SidebarContent>
+      <SidebarContent className="mt-2">
         <SidebarGroup>
           <SidebarGroupLabel>Notification</SidebarGroupLabel>
-          <SidebarGroupContent>
+          <SidebarGroupContent className="space-y-3">
             {msgLocal.map((msg, index) => (
-              <Card key={index}>
-                <CardContent>
-                  <CardTitle>{msg.title}</CardTitle>
-                  <CardDescription>{msg.body}</CardDescription>
+              <Card
+                key={index}
+                className="rounded-md border border-gray-200 bg-white shadow-sm"
+              >
+                <CardContent className="p-3">
+                  <CardTitle className="text-sm font-semibold text-gray-900">
+                    {msg.title}
+                  </CardTitle>
+                  <CardDescription className="text-xs text-gray-500">
+                    {msg.body}
+                  </CardDescription>
                 </CardContent>
               </Card>
             ))}

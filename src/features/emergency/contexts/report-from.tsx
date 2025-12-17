@@ -5,7 +5,9 @@ import type {
 import ReportApi from '@/features/emergency/api/report.api.ts';
 import {
   createContext,
+  type Dispatch,
   type ReactNode,
+  type SetStateAction,
   useContext,
   useEffect,
   useState,
@@ -28,6 +30,7 @@ type ReportFromState = {
   ) => Promise<void>;
   isLoading: boolean;
   totalPage: number;
+  setStatus: Dispatch<SetStateAction<'pending' | 'resolved' | 'verified'>>;
 };
 
 const ReportFromContext = createContext<ReportFromState | null>(null);
@@ -40,6 +43,9 @@ export function ReportFromProvider({
   const [report, setReport] = useState<ReportResponseFrom[]>([]);
   const [totalPage, setTotalPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  const [status, setStatus] = useState<'pending' | 'verified' | 'resolved'>(
+    'pending'
+  );
 
   const { pathname } = useLocation();
 
@@ -75,9 +81,9 @@ export function ReportFromProvider({
 
   useEffect(() => {
     if (pathname !== '/activity') return;
-
-    findReportByStatusPag('pending', initialPage, initialLimit);
-  }, [pathname, initialPage, initialLimit]);
+    setReport([]);
+    findReportByStatusPag(status, initialPage, initialLimit);
+  }, [pathname, initialPage, initialLimit, status]);
 
   return (
     <ReportFromContext.Provider
@@ -87,6 +93,7 @@ export function ReportFromProvider({
         totalPage,
         createReport,
         findReportByStatusPag,
+        setStatus,
       }}
     >
       {children}

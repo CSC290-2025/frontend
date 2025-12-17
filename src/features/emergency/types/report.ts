@@ -8,7 +8,8 @@ const ReportFromSchema = z.object({
     .optional()
     .nullable(),
   description: z.string().min(5).max(1000).nullable(),
-  location: z.any().nullable().optional(),
+  lat: z.string().nullable(),
+  long: z.string().nullable(),
   ambulance_service: z.boolean().nullable(),
   contact_center_service: z.boolean().nullable().optional(),
   level: z

@@ -1,4 +1,4 @@
-import { useSearchParams } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 import {
   Tabs,
   TabsContent,
@@ -12,9 +12,9 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from '@/features/emergency/components/ui/dialog';
 import {
   Card,
@@ -23,21 +23,32 @@ import {
 import { Badge } from '@/features/emergency/components/ui/badge.tsx';
 import { PaginationWithLinks } from '@/features/emergency/components/ui/pagination-with-link.tsx';
 import { useReportFrom } from '@/features/emergency/contexts/report-from.tsx';
-import { useNavigate } from 'react-router';
 import { useEffect, useState } from 'react';
 import { Edit, ImageOff } from 'lucide-react';
 import { Button } from '@/features/emergency/components/ui/button.tsx';
 import { Label } from '@/components/ui/label.tsx';
+import config from '@/features/emergency/config/env.ts';
+import axios from 'axios';
 
 export default function ActivitiesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
   const currentPage = parseInt(searchParams.get('_page') || '1', 10);
   const perPage = parseInt(searchParams.get('_limit') || '5', 10);
-
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  const { report, isLoading, totalPage } = useReportFrom();
+  const { report, isLoading, totalPage, setStatus } = useReportFrom();
+
+  const [address, setAddress] = useState('');
+
+  useEffect(() => {
+    report.forEach(async (r) => {
+      const url = `https://api.geoapify.com/v1/geocode/reverse?lat=${r.lat}&lon=${r.long}&apiKey=${config.GEO_API_KEY}`;
+      const res = await axios.get(url);
+      const formatted = res.data?.features?.[0]?.properties?.formatted ?? '';
+      setAddress(formatted);
+    });
+  }, [report]);
 
   const handleEditClick = () => {
     setIsDialogOpen(true);
@@ -55,8 +66,12 @@ export default function ActivitiesPage() {
 
       <Tabs defaultValue="Ongoing" className="w-full">
         <TabsList>
-          <TabsTrigger value="Ongoing">Ongoing</TabsTrigger>
-          <TabsTrigger value="Complete">Complete</TabsTrigger>
+          <TabsTrigger value="Ongoing" onClick={() => setStatus('pending')}>
+            Ongoing
+          </TabsTrigger>
+          <TabsTrigger value="Complete" onClick={() => setStatus('resolved')}>
+            Complete
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="Ongoing" className="mb-6">
@@ -66,14 +81,14 @@ export default function ActivitiesPage() {
             {report.map((r) => {
               return (
                 <div key={r.id} className="mb-6">
-                  <Card className="w-full overflow-hidden">
+                  <Card className="w-full overflow-hidden rounded-lg border border-gray-200 bg-white">
                     <CardContent className="p-5">
-                      <div className="grid grid-cols-6">
+                      <div className="grid grid-cols-6 gap-4">
                         <Card
-                          className="col-span-2 w-[150px] overflow-hidden py-0 sm:col-span-1"
-                          onClick={() => {
-                            navigate(`${r.image_url}`);
-                          }}
+                          className="col-span-2 w-[150px] cursor-pointer overflow-hidden rounded-md bg-gray-50 py-0 transition-colors duration-200 hover:bg-gray-100 sm:col-span-1"
+                          onClick={() =>
+                            navigate(`${r.image_url}`, { replace: true })
+                          }
                         >
                           {r.image_url ? (
                             <img
@@ -83,11 +98,11 @@ export default function ActivitiesPage() {
                                   ? URL.createObjectURL(r.image_url)
                                   : r.image_url
                               }
-                              loading={'eager'}
-                              className="aspect-square h-full w-full object-cover"
+                              loading="eager"
+                              className="aspect-square h-full w-full rounded-md object-cover"
                             />
                           ) : (
-                            <div className="flex aspect-square h-full w-full flex-col items-center justify-center bg-gray-100 text-gray-400">
+                            <div className="flex aspect-square h-full w-full flex-col items-center justify-center text-gray-400">
                               <ImageOff className="mb-2 h-6 w-6 opacity-40" />
                               <span className="text-[10px] font-medium tracking-wider uppercase opacity-60">
                                 No Image
@@ -100,15 +115,84 @@ export default function ActivitiesPage() {
                           <div className="font-medium text-gray-900">
                             {r.description}
                           </div>
+                          <div className="text-xs text-gray-500">
+                            {address || 'Fetching address...'}
+                          </div>
 
                           <div className="mt-auto flex items-center gap-2">
-                            <Badge>{r.status}</Badge>
-
-                            {/* BUTTON: Triggers the dialog via state */}
+                            <Badge className="bg-gray-100 text-gray-700">
+                              {r.status}
+                            </Badge>
                             <Button
                               size="icon"
                               onClick={() => handleEditClick()}
-                              className="h-8 w-8 rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300"
+                              className="h-8 w-8 rounded-full bg-gray-200 text-gray-700 transition-colors duration-200 hover:bg-gray-300"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              );
+            })}
+          </div>
+        </TabsContent>
+        <TabsContent value={'Complete'} className="mb-6">
+          <div className="h-auto">
+            {isLoading && <div className="p-4 text-center">Loading...</div>}
+
+            {report.map((r) => {
+              return (
+                <div key={r.id} className="mb-6">
+                  <Card className="w-full overflow-hidden rounded-lg border border-gray-200 bg-white">
+                    <CardContent className="p-5">
+                      <div className="grid grid-cols-6 gap-4">
+                        <Card
+                          className="col-span-2 w-[150px] cursor-pointer overflow-hidden rounded-md bg-gray-50 py-0 transition-colors duration-200 hover:bg-gray-100 sm:col-span-1"
+                          onClick={() =>
+                            navigate(`${r.image_url}`, { replace: true })
+                          }
+                        >
+                          {r.image_url ? (
+                            <img
+                              alt={r.title}
+                              src={
+                                r.image_url instanceof File
+                                  ? URL.createObjectURL(r.image_url)
+                                  : r.image_url
+                              }
+                              loading="eager"
+                              className="aspect-square h-full w-full rounded-md object-cover"
+                            />
+                          ) : (
+                            <div className="flex aspect-square h-full w-full flex-col items-center justify-center text-gray-400">
+                              <ImageOff className="mb-2 h-6 w-6 opacity-40" />
+                              <span className="text-[10px] font-medium tracking-wider uppercase opacity-60">
+                                No Image
+                              </span>
+                            </div>
+                          )}
+                        </Card>
+
+                        <div className="col-span-4 flex flex-col justify-between gap-2 p-4">
+                          <div className="font-medium text-gray-900">
+                            {r.description}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {address || 'Fetching address...'}
+                          </div>
+
+                          <div className="mt-auto flex items-center gap-2">
+                            <Badge className="bg-gray-100 text-gray-700">
+                              {r.status}
+                            </Badge>
+                            <Button
+                              size="icon"
+                              onClick={() => handleEditClick()}
+                              className="h-8 w-8 rounded-full bg-gray-200 text-gray-700 transition-colors duration-200 hover:bg-gray-300"
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
