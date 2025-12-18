@@ -670,7 +670,7 @@ export default function TrafficControlPage() {
             });
 
             // API returns { success, data: { id, ... }, message }
-            const markerId = response.data?.data?.id;
+            const markerId = response.data?.data?.marker?.id;
             if (markerId) {
               updates[`teams/10/traffic_lights/${lightKey}/support_marker_id`] =
                 markerId;
