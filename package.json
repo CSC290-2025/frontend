@@ -17,6 +17,7 @@
     "api:types": "orval"
   },
   "dependencies": {
+    "@fontsource/poppins": "^5.2.7",
     "@fortawesome/fontawesome-svg-core": "^7.1.0",
     "@fortawesome/free-regular-svg-icons": "^7.1.0",
     "@fortawesome/free-solid-svg-icons": "^7.1.0",

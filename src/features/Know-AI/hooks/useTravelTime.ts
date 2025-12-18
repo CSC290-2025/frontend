@@ -6,39 +6,23 @@ import {
 } from '../api/knowAi.api';
 
 export function useTravelDuration(
-  userAddressId: number | undefined,
+  userAddress: string | undefined,
   courseAddressId: number | undefined | null,
   isEnabled: boolean
 ) {
   return useQuery({
-    queryKey: ['travelDuration', userAddressId, courseAddressId],
-
+    queryKey: ['travelDuration', userAddress, courseAddressId],
     queryFn: async () => {
-      if (!userAddressId || !courseAddressId) return null;
+      if (!userAddress || !courseAddressId) return null;
 
-      const [userAddr, courseAddr] = await Promise.all([
-        getAddressById(userAddressId),
-        getAddressById(courseAddressId),
-      ]);
+      const courseAddr = await getAddressById(courseAddressId);
+      if (!courseAddr) return null;
 
-      if (!userAddr || !courseAddr) return null;
-
-      const originString = formatAddressToString(userAddr);
       const destinationString = formatAddressToString(courseAddr);
 
-      console.log(
-        'Calculating distance:',
-        originString,
-        '->',
-        destinationString
-      );
-
-      const duration = await calculateDistance(originString, destinationString);
-
+      const duration = await calculateDistance(userAddress, destinationString);
       return duration;
     },
-
-    enabled: !!userAddressId && !!courseAddressId && isEnabled,
-    staleTime: 1000 * 60 * 10,
+    enabled: !!userAddress && !!courseAddressId && isEnabled,
   });
 }

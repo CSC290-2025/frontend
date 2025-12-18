@@ -5,25 +5,30 @@ import AdminHospitalPage from '@/features/_healthcare/pages/admin/AdminHospitalP
 import AdminPharmacyPage from '@/features/_healthcare/pages/admin/AdminPharmacyPage';
 import AdminBillingPage from '@/features/_healthcare/pages/admin/AdminBillingPage';
 import AdminEmergencyPage from '@/features/_healthcare/pages/admin/AdminEmergencyPage';
+import AdminStaffPage from '@/features/_healthcare/pages/admin/AdminStaffPage';
 
 type AdminScreen =
   | 'admin-dashboard'
   | 'admin-hospital'
   | 'admin-pharmacy'
   | 'admin-billing'
-  | 'admin-emergency';
+  | 'admin-emergency'
+  | 'admin-staff';
 
 const navItems: Array<{ key: AdminScreen; label: string }> = [
   { key: 'admin-dashboard', label: 'Dashboard' },
   { key: 'admin-hospital', label: 'Hospital' },
   { key: 'admin-pharmacy', label: 'Pharmacy' },
   { key: 'admin-billing', label: 'Billing' },
+  { key: 'admin-staff', label: 'Staff' },
 ];
 
 const AdminHealthcareShell: React.FC = () => {
   const [currentScreen, setCurrentScreen] =
     useState<AdminScreen>('admin-dashboard');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  /* import AdminStaffPage from '@/features/_healthcare/pages/admin/AdminStaffPage'; - wait need to add import at top */
 
   const renderScreen = () => {
     switch (currentScreen) {
@@ -37,6 +42,8 @@ const AdminHealthcareShell: React.FC = () => {
         return <AdminBillingPage />;
       case 'admin-emergency':
         return <AdminEmergencyPage />;
+      case 'admin-staff':
+        return <AdminStaffPage />;
       default:
         return null;
     }
