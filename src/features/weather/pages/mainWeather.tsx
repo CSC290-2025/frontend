@@ -2,6 +2,7 @@ import { useWeatherData } from '../hooks/useWeatherData';
 import CurrentWeatherCard from '../components/CurrentWeatherCard';
 import HourlyForecast from '../components/HourlyForecast';
 import WeeklyForecast from '../components/WeeklyForecast';
+
 export default function WeatherMockPage() {
   const { data, isLoading, isError, refetch } = useWeatherData();
 
