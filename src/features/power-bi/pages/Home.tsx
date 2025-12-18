@@ -3,13 +3,7 @@ import Categories from '../components/Categories';
 import { useUserRole } from '../hooks/useUserRole';
 import Nav from '../components/Nav';
 
-type SectionId =
-  | 'summary'
-  | 'trends'
-  | 'detailed'
-  | 'planning'
-  | 'usage'
-  | 'data';
+type SectionId = 'summary' | 'trends';
 
 const SECTIONS: Array<{
   id: SectionId;
@@ -34,42 +28,6 @@ const SECTIONS: Array<{
       'Surface long-term shifts in population, climate and public health to create proactive programs.',
     badge: 'Insights',
     gradient: 'linear-gradient(135deg, #96E0E1 0%, #2B5991 100%)',
-  },
-  {
-    id: 'detailed',
-    title: 'Detailed Operational Dashboards',
-    description:
-      'Live telemetry across services — traffic flow, healthcare capacity, emergency readiness.',
-    badge: 'Admin',
-    adminOnly: true,
-    gradient: 'linear-gradient(135deg, #2B5991 0%, #0091B5 100%)',
-  },
-  {
-    id: 'planning',
-    title: 'Financial & Resource Planning',
-    description:
-      'Budget health, capital allocation and workforce forecasting in a unified playbook.',
-    badge: 'Admin',
-    adminOnly: true,
-    gradient: 'linear-gradient(135deg, #F9FAFB 0%, #2B5991 100%)',
-  },
-  {
-    id: 'usage',
-    title: 'Report Usage Analysis',
-    description:
-      'Understand which dashboards drive the most engagement and where knowledge gaps exist.',
-    badge: 'Admin',
-    adminOnly: true,
-    gradient: 'linear-gradient(135deg, #1ABFAE 0%, #01CCFF 100%)',
-  },
-  {
-    id: 'data',
-    title: 'Data Quality Dashboard',
-    description:
-      'Score accuracy, completeness and freshness of every dataset powering your reports.',
-    badge: 'Admin',
-    adminOnly: true,
-    gradient: 'linear-gradient(135deg, #2B5991 0%, #1E2C4C 100%)',
   },
 ];
 
