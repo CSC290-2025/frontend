@@ -6,7 +6,7 @@ import RoomDetailIcon from '@/features/G9-ApartmentListing/assets/RoomDetailIcon
 import { APT, Owner, Room } from '@/features/G9-ApartmentListing/hooks/index';
 import type { roomTypes } from '@/features/G9-ApartmentListing/types';
 import { useCreateBooking } from '@/features/G9-ApartmentListing/hooks/useBooking';
-import { useMyProfile } from '@/features/citizen/hooks/ProfileUser';
+// import { useMyProfile } from '@/features/citizen/hooks/ProfileUser';
 import { useUserById } from '@/features/G9-ApartmentListing/hooks/userApartmentOwner';
 
 export default function ApartmentBooking() {
@@ -16,7 +16,7 @@ export default function ApartmentBooking() {
   const { data: userData } = Owner.useUser();
   const userId = userData?.userId;
   const { data: userProfile } = useUserById(userId || 0);
-  const { data: userProfileDetails } = useUserProfileDetails(userId || 0);
+  // const { data: userProfileDetails } = useUserProfileDetails(userId || 0);
   const { data: apartmentData } = APT.useApartment(
     apartmentId ? parseInt(apartmentId) : 0
   );
@@ -33,8 +33,8 @@ export default function ApartmentBooking() {
   }, [availableRoomsData]);
 
   const [formData, setFormData] = useState({
-    firstName: userProfileDetails?.firstName || '',
-    lastName: userProfileDetails?.lastName || '',
+    firstName: '',
+    lastName: '',
     phone: userProfile?.phone || '',
     email: userProfile?.email || '',
     checkin: '',

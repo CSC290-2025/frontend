@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Activity, Pill } from 'lucide-react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import {
   useMedicineInventory,
   usePrescriptions,
@@ -7,13 +8,76 @@ import {
 import { StatusPill } from '@/features/_healthcare/components/common/StatusPill';
 import { DataState } from '@/features/_healthcare/components/common/DataState';
 import { formatAppointmentTime } from '@/features/_healthcare/utils';
+import { createPrescription } from '@/features/_healthcare/api/healthcare.api';
 
 const UserMedicationsPage: React.FC = () => {
+  const queryClient = useQueryClient();
+  const [patientId, setPatientId] = useState<number | null>(null);
+  const [feedback, setFeedback] = useState<{
+    type: 'success' | 'error';
+    message: string;
+  } | null>(null);
+  const [orderingId, setOrderingId] = useState<number | null>(null);
+
   const prescriptionsQuery = usePrescriptions({
     limit: 100,
     sortOrder: 'desc',
   });
   const inventoryQuery = useMedicineInventory({ limit: 100, sortOrder: 'asc' });
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const stored = localStorage.getItem('healthcare_patient_profile');
+    if (!stored) return;
+    try {
+      const parsed = JSON.parse(stored) as { patientId?: number };
+      if (parsed.patientId) {
+        setPatientId(parsed.patientId);
+      }
+    } catch {
+      // ignore bad cache
+    }
+  }, []);
+
+  const createPrescriptionMutation = useMutation({
+    mutationFn: createPrescription,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['prescriptions'] });
+      setFeedback({
+        type: 'success',
+        message: 'Medication order placed successfully.',
+      });
+    },
+    onError: (err: unknown) => {
+      const message =
+        err instanceof Error
+          ? err.message
+          : 'Unable to place medication order.';
+      setFeedback({ type: 'error', message });
+    },
+    onSettled: () => {
+      setOrderingId(null);
+    },
+  });
+
+  const handleOrder = (itemId: number) => {
+    const item = inventory.find((it) => it.id === itemId);
+    if (!item || createPrescriptionMutation.isPending) return;
+    setFeedback(null);
+    setOrderingId(itemId);
+    createPrescriptionMutation.mutate({
+      patientId: patientId ?? undefined,
+      facilityId: item.facilityId ?? undefined,
+      status: 'Pending',
+      medicinesList: [
+        {
+          medicineId: item.id,
+          name: item.medicineName ?? 'Medicine',
+          quantity: 1,
+        },
+      ],
+    });
+  };
 
   const prescriptions = prescriptionsQuery.data?.prescriptions ?? [];
   const inventory = inventoryQuery.data?.medicineInventory ?? [];
@@ -102,14 +166,19 @@ const UserMedicationsPage: React.FC = () => {
                 </p>
               </div>
               <button
-                disabled={!item.isInStock}
+                disabled={
+                  !item.isInStock || createPrescriptionMutation.isPending
+                }
+                onClick={() => handleOrder(item.id)}
                 className={`rounded-lg px-3 py-1 text-sm font-semibold ${
                   item.isInStock
                     ? 'bg-[#01CCFF] text-white hover:bg-[#0091B5]'
                     : 'bg-gray-300 text-gray-600'
                 }`}
               >
-                Order
+                {orderingId === item.id && createPrescriptionMutation.isPending
+                  ? 'Ordering...'
+                  : 'Order'}
               </button>
             </div>
           ))}
@@ -117,6 +186,17 @@ const UserMedicationsPage: React.FC = () => {
             <DataState message="No inventory data" accent="cyan" />
           )}
         </div>
+        {feedback && (
+          <div
+            className={`mt-3 rounded-lg border px-3 py-2 text-sm ${
+              feedback.type === 'success'
+                ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                : 'border-rose-200 bg-rose-50 text-rose-700'
+            }`}
+          >
+            {feedback.message}
+          </div>
+        )}
       </section>
     </div>
   );

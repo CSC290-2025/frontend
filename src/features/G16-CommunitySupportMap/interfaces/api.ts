@@ -47,5 +47,21 @@ export interface MapMarker {
   lat: number;
   lng: number;
   description: string | null;
+  marker_type_id: number | null;
+}
+
+export interface CreateMarkerInput {
   marker_type_id?: number | null;
+  description?: string | null;
+  location?: {
+    type: string;
+    coordinates: [number, number]; // [lng, lat]
+  };
+}
+
+export interface MarkerTypeInfo {
+  id: number;
+  name: string;
+  icon: string;
+  color: string;
 }

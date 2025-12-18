@@ -1,17 +1,24 @@
-import { post } from '.';
-import type { SuccessResponseInterface } from '../interfaces/api';
-import type { TokenModel } from '../interfaces/fcm.ts';
+import { Post, Get } from '.';
+import type { SuccessResponseInterface } from '@/features/emergency/types/api';
+import type {
+  CreateToken,
+  TokenResponse,
+} from '@/features/emergency/types/fcm.ts';
 
 export default class TokenApi {
-  // static async getTokens() {
-  //     const response: SuccessResponseInterface<TokenModel> = await get('/tokens');
-  //     return response;
-  // }
+  static async getTokensById(
+    userId: string
+  ): Promise<SuccessResponseInterface> {
+    const response: SuccessResponseInterface<TokenResponse> = await Get(
+      `/emergency/tokens/${userId}`
+    );
+    return response;
+  }
 
-  static async storeToken(token: string) {
-    const response: SuccessResponseInterface<TokenModel> = await post(
-      '/tokens',
-      { tokens: token }
+  static async storeToken(token: string, userId: number) {
+    const response: SuccessResponseInterface<CreateToken> = await Post(
+      '/emergency/tokens',
+      { tokens: token, user_id: userId }
     );
     return response;
   }
