@@ -31,6 +31,7 @@ export type Path =
   | `/clean-air/district-selection`
   | `/event_hub`
   | `/event_hub/CreatePage`
+  | `/event_hub/EditPage/:id`
   | `/example/:id`
   | `/financial`
   | `/financial/insurance`
@@ -88,6 +89,7 @@ export type Params = {
   '/Know-AI/:course/:id': { course: string; id: string };
   '/Know-AI/exercises/:level/:question': { level: string; question: string };
   '/clean-air/district-detail/:district': { district: string };
+  '/event_hub/EditPage/:id': { id: string };
   '/example/:id': { id: string };
   '/financial/insurance/info/:id': { id: string };
   '/financial/metro/info/:id': { id: string };
