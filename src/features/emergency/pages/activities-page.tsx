@@ -67,13 +67,10 @@ export default function ActivitiesPage() {
     });
   }, [report]);
 
-  const verifiedReports = report.filter((r) => r.status === 'verified');
-
   useEffect(() => {
-    if (verifiedReports.length === 0) return;
-
+    const verifiedReport = report.filter((r) => r.status === 'verified');
     const createMarkers = async () => {
-      for (const r of verifiedReports) {
+      for (const r of verifiedReport) {
         const data = {
           marker_type_id: 4,
           description: r.description,
@@ -83,20 +80,16 @@ export default function ActivitiesPage() {
             lng: Number(r.long),
           },
         };
-        return await apiClient.post('/api/marker-types', data);
+        await apiClient.post('/api/marker-types', data);
       }
     };
     console.log(createMarkers());
     createMarkers();
-  }, [verifiedReports]);
+  }, [report]);
 
   const handleEditClick = () => {
     setIsDialogOpen(true);
   };
-
-  useEffect(() => {
-    console.log('Report data:', report);
-  }, [report]);
 
   return (
     <div className="mx-auto w-full max-w-5xl p-2 sm:p-6">

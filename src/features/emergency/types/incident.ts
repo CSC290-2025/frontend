@@ -1,9 +1,4 @@
-export type IncidentStatus =
-  | 'pending'
-  | 'verified'
-  | 'dispatched'
-  | 'resolved'
-  | 'false_alarm';
+export type IncidentStatus = 'pending' | 'resolved';
 
 export type IncidentCategory =
   | 'fire'
