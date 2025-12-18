@@ -5,45 +5,15 @@ export default function Summary() {
   const { district } = useParams('/clean-air/district-detail/:district');
   const { data: summary, isLoading, error } = useSummaryQuery(district);
 
-  if (isLoading) {
-    return (
-      <div className="h-full rounded-xl border border-gray-900 bg-white p-6 text-gray-900 shadow-2xl shadow-gray-400">
-        <h2 className="mb-4 text-lg font-semibold">Week Summary</h2>
-        <div className="grid grid-cols-3 gap-4">
-          {[1, 2, 3].map((index) => (
-            <div
-              key={index}
-              className="rounded-lg border border-gray-300 bg-gray-100 p-4 text-center"
-            >
-              <div className="animate-pulse">
-                <div className="mb-2 h-8 rounded bg-gray-300"></div>
-                <div className="mb-1 h-4 rounded bg-gray-300"></div>
-                <div className="h-3 rounded bg-gray-300"></div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
+  const containerClass =
+    'h-full rounded-xl border border-gray-900 bg-white p-6 text-gray-900 shadow-2xl shadow-gray-400';
 
-  if (error) {
+  if (isLoading || error || !summary) {
     return (
-      <div className="h-full rounded-xl border border-gray-900 bg-white p-6 text-gray-900 shadow-2xl shadow-gray-400">
+      <div className={containerClass}>
         <h2 className="mb-4 text-lg font-semibold">Week Summary</h2>
-        <div className="text-center text-red-500">
-          <p>Error loading summary</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!summary) {
-    return (
-      <div className="h-full rounded-xl border border-gray-900 bg-white p-6 text-gray-900 shadow-2xl shadow-gray-400">
-        <h2 className="mb-4 text-lg font-semibold">Week Summary</h2>
-        <div className="text-center text-gray-500">
-          <p>No data available</p>
+        <div className="flex h-40 items-center justify-center">
+          {isLoading ? 'Loading...' : 'No data available'}
         </div>
       </div>
     );
@@ -55,11 +25,7 @@ export default function Summary() {
       value: summary.summary.average.aqi,
       unit: 'AQI',
     },
-    {
-      label: 'Highest AQI',
-      value: summary.summary.maximum.aqi,
-      unit: 'AQI',
-    },
+    { label: 'Highest AQI', value: summary.summary.maximum.aqi, unit: 'AQI' },
     {
       label: summary.summary.trend.description,
       value:
@@ -71,17 +37,28 @@ export default function Summary() {
   ];
 
   return (
-    <div className="h-full rounded-xl border border-gray-900 bg-white p-6 text-gray-900 shadow-2xl shadow-gray-400">
-      <h2 className="mb-4 text-lg font-semibold">Week Summary</h2>
-      <div className="grid grid-cols-3 gap-4">
+    <div className={containerClass}>
+      <h2 className="mb-6 text-lg font-bold lg:text-xl lg:font-semibold">
+        Week Summary
+      </h2>
+
+      <div className="grid grid-cols-3 gap-3 lg:gap-6">
         {summaryData.map((item, index) => (
           <div
             key={index}
-            className="rounded-lg border border-gray-300 bg-gray-100 p-4 text-center"
+            className="flex min-h-[110px] flex-col items-center justify-center rounded-lg border border-gray-500 bg-white px-2 py-4 text-center transition-all lg:min-h-[140px] lg:p-6"
           >
-            <p className="text-3xl font-bold">{item.value}</p>
-            <p className="text-sm font-medium text-gray-700">{item.unit}</p>
-            <p className="mt-1 text-xs leading-tight text-gray-500">
+            <p className="text-2xl leading-none font-bold text-gray-900 lg:text-4xl lg:font-medium">
+              {item.value}
+            </p>
+
+            {item.unit && (
+              <p className="mt-1 text-[10px] font-bold tracking-widest text-gray-600 uppercase lg:text-[11px] lg:font-normal">
+                {item.unit}
+              </p>
+            )}
+
+            <p className="mt-2 text-[10px] leading-tight text-gray-500 lg:text-sm lg:font-normal">
               {item.label}
             </p>
           </div>

@@ -1,4 +1,3 @@
-// frontend/src/components/BinLocator.tsx
 import { useState, useEffect, useRef } from 'react';
 import type { CSSProperties } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
@@ -21,28 +20,77 @@ import { NearestBinCard } from '@/features/waste-management/components';
 import { LocationsSideBar } from '@/features/waste-management/components';
 import { BIN_TYPE_COLORS } from '@/constant';
 
-const icon = new URL(
-  'leaflet/dist/images/marker-icon.png',
-  import.meta.url
-).toString();
-const iconShadow = new URL(
-  'leaflet/dist/images/marker-shadow.png',
-  import.meta.url
-).toString();
+// Custom SVG Icons for location markers
+const createUserLocationIcon = () => {
+  const svgString = `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 56" width="40" height="56">
+      <defs>
+        <filter id="shadow">
+          <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.3"/>
+        </filter>
+      </defs>
+      <!-- Outer glow circle -->
+      <circle cx="20" cy="20" r="16" fill="#A78BFA" opacity="0.2"/>
+      <!-- Main marker body -->
+      <path d="M20 2 C10 2, 2 10, 2 20 C2 35, 20 54, 20 54 C20 54, 38 35, 38 20 C38 10, 30 2, 20 2 Z" fill="#7C3AED" filter="url(#shadow)"/>
+      <!-- Inner highlight -->
+      <circle cx="20" cy="20" r="8" fill="#C4B5FD"/>
+      <!-- Center dot -->
+      <circle cx="20" cy="20" r="4" fill="#FFFFFF"/>
+    </svg>
+  `;
 
-const DefaultIcon = L.icon({
-  iconUrl: icon,
-  shadowUrl: iconShadow,
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-});
+  const blob = new Blob([svgString], { type: 'image/svg+xml' });
+  const url = URL.createObjectURL(blob);
 
-L.Marker.prototype.options.icon = DefaultIcon;
+  return L.icon({
+    iconUrl: url,
+    iconSize: [40, 56],
+    iconAnchor: [20, 56],
+    popupAnchor: [0, -56],
+    className: 'user-location-marker',
+  });
+};
+
+const createSearchLocationIcon = () => {
+  const svgString = `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 56" width="40" height="56">
+      <defs>
+        <filter id="shadow">
+          <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.3"/>
+        </filter>
+      </defs>
+      <!-- Outer glow circle -->
+      <circle cx="20" cy="20" r="16" fill="#FDBA74" opacity="0.3"/>
+      <!-- Main marker body -->
+      <path d="M20 2 C10 2, 2 10, 2 20 C2 35, 20 54, 20 54 C20 54, 38 35, 38 20 C38 10, 30 2, 20 2 Z" fill="#F97316" filter="url(#shadow)"/>
+      <!-- Inner highlight -->
+      <circle cx="20" cy="20" r="8" fill="#FDEDD5"/>
+      <!-- Center dot -->
+      <circle cx="20" cy="20" r="4" fill="#FFFFFF"/>
+    </svg>
+  `;
+
+  const blob = new Blob([svgString], { type: 'image/svg+xml' });
+  const url = URL.createObjectURL(blob);
+
+  return L.icon({
+    iconUrl: url,
+    iconSize: [40, 56],
+    iconAnchor: [20, 56],
+    popupAnchor: [0, -56],
+    className: 'search-location-marker',
+  });
+};
+
+const userLocationIcon = createUserLocationIcon();
+const searchLocationIcon = createSearchLocationIcon();
 
 const BANGKOK_COORDS = { lat: 13.7563, lng: 100.5018 };
 
 export function BinLocator() {
   const [userLocation, setUserLocation] = useState<Coordinates>(BANGKOK_COORDS);
+  const [userAddress, setUserAddress] = useState<string>('Your Location');
   const [bins, setBins] = useState<Bin[]>([]);
   const [allBins, setAllBins] = useState<Bin[]>([]);
 
@@ -50,6 +98,7 @@ export function BinLocator() {
   const [loading, setLoading] = useState<boolean>(false);
   const [activeTypeFilter, setActiveTypeFilter] = useState<BinFilter>('All');
   const mapRef = useRef<L.Map | null>(null);
+  const nearestBinMarkerRef = useRef<L.Marker | null>(null);
 
   const [centerLocation, setCenterLocation] =
     useState<Coordinates>(userLocation);
@@ -59,6 +108,30 @@ export function BinLocator() {
     lng: number;
     name?: string;
   } | null>(null);
+  const [searchLocationNearestBin, setSearchLocationNearestBin] =
+    useState<Bin | null>(null);
+
+  // Function to fetch address from coordinates
+  const fetchAddressFromCoordinates = async (
+    lat: number,
+    lng: number
+  ): Promise<string> => {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`,
+        {
+          headers: {
+            'User-Agent': 'WasteManagementApp',
+          },
+        }
+      );
+      const data = await response.json();
+      return data.display_name || 'Location';
+    } catch (error) {
+      console.error('Error fetching address:', error);
+      return 'Location';
+    }
+  };
 
   const handleLocationSearch = (coords: Coordinates, address?: string) => {
     setCenterLocation(coords);
@@ -81,7 +154,17 @@ export function BinLocator() {
       }
     }
 
+    // Fetch initial address for Bangkok default location
+    const fetchInitialAddress = async () => {
+      const address = await fetchAddressFromCoordinates(
+        BANGKOK_COORDS.lat,
+        BANGKOK_COORDS.lng
+      );
+      setUserAddress(address);
+    };
+
     loadAllBins();
+    fetchInitialAddress();
   }, []);
 
   useEffect(() => {
@@ -106,7 +189,11 @@ export function BinLocator() {
     loadNearbyBins();
   }, [centerLocation, activeTypeFilter]);
 
-  const nearestBin = bins.length > 0 ? bins[0] : null;
+  const nearestBin = (() => {
+    if (!bins.length || !bins[0].distance) return null;
+    const distanceValue = parseFloat(bins[0].distance.toString().split(' ')[0]);
+    return distanceValue <= 1 ? bins[0] : null;
+  })();
 
   function handleSelectBin(binId: number) {
     const target = bins.find((bin) => bin.id === binId);
@@ -124,17 +211,35 @@ export function BinLocator() {
   function handleMapClick(coords: Coordinates) {
     setCenterLocation(coords);
     setSelectedBinId(null);
-    setSearchLocation({ lat: coords.lat, lng: coords.lng, name: undefined });
+
+    // Fetch address for the marked location
+    fetchAddressFromCoordinates(coords.lat, coords.lng).then((address) => {
+      setSearchLocation({ lat: coords.lat, lng: coords.lng, name: address });
+    });
+
+    // Fetch nearest bin for the marked location
+    fetchNearbyBins(coords.lat, coords.lng, 'All', '').then((nearbyBins) => {
+      if (nearbyBins.length > 0) {
+        setSearchLocationNearestBin(nearbyBins[0]);
+      }
+    });
   }
 
   function handleLocateUser() {
     setLoading(true);
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
-        (position: GeolocationPosition) => {
+        async (position: GeolocationPosition) => {
           const { latitude, longitude } = position.coords;
           const coords = { lat: latitude, lng: longitude };
           setUserLocation(coords);
+
+          // Fetch address for user location
+          const address = await fetchAddressFromCoordinates(
+            latitude,
+            longitude
+          );
+          setUserAddress(address);
 
           setCenterLocation(coords);
           setSearchLocation(null);
@@ -157,6 +262,42 @@ export function BinLocator() {
     handleLocateUser();
   }
 
+  // Auto-open nearest bin popup when it changes
+  useEffect(() => {
+    if (nearestBin && nearestBinMarkerRef.current) {
+      // Try opening popup with multiple attempts at different intervals
+      const openPopup = () => {
+        try {
+          const popup = nearestBinMarkerRef.current?.getPopup?.();
+          if (popup && nearestBinMarkerRef.current?.openPopup) {
+            nearestBinMarkerRef.current.openPopup();
+            console.log('Nearest bin popup opened successfully');
+          }
+        } catch (e) {
+          console.log('Error opening popup:', e);
+        }
+      };
+
+      // Multiple attempts to ensure popup opens
+      const timers = [
+        setTimeout(openPopup, 300),
+        setTimeout(openPopup, 700),
+        setTimeout(openPopup, 1200),
+      ];
+
+      return () => timers.forEach((timer) => clearTimeout(timer));
+      // // Ensure popup opens after a longer delay to allow render cycle
+      // const timer = setTimeout(() => {
+      //   try {
+      //     nearestBinMarkerRef.current?.openPopup();
+      //   } catch (e) {
+      //     console.log('Popup open error:', e);
+      //   }
+      // }, 500);
+      // return () => clearTimeout(timer);
+    }
+  }, [nearestBin?.id]);
+
   const mapWrapperStyle: CSSProperties = {
     position: 'relative',
     width: '100%',
@@ -175,40 +316,26 @@ export function BinLocator() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center bg-gray-50 p-4">
-      <div className="mb-6 flex flex-col items-center gap-4">
-        <h1 className="text-2xl font-bold text-gray-800">
+    <div className="flex min-h-screen flex-col items-center bg-gradient-to-br from-gray-50 to-gray-100 p-6">
+      <div className="mb-8 flex flex-col items-center gap-2">
+        <h1 className="text-3xl font-bold text-gray-800">
           City Hub Bin Locations
         </h1>
-        <button
-          onClick={handleFindNearestBin}
-          disabled={loading}
-          className="flex items-center gap-2 rounded-xl bg-blue-600 px-6 py-3 text-base font-semibold text-white shadow-lg transition hover:bg-blue-700 disabled:bg-blue-400"
-        >
-          {loading ? (
-            <>
-              <span className="animate-spin">⏳</span>
-              Locating...
-            </>
-          ) : (
-            <>
-              <span>📍</span>
-              Find Nearest Bin for My Location
-            </>
-          )}
-        </button>
+        <p className="text-lg text-gray-500">
+          Find waste disposal locations near you
+        </p>
       </div>
-      <p className="mb-8 max-w-3xl text-center text-gray-500">
-        Explore recycling and disposal sites across the city. Use the filters to
-        view different bin types, select a location from the list, or click
-        anywhere on the map to update your position and refresh the nearest
-        bins.
-      </p>
 
-      <div className="grid w-full max-w-6xl gap-6 md:grid-cols-[2fr,1fr]">
+      <div className="grid h-screen w-full max-w-7xl grid-cols-1 gap-6 lg:h-auto lg:grid-cols-2">
+        {/* Map Column */}
         <div
-          className="relative h-[520px] overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-2xl"
-          style={mapWrapperStyle}
+          className="relative overflow-hidden rounded-2xl border-2 border-gray-200 bg-white shadow-2xl"
+          style={{ ...mapWrapperStyle, minHeight: 600 }}
+          // <div className="grid w-full max-w-7xl grid-cols-1 gap-6 lg:grid-cols-2">
+          //   {/* Map Column */}
+          //   <div
+          //     className="relative h-[600px] overflow-hidden rounded-2xl border-2 border-gray-200 bg-white shadow-2xl"
+          //     style={mapWrapperStyle}
         >
           {nearestBin && <NearestBinCard bin={nearestBin} />}
 
@@ -218,7 +345,7 @@ export function BinLocator() {
             className="z-0 h-full w-full"
             scrollWheelZoom
             ref={mapRef}
-            style={mapContainerStyle}
+            style={{ ...mapContainerStyle, minHeight: 600 }}
           >
             <RecenterMap lat={centerLocation.lat} lng={centerLocation.lng} />
             <MapClickHandler onSelect={handleMapClick} />
@@ -229,13 +356,52 @@ export function BinLocator() {
             />
 
             <Marker position={[userLocation.lat, userLocation.lng]}>
-              <Popup className="font-sans">You are here</Popup>
+              <Popup className="font-sans">
+                <div className="w-40 space-y-0 rounded p-1">
+                  <p className="text-xs font-semibold text-blue-700">
+                    You are here
+                  </p>
+                  <p className="text-xs leading-tight font-medium break-words text-gray-800">
+                    {userAddress}
+                  </p>
+                </div>
+              </Popup>
             </Marker>
 
             {searchLocation && (
-              <Marker position={[searchLocation.lat, searchLocation.lng]}>
+              <Marker
+                position={[searchLocation.lat, searchLocation.lng]}
+                icon={searchLocationIcon}
+              >
                 <Popup className="font-sans">
-                  {searchLocation.name ?? 'Searched location'}
+                  <div className="w-48 space-y-2 rounded p-2">
+                    <div>
+                      <p className="text-xs font-semibold text-green-700">
+                        Selected point
+                      </p>
+                      <p className="text-xs leading-tight font-medium break-words text-gray-800">
+                        {searchLocation.name ?? 'Location'}
+                      </p>
+                    </div>
+                    {searchLocationNearestBin && (
+                      <div className="border-t border-green-100 pt-2">
+                        <p className="mb-1 text-xs font-semibold text-green-700">
+                          Nearest Bin
+                        </p>
+                        <p className="text-xs font-medium text-gray-800">
+                          {searchLocationNearestBin.name}
+                        </p>
+                        <p
+                          className={`text-xs font-medium ${searchLocationNearestBin.color}`}
+                        >
+                          {searchLocationNearestBin.type}
+                        </p>
+                        <p className="mt-1 text-xs font-semibold text-blue-600">
+                          📍 {searchLocationNearestBin.distance}
+                        </p>
+                      </div>
+                    )}
+                  </div>
                 </Popup>
               </Marker>
             )}
@@ -300,18 +466,53 @@ export function BinLocator() {
                 </Marker>
               );
             })}
+
+            {nearestBin && (
+              <Marker
+                ref={nearestBinMarkerRef}
+                position={[nearestBin.lat, nearestBin.lng]}
+                eventHandlers={{
+                  popupopen: () => console.log('Nearest bin popup opened'),
+                }}
+              >
+                <Popup className="font-sans" closeButton={false} autoPan={true}>
+                  <div className="w-48 space-y-1.5 rounded p-2">
+                    <p className="mb-1 text-xs font-bold text-purple-700">
+                      📍 NEAREST BIN
+                    </p>
+                    <div>
+                      <p className="text-xs font-bold text-gray-800">
+                        {nearestBin.name}
+                      </p>
+                      <p className={`text-xs font-medium ${nearestBin.color}`}>
+                        {nearestBin.type}
+                      </p>
+                    </div>
+                    <div className="rounded bg-purple-50 px-2 py-1">
+                      <p className="text-xs font-semibold text-purple-700">
+                        Distance: {nearestBin.distance}
+                      </p>
+                    </div>
+                  </div>
+                </Popup>
+              </Marker>
+            )}
           </MapContainer>
         </div>
-        <LocationsSideBar
-          bins={bins}
-          selectedBinId={selectedBinId}
-          activeTypeFilter={activeTypeFilter}
-          loading={loading}
-          onFilterChange={setActiveTypeFilter}
-          onBinSelect={handleSelectBin}
-          onLocateUser={handleLocateUser}
-          onLocationSearch={handleLocationSearch}
-        />
+
+        {/* Filter Card Column */}
+        <div className="h-full">
+          <LocationsSideBar
+            bins={bins}
+            selectedBinId={selectedBinId}
+            activeTypeFilter={activeTypeFilter}
+            loading={loading}
+            onFilterChange={setActiveTypeFilter}
+            onBinSelect={handleSelectBin}
+            onLocateUser={handleLocateUser}
+            onLocationSearch={handleLocationSearch}
+          />
+        </div>
       </div>
     </div>
   );

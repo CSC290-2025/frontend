@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
+import { useNavigate } from '@/router'; // Ensure this path is correct based on project structure
 import { Menu, X } from 'lucide-react';
 import UserOverviewPage from '@/features/_healthcare/pages/user/UserOverviewPage';
 import UserBookingPage from '@/features/_healthcare/pages/user/UserBookingPage';
 import UserMedicationsPage from '@/features/_healthcare/pages/user/UserMedicationsPage';
 import UserBillingPage from '@/features/_healthcare/pages/user/UserBillingPage';
 import UserProfilePage from '@/features/_healthcare/pages/user/UserProfilePage';
+import AdminHealthcareShell from '@/features/_healthcare/pages/AdminHealthcareShell';
 
 type UserScreen =
   | 'overview'
@@ -22,9 +24,23 @@ const navItems: Array<{ key: UserScreen; label: string }> = [
 ];
 
 const UserHealthcareShell: React.FC = () => {
+  const [mode, setMode] = useState<'user' | 'admin-login' | 'admin'>('user');
   const [currentScreen, setCurrentScreen] = useState<UserScreen>('overview');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [emergencyContact, setEmergencyContact] = useState('');
+
+  if (mode === 'admin') {
+    return <AdminHealthcareShell />;
+  }
+
+  if (mode === 'admin-login') {
+    return (
+      <AdminLoginView
+        onBack={() => setMode('user')}
+        onSuccess={() => setMode('admin')}
+      />
+    );
+  }
 
   return (
     <div
@@ -100,6 +116,7 @@ const UserHealthcareShell: React.FC = () => {
           <UserProfilePage
             emergencyContact={emergencyContact}
             onContactChange={setEmergencyContact}
+            onAdminLoginRequest={() => setMode('admin-login')}
           />
         )}
       </main>
@@ -142,3 +159,110 @@ const MobileNavButton: React.FC<{
 );
 
 export default UserHealthcareShell;
+
+const AdminLoginView: React.FC<{
+  onBack: () => void;
+  onSuccess: () => void;
+}> = ({ onBack, onSuccess }) => {
+  const navigate = useNavigate();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await fetch(
+        'http://localhost:3000/api/healthcare/auth/login',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password }),
+        }
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Login failed');
+      }
+
+      localStorage.setItem('healthcare_token', data.data.token);
+      localStorage.setItem('healthcare_user', JSON.stringify(data.data.user));
+
+      // Redirect to Admin Page (URL change)
+      navigate('/healthcare/healthcare-admin');
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div
+      className="flex min-h-screen flex-col items-center justify-center bg-gray-50 px-4"
+      style={{ fontFamily: 'Poppins, sans-serif' }}
+    >
+      <div className="w-full max-w-md rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+        <button
+          onClick={onBack}
+          className="text-sm font-semibold text-[#0091B5] hover:underline"
+        >
+          ← Back to Healthcare
+        </button>
+        <div className="mt-4 space-y-2">
+          <h1 className="text-2xl font-extrabold text-gray-900">
+            Healthcare Staff Login
+          </h1>
+          <p className="text-sm text-gray-600">
+            Enter the staff email and password provided by the admin team.
+            Signup is disabled for security.
+          </p>
+        </div>
+
+        {error && (
+          <div className="mt-4 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+            {error}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+          <label className="block space-y-1 text-sm font-semibold text-gray-700">
+            Email
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#01CCFF] focus:outline-none"
+              placeholder="admin@healthcare.com"
+            />
+          </label>
+          <label className="block space-y-1 text-sm font-semibold text-gray-700">
+            Password
+            <input
+              type="password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#01CCFF] focus:outline-none"
+              placeholder="••••••••"
+            />
+          </label>
+          <button
+            type="submit"
+            disabled={loading}
+            className={`w-full rounded-lg bg-[#0091B5] px-4 py-2 text-sm font-semibold text-white transition hover:bg-[#007fa0] ${loading ? 'cursor-not-allowed opacity-70' : ''}`}
+          >
+            {loading ? 'Verifying...' : 'Login to Admin'}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+};

@@ -31,6 +31,7 @@ import {
   Cloud,
   Navigation,
 } from 'lucide-react';
+import { apiClient } from '@/lib/apiClient.ts';
 
 export default function Sidebar() {
   const [expandedSections, setExpandedSections] = useState({
@@ -46,6 +47,16 @@ export default function Sidebar() {
     }));
   };
 
+  const [role, setRole] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchUserId = async () => {
+      const me = await apiClient.get('/auth/me');
+      setRole(me.data.data.role);
+    };
+    fetchUserId();
+  }, []);
+
   // Main services - compact for sidebar
   const mainRoutes = [
     { icon: BusFront, label: 'Transport', path: '/public_transportation' },
@@ -56,14 +67,18 @@ export default function Sidebar() {
       label: 'Healthcare',
       path: '/healthcare/healthcare-user',
     },
-    { icon: BookText, label: 'Learn AI', path: '/Know-AI/createCourse' },
+    { icon: BookText, label: 'Learn AI', path: '/Know-AI/courses' },
   ];
 
   // Additional services with dropdown
   const additionalRoutes = [
     { icon: Zap, label: 'Power BI', path: '/power-bi' },
     { icon: Leaf, label: 'Waste Mgmt', path: '/waste-management' },
-    { icon: Shield, label: 'Emergency', path: '/sos' },
+    {
+      icon: Shield,
+      label: 'Emergency',
+      path: role === 'Admin' ? 'sos/admindashboard' : 'sos',
+    },
     { icon: Users, label: 'Volunteer', path: '/volunteer/board' },
     { icon: MapPin, label: 'Map', path: '/map' },
     { icon: House, label: 'Apartments', path: '/ApartmentHomepage' },
@@ -71,7 +86,6 @@ export default function Sidebar() {
     { icon: Trees, label: 'Clean Air', path: '/clean-air/district-selection' },
     { icon: AlertTriangle, label: 'Harm Reports', path: '/harm' },
     { icon: Radio, label: 'Traffic', path: '/traffic' },
-    { icon: Cloud, label: 'Air Quality', path: '/weather-aqi' },
     { icon: Activity, label: 'Activity', path: '/activity' },
     { icon: MessageSquare, label: 'Chat', path: '/chat' },
     { icon: PhoneOff, label: 'Hotline', path: '/hotLine' },
@@ -79,7 +93,7 @@ export default function Sidebar() {
 
   // User routes
   const userRoutes = [
-    { icon: CircleUser, label: 'Profile', path: '/profile' },
+    { icon: CircleUser, label: 'Profile', path: '/citizen/profile' },
     { icon: Settings, label: 'Settings', path: '/citizen/setting' },
     { icon: Wallet, label: 'E-Wallet', path: '/financial' },
   ];

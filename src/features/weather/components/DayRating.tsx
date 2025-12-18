@@ -31,6 +31,11 @@ export default function DayRating({
   );
   const [error, setError] = useState<string | null>(null);
 
+  // pressed states for click-and-hold animations
+  const [pressedCompact, setPressedCompact] = useState(false);
+  const [pressedEmoji, setPressedEmoji] = useState<number | null>(null);
+  const [pressedSubmit, setPressedSubmit] = useState(false);
+
   const openModal = () => {
     setSelected(null);
     setError(null);
@@ -83,7 +88,18 @@ export default function DayRating({
     <>
       {/* compact card */}
       <div className="inline-flex items-center gap-3">
-        <div className="rounded-lg border bg-white p-3 shadow-sm select-none">
+        <div
+          className={`rounded-lg border bg-white p-3 shadow-sm transition-transform duration-150 select-none ${
+            pressedCompact
+              ? 'scale-[0.97] shadow-md'
+              : 'hover:scale-[1.02] hover:shadow-md'
+          }`}
+          onMouseDown={() => setPressedCompact(true)}
+          onMouseUp={() => setPressedCompact(false)}
+          onMouseLeave={() => setPressedCompact(false)}
+          onTouchStart={() => setPressedCompact(true)}
+          onTouchEnd={() => setPressedCompact(false)}
+        >
           <div className="text-xs text-gray-500">Overall Weather Today</div>
           {current ? (
             <div className="mt-1 flex items-center gap-3">
@@ -97,10 +113,21 @@ export default function DayRating({
           ) : (
             <button
               onClick={openModal}
-              className="mt-2 flex items-center gap-2 rounded px-3 py-1 text-sm font-medium text-gray-700 hover:bg-gray-50 active:opacity-80"
+              onMouseDown={() => setPressedCompact(true)}
+              onMouseUp={() => setPressedCompact(false)}
+              onMouseLeave={() => setPressedCompact(false)}
+              onTouchStart={() => setPressedCompact(true)}
+              onTouchEnd={() => setPressedCompact(false)}
+              className="mt-2 flex items-center gap-2 rounded px-3 py-1 text-sm font-medium text-gray-700 transition-transform duration-100"
             >
-              <span>Tap to rate</span>
-              <span className="flex h-6 w-6 items-center justify-center rounded-full border">
+              <span className="transform">
+                {pressedCompact ? 'Tap to rate' : 'Tap to rate'}
+              </span>
+              <span
+                className={`flex h-6 w-6 items-center justify-center rounded-full border transition-transform duration-100 ${
+                  pressedCompact ? 'scale-[0.92] bg-gray-100' : ''
+                }`}
+              >
                 ＋
               </span>
             </button>
@@ -138,10 +165,13 @@ export default function DayRating({
                 <button
                   key={e.value}
                   onClick={() => setSelected(e.value)}
-                  className={`flex w-full flex-col items-center gap-2 rounded-lg border p-3 text-center ${
-                    selected === e.value ? 'ring-2 ring-blue-400' : ''
-                  }`}
+                  onMouseDown={() => setPressedEmoji(e.value)}
+                  onMouseUp={() => setPressedEmoji(null)}
+                  onMouseLeave={() => setPressedEmoji(null)}
+                  onTouchStart={() => setPressedEmoji(e.value)}
+                  onTouchEnd={() => setPressedEmoji(null)}
                   type="button"
+                  className={`flex w-full flex-col items-center gap-2 rounded-lg border-transparent bg-transparent p-3 text-center transition-transform duration-100 ${selected === e.value ? 'bg-blue-50 ring-2 ring-blue-400' : ''} ${pressedEmoji === e.value ? 'scale-[0.95]' : 'hover:scale-[1.03]'}`}
                 >
                   <div className="text-2xl">{e.emoji}</div>
                   <div className="text-xs text-gray-600">{e.label}</div>
@@ -154,8 +184,17 @@ export default function DayRating({
             <div className="mt-6 flex justify-center">
               <button
                 onClick={submitRating}
+                onMouseDown={() => setPressedSubmit(true)}
+                onMouseUp={() => setPressedSubmit(false)}
+                onMouseLeave={() => setPressedSubmit(false)}
+                onTouchStart={() => setPressedSubmit(true)}
+                onTouchEnd={() => setPressedSubmit(false)}
                 disabled={submitting}
-                className="rounded bg-blue-400 px-6 py-2 text-white disabled:opacity-60"
+                className={`rounded bg-blue-400 px-6 py-2 text-white transition-transform duration-100 disabled:opacity-60 ${
+                  pressedSubmit
+                    ? 'scale-[0.97] shadow-md'
+                    : 'hover:scale-[1.02]'
+                }`}
               >
                 {submitting ? 'Submitting...' : 'Submit Rating'}
               </button>

@@ -1,4 +1,9 @@
-import React, { MouseEvent, ReactNode, ReactElement, useState } from 'react';
+import React, {
+  type MouseEvent,
+  type ReactNode,
+  type ReactElement,
+  useState,
+} from 'react';
 
 // Enhanced Icons
 const XIcon = ({ className = 'w-4 h-4' }: { className?: string }) => (
@@ -36,6 +41,15 @@ const LoadingIcon = ({ className = 'w-4 h-4' }: { className?: string }) => (
   </svg>
 );
 
+type BadgeVariant =
+  | 'default'
+  | 'secondary'
+  | 'destructive'
+  | 'outline'
+  | 'warning'
+  | 'success'
+  | 'info';
+
 // Enhanced Types
 type BadgeSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 type BadgeShape = 'rounded' | 'pill' | 'square' | 'circle';
@@ -54,6 +68,7 @@ type BadgePosition = 'static' | 'absolute' | 'fixed' | 'sticky';
 // Enhanced Badge Props Interface
 interface BadgeBaseProps {
   children: ReactNode;
+  variant?: BadgeVariant;
   size?: BadgeSize;
   shape?: BadgeShape;
   animation?: BadgeAnimation;
@@ -121,6 +136,7 @@ export const Badge = React.forwardRef<HTMLElement, BadgeProps>(
   (
     {
       children,
+      variant = 'default',
       size = 'md',
       shape = 'rounded',
       animation = 'none',
@@ -163,6 +179,21 @@ export const Badge = React.forwardRef<HTMLElement, BadgeProps>(
 
     // Don't render if dismissed
     if (isDismissed) return null;
+
+    const variantStyles: Record<BadgeVariant, string> = {
+      default:
+        'bg-primary text-primary-foreground hover:bg-primary/80 border-transparent',
+      secondary:
+        'bg-secondary text-secondary-foreground hover:bg-secondary/80 border-transparent',
+      destructive:
+        'bg-destructive text-destructive-foreground hover:bg-destructive/80 border-transparent',
+      outline:
+        'text-foreground border border-input hover:bg-accent hover:text-accent-foreground',
+      warning:
+        'bg-yellow-500 text-white hover:bg-yellow-600 border-transparent',
+      success: 'bg-green-500 text-white hover:bg-green-600 border-transparent',
+      info: 'bg-blue-500 text-white hover:bg-blue-600 border-transparent',
+    };
 
     // Enhanced Size Styles
     const sizeStyles: Record<BadgeSize, string> = {
@@ -248,6 +279,7 @@ export const Badge = React.forwardRef<HTMLElement, BadgeProps>(
     const baseClasses = [
       'inline-flex items-center justify-center font-medium transition-all duration-200',
       'focus:outline-none focus:ring-2 focus:ring-offset-2',
+      variantStyles[variant as BadgeVariant],
       sizeStyles[size],
       shapeStyles[shape],
       animationStyles[animation],
@@ -267,7 +299,7 @@ export const Badge = React.forwardRef<HTMLElement, BadgeProps>(
       .filter(Boolean)
       .join(' ');
 
-    // Add positioning styles if needed
+    // Add positioning chat if needed
     const positioningStyles: React.CSSProperties = {
       ...style,
       ...(top !== undefined && { top }),

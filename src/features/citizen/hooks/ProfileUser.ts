@@ -1,16 +1,15 @@
 import { useQuery } from '@tanstack/react-query';
-import { fetchUserProfile, fetchUserProfileDetails } from '../api/ProfileUser';
+import { fetchProfileForSettingUser } from '../api/ProfileUser';
 
-export function useUserProfile(userId: number) {
+export function useMyProfile(userID: number) {
   return useQuery({
-    queryKey: ['userProfile', userId],
-    queryFn: () => fetchUserProfile(userId),
+    queryKey: ['myProfile', userID],
+    queryFn: () => fetchProfileForSettingUser(userID),
+
+    staleTime: 0,
+    refetchOnMount: 'always',
+    refetchOnWindowFocus: true,
   });
 }
 
-export function useUserProfileDetails(userId: number) {
-  return useQuery({
-    queryKey: ['userProfileDetails', userId],
-    queryFn: () => fetchUserProfileDetails(userId),
-  });
-}
+export const useUserProfileDetails = useMyProfile;
