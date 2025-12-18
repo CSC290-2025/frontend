@@ -9,7 +9,7 @@ You can start using the existing components right away.
 
 1. You can import any component that already exists in `components/ui`.
 2. Use them directly in your React files like normal JSX components.
-3. TailwindCSS is already integrated, so you can customize chat with classes.
+3. TailwindCSS is already integrated, so you can customize styles with classes.
 
 Example:
 
