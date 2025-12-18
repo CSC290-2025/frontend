@@ -1,6 +1,13 @@
 // src/pages/MapPage.tsx
-import { useEffect, useMemo, useRef, useState } from 'react';
-import initMapAndMarkers from '../config/google-map';
+import { useEffect, useMemo, useState, useCallback } from 'react';
+import {
+  APIProvider,
+  Map,
+  Marker,
+  InfoWindow,
+  useMap,
+} from '@vis.gl/react-google-maps';
+import { getMarkerIconUrl } from '../config/google-map';
 import type { SuccessMarker, MapMarker } from '../interfaces/api';
 import { MarkerSidePanel } from '../components/rightSide';
 import { apiClient } from '@/lib/apiClient';
@@ -49,12 +56,84 @@ function isInAnyZone(m: MapMarker): boolean {
   );
 }
 
+type MarkerWithInfo = {
+  id: number;
+  position: google.maps.LatLngLiteral;
+  title: string;
+  markerTypeId?: number;
+  markerTypeIconKey?: string;
+};
+
+interface MapMarkersProps {
+  markers: MarkerWithInfo[];
+  onFocusRequest?: { lat: number; lng: number } | null;
+  onFocusHandled?: () => void;
+}
+
+function MapMarkers({
+  markers,
+  onFocusRequest,
+  onFocusHandled,
+}: MapMarkersProps) {
+  const map = useMap();
+  const [selectedMarker, setSelectedMarker] = useState<MarkerWithInfo | null>(
+    null
+  );
+
+  // Handle focus request from parent
+  useEffect(() => {
+    if (map && onFocusRequest) {
+      map.panTo(onFocusRequest);
+      map.setZoom(18);
+      onFocusHandled?.();
+    }
+  }, [map, onFocusRequest, onFocusHandled]);
+
+  return (
+    <>
+      {markers.map((marker) => {
+        const iconUrl = getMarkerIconUrl(
+          marker.markerTypeIconKey,
+          marker.markerTypeId
+        );
+
+        return (
+          <Marker
+            key={marker.id}
+            position={marker.position}
+            title={marker.title}
+            onClick={() => setSelectedMarker(marker)}
+            icon={
+              iconUrl
+                ? {
+                    url: iconUrl,
+                    scaledSize: { width: 32, height: 32 } as google.maps.Size,
+                  }
+                : undefined
+            }
+          />
+        );
+      })}
+
+      {selectedMarker && (
+        <InfoWindow
+          position={selectedMarker.position}
+          onCloseClick={() => setSelectedMarker(null)}
+        >
+          <div style={{ minWidth: 160, fontSize: 14 }}>
+            <strong>{selectedMarker.title}</strong>
+            <br />
+            Lat: {selectedMarker.position.lat}
+            <br />
+            Lng: {selectedMarker.position.lng}
+          </div>
+        </InfoWindow>
+      )}
+    </>
+  );
+}
+
 const MapPage = () => {
-  const mapRef = useRef<HTMLDivElement>(null);
-
-  // 1. add variable for Google Map Instance
-  const mapInstanceRef = useRef<google.maps.Map | null>(null);
-
   const [markers, setMarkers] = useState<MapMarker[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -67,13 +146,20 @@ const MapPage = () => {
   const [selectedTypeId, setSelectedTypeId] = useState<number | null>(null);
   const navigate = useNavigate();
 
-  // 2. Focus function
-  const handleFocusMarker = (lat: number, lng: number) => {
-    if (mapInstanceRef.current) {
-      mapInstanceRef.current.panTo({ lat, lng }); // move to it
-      mapInstanceRef.current.setZoom(18); // zoom
-    }
-  };
+  // Focus request state
+  const [focusRequest, setFocusRequest] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
+
+  // Focus function
+  const handleFocusMarker = useCallback((lat: number, lng: number) => {
+    setFocusRequest({ lat, lng });
+  }, []);
+
+  const handleFocusHandled = useCallback(() => {
+    setFocusRequest(null);
+  }, []);
 
   const handleSelectTypeId = (id: number) => {
     console.log('=== handleSelectTypeId called ===');
@@ -208,42 +294,24 @@ const MapPage = () => {
     return result;
   }, [markers, selectedTypeId]);
 
-  // Render Google Map whenever filteredMarkers changes
-  useEffect(() => {
-    if (!mapRef.current) return;
-
-    const filtered = filteredMarkers;
-
-    const center = {
-      lat: (MAP_BOUNDS.north + MAP_BOUNDS.south) / 2,
-      lng: (MAP_BOUNDS.east + MAP_BOUNDS.west) / 2,
-    };
-
-    const mapOptions: google.maps.MapOptions = {
-      center,
-      zoom: 13,
-      restriction: {
-        latLngBounds: MAP_BOUNDS,
-        strictBounds: true,
-      },
-    };
-
-    const markerOptions = filtered.map((m) => ({
+  // Transform markers for the map component
+  const mapMarkers = useMemo(() => {
+    return filteredMarkers.map((m) => ({
+      id: m.id,
       position: { lat: m.lat, lng: m.lng },
       title: m.description ?? `Marker #${m.id}`,
       markerTypeId: m.marker_type_id ?? 1,
       markerTypeIconKey: markerTypeIconById[m.marker_type_id ?? 1],
     }));
-
-    // 3. recive Map Instance in Ref when finish Init
-    initMapAndMarkers({
-      mapEl: mapRef.current,
-      mapOptions,
-      markerOptions,
-    }).then((map) => {
-      mapInstanceRef.current = map;
-    });
   }, [filteredMarkers, markerTypeIconById]);
+
+  const center = useMemo(
+    () => ({
+      lat: (MAP_BOUNDS.north + MAP_BOUNDS.south) / 2,
+      lng: (MAP_BOUNDS.east + MAP_BOUNDS.west) / 2,
+    }),
+    []
+  );
 
   const panelMarkers = filteredMarkers;
 
@@ -486,12 +554,30 @@ const MapPage = () => {
 
           <div className="flex gap-4">
             <div className="flex-1">
-              <div
-                ref={mapRef}
-                id="google_map"
-                className="overflow-hidden rounded-xl border border-neutral-300 shadow-sm"
-                style={{ height: 'calc(95vh - 180px)' }}
-              />
+              <APIProvider
+                apiKey={import.meta.env.VITE_G16_GOOGLE_MAPS_API_KEY}
+              >
+                <div
+                  className="overflow-hidden rounded-xl border border-neutral-300 shadow-sm"
+                  style={{ height: 'calc(95vh - 180px)', width: '100%' }}
+                >
+                  <Map
+                    defaultCenter={center}
+                    defaultZoom={13}
+                    restriction={{
+                      latLngBounds: MAP_BOUNDS,
+                      strictBounds: true,
+                    }}
+                    style={{ width: '100%', height: '100%' }}
+                  >
+                    <MapMarkers
+                      markers={mapMarkers}
+                      onFocusRequest={focusRequest}
+                      onFocusHandled={handleFocusHandled}
+                    />
+                  </Map>
+                </div>
+              </APIProvider>
             </div>
 
             {/* send onFocus function to sidebar */}
