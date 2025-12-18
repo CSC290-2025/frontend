@@ -46,6 +46,7 @@ export type Path =
   | `/freecycle/post-item`
   | `/harm`
   | `/harm/:id`
+  | `/healthcare/Login`
   | `/healthcare/healthcare-admin`
   | `/healthcare/healthcare-user`
   | `/hotLine`
