@@ -471,7 +471,7 @@ const TrafficDataForm: React.FC = () => {
 
   // --- ส่วน Render ของ Component ---
   return (
-    <div className="m-2 max-w-170 justify-self-center rounded-md border-1 border-gray-300 p-5">
+    <div className="m-2 max-w-170 justify-self-center rounded-md border-1 border-gray-300 p-5 shadow">
       {backendmode ? (
         <div>
           {message.text && (
@@ -483,17 +483,17 @@ const TrafficDataForm: React.FC = () => {
           )}
 
           <div className="mb-6 flex flex-row justify-between">
-            <h1 className="w-full rounded-md bg-gradient-to-r from-green-400 to-blue-500 p-3 text-center font-bold text-white">
+            <h1 className="w-full rounded-md bg-gray-100 p-3 text-center font-bold shadow">
               🚦 Traffic Light management (Firebase Realtime DB)
             </h1>
             <button
-              className="ml-5 rounded-md bg-gradient-to-r from-blue-500 to-blue-600 p-3 text-center font-bold text-white hover:from-blue-600 hover:to-blue-700"
+              className="ml-5 rounded-md bg-blue-500 p-3 text-center font-bold text-white shadow transition-colors duration-300 hover:bg-blue-600"
               onClick={() => navigate('/traffic/admin')}
             >
               Admin
             </button>
             <button
-              className="ml-5 rounded-md bg-gradient-to-r from-blue-500 to-blue-600 p-3 text-center font-bold text-white hover:from-blue-600 hover:to-blue-700"
+              className="ml-5 rounded-md bg-blue-600 p-3 text-center font-bold text-white shadow transition-colors duration-300 hover:bg-blue-700"
               onClick={changeMode}
             >
               switch
@@ -502,7 +502,7 @@ const TrafficDataForm: React.FC = () => {
           <hr />
           <div className="flex flex-row justify-between space-x-5">
             {/* -------------------- ภาค 1: เพิ่มข้อมูลใหม่ (กำหนด Key เอง) -------------------- */}
-            <div className="rounded-md border p-5">
+            <div className="rounded-md border p-5 shadow">
               <h2 className="mb-3 font-bold">Traffic Light Input</h2>
               <p className="mb-2 text-sm text-gray-400">
                 Input Trafficlight data to add new light or update light with
@@ -704,7 +704,7 @@ const TrafficDataForm: React.FC = () => {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full rounded-lg bg-green-500 p-3 text-center font-bold text-white transition-colors duration-300 hover:bg-green-600"
+                  className="w-full rounded-lg bg-blue-500 p-3 text-center font-bold text-white transition-colors duration-300 hover:bg-blue-600"
                 >
                   {isLoading ? 'saving...' : 'Save Traffic Light to DB'}
                 </button>
@@ -787,7 +787,7 @@ const TrafficDataForm: React.FC = () => {
           <hr style={{ marginTop: '20px' }} />
 
           {/* -------------------- ภาค 3: ตารางแสดงข้อมูล Traffic Realtime -------------------- */}
-          <h2 className="mb-6 rounded-md bg-gradient-to-r from-green-400 to-blue-500 p-3 text-center font-bold text-white">
+          <h2 className="mb-5 w-full rounded-md bg-gray-100 p-3 text-center font-bold shadow">
             📊 Traffic Light data in Realtime Database ({selectref})
           </h2>
 
@@ -797,7 +797,7 @@ const TrafficDataForm: React.FC = () => {
             <div className="max-h-120 overflow-x-auto overflow-y-scroll">
               <table className="w-full">
                 <thead>
-                  <tr className="bg-gradient-to-t from-gray-300 to-gray-100">
+                  <tr className="bg-gray-200">
                     <th
                       style={{ padding: '10px', border: '1px solid #000000ff' }}
                     >
@@ -1002,12 +1002,12 @@ const TrafficDataForm: React.FC = () => {
       ) : (
         <div className="">
           <div className="mb-6 flex flex-row justify-between">
-            <h1 className="w-full rounded-md bg-gradient-to-r from-blue-400 to-purple-500 p-3 text-center font-bold text-white">
-              🚦 Traffic Light calculation
+            <h1 className="w-full rounded-md bg-gray-100 p-3 text-center font-bold shadow">
+              Traffic Light calculation (Density level)
             </h1>
 
             <button
-              className="ml-5 rounded-md bg-gradient-to-r from-purple-500 to-purple-600 p-3 text-center font-bold text-white hover:from-purple-600 hover:to-purple-700"
+              className="ml-5 rounded-md bg-black p-3 text-center font-bold text-white shadow duration-300 hover:bg-gray-300 hover:text-black"
               onClick={changeMode}
             >
               switch
@@ -1023,14 +1023,14 @@ const TrafficDataForm: React.FC = () => {
           <form onSubmit={handlefetch}>
             {/* Status Input */}
             <div style={{ marginBottom: '10px' }}>
-              <label className="font-bold text-purple-600">Traffic Key :</label>
+              <label className="font-bold text-gray-600">Traffic Key :</label>
               <input
                 type="text"
                 name="calcukey"
                 value={calcukey}
                 onChange={(e) => setCalcukey(e.target.value)}
                 required
-                className="mt-1 w-full rounded-sm border-2 border-purple-600 p-2"
+                className="mt-1 w-full rounded-sm border-2 border-gray-600 p-2"
               />
             </div>
 
@@ -1038,7 +1038,7 @@ const TrafficDataForm: React.FC = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full rounded-md bg-purple-500 p-3 text-center font-bold text-white transition-colors duration-300 hover:bg-purple-600"
+              className="w-full rounded-md bg-gray-500 p-3 text-center font-bold text-white transition-colors duration-300 hover:bg-gray-600"
             >
               {isLoading ? 'fetching...' : 'Fetch Data'}
             </button>
@@ -1071,7 +1071,7 @@ const TrafficDataForm: React.FC = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className="mt-5 w-full rounded-md bg-gradient-to-b from-purple-500 to-blue-500 p-3 text-center font-bold text-white transition-colors duration-300 hover:bg-orange-700 hover:from-purple-600 hover:to-blue-600"
+              className="mt-5 w-full rounded-md bg-blue-500 p-3 text-center font-bold text-white transition-colors duration-300 hover:bg-blue-600"
             >
               {isLoading ? 'Calculating...' : 'Calculate'}
             </button>
