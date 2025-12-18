@@ -28,6 +28,7 @@ export interface DailyStats {
     log_id: number;
   }[];
 }
+
 export interface Bin {
   id: number;
   bin_name: string;
@@ -99,4 +100,14 @@ export interface ApiResponse<T> {
   success: boolean;
   data?: T;
   message?: string;
+}
+
+export interface DailyLog {
+  log_id: number;
+  waste_type?: string;
+  weight: number;
+}
+
+export interface DailyLogsResponse {
+  logs: DailyLog[];
 }

@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { BarChart3, MapPin, Trash2, Navigation } from 'lucide-react';
+import { BarChart3, MapPin, Trash2, Navigation, Delete } from 'lucide-react';
 import Dashboard from '@/features/waste-management/pages/Dashboard.tsx';
 import BinsManagement from '@/features/waste-management/pages/BinsManagement';
 import WasteLogging from '@/features/waste-management/pages/WasteLogging';
 import { BinLocator } from '@/features/waste-management/pages/NearestBins';
+import WasteEventsPage from './WasteEventsPage';
 
 export default function WasteManagementPage() {
   const [currentPage, setCurrentPage] = useState('dashboard');
@@ -12,12 +13,14 @@ export default function WasteManagementPage() {
     switch (currentPage) {
       case 'dashboard':
         return <Dashboard />;
-      case 'bins':
-        return <BinsManagement />;
       case 'waste':
         return <WasteLogging />;
+      case 'bins':
+        return <BinsManagement />;
       case 'nearest':
         return <BinLocator />;
+      case 'wasteEvent':
+        return <WasteEventsPage />;
       default:
         return <Dashboard />;
     }
@@ -46,15 +49,15 @@ export default function WasteManagementPage() {
         </div>
       </header>
 
-      {/* Navigation */}
       <nav className="border-b border-gray-200 bg-white">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex gap-1">
             {[
               { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
-              { id: 'bins', label: 'Bins', icon: MapPin },
               { id: 'waste', label: 'Log Waste', icon: Trash2 },
-              { id: 'nearest', label: 'Find Nearest', icon: Navigation },
+              { id: 'bins', label: 'Bins Management', icon: MapPin },
+              { id: 'nearest', label: 'Find Nearest Bins', icon: Navigation },
+              { id: 'wasteEvent', label: 'Waste Events', icon: Delete },
             ].map((item) => (
               <button
                 key={item.id}
@@ -73,19 +76,9 @@ export default function WasteManagementPage() {
         </div>
       </nav>
 
-      {/* Main Content */}
       <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         {renderPage()}
       </main>
-
-      {/* Footer */}
-      <footer className="mt-12 border-t border-gray-200 bg-white">
-        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
-          <p className="text-center text-sm text-gray-500">
-            Waste Management System © 2025 - Built with React & TypeScript
-          </p>
-        </div>
-      </footer>
     </div>
   );
 }
