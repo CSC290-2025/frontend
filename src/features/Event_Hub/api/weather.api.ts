@@ -5,7 +5,6 @@ interface RainForecastItem {
   date: string;
   precipitation_probability_max: number | null;
 }
-
 export const fetchDailyRainForecast = async (
   locationId: number,
   startDate: string,
@@ -23,10 +22,9 @@ export const fetchDailyRainForecast = async (
 
     // Assume the response structure is { data: { days: [...] } }
     const rainData = response.data;
-
-    if (rainData && Array.isArray(rainData.days)) {
+    if (rainData && Array.isArray(rainData.data.days)) {
       // Map the full API response item to the minimal interface
-      return rainData.days.map((item: any) => ({
+      return rainData.data.days.map((item: any) => ({
         date: item.date,
 
         precipitation_probability_max:
