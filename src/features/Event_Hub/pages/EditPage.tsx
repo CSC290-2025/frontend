@@ -104,14 +104,14 @@ const transformApiToForm = (e: any): EventForm => {
     start_time: toTime(e.start_at),
     end_date: toDate(e.end_at),
     end_time: toTime(e.end_at),
-    organization_name: e.organization?.name || '',
-    organization_email: e.organization?.email || '',
-    organization_phone: e.organization?.phone_number || '',
-    address_line: e.address?.address_line || '',
-    province: e.address?.province || '',
-    district: e.address?.district || '',
-    subdistrict: e.address?.subdistrict || '',
-    postal_code: e.address?.postal_code || '',
+    organization_name: e.event_organization.name || '',
+    organization_email: e.event_organization.email || '',
+    organization_phone: e.event_organization.phone_number || '',
+    address_line: e.addresses.address_line || '',
+    province: e.addresses.province || '',
+    district: e.addresses.district || '',
+    subdistrict: e.addresses.subdistrict || '',
+    postal_code: e.addresses.postal_code || '',
     event_tag_name: e.event_tag?.name || '',
   };
 };
@@ -132,8 +132,9 @@ const EditPage = () => {
     const load = async () => {
       try {
         const res = await fetchEventById(eventId);
+        console.log(res.data.data);
         const data = (res as any)?.data?.data ?? (res as any)?.data ?? res;
-        setFormData(transformApiToForm(data));
+        setFormData(transformApiToForm(data.event));
       } catch (err) {
         setError('Failed to load event details.');
       } finally {
@@ -293,6 +294,18 @@ const EditPage = () => {
                       <input
                         name="title"
                         value={formData.title || ''}
+                        onChange={handleChange}
+                        className="w-full rounded-lg border p-2.5"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-bold text-gray-500 uppercase">
+                        image
+                      </label>
+                      <input
+                        name="image_url"
+                        value={formData.image_url || ''}
                         onChange={handleChange}
                         className="w-full rounded-lg border p-2.5"
                         required

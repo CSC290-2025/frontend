@@ -8,7 +8,6 @@ const CreateEventPage = () => {
   const navigate = useNavigate();
   const { data: authData, isLoading: isAuthLoading } = useGetAuthMe();
   const user = authData?.data;
-
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);

@@ -77,14 +77,7 @@ const ContactPage: React.FC<ContactPageProps> = ({ setActiveTab }) => {
                 for contact
               </span>
             </label>
-            <input
-              type="email"
-              name="adminEmail"
-              value={formData.adminEmail}
-              onChange={handleInputChange}
-              className="w-full rounded-lg border border-gray-300 px-4 py-2.5 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
-              placeholder="admin@example.com"
-            />
+            user@example.com
             <p className="mt-2 text-sm text-gray-500">
               Example of what needs to be sent in email for event to be posted
               here
