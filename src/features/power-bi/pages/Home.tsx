@@ -3,13 +3,11 @@ import Categories from '../components/Categories';
 import { useUserRole } from '../hooks/useUserRole';
 import Nav from '../components/Nav';
 
-type SectionId =
-  | 'summary'
-  | 'trends'
-  | 'detailed'
-  | 'planning'
-  | 'usage'
-  | 'data';
+type SectionId = 'summary' | 'trends';
+// | 'detailed'
+// | 'planning'
+// | 'usage'
+// | 'data';
 
 const SECTIONS: Array<{
   id: SectionId;
