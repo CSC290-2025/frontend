@@ -15,15 +15,12 @@ import {
   Room,
   Upload as UploadHooks,
 } from '@/features/G9-ApartmentListing/hooks/index';
-
-interface LocationData {
-  [key: string]: {
-    districts: string[];
-    subdistricts: {
-      [key: string]: string[];
-    };
-  };
-}
+import type { LocationData } from '@/features/G9-ApartmentListing/types/upload.type';
+import type { RoomFormData } from '@/features/G9-ApartmentListing/types/room.type';
+import type {
+  FormData,
+  FieldErrors,
+} from '@/features/G9-ApartmentListing/types/booking.type';
 
 export default function AddApartment(): React.ReactElement {
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
@@ -72,49 +69,6 @@ export default function AddApartment(): React.ReactElement {
     },
   };
 
-  // Create a custom form data interface since the actual Apartment type doesn't have all the form fields
-  interface RoomFormData {
-    name: string;
-    type: string;
-    size: string;
-    price_start: number;
-    price_end: number;
-    room_status: roomTypes.RoomStatus;
-  }
-
-  interface FormData {
-    name: string;
-    phone: string;
-    description: string;
-    apartment_type: apartmentTypes.ApartmentType;
-    apartment_location: apartmentTypes.ApartmentLocation;
-    address_line: string;
-    province: string;
-    district: string;
-    subdistrict: string;
-    postal_code: string;
-    electric_price: number;
-    water_price: number;
-    internet_price: number;
-    internetFree: boolean;
-    roomTypes: RoomFormData[];
-    confirmed: boolean;
-  }
-
-  interface FieldErrors {
-    name?: string;
-    phone?: string;
-    address_line?: string;
-    province?: string;
-    district?: string;
-    subdistrict?: string;
-    postal_code?: string;
-    electric_price?: string;
-    water_price?: string;
-    internet_price?: string;
-    roomTypes?: { [key: number]: { [key: string]: string } };
-    confirmed?: string;
-  }
   // Separate state for images that will be uploaded
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [imagePreviews, setImagePreviews] = useState<string[]>([]);

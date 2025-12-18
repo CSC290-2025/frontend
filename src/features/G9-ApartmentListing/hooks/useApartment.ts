@@ -8,12 +8,7 @@ export function useApartment(id: number) {
     queryKey: ['apartment', id],
     queryFn: () => APTapi.fetchApartmentById(id),
     select: (response) => {
-      // Handle the API response structure: { success: true, data: {...}, timestamp: "..." }
-      if (response.data && response.data.data) {
-        return response.data.data;
-      }
-      // Fallback to response.data if it's the direct data
-      return response.data;
+      return response.data.data;
     },
     enabled: !!id,
   });
@@ -25,13 +20,7 @@ export function useApartments() {
     queryKey: ['apartments'],
     queryFn: () => APTapi.fetchAllApartments(),
     select: (response) => {
-      // Handle the API response structure
-      // If response.data has the structure { success: true, data: [...], timestamp: "..." }
-      if (response.data && response.data.data) {
-        return response.data.data;
-      }
-      // Fallback to response.data if it's already the array
-      return response.data;
+      return response.data.data;
     },
   });
 }

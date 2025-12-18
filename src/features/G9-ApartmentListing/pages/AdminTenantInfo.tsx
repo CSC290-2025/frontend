@@ -4,68 +4,51 @@ import {
   useUpdateBookingStatus,
 } from '@/features/G9-ApartmentListing/hooks/useBooking';
 import type { bookingTypes } from '@/features/G9-ApartmentListing/types/index';
+import type { Tenant } from '@/features/G9-ApartmentListing/types/booking.type';
 import EditIcon from '@/features/G9-ApartmentListing/assets/EditIcon.svg';
 import BackIcon from '@/features/G9-ApartmentListing/assets/BackIcon.svg';
 import ConfirmEndContract from '@/features/G9-ApartmentListing/components/ConfirmEndcontract';
 import SuccessModal from '@/features/G9-ApartmentListing/components/SuccessModal';
 
-interface Tenant {
-  id: number;
-  firstName: string;
-  lastName: string;
-  phone: string;
-  email: string;
-  roomType: string;
-  checkin: string;
-}
+const formatDate = (dateString?: string) => {
+  if (!dateString) return '';
+  try {
+    const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) return dateString;
+    return date.toISOString().slice(0, 10);
+  } catch {
+    return dateString;
+  }
+};
 
 export default function AdminTenantInfo() {
-  // const navigate = useNavigate();
-  const apartmentName = 'Current Tenants';
-  // Read apartment id from query param (AdminListedAPT links here as ?id=...)
   const params = new URLSearchParams(window.location.search);
   const apartmentId = Number(params.get('id') || 0);
-
-  // Use existing hooks to fetch bookings for this apartment
   const { data: bookingsResp, error } = useBookingsByApartment(apartmentId);
-  // Mutation hook to update booking status (end contract)
   const updateBookingStatus = useUpdateBookingStatus();
 
   const [showPopup, setShowPopup] = useState(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
-
   const [showSuccess, setShowSuccess] = useState(false);
 
   if (error) {
     console.error('Error loading bookings for apartment:', error);
   }
 
-  // Map booking API shape to local Tenant shape
-  const formatDate = (s?: string) => {
-    if (!s) return '';
-    try {
-      const d = new Date(s);
-      if (Number.isNaN(d.getTime())) return s;
-      return d.toISOString().slice(0, 10); // YYYY-MM-DD
-    } catch {
-      return s;
-    }
-  };
-
   const tenants: Tenant[] = (bookingsResp?.data?.data || []).map(
-    (b: bookingTypes.Booking) => {
-      const guest = b.guest_name || '';
-      const [firstName, ...rest] = guest.split(' ');
+    (booking: bookingTypes.Booking) => {
+      const guestName = booking.guest_name || '';
+      const [firstName, ...rest] = guestName.split(' ');
       const lastName = rest.join(' ');
 
       return {
-        id: b.id,
+        id: booking.id,
         firstName: firstName || '',
         lastName: lastName || '',
-        phone: b.guest_phone || '',
-        email: b.guest_email || '',
-        roomType: b.room_type || '',
-        checkin: formatDate(b.check_in),
+        phone: booking.guest_phone || '',
+        email: booking.guest_email || '',
+        roomType: booking.room_type || '',
+        checkin: formatDate(booking.check_in),
       } as Tenant;
     }
   );
@@ -77,7 +60,6 @@ export default function AdminTenantInfo() {
 
   const confirmEndContract = () => {
     if (selectedId !== null) {
-      // Call backend to mark booking as cancelled
       updateBookingStatus.mutate(
         { id: selectedId, status: 'cancelled' },
         {
@@ -91,7 +73,6 @@ export default function AdminTenantInfo() {
         }
       );
     }
-
     setShowPopup(false);
   };
 
@@ -104,7 +85,6 @@ export default function AdminTenantInfo() {
         >
           <img src={BackIcon} alt="Back" className="h-7 w-7" />
         </a>
-
         <h1 className="text-[48px] font-bold text-gray-900">
           Tenant Information
         </h1>
@@ -112,7 +92,7 @@ export default function AdminTenantInfo() {
 
       <div className="mb-6 flex w-full max-w-5xl items-center justify-between">
         <h2 className="text-[24px] font-semibold text-gray-800">
-          {apartmentName}
+          Current Tenants
         </h2>
       </div>
 

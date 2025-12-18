@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import { useGetTransactions } from '@/api/generated/transactions';
 import { useGetMetroCardsUserUserId } from '@/api/generated/metro-cards';
+import { useUseGetUserInsuranceCards } from '@/api/generated/insurance-cards';
 import { ArrowLeftRight, CreditCard, DollarSign } from 'lucide-react';
 import WalletIcon from '@/features/Financial/assets/wallet.svg';
 import MetroIcon from '@/features/Financial/assets/metro.svg';
@@ -118,15 +119,17 @@ export default function TransactionHistory({
     },
   });
   const { data: metroCardsResp } = useGetMetroCardsUserUserId(userId);
+  const { data: insuranceCardsResp } = useUseGetUserInsuranceCards(userId);
 
   const transactions = useMemo<UnifiedTx[]>(() => {
     if (!wallet) return [];
 
     const wData = data?.data?.wallet_transactions || [];
     const cData = data?.data?.card_transactions || [];
-    const userCardIds = new Set(
-      metroCardsResp?.data?.metroCards?.map((c) => c.id) || []
-    );
+    const userCardIds = new Set([
+      ...(metroCardsResp?.data?.metroCards?.map((c) => c.id) || []),
+      ...(insuranceCardsResp?.data?.insuranceCards?.map((c) => c.id) || []),
+    ]);
 
     const mappedWallet = wData
       .filter((w) => w.wallet_id === wallet.id)
@@ -170,7 +173,7 @@ export default function TransactionHistory({
       (a, b) =>
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     );
-  }, [data, metroCardsResp, wallet]);
+  }, [data, metroCardsResp, insuranceCardsResp, wallet]);
 
   const preview = transactions.slice(0, 3);
 

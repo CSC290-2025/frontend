@@ -17,8 +17,12 @@ export interface PostItem {
   photo_url?: string;
   description?: string;
   is_given: boolean;
+  request_count: number;
   categories?: Category[];
   owner_id: number;
+  owner_name: string;
+  owner_email: string;
+  owner_phone: string;
 }
 
 export interface ApiPost {
@@ -33,6 +37,14 @@ export interface ApiPost {
   categories?: Category[];
   donater_id: number | null;
   donate_to_department_id: number | null;
+
+  users?: {
+    username: string;
+    email: string;
+    phone: string | null;
+  };
+
+  receiver_requests?: any[];
 }
 
 // Helper: map ApiPost -> PostItem
@@ -53,7 +65,15 @@ export function mapApiPostToItem(api: ApiPost): PostItem {
     photo_url: api.photo_url ?? undefined,
     description: api.description ?? undefined,
     is_given: api.is_given,
+
+    request_count: Array.isArray(api.receiver_requests)
+      ? api.receiver_requests.length
+      : 0,
     owner_id: ownerId,
+
+    owner_name: api.users?.username || 'Unknown User',
+    owner_email: api.users?.email || '',
+    owner_phone: api.users?.phone || '',
   };
 }
 
