@@ -1,12 +1,15 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   createWeatherRating,
+  fetchUserWeatherRating,
   type WeatherRatingRecord,
 } from '../api/weather.api';
 
 type DayRatingProps = {
   // Public location id expected by backend (maps to address_id server-side)
   locationId?: number;
+  // Authenticated user id (required by backend)
+  userId?: number;
   // Optional callback fired with the saved weather rating record
   onSubmitted?: (record: WeatherRatingRecord) => void;
 };
@@ -21,6 +24,7 @@ const EMOJIS = [
 
 export default function DayRating({
   locationId,
+  userId,
   onSubmitted,
 }: Readonly<DayRatingProps>) {
   const [open, setOpen] = useState(false);
@@ -30,6 +34,7 @@ export default function DayRating({
     null
   );
   const [error, setError] = useState<string | null>(null);
+  const [loadingExisting, setLoadingExisting] = useState(false);
 
   // pressed states for click-and-hold animations
   const [pressedCompact, setPressedCompact] = useState(false);
@@ -37,12 +42,49 @@ export default function DayRating({
   const [pressedSubmit, setPressedSubmit] = useState(false);
 
   const openModal = () => {
-    setSelected(null);
+    setSelected(savedRecord ? Number(savedRecord.rating) : null);
     setError(null);
     setOpen(true);
   };
 
   const closeModal = () => setOpen(false);
+
+  useEffect(() => {
+    let active = true;
+    if (!locationId || !userId) {
+      setSavedRecord(null);
+      setSelected(null);
+      return () => {
+        active = false;
+      };
+    }
+
+    const loadExisting = async () => {
+      setLoadingExisting(true);
+      setError(null);
+      try {
+        const existing = await fetchUserWeatherRating({
+          location_id: locationId,
+        });
+        if (!active) return;
+        setSavedRecord(existing);
+        setSelected(existing ? Number(existing.rating) : null);
+      } catch (err: any) {
+        if (!active) return;
+        console.error('DayRating fetch error', err);
+        setError(err?.message ?? 'Unable to load your rating');
+        setSavedRecord(null);
+      } finally {
+        if (active) setLoadingExisting(false);
+      }
+    };
+
+    loadExisting();
+
+    return () => {
+      active = false;
+    };
+  }, [locationId, userId]);
 
   const handleOverlayKeyDown = (
     event: React.KeyboardEvent<HTMLButtonElement>
@@ -60,6 +102,10 @@ export default function DayRating({
     }
     if (!locationId) {
       setError('locationId not provided.');
+      return;
+    }
+    if (!userId) {
+      setError('Please sign in to submit a rating.');
       return;
     }
     setSubmitting(true);
@@ -101,14 +147,26 @@ export default function DayRating({
           onTouchEnd={() => setPressedCompact(false)}
         >
           <div className="text-xs text-gray-500">Overall Weather Today</div>
-          {current ? (
-            <div className="mt-1 flex items-center gap-3">
-              <div
-                className={`flex h-9 w-9 items-center justify-center rounded-full text-white ${current.color}`}
-              >
-                {current.emoji}
+          {loadingExisting ? (
+            <div className="mt-2 text-sm text-gray-500">
+              Loading your rating...
+            </div>
+          ) : current ? (
+            <div className="mt-1 space-y-2">
+              <div className="flex items-center gap-3">
+                <div
+                  className={`flex h-9 w-9 items-center justify-center rounded-full text-white ${current.color}`}
+                >
+                  {current.emoji}
+                </div>
+                <div className="text-sm font-semibold">{current.label} !</div>
               </div>
-              <div className="text-sm font-semibold">{current.label} !</div>
+              <button
+                onClick={openModal}
+                className="text-xs font-medium text-blue-600 underline"
+              >
+                Update rating
+              </button>
             </div>
           ) : (
             <button

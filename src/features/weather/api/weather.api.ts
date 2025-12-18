@@ -80,6 +80,11 @@ export type CreateWeatherRatingPayload = {
   rating: number;
 };
 
+export type UserWeatherRatingParams = {
+  location_id: number;
+  date?: string;
+};
+
 const basePath = '/weather/external';
 
 const buildParams = (locationId: number) => ({
@@ -116,6 +121,16 @@ export const createWeatherRating = async (
   const response = await apiClient.post<
     ApiResponse<{ data: WeatherRatingRecord }>
   >('/weather/ratings', payload);
+  const wrapped = unwrapResponse(response.data);
+  return wrapped.data;
+};
+
+export const fetchUserWeatherRating = async (
+  params: UserWeatherRatingParams
+) => {
+  const response = await apiClient.get<
+    ApiResponse<{ data: WeatherRatingRecord | null }>
+  >('/weather/ratings/me', { params });
   const wrapped = unwrapResponse(response.data);
   return wrapped.data;
 };

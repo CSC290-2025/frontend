@@ -81,6 +81,12 @@ export type WeatherUIData = {
   }[];
   warning: string;
   warningDetail: string;
+  distinctName?: string;
+  location_name?: string;
+  locationName?: string;
+  city?: string;
+  location_id?: number;
+  locationId?: number;
 };
 
 export function useWeatherData(locationId?: number) {
