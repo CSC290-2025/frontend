@@ -77,14 +77,9 @@ export const mockIncidents: Incident[] = [
     userPhone: '085-555-6666',
     category: 'natural_disaster',
     description: 'Road flooded, vehicles cannot pass',
-    status: 'resolved',
-    latitude: 13.715,
-    longitude: 100.505,
-    address: 'Charoen Krung Rd, Yan Nawa, Sathon',
-    images: [],
-    createdAt: new Date(Date.now() - 120 * 60000),
-    updatedAt: new Date(Date.now() - 30 * 60000),
-    isSOS: false,
+  },
+  {
+    id: '6',
   },
 ];
 

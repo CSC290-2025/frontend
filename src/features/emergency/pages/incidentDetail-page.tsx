@@ -1,13 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from '@/router';
-import {
-  mockIncidents,
-  mockMessages,
-} from '@/features/emergency/data/mockData';
 import { IncidentDetail } from '@/features/emergency/components/admin/IncidentDetail';
 import type {
   IncidentStatus,
   ChatMessage,
+  Incident,
 } from '@/features/emergency/types/incident';
 
 import { Button } from '@/features/emergency/components/ui/button';
@@ -31,15 +28,14 @@ export default function IncidentDetailPage() {
   console.log(id);
   const navigate = useNavigate();
   const [data, setData] = useState<Record<string, string>>({});
-  const incident = mockIncidents.find((i) => String(i.id) === id);
-  const [messages, setMessages] = useState<ChatMessage[]>(
-    mockMessages.filter((m) => String(m.incidentId) === id)
-  );
+  const [incident, setIncident] = useState<Incident>({});
+  const [messages, setMessages] = useState<ChatMessage[]>();
   const [showBroadcastDialog, setShowBroadcastDialog] = useState(false);
 
   useEffect(() => {
     const fetch = async (id: string) => {
       const res = await apiClient.get(`/emergency/report/${id}`);
+      setIncident(res.data.data.report);
       setData(res.data.data.report);
     };
     fetch(id);

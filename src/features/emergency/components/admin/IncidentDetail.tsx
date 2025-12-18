@@ -50,9 +50,9 @@ export function IncidentDetail({ incident, id, address }: IncidentDetailProps) {
   // Update report status to 'verified'
   const updateReport = async (id: string) => {
     try {
-      await apiClient.put(`/emergency/reports/${id}`, { status: 'verified' });
+      await apiClient.put(`/emergency/reports/${id}`, { status: 'resolved' });
       if (typeof incident.status !== 'undefined') {
-        incident.status = 'verified';
+        incident.status = 'resolved';
       }
     } catch (error) {
       console.error('Failed to update report status:', error);
@@ -148,8 +148,7 @@ export function IncidentDetail({ incident, id, address }: IncidentDetailProps) {
               Command Actions
             </h3>
             <div className="flex flex-1 flex-col justify-center overflow-y-auto">
-              {incident.status === 'false_alarm' ||
-              incident.status === 'resolved' ? (
+              {incident.status === 'resolved' ? (
                 <div className="rounded-lg border border-slate-100 bg-slate-50 p-4 text-center">
                   <CheckCircle className="mx-auto mb-2 h-8 w-8 text-slate-400" />
                   <p className="text-sm font-medium text-slate-600">
@@ -169,7 +168,7 @@ export function IncidentDetail({ incident, id, address }: IncidentDetailProps) {
                     }}
                     className="h-9 w-full bg-blue-600 text-sm"
                   >
-                    <CheckCircle className="mr-2 h-3.5 w-3.5" /> Verify
+                    <CheckCircle className="mr-2 h-3.5 w-3.5" /> Resolved
                   </Button>
                 </div>
               )}
