@@ -4,32 +4,40 @@ import { BinApiService } from '@/features/waste-management/api/bin.service.api';
 import type { BackendBin, BinType } from '@/features/waste-management/types';
 import { BIN_TYPE_COLORS, BIN_TYPE_LABELS } from '@/constant';
 import AddBinModal from '@/features/waste-management/components/AddBinModal';
-import { useAuth } from '@/features/auth';
+import { useGetAuthMe } from '@/api/generated/authentication';
 
 export default function BinsManagement() {
-  const [bins, setBins] = useState<BackendBin[]>([]);
+  const [userBins, setUserBins] = useState<BackendBin[]>([]);
+  const [otherBins, setOtherBins] = useState<BackendBin[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState<BinType | ''>('');
   const [showAddModal, setShowAddModal] = useState(false);
-  const { user } = useAuth();
-  const userId = user ? (user.id ?? user.userId ?? null) : null;
 
-  const binsUserCanDelete =
-    userId === null
-      ? []
-      : bins.filter((bin) => bin.created_by_user_id === userId);
-  const otherBins = bins.filter(
-    (bin) => !(userId !== null && bin.created_by_user_id === userId)
-  );
+  const { data: authData } = useGetAuthMe();
+  const userId = authData?.data?.userId ?? null;
 
   const loadBins = async () => {
     try {
       setLoading(true);
       const filters: any = {};
       if (filterType) filters.bin_type = filterType;
-      const data = await BinApiService.getAllBins(filters);
-      console.log('Fetched bins for management:', data);
-      setBins(data);
+
+      const [allBinsData, userBinsData] = await Promise.all([
+        BinApiService.getAllBins(filters),
+        userId !== null ? BinApiService.getBinsByUser() : Promise.resolve([]),
+      ]);
+
+      const filteredUserBins = filterType
+        ? userBinsData.filter((bin) => bin.bin_type === filterType)
+        : userBinsData;
+
+      setUserBins(filteredUserBins);
+
+      const filteredOtherBins = allBinsData.filter(
+        (bin) => !(userId !== null && bin.created_by_user_id === userId)
+      );
+
+      setOtherBins(filteredOtherBins);
     } catch (error) {
       console.error('Error loading bins:', error);
       alert('Failed to load bins. Please check the console for details.');
@@ -40,7 +48,7 @@ export default function BinsManagement() {
 
   useEffect(() => {
     loadBins();
-  }, [filterType]);
+  }, [filterType, userId]);
 
   const handleDeleteBin = async (binId: number) => {
     if (userId === null) {
@@ -152,9 +160,9 @@ export default function BinsManagement() {
             Total Capacity:
           </span>
           <span className="text-sm font-semibold text-blue-600">
-            {bins
+            {[...userBins, ...otherBins]
               .reduce((sum, bin) => sum + (Number(bin.capacity_kg) || 0), 0)
-              .toLocaleString()}{' '}
+              .toLocaleString()}
             kg
           </span>
         </div>
@@ -177,7 +185,7 @@ export default function BinsManagement() {
                 </p>
               </div>
             </header>
-            {binsUserCanDelete.length === 0 ? (
+            {userBins.length === 0 ? (
               <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-6 text-center text-sm text-gray-500">
                 {userId === null
                   ? 'No bins available until you sign in.'
@@ -185,7 +193,7 @@ export default function BinsManagement() {
               </div>
             ) : (
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
-                {binsUserCanDelete.map((bin) => (
+                {userBins.map((bin) => (
                   <div className="h-full" key={bin.id}>
                     {renderBinCard(bin, true)}
                   </div>
