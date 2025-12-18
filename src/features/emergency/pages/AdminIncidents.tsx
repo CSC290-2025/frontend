@@ -111,13 +111,6 @@ export default function AdminIncidents() {
 
   console.log('Report data:', report);
 
-  const handlePageChange = (newPage: number) => {
-    setSearchParams({
-      _page: String(newPage),
-      _limit: String(limit),
-    });
-  };
-
   const [totalCount, setTotalCount] = useState(0);
   const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
   const currentPage = parseInt(searchParams.get('_page') || '1', 10);
