@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { UserPlus, MapPin, Users, Edit, Trash2, X } from 'lucide-react';
+import { apiClient } from '@/lib/apiClient';
 
 interface Staff {
   id: number;
@@ -15,7 +16,6 @@ interface Staff {
 
 const AdminStaffPage = () => {
   const [loading, setLoading] = useState(false);
-  const [token, setToken] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'list' | 'add'>('list');
 
   // Data State
@@ -36,33 +36,22 @@ const AdminStaffPage = () => {
   const [editFacilityId, setEditFacilityId] = useState('');
 
   useEffect(() => {
-    const storedToken = localStorage.getItem('healthcare_token');
-    if (storedToken) setToken(storedToken);
-  }, []);
-
-  useEffect(() => {
-    if (token && activeTab === 'list') {
+    if (activeTab === 'list') {
       fetchStaffList();
     }
-  }, [token, activeTab]);
+  }, [activeTab]);
 
   const fetchStaffList = async () => {
-    if (!token) return;
     setLoading(true);
     try {
-      const response = await fetch(
-        'http://localhost:3000/api/healthcare/staff',
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      const result = await response.json();
-      if (result.success) {
-        setStaffList(result.data.data);
+      const response = await apiClient.get('/api/healthcare/staff');
+      const result = response.data;
+      if (result?.success) {
+        setStaffList(result.data?.data ?? []);
       } else {
         setMessage({
           type: 'error',
-          text: result.message || 'Failed to fetch staff list',
+          text: result?.message || 'Failed to fetch staff list',
         });
       }
     } catch (err: any) {
@@ -78,26 +67,15 @@ const AdminStaffPage = () => {
     setMessage(null);
 
     try {
-      const response = await fetch(
-        'http://localhost:3000/api/healthcare/auth/staff',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            email,
-            role,
-            facilityId: facilityId ? Number(facilityId) : undefined,
-          }),
-        }
-      );
+      const response = await apiClient.post('/api/healthcare/auth/staff', {
+        email,
+        role,
+        facilityId: facilityId ? Number(facilityId) : undefined,
+      });
+      const data = response.data;
 
-      const data = await response.json();
-
-      if (!data.success && !response.ok) {
-        throw new Error(data.message || 'Failed to add staff');
+      if (!data?.success) {
+        throw new Error(data?.message || 'Failed to add staff');
       }
 
       setMessage({ type: 'success', text: 'Staff member added successfully!' });
@@ -121,21 +99,15 @@ const AdminStaffPage = () => {
       return;
 
     try {
-      const response = await fetch(
-        `http://localhost:3000/api/healthcare/staff/${id}`,
-        {
-          method: 'DELETE',
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      const data = await response.json();
-      if (data.success) {
-        fetchStaffList();
+      const response = await apiClient.delete(`/api/healthcare/staff/${id}`);
+      const data = response.data;
+      if (data?.success) {
+        void fetchStaffList();
         setMessage({ type: 'success', text: 'Staff removed successfully' });
       } else {
         setMessage({
           type: 'error',
-          text: data.message || 'Failed to delete staff',
+          text: data?.message || 'Failed to delete staff',
         });
       }
     } catch (err: any) {
@@ -155,30 +127,23 @@ const AdminStaffPage = () => {
 
     setLoading(true);
     try {
-      const response = await fetch(
-        `http://localhost:3000/api/healthcare/staff/${editingStaff.id}`,
+      const response = await apiClient.put(
+        `/api/healthcare/staff/${editingStaff.id}`,
         {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            role: editRole,
-            facilityId: editFacilityId ? Number(editFacilityId) : null,
-          }),
+          role: editRole,
+          facilityId: editFacilityId ? Number(editFacilityId) : null,
         }
       );
-      const data = await response.json();
+      const data = response.data;
 
-      if (data.success) {
+      if (data?.success) {
         setEditingStaff(null);
-        fetchStaffList();
+        void fetchStaffList();
         setMessage({ type: 'success', text: 'Staff updated successfully' });
       } else {
         setMessage({
           type: 'error',
-          text: data.message || 'Failed to update staff',
+          text: data?.message || 'Failed to update staff',
         });
       }
     } catch (err: any) {
@@ -187,8 +152,6 @@ const AdminStaffPage = () => {
       setLoading(false);
     }
   };
-
-  if (!token) return <div>Access Denied. Please login.</div>;
 
   return (
     <div className="space-y-6">
