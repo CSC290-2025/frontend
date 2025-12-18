@@ -234,13 +234,18 @@ const TrafficSignalMarker = memo(
     const statusLabel =
       signal.status === 1 ? 'BROKEN' : signal.status === 2 ? 'FIXING' : '';
 
-    // Determine background color - gray for broken/fixing, normal color otherwise
-    const backgroundColor = isBrokenOrFixing
-      ? '#6b7280'
-      : colorMap[signal.color];
-
     // Show "--" for stopped, broken/fixing, or emergency all-red mode lights
     const showDash = isStopped || isBrokenOrFixing || isEmergencyAllRed;
+
+    // Determine background color:
+    // - Gray for broken/fixing
+    // - Red for stopped or emergency controlled
+    // - Normal color otherwise
+    const backgroundColor = isBrokenOrFixing
+      ? '#6b7280'
+      : isStopped || isEmergencyAllRed
+        ? colorMap.red
+        : colorMap[signal.color];
 
     return (
       <AdvancedMarker
@@ -888,10 +893,63 @@ export default function TrafficControlPage() {
           }
         }
 
+        // Extract interid from junctionId
+        const interid = parseInt(signal.junctionId.replace('Inter-', ''));
+
+        // First, stop the intersection
+        const stopUpdates: Record<string, any> = {
+          [`teams/10/stopped-intersections/${interid}`]: true,
+        };
+        await update(ref(database), stopUpdates);
+
+        // Small delay to ensure stop is processed
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
         // Remove the light from Firebase
         await update(ref(database), {
           [`teams/10/traffic_lights/${signal.trafficLightId}`]: null,
         });
+
+        // Small delay to ensure removal is processed
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
+        // Get remaining lights for this intersection (excluding the removed one)
+        const remainingLightsData = { ...trafficLightsData };
+        delete remainingLightsData[signal.trafficLightId];
+
+        const intersections = groupLightsByIntersection(remainingLightsData);
+        const remainingLights = intersections[interid];
+
+        // Restart the intersection with remaining lights
+        const restartUpdates: Record<string, any> = {
+          [`teams/10/stopped-intersections/${interid}`]: null,
+        };
+
+        if (remainingLights && remainingLights.length > 0) {
+          const sortedLights = sortLightsByRoadId(remainingLights);
+          const firstLight = sortedLights[0];
+          const lightDurations =
+            calculateIntersectionLightDurations(sortedLights);
+          const { greenDuration, yellowDuration } =
+            getLightDuration(firstLight);
+
+          // Set first light to green, others to red with proper stacked times
+          sortedLights.forEach((light, idx) => {
+            const isActive = idx === 0;
+            const redTime = isActive
+              ? 0
+              : calculateRedLightRemainingTime(lightDurations, 0, idx);
+
+            restartUpdates[`teams/10/traffic_lights/${light.key}/color`] =
+              isActive ? COLOR_GREEN : COLOR_RED;
+            restartUpdates[`teams/10/traffic_lights/${light.key}/remaintime`] =
+              isActive ? greenDuration + yellowDuration : redTime;
+            restartUpdates[`teams/10/traffic_lights/${light.key}/timestamp`] =
+              new Date().toISOString();
+          });
+        }
+
+        await update(ref(database), restartUpdates);
 
         // Clear selection if this was selected
         if (selectedSignal?.trafficLightId === signal.trafficLightId) {
@@ -1126,6 +1184,11 @@ export default function TrafficControlPage() {
   const filteredSignals = useMemo(() => {
     let filtered = signals;
 
+    // Filter out broken/fixing lights if toggle is off
+    if (!showBrokenLights) {
+      filtered = filtered.filter((s) => s.status !== 1 && s.status !== 2);
+    }
+
     if (filter !== 'all') {
       filtered = filtered.filter((s) => s.color === filter);
     }
@@ -1141,7 +1204,7 @@ export default function TrafficControlPage() {
     }
 
     return filtered;
-  }, [signals, filter, junctionSearchQuery]);
+  }, [signals, filter, junctionSearchQuery, showBrokenLights]);
 
   const junctions = useMemo(() => {
     const junctionGroups: Record<string, TrafficSignal[]> = {};

@@ -1,1 +1,1 @@
-export { default } from '@/features/traffic-management/pages/TrafficAdminpage';
+export { default } from '@/features/traffic-management/pages/TrafficAdminPage.tsx';
