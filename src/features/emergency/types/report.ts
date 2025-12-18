@@ -8,7 +8,8 @@ const ReportFromSchema = z.object({
     .optional()
     .nullable(),
   description: z.string().min(5).max(1000).nullable(),
-  location: z.any().nullable().optional(),
+  lat: z.string().nullable(),
+  long: z.string().nullable(),
   ambulance_service: z.boolean().nullable(),
   contact_center_service: z.boolean().nullable().optional(),
   level: z
@@ -30,9 +31,18 @@ export const ReportOmit = ReportFromSchema.omit({
 });
 
 const ReportResponseMannySchema = z.object({
-  report: z.array(ReportFromSchema),
+  data: z.object({
+    report: z.array(ReportFromSchema),
+  }),
 });
+
+const ReportUpdateFromSchema = ReportFromSchema.omit({
+  id: true,
+  created_at: true,
+  updated_at: true,
+}).partial();
 
 export type ReportRequestFrom = z.infer<typeof ReportOmit>;
 export type ReportResponseFrom = z.infer<typeof ReportFromSchema>;
+export type ReportUpdateForm = z.infer<typeof ReportUpdateFromSchema>;
 export type ReportResponseManny = z.infer<typeof ReportResponseMannySchema>;

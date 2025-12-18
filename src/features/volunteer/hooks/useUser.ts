@@ -1,4 +1,4 @@
-//example of how the hooks file should look like
+//example of how the contexts file should look like
 import { useQuery } from '@tanstack/react-query';
 import { fetchUserById } from '../api/feature.api';
 
