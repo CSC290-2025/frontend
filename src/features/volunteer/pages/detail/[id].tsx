@@ -8,10 +8,8 @@ import {
   Trash2,
   Users,
   X,
-  Share2,
   CheckCircle,
   AlertCircle,
-  Heart,
 } from 'lucide-react';
 import { apiClient } from '@/lib/apiClient';
 import { DonateModal } from '@/features/volunteer/components/DonateModal';

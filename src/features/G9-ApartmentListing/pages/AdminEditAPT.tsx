@@ -15,7 +15,10 @@ import {
   Upload as UploadHooks,
 } from '@/features/G9-ApartmentListing/hooks/index';
 import { FailedError } from '@/features/G9-ApartmentListing/components/toastBox';
-
+import type {
+  LocationData,
+  ImageData,
+} from '@/features/G9-ApartmentListing/types/upload.type';
 // File upload constants
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED_FILE_TYPES = [
@@ -46,21 +49,6 @@ const validateFile = (file: File): { isValid: boolean; error?: string } => {
   return { isValid: true };
 };
 
-interface LocationData {
-  [key: string]: {
-    districts: string[];
-    subdistricts: {
-      [key: string]: string[];
-    };
-  };
-}
-
-interface ImageData {
-  id: string;
-  fileId: string;
-  url?: string;
-  apartmentId?: number;
-}
 export default function EditApartment(): React.ReactElement {
   const urlParams = new URLSearchParams(window.location.search);
   const apartmentIdParam = urlParams.get('apartmentId');

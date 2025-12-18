@@ -7,7 +7,7 @@ export const fetchProgressByLevel = async (level: number, userId: number) => {
         user_id: userId,
       },
     });
-    console.log('API Response:', response.data.data);
+    //console.log('API Response:', response.data.data);
     return response.data.data;
   } catch (error) {
     console.error(`Failed to fetch Progress by level ${level}:`, error);

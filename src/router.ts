@@ -1,6 +1,3 @@
-// Generouted, changes to this file will be overridden
- 
-
 import { components, hooks, utils } from '@generouted/react-router/client';
 
 export type Path =
@@ -17,18 +14,24 @@ export type Path =
   | `/ApartmentPayment`
   | `/Know-AI/:course`
   | `/Know-AI/:course/:id`
+  | `/Know-AI/adminAi`
   | `/Know-AI/createCourse`
   | `/Know-AI/exercises`
   | `/Know-AI/exercises/:level/:question`
   | `/MyRentedAPT`
   | `/activity`
   | `/chat`
+  | `/citizen/profile`
+  | `/citizen/profile/emergency`
+  | `/citizen/profile/healthcare`
+  | `/citizen/profile/volunteer`
+  | `/citizen/profile/waste`
   | `/citizen/setting`
   | `/clean-air/district-detail/:district`
   | `/clean-air/district-selection`
-  | `/demo-tracking`
   | `/event_hub`
   | `/event_hub/CreatePage`
+  | `/event_hub/EditPage/:id`
   | `/example/:id`
   | `/financial`
   | `/financial/insurance`
@@ -44,6 +47,7 @@ export type Path =
   | `/freecycle/post-item`
   | `/harm`
   | `/harm/:id`
+  | `/healthcare/Login`
   | `/healthcare/healthcare-admin`
   | `/healthcare/healthcare-user`
   | `/hotLine`
@@ -55,7 +59,6 @@ export type Path =
   | `/power-bi/:type/:category/:id`
   | `/power-bi/create`
   | `/power-bi/edit/:id`
-  | `/profile`
   | `/public_transportation`
   | `/register`
   | `/sos`
@@ -64,11 +67,9 @@ export type Path =
   | `/sos/report/:id`
   | `/traffic`
   | `/traffic/AddLight`
-  | `/traffic/Manual-Manage`
   | `/traffic/admin`
   | `/traffic/control`
-  | `/traffic/mock`
-  | `/traffic/test`
+  | `/traffic/tracking`
   | `/users`
   | `/volunteer/board`
   | `/volunteer/createpost`
@@ -88,6 +89,7 @@ export type Params = {
   '/Know-AI/:course/:id': { course: string; id: string };
   '/Know-AI/exercises/:level/:question': { level: string; question: string };
   '/clean-air/district-detail/:district': { district: string };
+  '/event_hub/EditPage/:id': { id: string };
   '/example/:id': { id: string };
   '/financial/insurance/info/:id': { id: string };
   '/financial/metro/info/:id': { id: string };

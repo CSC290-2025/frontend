@@ -5,8 +5,13 @@ import {
   getCourseById,
   createCourse,
   uploadFile,
+  enrollCourse,
 } from '../api/knowAi.api';
-import type { CourseType, CreateCoursePayload } from '@/types/course';
+import type {
+  CourseType,
+  CreateCoursePayload,
+  EnrollCourse,
+} from '@/types/course';
 
 export function useCourses(type?: CourseType) {
   return useQuery({
@@ -49,6 +54,24 @@ export function useUploadFile() {
     onError: (error) => {
       console.error('Upload error:', error);
       alert('File upload failed');
+    },
+  });
+}
+
+export function useEnrollCourse() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: EnrollCourse) => enrollCourse(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['courses'] });
+      alert('Course enroll successfully!');
+    },
+    onError: (error: any) => {
+      console.error('Enroll Error:', error);
+      alert(
+        `Error creating course: ${error.response?.data?.message || error.message}`
+      );
     },
   });
 }

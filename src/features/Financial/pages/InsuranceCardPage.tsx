@@ -17,9 +17,14 @@ import type {
   UseCreateInsuranceCard400,
   UseCreateInsuranceCard409,
 } from '@/api/generated/model';
+import { useAuth } from '@/features/auth';
+import { ROLES } from '@/constant';
+import InsuranceCardManagement from '@/features/Financial/components/insurance-cards/InsuranceCardManagement';
 
 export default function InsuranceCardPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const isAdmin = user?.roles?.role_name === ROLES.ADMIN;
 
   const {
     data: insuranceCardsData,
@@ -149,6 +154,7 @@ export default function InsuranceCardPage() {
             ))}
           </div>
         )}
+        {isAdmin && <InsuranceCardManagement />}
       </div>
     </div>
   );
