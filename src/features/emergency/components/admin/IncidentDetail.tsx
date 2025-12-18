@@ -30,11 +30,13 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { useNotification } from '@/features/emergency/contexts/notification.tsx';
+import { apiClient } from '@/lib/apiClient.ts';
 
 interface IncidentDetailProps {
   incident: Incident;
   onStatusChange: (status: IncidentStatus) => void;
   onBroadcast: () => void;
+  id: number;
 }
 
 // Workflow Configuration
@@ -58,6 +60,7 @@ export function IncidentDetail({
   incident,
   onStatusChange,
   onBroadcast,
+  id,
 }: IncidentDetailProps) {
   const currentStatusIndex = statusFlow.findIndex(
     (s) => s.status === incident.status
@@ -65,6 +68,10 @@ export function IncidentDetail({
   const { sendAllNotification } = useNotification();
   const activeStepIndex =
     incident.status === 'false_alarm' ? -1 : currentStatusIndex;
+
+  const updateReport = async (id: string) => {
+    await apiClient.put(`/emergency/reports/${id}`, { status: 'verified' });
+  };
 
   return (
     // Main Container: h-full ensures it takes available height, flex-col organizes Header vs Grid
@@ -155,36 +162,6 @@ export function IncidentDetail({
           </div>
 
           {/* Cell 4: Reporter */}
-          <div className="flex min-h-0 flex-col rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <h3 className="mb-2 shrink-0 text-sm font-semibold text-slate-900">
-              Reporter Profile
-            </h3>
-            <div className="flex flex-1 flex-col justify-center overflow-hidden">
-              <div className="mb-4 flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-indigo-100 bg-indigo-50 font-bold text-indigo-600">
-                  {incident.userName.charAt(0)}
-                </div>
-                <div className="min-w-0">
-                  <p className="truncate font-semibold text-slate-900">
-                    {incident.userName}
-                  </p>
-                  <p className="text-xs text-slate-500">Civilian</p>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50 p-2.5">
-                <div className="flex items-center gap-2 overflow-hidden">
-                  <Phone className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-                  <span className="truncate font-mono text-xs text-slate-700">
-                    {incident.userPhone}
-                  </span>
-                </div>
-                <Button variant="ghost" size="icon" className="h-6 w-6">
-                  <Copy className="h-3 w-3 text-slate-400" />
-                </Button>
-              </div>
-            </div>
-          </div>
 
           <div className="flex min-h-0 flex-col rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
             <h3 className="mb-2 shrink-0 text-sm font-semibold text-slate-900">
@@ -203,7 +180,10 @@ export function IncidentDetail({
               ) : (
                 <div className="space-y-2">
                   <Button
-                    onClick={() => sendAllNotification('Test5', 'jjjjddd')}
+                    onClick={() => {
+                      sendAllNotification('Test5', 'jjjjddd');
+                      updateReport(id.toString());
+                    }}
                     className="h-9 w-full bg-blue-600 text-sm"
                   >
                     <CheckCircle className="mr-2 h-3.5 w-3.5" /> Verify

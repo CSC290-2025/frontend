@@ -81,7 +81,7 @@ export function ReportFromProvider({
   };
 
   useEffect(() => {
-    if (pathname !== '/activity') return;
+    // if (pathname !== '/activity' || pathname !== '/admindashboard') return;
     setReport([]);
     findReportByStatusPag(status, initialPage, initialLimit);
   }, [pathname, initialPage, initialLimit, status]);

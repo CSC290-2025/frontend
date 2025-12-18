@@ -25,17 +25,17 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useNotification } from '@/features/emergency/contexts/notification.tsx';
+import { apiClient } from '@/lib/apiClient.ts';
 
 export default function IncidentDetailPage() {
   const { id } = useParams('/sos/AdminIncidents/:id');
+  console.log(id);
   const navigate = useNavigate();
   const incident = mockIncidents.find((i) => String(i.id) === id);
   const [messages, setMessages] = useState<ChatMessage[]>(
     mockMessages.filter((m) => String(m.incidentId) === id)
   );
   const [showBroadcastDialog, setShowBroadcastDialog] = useState(false);
-
-  const { sendAllNotification } = useNotification();
 
   if (!incident) {
     return (
@@ -100,6 +100,7 @@ export default function IncidentDetailPage() {
           incident={incident}
           onStatusChange={handleStatusChange}
           onBroadcast={handleBroadcast}
+          id={Number(id)}
         />
       </div>
 
