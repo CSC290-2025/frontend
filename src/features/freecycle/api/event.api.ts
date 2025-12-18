@@ -5,11 +5,18 @@ export const createEvent = (data: {
   title: string;
   description: string;
   total_seats: number;
-  start_at: string;
-  end_at: string;
-  organization_id: number | null;
-  address_id: number | null;
-  event_tag_id: number | null;
+  start_date: string;
+  start_time: string;
+  end_date: string;
+  end_time: string;
+  image_url: string;
+  organization: {
+    id: number;
+    name: string;
+    email: string;
+    phone_number: string;
+  };
+  address: { id: number; name: string };
 }) => {
   return apiClient.post('/events', data);
 };
@@ -22,8 +29,15 @@ export const createVolunteerEvent = (data: {
   start_at: string;
   end_at: string;
   created_by_user_id: number;
-  address_id: number | null;
   registration_deadline: string | null;
+  tag?: string;
+  organization: {
+    id: number;
+    name: string;
+    email: string;
+    phone_number: string;
+  };
+  address: { id: number; name: string };
 }) => {
   return apiClient.post('/api/v1/volunteer/create', data);
 };

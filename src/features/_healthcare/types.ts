@@ -50,6 +50,13 @@ export interface Facility {
   name: string;
   facilityType: Nullable<string>;
   addressId: Nullable<number>;
+  address?: {
+    address_line?: Nullable<string>;
+    province?: Nullable<string>;
+    district?: Nullable<string>;
+    subdistrict?: Nullable<string>;
+    postal_code?: Nullable<string>;
+  };
   phone: Nullable<string>;
   emergencyServices: Nullable<boolean>;
   departmentId: Nullable<number>;
@@ -75,10 +82,34 @@ export interface FacilityListParams {
   search?: string;
 }
 
+export interface AddressPayload {
+  address_line?: string;
+  province?: string;
+  district?: string;
+  subdistrict?: string;
+  postal_code?: string;
+}
+
+export interface CreateFacilityPayload {
+  name: string;
+  facilityType?: string;
+  addressId?: number;
+  address?: AddressPayload;
+  phone?: string;
+  emergencyServices?: boolean;
+  departmentId?: number;
+}
+
+export type UpdateFacilityPayload = Partial<CreateFacilityPayload>;
+
 export interface Patient {
   id: number;
   userId: Nullable<number>;
   emergencyContact: Nullable<string>;
+  dateOfBirth: Nullable<string>;
+  bloodType: Nullable<string>;
+  totalPayments: Nullable<number>;
+  appointmentHistory?: Appointment[];
   createdAt: string;
 }
 
@@ -92,11 +123,28 @@ export interface PaginatedPatients {
 export interface PatientListParams {
   page?: number;
   limit?: number;
-  sortBy?: 'id' | 'createdAt';
+  sortBy?: 'id' | 'createdAt' | 'dateOfBirth';
   sortOrder?: 'asc' | 'desc';
   userId?: number;
+  bloodType?: string;
   search?: string;
 }
+
+export interface CreatePatientPayload {
+  userId?: number;
+  emergencyContact?: string;
+  dateOfBirth?: string;
+  bloodType?: string;
+  totalPayments?: number;
+}
+
+export type UpdatePatientPayload = {
+  userId?: number | null;
+  emergencyContact?: string | null;
+  dateOfBirth?: string | null;
+  bloodType?: string | null;
+  totalPayments?: number | null;
+};
 
 export interface Appointment {
   id: number;
@@ -136,6 +184,15 @@ export interface CreateAppointmentPayload {
   type?: string;
   doctorId?: number;
   consultationFee?: number;
+}
+
+export interface UpdateAppointmentPayload {
+  patientId?: number | null;
+  facilityId?: number | null;
+  doctorId?: number | null;
+  appointmentAt?: string | null;
+  type?: string | null;
+  consultationFee?: number | null;
 }
 
 export interface MedicineInventory {
@@ -199,6 +256,31 @@ export interface PaginatedPrescriptions {
   totalPages: number;
 }
 
+export interface Department {
+  id: number;
+  name: string;
+  createdAt: string;
+}
+
+export interface PaginatedDepartments {
+  departments: Department[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
+
+export interface DepartmentListParams {
+  page?: number;
+  limit?: number;
+  sortBy?: 'id' | 'createdAt' | 'name';
+  sortOrder?: 'asc' | 'desc';
+  search?: string;
+}
+
+export interface DepartmentPayload {
+  name: string;
+}
+
 export interface PrescriptionListParams {
   page?: number;
   limit?: number;
@@ -228,9 +310,12 @@ export type UpdatePrescriptionPayload = {
 
 export interface Doctor {
   id: number;
+  doctorName: Nullable<string>;
   specialization: Nullable<string>;
   currentStatus: Nullable<string>;
   consultationFee: Nullable<number>;
+  facilityId?: Nullable<number>;
+  departmentId?: Nullable<number>;
   createdAt: string;
 }
 
@@ -249,4 +334,17 @@ export interface DoctorListParams {
   specialization?: string;
   currentStatus?: string;
   search?: string;
+  facilityId?: number;
+  departmentId?: number;
 }
+
+export interface CreateDoctorPayload {
+  doctorName?: string;
+  specialization?: string;
+  currentStatus?: string;
+  consultationFee?: number;
+  facilityId?: number;
+  departmentId?: number;
+}
+
+export type UpdateDoctorPayload = Partial<CreateDoctorPayload>;

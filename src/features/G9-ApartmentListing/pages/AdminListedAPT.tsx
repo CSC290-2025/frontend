@@ -42,7 +42,13 @@ function ApartmentCard({
   const name = apt.apartmentName ?? apt.name;
   const addressData = apt.addresses;
   const address = addressData
-    ? [addressData.address_line, addressData.subdistrict, addressData.district, addressData.province, addressData.postal_code]
+    ? [
+        addressData.address_line,
+        addressData.subdistrict,
+        addressData.district,
+        addressData.province,
+        addressData.postal_code,
+      ]
         .filter((part) => part && String(part).trim().length > 0)
         .join(' ')
     : apt.apartment_location || '';

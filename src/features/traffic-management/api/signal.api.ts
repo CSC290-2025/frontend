@@ -7,7 +7,7 @@ import type { TrafficSignal, trafficLight } from '../types/traffic.types';
 export function subscribeToTrafficSignal(
   callback: (signal: TrafficSignal) => void
 ) {
-  const signalRef = ref(database, 'traffic-signals/0');
+  const signalRef = ref(database, 'teams/10/traffic-signals/0');
 
   const unsubscribe = onValue(signalRef, (snapshot) => {
     const data = snapshot.val();
@@ -21,7 +21,7 @@ export function subscribeToTrafficSignal(
 
 // Get current traffic signal (one-time)
 export async function getTrafficSignal(): Promise<TrafficSignal | null> {
-  const signalRef = ref(database, 'traffic-signals/0');
+  const signalRef = ref(database, 'teams/10/traffic-signals/0');
   const snapshot = await get(signalRef);
   return snapshot.val() as TrafficSignal | null;
 }
@@ -56,7 +56,7 @@ export async function updateTrafficDurations(durations: {
   yellow: number;
   green: number;
 }) {
-  const durationsRef = ref(database, 'traffic-signals/0/durations');
+  const durationsRef = ref(database, 'teams/10/traffic-signals/0/durations');
   await set(durationsRef, durations);
 }
 

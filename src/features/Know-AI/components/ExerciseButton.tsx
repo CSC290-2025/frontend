@@ -32,8 +32,8 @@ export default function ExerciseButton({
         locked
           ? 'cursor-not-allowed bg-gray-300 opacity-50'
           : done
-            ? 'cursor-not-allowed bg-linear-to-br from-green-400 to-green-700'
-            : 'bg-linear-to-br from-sky-400 to-blue-600 hover:scale-110 hover:from-sky-500 hover:to-blue-700 hover:shadow-xl'
+            ? 'cursor-not-allowed bg-linear-to-br from-[#6FBF44] to-green-700'
+            : 'bg-linear-to-br from-[#01CCFF] to-[#01CCFF] hover:scale-110 hover:from-sky-500 hover:to-blue-700 hover:shadow-xl'
       }`}
     >
       {locked ? (
