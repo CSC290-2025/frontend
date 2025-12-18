@@ -1,5 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
-import { fetchProgressByLevel, fetchLevel } from '../api/exercise.api';
+import {
+  fetchProgressByLevel,
+  fetchLevel,
+} from '@/features/Know-AI/api/exercise.api';
+import { useAuthenticated } from '@/hooks/useAuthenticated';
 
 export const useExerciseProgress = (level: number, userId: number) => {
   return useQuery({

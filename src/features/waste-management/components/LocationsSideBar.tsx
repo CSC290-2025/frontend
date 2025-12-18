@@ -6,6 +6,7 @@ import {
   type BinFilter,
   type Coordinates,
 } from '@/features/waste-management/types';
+import { BIN_TYPE_COLORS } from '@/constant';
 
 interface LocationsSideBarProps {
   bins: Bin[];
@@ -93,7 +94,7 @@ export default function LocationsSideBar({
   };
 
   return (
-    <aside className="flex flex-col rounded-2xl border border-gray-100 bg-white p-5 shadow-xl">
+    <aside className="flex h-full flex-col rounded-2xl border border-gray-100 bg-white p-5 shadow-xl">
       <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-2">
           <div className="flex gap-2">
@@ -113,7 +114,7 @@ export default function LocationsSideBar({
             <button
               onClick={handleSearchLocation}
               disabled={searchingLocation}
-              className="flex items-center gap-1 rounded-xl bg-green-600 px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:bg-green-700 disabled:bg-green-400"
+              className="flex items-center gap-1 rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:from-green-600 hover:to-emerald-600 disabled:opacity-50"
             >
               <Search className="h-4 w-4" />
               {searchingLocation ? 'Searching...' : 'Search'}
@@ -122,7 +123,7 @@ export default function LocationsSideBar({
           <button
             onClick={onLocateUser}
             disabled={loading}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:bg-blue-700 disabled:bg-blue-400"
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-green-500 to-emerald-500 px-4 py-2 text-sm font-semibold text-white shadow-md transition hover:from-green-600 hover:to-emerald-600 disabled:bg-green-400"
           >
             {loading ? (
               <>
@@ -130,32 +131,55 @@ export default function LocationsSideBar({
                 Locating...
               </>
             ) : (
-              <>
-                <span>📍</span>
-                Find Nearest Bin for My Location
-              </>
+              <>Find Nearest Bin for My Location</>
             )}
           </button>
         </div>
 
         <div className="flex flex-wrap gap-2">
-          {typeFilters.map((filter) => (
-            <button
-              key={filter}
-              onClick={() => onFilterChange(filter)}
-              className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
-                activeTypeFilter === filter
-                  ? 'bg-blue-600 text-white shadow'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              {formatFilterLabel(filter)}
-            </button>
-          ))}
+          {typeFilters.map((filter) => {
+            const getFilterColor = () => {
+              if (filter === 'All') return '#22c55e'; // green
+              return BIN_TYPE_COLORS[filter as BinType] || '#22c55e';
+            };
+
+            const filterColor = getFilterColor();
+
+            return (
+              <button
+                key={filter}
+                onClick={() => onFilterChange(filter)}
+                className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+                  activeTypeFilter === filter
+                    ? 'text-white shadow'
+                    : 'bg-gray-100 text-gray-600'
+                }`}
+                style={
+                  activeTypeFilter === filter
+                    ? { backgroundColor: filterColor }
+                    : undefined
+                }
+                onMouseEnter={(e) => {
+                  if (activeTypeFilter !== filter) {
+                    e.currentTarget.style.backgroundColor = filterColor;
+                    e.currentTarget.style.color = 'white';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (activeTypeFilter !== filter) {
+                    e.currentTarget.style.backgroundColor = '';
+                    e.currentTarget.style.color = '';
+                  }
+                }}
+              >
+                {formatFilterLabel(filter)}
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      <div className="mt-4 flex-1 space-y-3 overflow-y-auto pr-1">
+      <div className="mt-4 flex-1 space-y-3 overflow-y-auto pr-2 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-green-400 [&::-webkit-scrollbar-thumb]:hover:bg-green-500 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-gray-100">
         {bins.length === 0 && (
           <p className="mt-8 text-center text-sm text-gray-500">
             No locations match the current filters.
@@ -168,8 +192,8 @@ export default function LocationsSideBar({
             onClick={() => onBinSelect(bin.id)}
             className={`w-full rounded-xl border px-4 py-3 text-left transition ${
               selectedBinId === bin.id
-                ? 'border-blue-500 bg-blue-50 shadow-sm'
-                : 'border-gray-200 bg-white hover:border-blue-200 hover:bg-blue-50/60'
+                ? 'border-green-500 bg-green-50 shadow-sm'
+                : 'border-gray-200 bg-white hover:border-green-200 hover:bg-green-50/60'
             }`}
           >
             <div className="flex items-center justify-between">
@@ -179,7 +203,7 @@ export default function LocationsSideBar({
                 </p>
                 <p className={`text-xs ${bin.color}`}>{bin.type}</p>
               </div>
-              <span className="text-xs font-semibold text-blue-600">
+              <span className="text-xs font-semibold text-green-600">
                 {bin.distance}
               </span>
             </div>

@@ -54,5 +54,13 @@ export const formatAppointmentTime = (value: Appointment['appointmentAt']) => {
   const parsed = new Date(value);
   return Number.isNaN(parsed.getTime())
     ? 'Scheduling'
-    : parsed.toLocaleString();
+    : new Intl.DateTimeFormat(undefined, {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        timeZone: 'UTC',
+        timeZoneName: 'short',
+      }).format(parsed);
 };

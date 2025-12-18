@@ -17,17 +17,24 @@ export type Path =
   | `/ApartmentPayment`
   | `/Know-AI/:course`
   | `/Know-AI/:course/:id`
+  | `/Know-AI/adminAi`
   | `/Know-AI/createCourse`
   | `/Know-AI/exercises`
   | `/Know-AI/exercises/:level/:question`
   | `/MyRentedAPT`
   | `/activity`
   | `/chat`
+  | `/citizen/profile`
+  | `/citizen/profile/emergency`
+  | `/citizen/profile/healthcare`
+  | `/citizen/profile/volunteer`
+  | `/citizen/profile/waste`
   | `/citizen/setting`
   | `/clean-air/district-detail/:district`
   | `/clean-air/district-selection`
   | `/event_hub`
   | `/event_hub/CreatePage`
+  | `/event_hub/EditPage/:id`
   | `/example/:id`
   | `/financial`
   | `/financial/insurance`
@@ -43,6 +50,7 @@ export type Path =
   | `/freecycle/post-item`
   | `/harm`
   | `/harm/:id`
+  | `/healthcare/Login`
   | `/healthcare/healthcare-admin`
   | `/healthcare/healthcare-user`
   | `/hotLine`
@@ -54,11 +62,15 @@ export type Path =
   | `/power-bi/:type/:category/:id`
   | `/power-bi/create`
   | `/power-bi/edit/:id`
-  | `/profile`
   | `/public_transportation`
   | `/register`
+  | `/reset-password`
+  | `/reset-password/request`
   | `/sos`
   | `/sos/:id`
+  | `/sos/AdminDashboard`
+  | `/sos/AdminIncidents`
+  | `/sos/AdminIncidents/:id`
   | `/sos/report`
   | `/sos/report/:id`
   | `/traffic`
@@ -85,6 +97,7 @@ export type Params = {
   '/Know-AI/:course/:id': { course: string; id: string };
   '/Know-AI/exercises/:level/:question': { level: string; question: string };
   '/clean-air/district-detail/:district': { district: string };
+  '/event_hub/EditPage/:id': { id: string };
   '/example/:id': { id: string };
   '/financial/insurance/info/:id': { id: string };
   '/financial/metro/info/:id': { id: string };
@@ -100,6 +113,7 @@ export type Params = {
   };
   '/power-bi/edit/:id': { id: string };
   '/sos/:id': { id: string };
+  '/sos/AdminIncidents/:id': { id: string };
   '/sos/report/:id': { id: string };
   '/volunteer/detail/:id': { id: string };
   '/volunteer/edit/:id': { id: string };

@@ -317,10 +317,14 @@ export default function TrafficSidebar({
                           : '';
 
                     // Check if this intersection is stopped or emergency controlled
-                    const interid = parseInt(signal.junctionId.replace('Inter-', '')) || 0;
-                    const isStopped = emergencyStopAll || stoppedIntersections.has(interid);
-                    const isEmergencyControlled = emergencyControlledIntersections.has(interid);
-                    const showDash = isBrokenOrFixing || isStopped || isEmergencyControlled;
+                    const interid =
+                      parseInt(signal.junctionId.replace('Inter-', '')) || 0;
+                    const isStopped =
+                      emergencyStopAll || stoppedIntersections.has(interid);
+                    const isEmergencyControlled =
+                      emergencyControlledIntersections.has(interid);
+                    const showDash =
+                      isBrokenOrFixing || isStopped || isEmergencyControlled;
 
                     const signalKey = `${signal.junctionId}-${signal.direction}`;
                     return (
