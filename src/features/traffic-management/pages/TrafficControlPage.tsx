@@ -234,13 +234,18 @@ const TrafficSignalMarker = memo(
     const statusLabel =
       signal.status === 1 ? 'BROKEN' : signal.status === 2 ? 'FIXING' : '';
 
-    // Determine background color - gray for broken/fixing, normal color otherwise
-    const backgroundColor = isBrokenOrFixing
-      ? '#6b7280'
-      : colorMap[signal.color];
-
     // Show "--" for stopped, broken/fixing, or emergency all-red mode lights
     const showDash = isStopped || isBrokenOrFixing || isEmergencyAllRed;
+
+    // Determine background color:
+    // - Gray for broken/fixing
+    // - Red for stopped or emergency controlled
+    // - Normal color otherwise
+    const backgroundColor = isBrokenOrFixing
+      ? '#6b7280'
+      : isStopped || isEmergencyAllRed
+        ? colorMap.red
+        : colorMap[signal.color];
 
     return (
       <AdvancedMarker
