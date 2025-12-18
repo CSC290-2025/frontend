@@ -50,3 +50,14 @@ export function getnearbyAllAmenities(
     enabled: !!lat && !!lon && !!radius && !!limit,
   });
 }
+
+export function latlongcoverter(address: string[]) {
+  return useQuery({
+    queryKey: ['latlongconverter', address],
+    queryFn: () => LOCapi.latlongconverter(address),
+    select: (response) => {
+      return response.data.data;
+    },
+    enabled: !!address,
+  });
+}

@@ -23,6 +23,17 @@ import type {
   PaginatedDoctors,
   DoctorListParams,
   CreateAppointmentPayload,
+  CreateFacilityPayload,
+  UpdateFacilityPayload,
+  DepartmentListParams,
+  PaginatedDepartments,
+  DepartmentPayload,
+  CreateDoctorPayload,
+  UpdateDoctorPayload,
+  UpdateAppointmentPayload,
+  Patient,
+  CreatePatientPayload,
+  UpdatePatientPayload,
 } from '@/features/_healthcare/types';
 
 const sanitizeParams = (
@@ -71,6 +82,27 @@ export const fetchFacilities = async (params: FacilityListParams = {}) => {
   return data.data;
 };
 
+export const createFacility = async (payload: CreateFacilityPayload) => {
+  const { data } = await apiClient.post<
+    ApiSuccess<{ facility: PaginatedFacilities['facilities'][number] }>
+  >('/facilities', payload);
+  return data.data.facility;
+};
+
+export const updateFacility = async (
+  id: number,
+  payload: UpdateFacilityPayload
+) => {
+  const { data } = await apiClient.put<
+    ApiSuccess<{ facility: PaginatedFacilities['facilities'][number] }>
+  >(`/facilities/${id}`, payload);
+  return data.data.facility;
+};
+
+export const deleteFacility = async (id: number) => {
+  await apiClient.delete(`/facilities/${id}`);
+};
+
 export const fetchPatients = async (params: PatientListParams = {}) => {
   const query = sanitizeParams({
     page: 1,
@@ -88,6 +120,35 @@ export const fetchPatients = async (params: PatientListParams = {}) => {
   );
 
   return data.data;
+};
+
+export const getPatientById = async (id: number) => {
+  const { data } = await apiClient.get<ApiSuccess<{ patient: Patient }>>(
+    `/patients/${id}`
+  );
+
+  return data.data.patient;
+};
+
+export const createPatient = async (payload: CreatePatientPayload) => {
+  const { data } = await apiClient.post<ApiSuccess<{ patient: Patient }>>(
+    '/patients',
+    payload
+  );
+
+  return data.data.patient;
+};
+
+export const updatePatient = async (
+  id: number,
+  payload: UpdatePatientPayload
+) => {
+  const { data } = await apiClient.put<ApiSuccess<{ patient: Patient }>>(
+    `/patients/${id}`,
+    payload
+  );
+
+  return data.data.patient;
 };
 
 export const fetchAppointments = async (params: AppointmentListParams = {}) => {
@@ -128,6 +189,27 @@ export const fetchDoctors = async (params: DoctorListParams = {}) => {
   return data.data;
 };
 
+export const createDoctor = async (payload: CreateDoctorPayload) => {
+  const { data } = await apiClient.post<
+    ApiSuccess<{ doctor: PaginatedDoctors['doctors'][number] }>
+  >('/doctors', payload);
+  return data.data.doctor;
+};
+
+export const updateDoctor = async (
+  id: number,
+  payload: UpdateDoctorPayload
+) => {
+  const { data } = await apiClient.put<
+    ApiSuccess<{ doctor: PaginatedDoctors['doctors'][number] }>
+  >(`/doctors/${id}`, payload);
+  return data.data.doctor;
+};
+
+export const deleteDoctor = async (id: number) => {
+  await apiClient.delete(`/doctors/${id}`);
+};
+
 export const createAppointment = async (payload: CreateAppointmentPayload) => {
   try {
     const { data } = await apiClient.post<
@@ -146,6 +228,17 @@ export const createAppointment = async (payload: CreateAppointmentPayload) => {
 
     throw error;
   }
+};
+
+export const updateAppointment = async (
+  id: number,
+  payload: UpdateAppointmentPayload
+) => {
+  const { data } = await apiClient.put<
+    ApiSuccess<{ appointment: PaginatedAppointments['appointments'][number] }>
+  >(`/appointments/${id}`, payload);
+
+  return data.data.appointment;
 };
 
 export const fetchMedicineInventory = async (
@@ -232,6 +325,46 @@ export const updatePrescription = async (
 
 export const deletePrescription = async (id: number) => {
   await apiClient.delete(`/prescriptions/${id}`);
+};
+
+export const fetchDepartments = async (params: DepartmentListParams = {}) => {
+  const query = sanitizeParams({
+    page: 1,
+    limit: 50,
+    sortBy: 'name',
+    sortOrder: 'asc',
+    ...params,
+  });
+
+  const { data } = await apiClient.get<ApiSuccess<PaginatedDepartments>>(
+    '/departments',
+    {
+      params: query,
+    }
+  );
+
+  return data.data;
+};
+
+export const createDepartment = async (payload: DepartmentPayload) => {
+  const { data } = await apiClient.post<
+    ApiSuccess<{ department: PaginatedDepartments['departments'][number] }>
+  >('/departments', payload);
+  return data.data.department;
+};
+
+export const updateDepartment = async (
+  id: number,
+  payload: Partial<DepartmentPayload>
+) => {
+  const { data } = await apiClient.put<
+    ApiSuccess<{ department: PaginatedDepartments['departments'][number] }>
+  >(`/departments/${id}`, payload);
+  return data.data.department;
+};
+
+export const deleteDepartment = async (id: number) => {
+  await apiClient.delete(`/departments/${id}`);
 };
 
 export const createBed = async (payload: BedPayload) => {

@@ -12,7 +12,7 @@ export default function SosPage() {
   }, []);
 
   return (
-    <div className="flex flex-col items-center justify-center font-sans">
+    <div className="mt-12 flex flex-col items-center justify-center font-sans">
       <style>{`
         @keyframes slide-up {
           from { opacity: 0; transform: translateY(20px); }

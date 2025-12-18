@@ -36,3 +36,11 @@ export const updateAddress = () => {
     },
   });
 };
+
+export const getHospitalAddress = () => {
+  return useQuery({
+    queryKey: ['allAddresses'],
+    queryFn: () => ADDapi.fetchAllAddresses(),
+    select: (data) => data.data,
+  });
+};

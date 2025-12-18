@@ -5,6 +5,9 @@ import UserBookingPage from '@/features/_healthcare/pages/user/UserBookingPage';
 import UserMedicationsPage from '@/features/_healthcare/pages/user/UserMedicationsPage';
 import UserBillingPage from '@/features/_healthcare/pages/user/UserBillingPage';
 import UserProfilePage from '@/features/_healthcare/pages/user/UserProfilePage';
+import AdminHealthcareShell from '@/features/_healthcare/pages/AdminHealthcareShell';
+import { useAuth } from '@/features/auth';
+import { ROLES } from '@/constant';
 
 type UserScreen =
   | 'overview'
@@ -22,9 +25,18 @@ const navItems: Array<{ key: UserScreen; label: string }> = [
 ];
 
 const UserHealthcareShell: React.FC = () => {
+  const { user } = useAuth();
   const [currentScreen, setCurrentScreen] = useState<UserScreen>('overview');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [emergencyContact, setEmergencyContact] = useState('');
+
+  const isAdmin =
+    String(user?.roles?.role_name ?? '').toLowerCase() ===
+    ROLES.ADMIN.toLowerCase();
+
+  if (isAdmin) {
+    return <AdminHealthcareShell />;
+  }
 
   return (
     <div

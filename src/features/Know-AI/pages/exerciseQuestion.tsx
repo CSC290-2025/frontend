@@ -1,17 +1,21 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from '@/router';
-import { useQuestion } from '../hooks/useQuestion';
-import { useSubmitAnswer } from '../hooks/useSubmitAnswer';
-import QuestionHeader from '../components/QuestionHeader';
-import QuestionBox from '../components/QuestionBox';
-import PromptInputBox from '../components/PromptInputBox';
-import SubmitModal from '../components/SubmitModal';
+import { useQuestion } from '@/features/Know-AI/hooks/useQuestion';
+import { useSubmitAnswer } from '@/features/Know-AI/hooks/useSubmitAnswer';
+import QuestionHeader from '@/features/Know-AI/components/QuestionHeader';
+import QuestionBox from '@/features/Know-AI/components/QuestionBox';
+import PromptInputBox from '@/features/Know-AI/components/PromptInputBox';
+import SubmitModal from '@/features/Know-AI/components/SubmitModal';
+import { useQueryClient } from '@tanstack/react-query';
+import { useGetAuthMe } from '@/api/generated/authentication';
 
 export default function ExerciseQuestionPage() {
   const navigate = useNavigate();
   const { level, question } = useParams('/Know-AI/exercises/:level/:question');
-  const userId = 8;
   const questionId = Number(question);
+  const queryClient = useQueryClient();
+
+  const userId = useGetAuthMe().data?.data?.userId ?? null;
 
   const { data: questionData, isLoading } = useQuestion(questionId);
   const [promptInput, setPromptInput] = useState('');
@@ -21,6 +25,7 @@ export default function ExerciseQuestionPage() {
   const submitMutation = useSubmitAnswer();
 
   const handleSubmit = () => {
+    if (!userId) return;
     submitMutation.mutate(
       {
         questionId,
@@ -31,6 +36,10 @@ export default function ExerciseQuestionPage() {
         onSuccess: (res) => {
           setEvaluation(res);
           setModalOpen(true);
+
+          queryClient.invalidateQueries({
+            queryKey: ['exerciseProgress', Number(level), userId],
+          });
         },
       }
     );
@@ -41,18 +50,6 @@ export default function ExerciseQuestionPage() {
     setEvaluation(null);
     setPromptInput('');
     navigate('/Know-AI/exercises');
-  };
-
-  const handleNext = () => {
-    setModalOpen(false);
-    setEvaluation(null);
-    setPromptInput('');
-    navigate('/Know-AI/exercises/:level/:question', {
-      params: {
-        level: String(level),
-        question: String(Number(question) + 1),
-      },
-    });
   };
 
   if (isLoading) {
@@ -132,12 +129,7 @@ export default function ExerciseQuestionPage() {
       </button>
 
       {/* Popup */}
-      <SubmitModal
-        open={modalOpen}
-        result={evaluation}
-        onClose={handleClose}
-        onNext={handleNext}
-      />
+      <SubmitModal open={modalOpen} result={evaluation} onClose={handleClose} />
     </div>
   );
 }
