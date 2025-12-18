@@ -11,6 +11,27 @@ export const getUserProflie = async (id: number) => {
   }
 };
 
+export const updateUserProfilePicture = async (id: number, file: File) => {
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await apiClient.put(
+      `/user/profile/picture/${id}`,
+      formData,
+      {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      }
+    );
+    return response.data.data;
+  } catch (error) {
+    console.error('Failed to update profile picture:', error);
+    throw error;
+  }
+};
+
 export const updateUserPersonal = async (
   id: number,
   data: UserType.PersonalProps
