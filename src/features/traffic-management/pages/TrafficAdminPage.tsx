@@ -675,7 +675,7 @@ function MapContent({
   );
 }
 
-export default function TrafficAdminpage() {
+export default function TrafficAdminPage() {
   const navigate = useNavigate();
   const apiKey = import.meta.env.VITE_G10_GOOGLE_MAPS_API_KEY;
   const [currentLocation, setCurrentLocation] = useState('');
@@ -692,7 +692,6 @@ export default function TrafficAdminpage() {
     null
   );
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [requestOpen, setrequestOpen] = useState(false);
   const [signalOpen, setsignalOpen] = useState(false);
   const [refreshrate, setrefreshrate] = useState(1);
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -1176,9 +1175,9 @@ export default function TrafficAdminpage() {
             </APIProvider>
           </div>
         </div>
-        {/*Control panel */}  
+        {/*Control panel */}
         <div className="absolute top-15 right-8 z-10 mt-15 flex flex-col gap-2">
-          {!legendVisible && !requestOpen && !signalOpen && (
+          {!legendVisible && !signalOpen && (
             <div className="">
               <button
                 onClick={() => navigate('/traffic/AddLight')}
@@ -1197,7 +1196,6 @@ export default function TrafficAdminpage() {
                     d="M11 8C11 7.44772 11.4477 7 12 7C12.5523 7 13 7.44771 13 8V11H16C16.5523 11 17 11.4477 17 12C17 12.5523 16.5523 13 16 13H13V16C13 16.5523 12.5523 17 12 17C11.4477 17 11 16.5523 11 16V13H8C7.44772 13 7 12.5523 7 12C7 11.4477 7.44771 11 8 11H11V8Z"
                   />
                 </svg>
-                   
               </button>
               <button
                 onClick={() => handleMapSettingsClick()}
@@ -1216,41 +1214,11 @@ export default function TrafficAdminpage() {
                     d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
                   />
                 </svg>
-                   
               </button>
             </div>
           )}
-                    {/*Emer*/}   
-          {!legendVisible && !settingsOpen && !signalOpen && (
-            <button
-              onClick={() => setrequestOpen(!requestOpen)}
-              className="relative flex items-center gap-2 rounded-lg bg-red-600 px-6 py-3 text-white shadow-lg hover:bg-red-700"
-            >
-              {emergencyRequests.length > 0 && (
-                <>
-                  <span className="absolute -top-2 -right-2 h-5 w-5 rounded-full border-2 border-white bg-red-500" />
-                  {/*<span className="absolute -top-2.75 -right-2 h-5 w-5 text-red-500 text-center" >{emergencyRequests.length}</span>*/}
-                  <span className="absolute -top-2 -right-2 h-5 w-5 animate-ping rounded-full bg-red-500" />
-                </>
-              )}
-              <svg
-                className="h-5 w-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                />
-              </svg>
-                 
-            </button>
-          )}
-                    {/*Signal*/} 
-          {!legendVisible && !settingsOpen && !requestOpen && (
+          {/*Signal*/}
+          {!legendVisible && !settingsOpen && (
             <button
               onClick={() => setsignalOpen(!signalOpen)}
               className="relative flex items-center gap-2 rounded-lg bg-yellow-500 px-6 py-3 text-white shadow-lg hover:bg-yellow-600"
@@ -1275,67 +1243,15 @@ export default function TrafficAdminpage() {
                   d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
                 />
               </svg>
-                 
             </button>
           )}
-                    {/*Emer re*/} 
-          {requestOpen && (
-            <div className="max-h-80 max-w-md overflow-y-auto rounded-lg border border-gray-200 bg-white p-6 shadow-lg">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold text-gray-800">
-                                        Emergency Requests                
-                  </h3>
-                  <button
-                    onClick={() => setrequestOpen(false)}
-                    className="text-xl text-gray-500 hover:text-gray-700"
-                  >
-                                        ×
-                  </button>
-                </div>
-                <div className="max-h-96 space-y-3 overflow-y-auto">
-                  {emergencyRequests.map((request) => (
-                    <div
-                      key={request.id}
-                      className="rounded-md border border-gray-200 p-3 hover:bg-gray-50"
-                    >
-                      <div className="mb-2 flex items-start justify-between">
-                        <div className="font-semibold text-gray-800">
-                                                    {request.location}         
-                        </div>
-                        <span
-                          className={`rounded-full px-2 py-1 text-xs font-bold ${
-                            request.status === 'Active'
-                              ? 'bg-red-100 text-red-700'
-                              : 'bg-green-100 text-green-700'
-                          }`}
-                        >
-                                                    {request.status}           
-                        </span>
-                      </div>
-                      <div className="text-sm text-gray-600">
-                        <p>
-                                                    <strong>Reason:</strong>
-                          {request.reason}               
-                        </p>
-                        <p>
-                                                    <strong>Time:</strong>
-                          {request.time}   
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
-                    {/*Signal off*/}   
+          {/*Signal off*/}
           {signalOpen && (
             <div className="max-h-80 max-w-md overflow-y-auto rounded-lg border border-gray-200 bg-white p-6 shadow-lg">
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-semibold text-gray-800">
-                                        Offline Signals
+                    Offline Signals
                   </h3>
                   <button
                     onClick={() => setsignalOpen(false)}
@@ -1352,29 +1268,29 @@ export default function TrafficAdminpage() {
                         <div className="mb-2 flex items-start justify-between">
                           <div className="font-semibold text-gray-800">
                             Traffic Light NO.
-                            {LR.traffic_light_id}   
+                            {LR.traffic_light_id}
                           </div>
                           <span className="rounded-full bg-yellow-100 px-2 py-1 text-xs font-bold text-yellow-700">
-                                                        Offline                
+                            Offline
                           </span>
                         </div>
                         <div className="text-sm text-gray-600">
                           <p>
-                                                        <strong>Reason:</strong>
-                            {LR.reason}   
+                            <strong>Reason:</strong>
+                            {LR.reason}
                           </p>
                           <p>
-                            <strong>Request by</strong> {LR.requested_by}       
+                            <strong>Request by</strong> {LR.requested_by}
                           </p>
                           <p>
-                            <strong>Last Seen:</strong> {LR.requested_at}       
+                            <strong>Last Seen:</strong> {LR.requested_at}
                           </p>
                         </div>
                       </div>
                     ))
                   ) : (
                     <p className="py-4 text-center text-gray-500">
-                                            No offline signals                  
+                      No offline signals
                     </p>
                   )}
                 </div>
