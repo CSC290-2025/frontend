@@ -79,14 +79,6 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
       alert('Please enter at least 1 volunteer needed');
       return;
     }
-    if (
-      formData.volunteer_required &&
-      (!formData.total_seats || parseInt(formData.total_seats) < 1)
-    ) {
-      alert('Please enter at least 1 volunteer needed');
-      setLoading(false);
-      return;
-    }
 
     setShowConfirmDialog(true);
   };
@@ -374,7 +366,6 @@ export default function PostEventForm({ _onSuccess }: PostEventFormProps) {
                 className="w-full rounded-lg border border-gray-300 px-4 py-3 focus:ring-2 focus:ring-cyan-500 focus:outline-none"
               />
             </div>
-          </div>
 
             <div>
               <label className="mb-3 block text-sm font-semibold text-gray-900">

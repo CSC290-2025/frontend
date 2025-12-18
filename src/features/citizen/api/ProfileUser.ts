@@ -1,4 +1,3 @@
-
 import { apiClient } from '@/lib/apiClient';
 
 type ApiSuccess<T> = {
@@ -30,37 +29,6 @@ type UserProfileRowApi = {
   nationality?: string | null;
   religion?: string | null;
   addresses?: AddressApi[] | AddressApi | null;
-
-export type ProfileVM = {
-  userId: number;
-  username: string;
-  phone: string;
-  email: string;
-
-  idCardNumber: string;
-  firstName: string;
-  middleName: string;
-  lastName: string;
-
-  ethnicity: string;
-  nationality: string;
-  religion: string;
-
-  addressLine: string;
-  province: string;
-  district: string;
-  subdistrict: string;
-  postalCode: string;
-
-  address: string;
-
-  cardId: string;
-  busCardBalance: string;
-};
-
-   API CALL
-
-// ✅ ใช้ apiClient แทน httpGet
 };
 
 type UserProfileApi = {
@@ -106,7 +74,6 @@ export async function fetchUserProfileById(userId: number) {
   );
   return res.data;
 }
-
 
 function normalizeProfile(
   userId: number,
@@ -169,8 +136,6 @@ function normalizeProfile(
   };
 }
 
-
-// ✅ ใช้อันนี้แทน fetchMyFullProfile
 export async function fetchProfileForSettingUser(
   userId: number
 ): Promise<ProfileVM> {
