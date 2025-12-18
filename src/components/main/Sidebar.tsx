@@ -67,7 +67,7 @@ export default function Sidebar() {
       label: 'Healthcare',
       path: '/healthcare/healthcare-user',
     },
-    { icon: BookText, label: 'Learn AI', path: '/Know-AI/createCourse' },
+    { icon: BookText, label: 'Learn AI', path: '/Know-AI/courses' },
   ];
 
   // Additional services with dropdown
@@ -86,7 +86,6 @@ export default function Sidebar() {
     { icon: Trees, label: 'Clean Air', path: '/clean-air/district-selection' },
     { icon: AlertTriangle, label: 'Harm Reports', path: '/harm' },
     { icon: Radio, label: 'Traffic', path: '/traffic' },
-    { icon: Cloud, label: 'Air Quality', path: '/weather-aqi' },
     { icon: Activity, label: 'Activity', path: '/activity' },
     { icon: MessageSquare, label: 'Chat', path: '/chat' },
     { icon: PhoneOff, label: 'Hotline', path: '/hotLine' },
@@ -94,7 +93,7 @@ export default function Sidebar() {
 
   // User routes
   const userRoutes = [
-    { icon: CircleUser, label: 'Profile', path: '/profile' },
+    { icon: CircleUser, label: 'Profile', path: '/citizen/profile' },
     { icon: Settings, label: 'Settings', path: '/citizen/setting' },
     { icon: Wallet, label: 'E-Wallet', path: '/financial' },
   ];

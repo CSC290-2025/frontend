@@ -5,30 +5,39 @@ interface TopCategory {
   id: string;
   icon: LucideIcon;
   label: string;
-  subtitle: string;
+  subtitle?: string;
 }
 
 interface TopBarProps {
   topCategories: TopCategory[];
+  onSelectCategory?: (categoryId: string) => void;
 }
 
-const TopBar: React.FC<TopBarProps> = ({ topCategories }) => {
+const TopBar: React.FC<TopBarProps> = ({ topCategories, onSelectCategory }) => {
   return (
     <div className="border-b border-gray-200 bg-white p-6">
       <div className="mx-auto grid max-w-7xl grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
         {topCategories.map((cat) => (
-          <div
+          <button
             key={cat.id}
-            className="flex cursor-pointer items-center gap-3 rounded-xl border border-gray-200 p-4 transition-shadow hover:shadow-md"
+            type="button"
+            onClick={() => onSelectCategory?.(cat.id)}
+            disabled={!onSelectCategory}
+            className="flex cursor-pointer items-center gap-3 rounded-xl border border-gray-200 p-4 text-left transition-all hover:border-cyan-200 hover:shadow-md disabled:cursor-default disabled:opacity-60"
+            aria-label={`Open ${cat.label}`}
           >
-            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-cyan-50">
+            <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-lg bg-cyan-50">
               <cat.icon className="h-6 w-6 text-cyan-600" />
             </div>
-            <div>
-              <div className="font-semibold text-gray-800">{cat.label}</div>
-              <div className="text-xs text-gray-500">{cat.subtitle}</div>
+            <div className="min-w-0">
+              <div className="truncate font-semibold text-gray-800">
+                {cat.label}
+              </div>
+              <div className="truncate text-xs text-gray-500">
+                {cat.subtitle || `View ${cat.label}`}
+              </div>
             </div>
-          </div>
+          </button>
         ))}
       </div>
     </div>

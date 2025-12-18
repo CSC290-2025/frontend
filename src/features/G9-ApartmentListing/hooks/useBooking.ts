@@ -8,15 +8,7 @@ export function useBooking(id: number) {
     queryKey: ['booking', id],
     queryFn: () => BOOKapi.fetchBookingById(id),
     select: (response) => {
-      // Handle the API response structure
-      if (response.data && response.data.success && response.data.data) {
-        return response.data.data;
-      }
-      // Fallback for different response structures
-      if (response.data) {
-        return response.data;
-      }
-      return response;
+      return response.data.data;
     },
     enabled: !!id,
   });

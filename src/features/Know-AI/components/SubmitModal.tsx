@@ -1,4 +1,18 @@
-export default function SubmitModal({ open, result, onClose, onNext }: any) {
+interface SubmitModalProps {
+  open: boolean;
+  result: {
+    is_correct: boolean;
+    feedback: string;
+    specialty_granted?: boolean;
+  } | null;
+  onClose: () => void;
+}
+
+export default function SubmitModal({
+  open,
+  result,
+  onClose,
+}: SubmitModalProps) {
   if (!open || !result) return null;
 
   return (
@@ -7,7 +21,10 @@ export default function SubmitModal({ open, result, onClose, onNext }: any) {
         {/* Close Button */}
         <button
           className="absolute top-4 right-4 flex h-8 w-8 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
-          onClick={onClose}
+          onClick={() => {
+            onClose();
+            window.location.reload();
+          }}
         >
           <svg
             className="h-5 w-5"
@@ -102,19 +119,13 @@ export default function SubmitModal({ open, result, onClose, onNext }: any) {
         <div className="flex flex-col gap-3 sm:flex-row sm:justify-center">
           <button
             className="rounded-full bg-gray-200 px-8 py-3 font-semibold text-gray-700 transition-all hover:bg-gray-300 hover:shadow-md"
-            onClick={onClose}
+            onClick={() => {
+              onClose();
+              window.location.reload();
+            }}
           >
             Back to Exercise
           </button>
-
-          {result.is_correct && (
-            <button
-              className="rounded-full bg-linear-to-r from-green-400 to-green-500 px-8 py-3 font-semibold text-white shadow-lg transition-all hover:from-green-500 hover:to-green-600 hover:shadow-xl"
-              onClick={onNext}
-            >
-              Next Question
-            </button>
-          )}
         </div>
       </div>
     </div>

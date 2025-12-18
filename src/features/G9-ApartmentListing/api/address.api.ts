@@ -16,3 +16,7 @@ export const updateAddress = (id: number, data: addressTypes.updateAddress) => {
 export const deleteAddress = (id: number) => {
   return apiClient.delete(`/address/${id}`);
 };
+
+export const fetchAllAddresses = () => {
+  return apiClient.get('/healthcare/addresses');
+};

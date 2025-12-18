@@ -20,6 +20,7 @@ export default defineConfig({
           'Transactions',
           'User',
           'Authentication',
+          'LocationIQ',
         ],
       },
       // target: `${BACKEND_URL}/doc`,

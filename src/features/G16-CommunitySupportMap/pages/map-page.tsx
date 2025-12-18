@@ -1,212 +1,32 @@
-import { useEffect, useState } from 'react';
-import {
-  APIProvider,
-  Map,
-  AdvancedMarker,
-  InfoWindow,
-  useMap,
-} from '@vis.gl/react-google-maps';
+// src/pages/MapPage.tsx
+import { useEffect, useMemo, useRef, useState } from 'react';
+import initMapAndMarkers from '../config/google-map';
 import type { SuccessMarker, MapMarker } from '../interfaces/api';
-import { Trash2 } from 'lucide-react';
-import config from '../config/env';
-import { getBaseAPIURL } from '@/lib/apiClient.ts';
+import { MarkerSidePanel } from '../components/rightSide';
+import { apiClient } from '@/lib/apiClient';
+import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router';
+import {
+  ChevronDown,
+  Wind,
+  TrafficCone,
+  Trophy,
+  Siren,
+  TriangleAlert,
+  HeartPlus,
+  Trash2,
+  BusFront,
+  MapPin,
+  MessageCircle,
+} from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 
-export const MarkerIcon = {
-  Trash: (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="lucide lucide-trash2-icon lucide-trash-2"
-    >
-      <path d="M10 11v6" />
-      <path d="M14 11v6" />
-      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
-      <path d="M3 6h18" />
-      <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-    </svg>
-  ),
-  Busfront: (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="lucide lucide-bus-front-icon lucide-bus-front"
-    >
-      <path d="M4 6 2 7" />
-      <path d="M10 6h4" />
-      <path d="m22 7-2-1" />
-      <rect width="16" height="16" x="4" y="3" rx="2" />
-      <path d="M4 11h16" />
-      <path d="M8 15h.01" />
-      <path d="M16 15h.01" />
-      <path d="M6 19v2" />
-      <path d="M18 21v-2" />
-    </svg>
-  ),
-  TrafficCone: (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="lucide lucide-traffic-cone-icon lucide-traffic-cone"
-    >
-      <path d="M16.05 10.966a5 2.5 0 0 1-8.1 0" />
-      <path d="m16.923 14.049 4.48 2.04a1 1 0 0 1 .001 1.831l-8.574 3.9a2 2 0 0 1-1.66 0l-8.574-3.91a1 1 0 0 1 0-1.83l4.484-2.04" />
-      <path d="M16.949 14.14a5 2.5 0 1 1-9.9 0L10.063 3.5a2 2 0 0 1 3.874 0z" />
-      <path d="M9.194 6.57a5 2.5 0 0 0 5.61 0" />
-    </svg>
-  ),
-  MapPin: (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="lucide lucide-map-pin-icon lucide-map-pin"
-    >
-      <path d="M20 10c0 4.993-5.539 10.193-7.399 11.799a1 1 0 0 1-1.202 0C9.539 20.193 4 14.993 4 10a8 8 0 0 1 16 0" />
-      <circle cx="12" cy="10" r="3" />
-    </svg>
-  ),
-  MessageCircle: (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="lucide lucide-message-circle-icon lucide-message-circle"
-    >
-      <path d="M2.992 16.342a2 2 0 0 1 .094 1.167l-1.065 3.29a1 1 0 0 0 1.236 1.168l3.413-.998a2 2 0 0 1 1.099.092 10 10 0 1 0-4.777-4.719" />
-    </svg>
-  ),
-  ChevronDown: (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="lucide lucide-chevron-down-icon lucide-chevron-down"
-    >
-      <path d="m6 9 6 6 6-6" />
-    </svg>
-  ),
-  Wind: (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="lucide lucide-wind-icon lucide-wind"
-    >
-      <path d="M12.8 19.6A2 2 0 1 0 14 16H2" />
-      <path d="M17.5 8a2.5 2.5 0 1 1 2 4H2" />
-      <path d="M9.8 4.4A2 2 0 1 1 11 8H2" />
-    </svg>
-  ),
-  Trophy: (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="lucide lucide-trophy-icon lucide-trophy"
-    >
-      <path d="M10 14.66v1.626a2 2 0 0 1-.976 1.696A5 5 0 0 0 7 21.978" />
-      <path d="M14 14.66v1.626a2 2 0 0 0 .976 1.696A5 5 0 0 1 17 21.978" />
-      <path d="M18 9h1.5a1 1 0 0 0 0-5H18" />
-      <path d="M4 22h16" />
-      <path d="M6 9a6 6 0 0 0 12 0V3a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1z" />
-      <path d="M6 9H4.5a1 1 0 0 1 0-5H6" />
-    </svg>
-  ),
-  Siren: (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="lucide lucide-siren-icon lucide-siren"
-    >
-      <path d="M7 18v-6a5 5 0 1 1 10 0v6" />
-      <path d="M5 21a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-1a2 2 0 0 0-2-2H7a2 2 0 0 0-2 2z" />
-      <path d="M21 12h1" />
-      <path d="M18.5 4.5 18 5" />
-      <path d="M2 12h1" />
-      <path d="M12 2v1" />
-      <path d="m4.929 4.929.707.707" />
-      <path d="M12 12v6" />
-    </svg>
-  ),
-  TriangleAlert: (
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className="lucide lucide-triangle-alert-icon lucide-triangle-alert"
-    >
-      <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3" />
-      <path d="M12 9v4" />
-      <path d="M12 17h.01" />
-    </svg>
-  ),
-} as const;
-
-// Area of map with 4 districts
+// area of map with 4 district
 const MAP_BOUNDS = {
   north: 13.745,
   south: 13.58,
@@ -229,76 +49,92 @@ function isInAnyZone(m: MapMarker): boolean {
   );
 }
 
-// Separate component for markers to have access to map context
-const MapMarkers = ({
-  markers,
-  onMarkerClick,
-}: {
-  markers: MapMarker[];
-  onMarkerClick: (marker: MapMarker) => void;
-}) => {
-  return (
-    <>
-      {markers.map((marker) => (
-        <AdvancedMarker
-          key={marker.id}
-          position={{ lat: marker.lat, lng: marker.lng }}
-          title={marker.description ?? `Marker #${marker.id}`}
-          onClick={() => onMarkerClick(marker)}
-        />
-      ))}
-    </>
-  );
-};
+const MapPage = () => {
+  const mapRef = useRef<HTMLDivElement>(null);
 
-const MapContent = () => {
+  // 1. add variable for Google Map Instance
+  const mapInstanceRef = useRef<google.maps.Map | null>(null);
+
   const [markers, setMarkers] = useState<MapMarker[]>([]);
   const [loading, setLoading] = useState(false);
-  const [selectedMarker, setSelectedMarker] = useState<MapMarker | null>(null);
 
-  const panelMarkers = markers.filter(isInAnyZone);
-  const filteredMarkers = markers.filter(isInAnyZone);
+  // map id to marker_type_icon (string)
+  const [markerTypeIconById, setMarkerTypeIconById] = useState<
+    Record<number, string>
+  >({});
 
-  // Center of the whole area
-  const center = {
-    lat: (MAP_BOUNDS.north + MAP_BOUNDS.south) / 2,
-    lng: (MAP_BOUNDS.east + MAP_BOUNDS.west) / 2,
+  // null = show all, number = filter by marker_type_id
+  const [selectedTypeId, setSelectedTypeId] = useState<number | null>(null);
+  const navigate = useNavigate();
+
+  // 2. Focus function
+  const handleFocusMarker = (lat: number, lng: number) => {
+    if (mapInstanceRef.current) {
+      mapInstanceRef.current.panTo({ lat, lng }); // move to it
+      mapInstanceRef.current.setZoom(18); // zoom
+    }
+  };
+
+  const handleSelectTypeId = (id: number) => {
+    console.log('=== handleSelectTypeId called ===');
+    console.log('Clicked ID:', id);
+    setSelectedTypeId((prev) => (prev === id ? null : id));
   };
 
   async function handleDeleteMarker(id: number) {
     try {
-      const res = await fetch(getBaseAPIURL + `/api/markers/${id}`, {
-        method: 'DELETE',
-      });
-
-      if (!res.ok) {
-        console.error('Delete failed:', await res.text());
-        return;
-      }
+      await apiClient.delete(`/api/markers/${id}`);
       setMarkers((prev) => prev.filter((m) => m.id !== id));
-      if (selectedMarker?.id === id) {
-        setSelectedMarker(null);
-      }
     } catch (err) {
       console.error('Delete failed:', err);
     }
   }
 
-  const handleMarkerClick = (marker: MapMarker) => {
-    setSelectedMarker(marker);
-  };
+  // marker types (id to marker_type_icon)
+  useEffect(() => {
+    async function loadMarkerTypes() {
+      try {
+        const res = await apiClient.get('/api/marker-types', {
+          params: { limit: 200 },
+        });
+
+        // response: res.data.data.markerTypes or marker by your API
+        const types = (res.data.data.markerTypes || res.data.data.marker) as {
+          id: number;
+          marker_type_icon: string;
+        }[];
+
+        if (types) {
+          const typeMap = Object.fromEntries(
+            types.map((t) => [t.id, t.marker_type_icon])
+          );
+          setMarkerTypeIconById(typeMap);
+        }
+      } catch (err) {
+        console.error('Load marker types failed:', err);
+      }
+    }
+
+    loadMarkerTypes();
+  }, []);
 
   // Fetch markers from backend and normalize location
   useEffect(() => {
     async function loadMarkers() {
       try {
         setLoading(true);
+        const res = await apiClient.get('/api/markers', {
+          params: { limit: 200 },
+        });
 
-        const res = await fetch(getBaseAPIURL + '/api/markers?limit=200');
-        const json = await res.json();
-        const data = json.data as SuccessMarker[];
+        const data = (res.data.data.markers ||
+          res.data.data.marker ||
+          []) as SuccessMarker[];
+
+        if (!data) return;
 
         const mapped: MapMarker[] = data
+          .filter((m) => m.location)
           .map((m) => {
             if (!m.location) return null;
 
@@ -306,22 +142,17 @@ const MapContent = () => {
             let lng: number | null = null;
             const loc = m.location as any;
 
-            // Case 1 - GeoJSON { type: 'Point', coordinates: [lng, lat] }
             if (loc && Array.isArray(loc.coordinates)) {
               const [lngRaw, latRaw] = loc.coordinates;
               lng = Number(lngRaw);
               lat = Number(latRaw);
-            }
-            // Case 2 - WKT string e.g. "POINT(100.49 13.65)"
-            else if (typeof loc === 'string') {
+            } else if (typeof loc === 'string') {
               const match = loc.match(/POINT\(([-0-9.]+)\s+([-0-9.]+)\)/i);
               if (match) {
                 lng = parseFloat(match[1]);
                 lat = parseFloat(match[2]);
               }
-            }
-            // Case 3 - Object with x/y properties e.g. { x: lng, y: lat }
-            else if (
+            } else if (
               typeof loc === 'object' &&
               loc !== null &&
               typeof loc.x === 'number' &&
@@ -331,7 +162,6 @@ const MapContent = () => {
               lat = loc.y;
             }
 
-            // If we still cannot get valid lat/lng, skip this marker
             if (
               lat === null ||
               lng === null ||
@@ -346,9 +176,9 @@ const MapContent = () => {
               lat,
               lng,
               description: m.description,
+              marker_type_id: m.marker_type_id,
             };
           })
-          // Remove null entries
           .filter((m): m is MapMarker => m !== null);
 
         setMarkers(mapped);
@@ -360,107 +190,320 @@ const MapContent = () => {
     loadMarkers();
   }, []);
 
+  // filter markers (zone + marker_type_id)
+  const filteredMarkers = useMemo(() => {
+    // Step 1: Filter by zone
+    const inZone = markers.filter(isInAnyZone);
+
+    // Step 2: Filter by marker_type_id
+    const result = inZone.filter((m) => {
+      if (selectedTypeId === null) {
+        return true;
+      }
+      const markerTypeId = Number(m.marker_type_id);
+      const selectedId = Number(selectedTypeId);
+      return markerTypeId === selectedId;
+    });
+
+    return result;
+  }, [markers, selectedTypeId]);
+
+  // Render Google Map whenever filteredMarkers changes
+  useEffect(() => {
+    if (!mapRef.current) return;
+
+    const filtered = filteredMarkers;
+
+    const center = {
+      lat: (MAP_BOUNDS.north + MAP_BOUNDS.south) / 2,
+      lng: (MAP_BOUNDS.east + MAP_BOUNDS.west) / 2,
+    };
+
+    const mapOptions: google.maps.MapOptions = {
+      center,
+      zoom: 13,
+      restriction: {
+        latLngBounds: MAP_BOUNDS,
+        strictBounds: true,
+      },
+    };
+
+    const markerOptions = filtered.map((m) => ({
+      position: { lat: m.lat, lng: m.lng },
+      title: m.description ?? `Marker #${m.id}`,
+      markerTypeId: m.marker_type_id ?? 1,
+      markerTypeIconKey: markerTypeIconById[m.marker_type_id ?? 1],
+    }));
+
+    // 3. recive Map Instance in Ref when finish Init
+    initMapAndMarkers({
+      mapEl: mapRef.current,
+      mapOptions,
+      markerOptions,
+    }).then((map) => {
+      mapInstanceRef.current = map;
+    });
+  }, [filteredMarkers, markerTypeIconById]);
+
+  const panelMarkers = filteredMarkers;
+
   return (
-    <div className="w-full space-y-4">
-      {loading && <p className="text-sm text-gray-500">Loading markers...</p>}
-
-      <div className="flex gap-4">
-        <div className="flex-1">
-          <div
-            className="overflow-hidden rounded-xl border border-neutral-300 shadow-sm"
-            style={{ height: 'calc(95vh - 180px)' }}
+    <main className="min-h-screen overflow-hidden bg-white">
+      {/* Header with 3 cards */}
+      <div className="font-poppins mx-auto w-full max-w-[1200px] px-5 pt-6 pb-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3">
+          <button
+            onClick={() => navigate('/traffic')}
+            className="flex items-center gap-3 rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-left transition-all hover:shadow-sm active:scale-95"
           >
-            <Map
-              mapId="map1"
-              defaultCenter={center}
-              defaultZoom={13}
-              restriction={{
-                latLngBounds: MAP_BOUNDS,
-                strictBounds: true,
-              }}
-              gestureHandling="greedy"
-              disableDefaultUI={false}
-            >
-              <MapMarkers
-                markers={filteredMarkers}
-                onMarkerClick={handleMarkerClick}
-              />
+            <TrafficCone className="h-6 w-8" />
+            <div className="leading-tight">
+              <div className="text-sm font-semibold md:text-base">Traffics</div>
+              <div className="text-xs text-neutral-500 md:text-sm">
+                Hospital &amp; emergency services
+              </div>
+            </div>
+          </button>
 
-              {selectedMarker && (
-                <InfoWindow
-                  position={{
-                    lat: selectedMarker.lat,
-                    lng: selectedMarker.lng,
-                  }}
-                  onCloseClick={() => setSelectedMarker(null)}
-                >
-                  <div style={{ minWidth: '180px', fontSize: '14px' }}>
-                    <strong>
-                      {selectedMarker.description
-                        ?.replace(/\(\d+%\)/, '')
-                        .trim() || `Marker #${selectedMarker.id}`}
-                    </strong>
-                    <br />
-                    Lat: {selectedMarker.lat}
-                    <br />
-                    Lng: {selectedMarker.lng}
-                  </div>
-                </InfoWindow>
-              )}
-            </Map>
-          </div>
+          <button
+            onClick={() => navigate('/volunteer/board')}
+            className="flex items-center gap-3 rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-left hover:shadow-sm"
+          >
+            <MapPin className="h-6 w-6" />
+            <div className="leading-tight">
+              <div className="text-sm font-semibold md:text-base">Nearby</div>
+              <div className="text-xs text-neutral-500 md:text-sm">
+                Activities and volunteer
+              </div>
+            </div>
+          </button>
+
+          <button
+            onClick={() => navigate('/map')}
+            className="flex items-center gap-3 rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-left hover:shadow-sm"
+          >
+            <MessageCircle className="h-6 w-6" />
+            <div className="leading-tight">
+              <div className="text-sm font-semibold md:text-base">
+                Support Map
+              </div>
+              <div className="text-xs text-neutral-500 md:text-sm">
+                Reservation
+              </div>
+            </div>
+          </button>
         </div>
 
-        <div
-          className="hidden w-[260px] shrink-0 flex-col rounded-xl border border-neutral-300 bg-white/95 p-3 shadow-sm md:flex"
-          style={{ height: 'calc(95vh - 180px)' }}
-        >
-          <div className="mb-2 text-sm font-semibold">
-            Selected markers
-            <span className="ml-1 text-xs text-neutral-500">
-              ({panelMarkers.length})
+        {/* Filter Button - Mobile */}
+        <div className="mt-5 flex w-full justify-center md:hidden">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button className="h-9 items-center gap-2 rounded-full border border-[#6FA8FF] bg-[#2749C9] px-4 text-white transition hover:bg-[#1f3db1]">
+                Filter
+                <ChevronDown className="h-4 w-4" strokeWidth={4} />
+              </Button>
+            </DropdownMenuTrigger>
+
+            <DropdownMenuContent
+              align="end"
+              sideOffset={10}
+              className="w-48 rounded-2xl bg-[#2749C9] p-3 text-white shadow-xl"
+            >
+              {/* <DropdownMenuItem
+                onClick={() => handleSelectTypeId(1)}
+                className="flex cursor-pointer items-center gap-2 px-3 py-2 hover:bg-[#1f3db1]"
+              >
+                <Wind className="h-6 w-6 text-white" strokeWidth={2} />
+                <span className="text-base">Impure Air</span>
+              </DropdownMenuItem> */}
+
+              {/* mobile */}
+              <DropdownMenuItem
+                onClick={() => handleSelectTypeId(2)}
+                className="flex cursor-pointer items-center gap-2 px-3 py-2 hover:bg-[#1f3db1]"
+              >
+                <TrafficCone className="h-6 w-6 text-white" strokeWidth={2} />
+                <span className="text-base">Traffics</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => handleSelectTypeId(3)}
+                className="flex cursor-pointer items-center gap-2 px-3 py-2 hover:bg-[#1f3db1]"
+              >
+                <Trophy className="h-6 w-6 text-white" strokeWidth={2} />
+                <span className="text-base">Events</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => handleSelectTypeId(4)}
+                className="flex cursor-pointer items-center gap-2 px-3 py-2 hover:bg-[#1f3db1]"
+              >
+                <Siren className="h-6 w-6 text-white" strokeWidth={2} />
+                <span className="text-base">Emergency Request</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => handleSelectTypeId(5)}
+                className="flex cursor-pointer items-center gap-2 px-3 py-2 hover:bg-[#1f3db1]"
+              >
+                <TriangleAlert className="h-6 w-6 text-white" strokeWidth={2} />
+                <span className="text-base">Danger Area</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => handleSelectTypeId(6)}
+                className="flex cursor-pointer items-center gap-2 px-3 py-2 hover:bg-[#1f3db1]"
+              >
+                <HeartPlus className="h-6 w-6 text-white" strokeWidth={2} />
+                <span className="text-base">Injured Area</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => handleSelectTypeId(7)}
+                className="flex cursor-pointer items-center gap-2 px-3 py-2 hover:bg-[#1f3db1]"
+              >
+                <Trash2 className="h-6 w-6 text-white" strokeWidth={2} />
+                <span className="text-base">Trash Area</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        {/* Filter Button - Desktop */}
+        <div className="mt-5 hidden w-full justify-end md:flex lg:mr-20">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button className="h-9 items-center gap-2 rounded-full border border-[#6FA8FF] bg-[#2749C9] px-4 text-white transition hover:bg-[#1f3db1]">
+                Filter
+                <ChevronDown className="h-4 w-4" strokeWidth={4} />
+              </Button>
+            </DropdownMenuTrigger>
+
+            <DropdownMenuContent
+              align="end"
+              sideOffset={10}
+              className="w-54 rounded-2xl bg-[#2749C9] p-3 text-white shadow-xl"
+            >
+              {/* <DropdownMenuItem
+                onClick={() => handleSelectTypeId(1)}
+                className="group flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 transition hover:bg-white hover:text-black"
+              >
+                <Wind
+                  className="h-6 w-6 text-white group-hover:text-black"
+                  strokeWidth={2}
+                />
+                <span className="text-base group-hover:text-black">
+                  Impure Air
+                </span>
+              </DropdownMenuItem> */}
+
+              {/* desktop */}
+              <DropdownMenuItem
+                onClick={() => handleSelectTypeId(2)}
+                className="group flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 transition hover:bg-white hover:text-black"
+              >
+                <TrafficCone
+                  className="h-6 w-6 text-white group-hover:text-black"
+                  strokeWidth={2}
+                />
+                <span className="text-base group-hover:text-black">
+                  Traffics
+                </span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => handleSelectTypeId(3)}
+                className="group flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 transition hover:bg-white hover:text-black"
+              >
+                <Trophy
+                  className="h-6 w-6 text-white group-hover:text-black"
+                  strokeWidth={2}
+                />
+                <span className="text-base group-hover:text-black">Events</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => handleSelectTypeId(4)}
+                className="group flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 transition hover:bg-white hover:text-black"
+              >
+                <Siren
+                  className="h-6 w-6 text-white group-hover:text-black"
+                  strokeWidth={2}
+                />
+                <span className="text-base group-hover:text-black">
+                  Emergency Request
+                </span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => handleSelectTypeId(5)}
+                className="group flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 transition hover:bg-white hover:text-black"
+              >
+                <TriangleAlert
+                  className="h-6 w-6 text-white group-hover:text-black"
+                  strokeWidth={2}
+                />
+                <span className="text-base group-hover:text-black">
+                  Danger Area
+                </span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => handleSelectTypeId(6)}
+                className="group flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 transition hover:bg-white hover:text-black"
+              >
+                <HeartPlus
+                  className="h-6 w-6 text-white group-hover:text-black"
+                  strokeWidth={2}
+                />
+                <span className="text-base group-hover:text-black">
+                  Injured Area
+                </span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => handleSelectTypeId(7)}
+                className="group flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 transition hover:bg-white hover:text-black"
+              >
+                <Trash2
+                  className="h-6 w-6 text-white group-hover:text-black"
+                  strokeWidth={2}
+                />
+                <span className="text-base group-hover:text-black">
+                  Trash Area
+                </span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="grid flex-1 items-end gap-4 p-6">
+        <div className="w-full space-y-4">
+          {loading && (
+            <p className="text-sm text-gray-500">Loading markers...</p>
+          )}
+
+          <div className="text-sm text-gray-600">
+            <span>
+              Selected Filter:{' '}
+              {selectedTypeId === null ? 'All' : `Type ${selectedTypeId}`}
             </span>
+            {' | '}
+            <span>Showing: {filteredMarkers.length} markers</span>
           </div>
 
-          <div className="flex-1 space-y-2 overflow-y-auto pr-1">
-            {panelMarkers.map((m) => (
+          <div className="flex gap-4">
+            <div className="flex-1">
               <div
-                key={m.id}
-                className="flex items-start gap-2 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-sm"
-              >
-                <div className="flex-1">
-                  <div className="text-xs font-semibold">ID : {m.id}</div>
-                  <div className="line-clamp-2 text-[11px] text-neutral-600">
-                    {m.description || 'No description'}
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => handleDeleteMarker(m.id)}
-                  className="flex h-7 w-7 items-center justify-center rounded-full hover:bg-red-100"
-                >
-                  <Trash2 className="h-4 w-4 text-red-500" />
-                </button>
-              </div>
-            ))}
+                ref={mapRef}
+                id="google_map"
+                className="overflow-hidden rounded-xl border border-neutral-300 shadow-sm"
+                style={{ height: 'calc(95vh - 180px)' }}
+              />
+            </div>
 
-            {panelMarkers.length === 0 && (
-              <p className="text-xs text-neutral-500">
-                No markers in this area.
-              </p>
-            )}
+            {/* send onFocus function to sidebar */}
+            <MarkerSidePanel
+              markers={panelMarkers}
+              onDelete={handleDeleteMarker}
+              onFocus={handleFocusMarker}
+            />
           </div>
         </div>
       </div>
-    </div>
-  );
-};
-
-const MapPage = () => {
-  return (
-    <APIProvider apiKey={config.GOOGLE_MAPS_API_KEY}>
-      <MapContent />
-    </APIProvider>
+    </main>
   );
 };
 
