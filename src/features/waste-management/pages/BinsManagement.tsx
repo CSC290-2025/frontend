@@ -129,12 +129,13 @@ export default function BinsManagement() {
         </div>
         <button
           onClick={() => setShowAddModal(true)}
-          className="flex items-center gap-2 rounded-lg bg-blue-500 px-4 py-2 text-white transition hover:bg-blue-600"
+          className="flex items-center gap-2 rounded-lg bg-green-500 px-4 py-2 text-white transition hover:bg-green-600"
         >
           <Plus className="h-4 w-4" />
           Add Bin
         </button>
       </div>
+
       <div className="flex gap-4 rounded-lg border border-gray-200 bg-white p-4">
         <select
           value={filterType}

@@ -1,12 +1,4 @@
-import { useState } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
-import { toast } from 'sonner';
-import {
-  useGetWalletsUserUserId,
-  usePostWallets,
-  usePutWalletsWalletId,
-} from '@/api/generated/wallets';
-import { getGetTransactionsQueryKey } from '@/api/generated/transactions';
+import { useGetWalletsUserUserId } from '@/api/generated/wallets';
 import { Card, CardContent } from '@/components/ui/card';
 import { Wallet } from 'lucide-react';
 import AmountBox from '../components/metro-cards/AmountBox';
@@ -15,60 +7,22 @@ import TransactionHistory from '../components/mainPage/TransactionHistory';
 import TopUpModal from '../components/mainPage/TopUpModal';
 import TransferModal from '../components/mainPage/TransferModal';
 import WalletManagement from '../components/mainPage/WalletManagement';
-import WalletLoader from '../components/mainPage/WalletLoader';
 import { useGetAuthMe } from '@/api/generated/authentication';
+import { useAuth } from '@/features/auth';
+import { ROLES } from '@/constant';
 
 export default function FinancialPage() {
   const userId = useGetAuthMe().data?.data?.userId.toString() ?? '';
 
-  const [loadedUserId, setLoadedUserId] = useState<number | null>(null);
-
   const { data: wallets, refetch } = useGetWalletsUserUserId(Number(userId));
-  const queryClient = useQueryClient();
-  const { mutate: createWallet } = usePostWallets({
-    mutation: {
-      onSuccess: (data) => {
-        toast.success(data.message || 'Wallet created successfully!');
-        refetch();
-        queryClient.invalidateQueries({
-          queryKey: getGetTransactionsQueryKey(),
-        });
-      },
-      onError: (error: any) => {
-        toast.error(error.response?.data?.message || 'Failed to create wallet');
-      },
-    },
-  });
-  const { mutate: updateWallet } = usePutWalletsWalletId({
-    mutation: {
-      onSuccess: (data) => {
-        toast.success(data.message || 'Wallet updated successfully!');
-        refetch();
-        queryClient.invalidateQueries({
-          queryKey: getGetTransactionsQueryKey(),
-        });
-      },
-      onError: (error: any) => {
-        toast.error(error.response?.data?.message || 'Failed to update wallet');
-      },
-    },
-  });
 
   const wallet = wallets?.data?.wallet;
 
-  const handleLoadWallet = () => {
-    setLoadedUserId(Number(userId));
-    refetch();
-  };
+  // Check if the user is admin
+  const { user } = useAuth();
+  const isAdmin = user?.roles?.role_name === ROLES.ADMIN;
 
-  const handleCreateWallet = () => {
-    createWallet({
-      data: {
-        user_id: Number(userId),
-        wallet_type: 'individual',
-      },
-    });
-  };
+  const loadedUserId = Number(userId);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -126,9 +80,11 @@ export default function FinancialPage() {
                 <TransactionHistory userId={loadedUserId} wallet={wallet} />
               </div>
             </div>
-            <div className="pt-15">
-              <WalletManagement wallet={wallet} updateWallet={updateWallet} />
-            </div>
+            {isAdmin && (
+              <div className="pt-15">
+                <WalletManagement />
+              </div>
+            )}
           </>
         )}
       </div>

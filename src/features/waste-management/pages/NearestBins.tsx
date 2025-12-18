@@ -1,4 +1,3 @@
-// frontend/src/components/BinLocator.tsx
 import { useState, useEffect, useRef } from 'react';
 import type { CSSProperties } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
@@ -21,23 +20,71 @@ import { NearestBinCard } from '@/features/waste-management/components';
 import { LocationsSideBar } from '@/features/waste-management/components';
 import { BIN_TYPE_COLORS } from '@/constant';
 
-const icon = new URL(
-  'leaflet/dist/images/marker-icon.png',
-  import.meta.url
-).toString();
-const iconShadow = new URL(
-  'leaflet/dist/images/marker-shadow.png',
-  import.meta.url
-).toString();
+// Custom SVG Icons for location markers
+const createUserLocationIcon = () => {
+  const svgString = `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 56" width="40" height="56">
+      <defs>
+        <filter id="shadow">
+          <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.3"/>
+        </filter>
+      </defs>
+      <!-- Outer glow circle -->
+      <circle cx="20" cy="20" r="16" fill="#A78BFA" opacity="0.2"/>
+      <!-- Main marker body -->
+      <path d="M20 2 C10 2, 2 10, 2 20 C2 35, 20 54, 20 54 C20 54, 38 35, 38 20 C38 10, 30 2, 20 2 Z" fill="#7C3AED" filter="url(#shadow)"/>
+      <!-- Inner highlight -->
+      <circle cx="20" cy="20" r="8" fill="#C4B5FD"/>
+      <!-- Center dot -->
+      <circle cx="20" cy="20" r="4" fill="#FFFFFF"/>
+    </svg>
+  `;
 
-const DefaultIcon = L.icon({
-  iconUrl: icon,
-  shadowUrl: iconShadow,
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-});
+  const blob = new Blob([svgString], { type: 'image/svg+xml' });
+  const url = URL.createObjectURL(blob);
 
-L.Marker.prototype.options.icon = DefaultIcon;
+  return L.icon({
+    iconUrl: url,
+    iconSize: [40, 56],
+    iconAnchor: [20, 56],
+    popupAnchor: [0, -56],
+    className: 'user-location-marker',
+  });
+};
+
+const createSearchLocationIcon = () => {
+  const svgString = `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 56" width="40" height="56">
+      <defs>
+        <filter id="shadow">
+          <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.3"/>
+        </filter>
+      </defs>
+      <!-- Outer glow circle -->
+      <circle cx="20" cy="20" r="16" fill="#FDBA74" opacity="0.3"/>
+      <!-- Main marker body -->
+      <path d="M20 2 C10 2, 2 10, 2 20 C2 35, 20 54, 20 54 C20 54, 38 35, 38 20 C38 10, 30 2, 20 2 Z" fill="#F97316" filter="url(#shadow)"/>
+      <!-- Inner highlight -->
+      <circle cx="20" cy="20" r="8" fill="#FDEDD5"/>
+      <!-- Center dot -->
+      <circle cx="20" cy="20" r="4" fill="#FFFFFF"/>
+    </svg>
+  `;
+
+  const blob = new Blob([svgString], { type: 'image/svg+xml' });
+  const url = URL.createObjectURL(blob);
+
+  return L.icon({
+    iconUrl: url,
+    iconSize: [40, 56],
+    iconAnchor: [20, 56],
+    popupAnchor: [0, -56],
+    className: 'search-location-marker',
+  });
+};
+
+const userLocationIcon = createUserLocationIcon();
+const searchLocationIcon = createSearchLocationIcon();
 
 const BANGKOK_COORDS = { lat: 13.7563, lng: 100.5018 };
 
@@ -239,6 +286,15 @@ export function BinLocator() {
       ];
 
       return () => timers.forEach((timer) => clearTimeout(timer));
+      // // Ensure popup opens after a longer delay to allow render cycle
+      // const timer = setTimeout(() => {
+      //   try {
+      //     nearestBinMarkerRef.current?.openPopup();
+      //   } catch (e) {
+      //     console.log('Popup open error:', e);
+      //   }
+      // }, 500);
+      // return () => clearTimeout(timer);
     }
   }, [nearestBin?.id]);
 
@@ -275,6 +331,11 @@ export function BinLocator() {
         <div
           className="relative overflow-hidden rounded-2xl border-2 border-gray-200 bg-white shadow-2xl"
           style={{ ...mapWrapperStyle, minHeight: 600 }}
+          // <div className="grid w-full max-w-7xl grid-cols-1 gap-6 lg:grid-cols-2">
+          //   {/* Map Column */}
+          //   <div
+          //     className="relative h-[600px] overflow-hidden rounded-2xl border-2 border-gray-200 bg-white shadow-2xl"
+          //     style={mapWrapperStyle}
         >
           {nearestBin && <NearestBinCard bin={nearestBin} />}
 
@@ -308,7 +369,10 @@ export function BinLocator() {
             </Marker>
 
             {searchLocation && (
-              <Marker position={[searchLocation.lat, searchLocation.lng]}>
+              <Marker
+                position={[searchLocation.lat, searchLocation.lng]}
+                icon={searchLocationIcon}
+              >
                 <Popup className="font-sans">
                   <div className="w-48 space-y-2 rounded p-2">
                     <div>

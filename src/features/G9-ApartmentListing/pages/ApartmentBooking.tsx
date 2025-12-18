@@ -6,25 +6,20 @@ import RoomDetailIcon from '@/features/G9-ApartmentListing/assets/RoomDetailIcon
 import { APT, Owner, Room } from '@/features/G9-ApartmentListing/hooks/index';
 import type { roomTypes } from '@/features/G9-ApartmentListing/types';
 import { useCreateBooking } from '@/features/G9-ApartmentListing/hooks/useBooking';
-import { useUserProfileDetails } from '@/features/citizen/hooks/ProfileUser';
+import { useMyProfile } from '@/features/citizen/hooks/ProfileUser';
 import { useUserById } from '@/features/G9-ApartmentListing/hooks/userApartmentOwner';
 
 export default function ApartmentBooking() {
-  // Get URL parameters
   const urlParams = new URLSearchParams(window.location.search);
   const apartmentId = urlParams.get('apartmentId');
+
   const { data: userData } = Owner.useUser();
-  const { data: userProfile } = useUserById(userData?.userId || 0);
-  const { data: userProfileDetails } = useUserProfileDetails(
-    userData?.userId || 0
-  );
   const userId = userData?.userId;
-  // Fetch apartment data
+  const { data: userProfile } = useUserById(userId || 0);
+  const { data: userProfileDetails } = useUserProfileDetails(userId || 0);
   const { data: apartmentData } = APT.useApartment(
     apartmentId ? parseInt(apartmentId) : 0
   );
-
-  // Fetch available rooms for the apartment
   const { data: availableRoomsData } = Room.useRoomsByStatus(
     apartmentId ? parseInt(apartmentId) : 0,
     'available'
@@ -32,7 +27,6 @@ export default function ApartmentBooking() {
 
   const createBooking = useCreateBooking();
 
-  // Extract apartment and room info
   const apartment = apartmentData?.data || apartmentData || null;
   const availableRooms = useMemo(() => {
     return availableRoomsData || [];
@@ -51,7 +45,6 @@ export default function ApartmentBooking() {
   const [isCreatingBooking, setIsCreatingBooking] = useState(false);
 
   useEffect(() => {
-    // Update roomType when availableRooms data loads and no room type is selected yet
     if (availableRooms.length > 0 && !formData.roomType) {
       setFormData((prev) => ({ ...prev, roomType: availableRooms[0].type }));
     }
@@ -62,14 +55,12 @@ export default function ApartmentBooking() {
   };
 
   const handleNext = async () => {
-    // Validate that we have apartment data
     if (!apartment || !apartmentId) {
       console.error('Missing apartment data');
       alert('Error: Missing apartment information.');
       return;
     }
 
-    // Check if there are any available rooms at all
     if (availableRooms.length === 0) {
       alert(
         'No available rooms in this apartment. Please browse other apartments or check back later.'
@@ -77,7 +68,6 @@ export default function ApartmentBooking() {
       return;
     }
 
-    // Since we're only fetching available rooms, any room in the list should be bookable
     const selectedRoom = availableRooms.find(
       (room: roomTypes.Room) => room.type === formData.roomType
     );
@@ -88,6 +78,7 @@ export default function ApartmentBooking() {
       );
       return;
     }
+
     setIsCreatingBooking(true);
     try {
       const bookingPayload = {
@@ -95,10 +86,10 @@ export default function ApartmentBooking() {
         room_id: selectedRoom.id,
         apartment_id: parseInt(apartmentId),
         guest_name: `${formData.firstName} ${formData.lastName}`,
-        guest_phone: formData.phone.replace(/\D/g, '').slice(0, 10), // Remove non-digits and limit to 10 characters
+        guest_phone: formData.phone.replace(/\D/g, '').slice(0, 10),
         guest_email: formData.email,
         room_type: formData.roomType,
-        check_in: new Date(formData.checkin + 'T00:00:00Z').toISOString(), // Convert date to ISO datetime format
+        check_in: new Date(formData.checkin + 'T00:00:00Z').toISOString(),
       };
 
       const result = await createBooking.mutateAsync(bookingPayload);
@@ -112,7 +103,6 @@ export default function ApartmentBooking() {
         return;
       }
 
-      // Navigate to payment page with booking ID in URL
       window.location.href = `/ApartmentPayment?bookingId=${bookingId}`;
     } catch (error) {
       console.error('Failed to create booking:', error);

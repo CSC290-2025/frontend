@@ -94,7 +94,7 @@ export default function LocationsSideBar({
   };
 
   return (
-    <aside className="flex flex-col rounded-2xl border border-gray-100 bg-white p-5 shadow-xl">
+    <aside className="flex h-full flex-col rounded-2xl border border-gray-100 bg-white p-5 shadow-xl">
       <div className="flex flex-col gap-3">
         <div className="flex flex-col gap-2">
           <div className="flex gap-2">
@@ -131,10 +131,7 @@ export default function LocationsSideBar({
                 Locating...
               </>
             ) : (
-              <>
-                <span>📍</span>
-                Find Nearest Bin for My Location
-              </>
+              <>Find Nearest Bin for My Location</>
             )}
           </button>
         </div>
@@ -182,7 +179,7 @@ export default function LocationsSideBar({
         </div>
       </div>
 
-      <div className="mt-4 flex-1 space-y-3 overflow-y-auto pr-1">
+      <div className="mt-4 flex-1 space-y-3 overflow-y-auto pr-2 [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-green-400 [&::-webkit-scrollbar-thumb]:hover:bg-green-500 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-gray-100">
         {bins.length === 0 && (
           <p className="mt-8 text-center text-sm text-gray-500">
             No locations match the current filters.

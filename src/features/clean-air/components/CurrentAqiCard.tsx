@@ -25,24 +25,22 @@ interface StatusDetails {
 const getStatusAndStyle = (category: string): StatusDetails => {
   switch (category.toUpperCase()) {
     case 'GOOD':
-    case 'HEALTHY':
       return {
-        status: 'Good',
-        style: 'bg-green-600 text-white',
+        status: 'GOOD',
+        style: 'bg-teal-500 text-white',
         icon: faFaceGrinWide,
-        iconStyle: 'text-green-600',
+        iconStyle: 'text-teal-600',
       };
     case 'MODERATE':
       return {
-        status: 'Moderate',
+        status: 'MODERATE',
         style: 'bg-lime-500 text-black',
         icon: faFaceSmile,
         iconStyle: 'text-lime-500',
       };
-    case 'UNHEALTHY_FOR_SENSITIVE_GROUPS':
-    case 'USG':
+    case 'UNHEALTHY_FOR_SENSITIVE':
       return {
-        status: 'USG',
+        status: 'UNHEALTHY FOR SENSITIVE',
         style: 'bg-yellow-500 text-black',
         icon: faFaceMeh,
         iconStyle: 'text-yellow-500',
@@ -50,21 +48,25 @@ const getStatusAndStyle = (category: string): StatusDetails => {
     case 'UNHEALTHY':
     case 'BAD':
       return {
-        status: 'Unhealthy',
-        style: 'bg-red-600 text-white',
+        status: 'UNHEALTHY',
+        style: 'bg-orange-500 text-white',
         icon: faFaceFrown,
-        iconStyle: 'text-red-500',
+        iconStyle: 'text-orange-500',
       };
     case 'VERY_UNHEALTHY':
     case 'DANGEROUS':
     case 'HAZARDOUS':
       return {
-        status: 'Very Unhealthy',
-        style: 'bg-red-800 text-white',
+        status: 'VERY UNHEALTHY',
+        style: 'bg-red-500 text-white',
         icon: faFaceDizzy,
-        iconStyle: 'text-red-800',
+        iconStyle: 'text-red-600',
       };
     default:
+      console.log(
+        'CurrentAqiCard category not matched, showing Unknown:',
+        category
+      ); // Debug
       return {
         status: 'Unknown',
         style: 'bg-gray-400 text-black',
@@ -73,7 +75,6 @@ const getStatusAndStyle = (category: string): StatusDetails => {
       };
   }
 };
-
 const getFormattedTime = (iso?: string) => {
   if (!iso) return 'No data';
   const d = new Date(iso);
@@ -105,22 +106,16 @@ export default function CurrentAqiCard({
 
   if (isLoading) {
     return (
-      <div className="h-full rounded-xl border border-black bg-white p-6 text-gray-900 shadow-md">
-                <div className="text-center">Loading air quality data...</div> 
-           {' '}
+      <div className="h-full rounded-xl border border-black bg-white p-6 text-center text-gray-900 shadow-md">
+        Loading air quality data...
       </div>
     );
   }
 
   if (error || !districtDetail?.currentData) {
     return (
-      <div className="h-full rounded-xl border border-black bg-white p-6 text-gray-900 shadow-md">
-               {' '}
-        <div className="text-center text-red-600">
-                    {error?.message || 'No air quality data available'}     
-           {' '}
-        </div>
-             {' '}
+      <div className="h-full rounded-xl border border-black bg-white p-6 text-center text-gray-900 shadow-md">
+        {error?.message || 'No air quality data available'}
       </div>
     );
   }
@@ -143,66 +138,59 @@ export default function CurrentAqiCard({
 
   return (
     <div className="h-full rounded-xl border border-black bg-white p-6 text-gray-900 shadow-md">
-           {' '}
       <div className="mb-4 flex items-start justify-between">
-               {' '}
         <h1 className="text-base font-semibold text-gray-800">
-                    Current Air Quality        {' '}
+          Current Air Quality
         </h1>
         <button
           onClick={onDocumentationClick}
-          className="rounded-full bg-gray-200 px-3 py-1 text-xs font-medium text-gray-800 transition-colors hover:bg-gray-300"
+          className="hidden rounded-full bg-gray-200 px-3 py-1 text-xs font-medium text-gray-800 transition-colors hover:bg-gray-300 sm:block"
         >
-          {' '}
           Information
         </button>
-             {' '}
       </div>
-           {' '}
-      <div className="mb-4 flex items-start justify-between">
-               {' '}
+
+      <div className="flex flex-col items-start justify-between gap-4 sm:flex-row">
         <div className="flex flex-col">
-                   {' '}
-          <p className="text-6xl leading-none font-bold">
-                        {aqi}{' '}
-            <span className="align-top text-3xl font-normal">AQI</span>       
-             {' '}
+          <div className="flex items-end leading-none">
+            <p className="text-6xl font-bold">{aqi}</p>
+            <span className="mb-2 ml-1 align-top text-3xl font-normal">
+              AQI
+            </span>
+          </div>
+
+          <p className="mt-2 text-base font-normal text-gray-700">
+            PM 2.5: {pm25Display} µg/m³
           </p>
-                   {' '}
-          <p className="mt-2 text-sm text-gray-700">
-                        PM 2.5: {pm25Display} µg/m³          {' '}
-          </p>
-                 {' '}
+
+          <span
+            className={`mt-1 rounded px-2 py-0.5 text-sm font-semibold ${statusStyle} `}
+          >
+            {status}
+          </span>
         </div>
-               {' '}
-        <div className="mt-1 text-right">
-                   {' '}
-          <FontAwesomeIcon icon={icon} className={`text-6xl ${iconStyle}`} />   
-             {' '}
+        <div className="flex h-full flex-col items-start justify-start sm:items-end">
+          <div className="relative mt-1 inline-block">
+            <FontAwesomeIcon icon={icon} className={`text-6xl ${iconStyle}`} />
+
+            <button
+              onClick={onDocumentationClick}
+              className="absolute -right-4 -bottom-1 flex h-6 w-6 items-center justify-center rounded-full border border-gray-400 bg-white text-[10px] font-bold text-gray-500 shadow-sm active:bg-gray-100 sm:hidden"
+            >
+              ?
+            </button>
+          </div>
+
+          <div className="mt-4 flex flex-col text-left sm:text-right">
+            <p className="text-sm font-semibold whitespace-nowrap text-black">
+              {displayDistrict}, Bangkok
+            </p>
+            <p className="text-xs whitespace-nowrap text-gray-500">
+              Last updated: {lastUpdated}
+            </p>
+          </div>
         </div>
-             {' '}
       </div>
-           {' '}
-      <div className="mt-4 flex items-center justify-between">
-               {' '}
-        <span
-          className={`inline-block rounded-full px-4 py-1 text-sm font-semibold ${statusStyle}`}
-        >
-                    {status}       {' '}
-        </span>
-               {' '}
-        <div className="flex flex-col text-right">
-                   {' '}
-          <p className="text-sm font-semibold text-black">
-                        {displayDistrict}, Bangkok          {' '}
-          </p>
-                   {' '}
-          <p className="text-xs text-gray-500">Last updated: {lastUpdated}</p> 
-               {' '}
-        </div>
-             {' '}
-      </div>
-         {' '}
     </div>
   );
 }

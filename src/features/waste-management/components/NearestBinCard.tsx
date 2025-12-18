@@ -15,7 +15,7 @@ export default function NearestBinCard({ bin }: NearestBinCardProps) {
       <h3 className="mt-1 text-lg font-bold text-gray-800">{bin.name}</h3>
       <p className={`text-sm font-medium ${bin.color}`}>{bin.type}</p>
       <div className="mt-3 flex flex-col gap-1 text-sm font-semibold text-blue-600">
-        <span>📍 {bin.distance}</span>
+        <span>{bin.distance}</span>
         <span className="text-xs text-gray-400">
           Click another pin or list item to preview it
         </span>

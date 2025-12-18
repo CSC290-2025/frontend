@@ -78,6 +78,7 @@ export default function AddBinModal({ onClose, onSuccess }: AddBinModalProps) {
   const [locationSearch, setLocationSearch] = useState('');
   const [searchingLocation, setSearchingLocation] = useState(false);
   const [fetchingAddress, setFetchingAddress] = useState(false);
+  const [locatingUser, setLocatingUser] = useState(false);
 
   const fetchAddressFromCoordinates = async (lat: number, lng: number) => {
     setFetchingAddress(true);
@@ -112,7 +113,6 @@ export default function AddBinModal({ onClose, onSuccess }: AddBinModalProps) {
     });
     setMapCenter([coords.lat, coords.lng]);
 
-    // Fetch address automatically
     const address = await fetchAddressFromCoordinates(coords.lat, coords.lng);
     if (address) {
       setFormData((prev) => ({
@@ -160,6 +160,38 @@ export default function AddBinModal({ onClose, onSuccess }: AddBinModalProps) {
       alert('Failed to search location. Please try again.');
     } finally {
       setSearchingLocation(false);
+    }
+  };
+
+  const handleLocateUser = () => {
+    setLocatingUser(true);
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+
+          const address = await fetchAddressFromCoordinates(lat, lng);
+          setFormData({
+            ...formData,
+            latitude: lat,
+            longitude: lng,
+            address: address || '',
+          });
+          setMapCenter([lat, lng]);
+          setLocatingUser(false);
+        },
+        (error) => {
+          console.error('Geolocation error:', error);
+          alert(
+            'Could not access your location. Please enable location services.'
+          );
+          setLocatingUser(false);
+        }
+      );
+    } else {
+      alert('Geolocation is not supported by this browser.');
+      setLocatingUser(false);
     }
   };
 
@@ -369,6 +401,24 @@ export default function AddBinModal({ onClose, onSuccess }: AddBinModalProps) {
                   {searchingLocation ? 'Searching...' : 'Search'}
                 </button>
               </div>
+              <button
+                type="button"
+                onClick={handleLocateUser}
+                disabled={locatingUser}
+                className="mb-3 flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-blue-500 to-cyan-500 px-4 py-2 text-sm font-semibold text-white transition hover:from-green-600 hover:to-cyan-600 disabled:opacity-50"
+              >
+                {locatingUser ? (
+                  <>
+                    <span className="animate-spin">...</span>
+                    Searching...
+                  </>
+                ) : (
+                  <>
+                    <MapPin className="h-4 w-4" />
+                    Use My Current Location
+                  </>
+                )}
+              </button>
               <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-gray-700">
                 <MapPin className="h-4 w-4 text-green-600" />
                 Click on map to set location
