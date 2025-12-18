@@ -10,6 +10,7 @@ import {
   Info,
 } from 'lucide-react';
 import { QuickActionCard } from '@/features/_healthcare/components/cards/QuickActionCard';
+import { apiClient } from '@/lib/apiClient';
 
 interface EmergencyReport {
   id: number;
@@ -35,25 +36,11 @@ const AdminEmergencyPage: React.FC = () => {
 
   const fetchEmergencies = async () => {
     setLoading(true);
-    const token = localStorage.getItem('healthcare_token');
-    if (!token) {
-      setError('No authentication token found');
-      setLoading(false);
-      return;
-    }
-
     try {
-      const response = await fetch(
-        'http://localhost:3000/api/healthcare/emergencies',
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-      const data = await response.json();
-      if (data.success) {
-        setReports(data.data);
+      const response = await apiClient.get('/api/healthcare/emergencies');
+      const data = response.data;
+      if (data?.success) {
+        setReports(data.data ?? []);
       } else {
         setError(data.message || 'Failed to fetch emergencies');
       }

@@ -235,14 +235,14 @@ function ReportForm({ oldReport }: ReportFormProps) {
                     Summary City Performance Dashboard
                   </option>
                   <option value="trends">Public Trends Report</option>
-                  <option value="detailed">
-                    Detailed Operational Dashboards
-                  </option>
-                  <option value="planning">
-                    Financial & Resource Planning
-                  </option>
-                  <option value="usage">Report Usage Analysis</option>
-                  <option value="data">Data Quality Dashboard</option>
+                  {/* <option value="detailed"> */}
+                  {/*   Detailed Operational Dashboards */}
+                  {/* </option> */}
+                  {/* <option value="planning"> */}
+                  {/*   Financial & Resource Planning */}
+                  {/* </option> */}
+                  {/* <option value="usage">Report Usage Analysis</option> */}
+                  {/* <option value="data">Data Quality Dashboard</option> */}
                 </select>
               </div>
               <div className="flex flex-col gap-2">

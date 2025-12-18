@@ -21,30 +21,30 @@ const TYPE_COPY: Record<
       'Long-term indicators covering population, environment and wellbeing shifts.',
     badge: 'Trends',
   },
-  detailed: {
-    title: 'Detailed Operational Dashboards',
-    description:
-      'Real-time telemetry for operations teams – traffic, healthcare, weather.',
-    badge: 'Admin',
-  },
-  planning: {
-    title: 'Financial & Resource Planning',
-    description:
-      'Budget, scenario planning and workforce allocation all in one view.',
-    badge: 'Admin',
-  },
-  usage: {
-    title: 'Report Usage Analysis',
-    description:
-      'Understand which dashboards are resonating and where gaps exist.',
-    badge: 'Admin',
-  },
-  data: {
-    title: 'Data Quality Dashboard',
-    description:
-      'Freshness, completeness and accuracy scoring for every dataset powering BI.',
-    badge: 'Quality',
-  },
+  // detailed: {
+  //   title: 'Detailed Operational Dashboards',
+  //   description:
+  //     'Real-time telemetry for operations teams – traffic, healthcare, weather.',
+  //   badge: 'Admin',
+  // },
+  // planning: {
+  //   title: 'Financial & Resource Planning',
+  //   description:
+  //     'Budget, scenario planning and workforce allocation all in one view.',
+  //   badge: 'Admin',
+  // },
+  // usage: {
+  //   title: 'Report Usage Analysis',
+  //   description:
+  //     'Understand which dashboards are resonating and where gaps exist.',
+  //   badge: 'Admin',
+  // },
+  // data: {
+  //   title: 'Data Quality Dashboard',
+  //   description:
+  //     'Freshness, completeness and accuracy scoring for every dataset powering BI.',
+  //   badge: 'Quality',
+  // },
 };
 
 function ReportsPage() {

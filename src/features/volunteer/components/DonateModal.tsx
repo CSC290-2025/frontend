@@ -101,6 +101,7 @@ export function DonateModal({
         from_user_id: Number(userId),
         to_user_id: Number(transferToUserId),
         amount: Number(transferAmount),
+        isVol: true,
       },
     });
   };
