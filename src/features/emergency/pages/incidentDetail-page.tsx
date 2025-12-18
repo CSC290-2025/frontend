@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from '@/router';
 import {
   mockIncidents,
@@ -26,16 +26,48 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useNotification } from '@/features/emergency/contexts/notification.tsx';
 import { apiClient } from '@/lib/apiClient.ts';
+import config from '@/features/emergency/config/env.ts';
+import axios from 'axios';
 
 export default function IncidentDetailPage() {
   const { id } = useParams('/sos/AdminIncidents/:id');
   console.log(id);
   const navigate = useNavigate();
+  const [data, setData] = useState<Record<string, string>>({});
   const incident = mockIncidents.find((i) => String(i.id) === id);
   const [messages, setMessages] = useState<ChatMessage[]>(
     mockMessages.filter((m) => String(m.incidentId) === id)
   );
   const [showBroadcastDialog, setShowBroadcastDialog] = useState(false);
+
+  useEffect(() => {
+    const fetch = async (id: string) => {
+      const res = await apiClient.get(`/emergency/report/${id}`);
+      setData(res.data.data);
+    };
+    fetch(id);
+    console.log(data);
+  }, [id]);
+
+  const [addressMap, setAddressMap] = useState<Record<string, string>>({});
+
+  const convertPo = async (
+    lat: string | null,
+    long: string | null,
+    id: number
+  ) => {
+    if (!lat || !long || addressMap[id]) return;
+    try {
+      const url = `https://api.geoapify.com/v1/geocode/reverse?lat=${lat}&lon=${long}&apiKey=${config.GEO_API_KEY}`;
+      const res = await axios.get(url);
+      const formatted =
+        res.data?.features?.[0]?.properties?.formatted ?? 'Unknown location';
+
+      setAddressMap((prev) => ({ ...prev, [id]: formatted }));
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   if (!incident) {
     return (
@@ -89,18 +121,18 @@ export default function IncidentDetailPage() {
       <div className="border-border bg-card flex shrink-0 items-center gap-4 border-b p-4">
         <div>
           <h1 className="text-foreground text-lg font-semibold">
-            CASE {incident.id}
+            CASE {data.id}
           </h1>
         </div>
       </div>
 
-      {/* Left: Details */}
       <div className="border-border bg-background min-h-[500px] overflow-y-auto border-r p-4">
         <IncidentDetail
           incident={incident}
           onStatusChange={handleStatusChange}
           onBroadcast={handleBroadcast}
           id={Number(id)}
+          description={data.description}
         />
       </div>
 

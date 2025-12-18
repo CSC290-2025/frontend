@@ -37,6 +37,8 @@ interface IncidentDetailProps {
   onStatusChange: (status: IncidentStatus) => void;
   onBroadcast: () => void;
   id: number;
+  address?: string;
+  description: string;
 }
 
 // Workflow Configuration
@@ -60,6 +62,8 @@ export function IncidentDetail({
   incident,
   onStatusChange,
   onBroadcast,
+  address,
+  description,
   id,
 }: IncidentDetailProps) {
   const currentStatusIndex = statusFlow.findIndex(
