@@ -1,17 +1,8 @@
-import { setOptions, importLibrary } from '@googlemaps/js-api-loader';
-
-setOptions({ key: import.meta.env.VITE_G16_GOOGLE_MAPS_API_KEY });
-
-type MapInit = {
-  mapEl: HTMLElement;
-  mapOptions: google.maps.MapOptions;
-  markerOptions?: {
-    position: google.maps.LatLngLiteral;
-    title: string;
-
-    markerTypeId?: number;
-    markerTypeIconKey?: string;
-  }[];
+export type MarkerOption = {
+  position: google.maps.LatLngLiteral;
+  title: string;
+  markerTypeId?: number;
+  markerTypeIconKey?: string;
 };
 
 export const MarkerIcon = {
@@ -38,7 +29,7 @@ export const MarkerIcon = {
 `,
 } as const;
 
-function getMarkerSvg(markerTypeId?: number): string {
+export function getMarkerSvg(markerTypeId?: number): string | undefined {
   const id = Number(markerTypeId);
 
   switch (id) {
@@ -56,8 +47,8 @@ function getMarkerSvg(markerTypeId?: number): string {
       return MarkerIcon.Injured; // Injured_area
     case 7:
       return MarkerIcon.Trash; // Trash_area
-    // default:
-    //   return MarkerIcon.;
+    default:
+      return undefined;
   }
 }
 
@@ -71,61 +62,17 @@ const svgByDbKey: Record<string, string> = {
   Trash_area: MarkerIcon.Trash,
 };
 
-// function getMarkerSvgByKey(key?: string): string {
-//   return key && svgByDbKey[key] ? svgByDbKey[key] : MarkerIcon.Wind; // default
-// }
-
-function getMarkerSvgByKey(key?: string): string | undefined {
+export function getMarkerSvgByKey(key?: string): string | undefined {
   if (!key) return undefined;
   return svgByDbKey[key];
 }
 
-const initMapAndMarkers = async ({
-  mapEl,
-  mapOptions,
-  markerOptions = [],
-}: MapInit) => {
-  try {
-    const [{ Map }] = await Promise.all([
-      importLibrary('maps') as Promise<google.maps.MapsLibrary>,
-    ]);
-
-    const map = new Map(mapEl, mapOptions);
-    const infoWindow = new google.maps.InfoWindow();
-
-    markerOptions.forEach((opt) => {
-      // use db key first if not have fallback to use id
-      const svg =
-        getMarkerSvgByKey(opt.markerTypeIconKey) ??
-        getMarkerSvg(opt.markerTypeId);
-
-      const marker = new google.maps.Marker({
-        position: opt.position,
-        title: opt.title,
-        map,
-        icon: {
-          url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
-          scaledSize: new google.maps.Size(32, 32),
-        },
-      });
-
-      marker.addListener('click', () => {
-        infoWindow.setContent(`
-          <div style="min-width:160px;font-size:14px">
-            <strong>${opt.title}</strong><br/>
-            Lat: ${opt.position.lat}<br/>
-            Lng: ${opt.position.lng}
-          </div>
-        `);
-        infoWindow.open(map, marker);
-      });
-    });
-
-    return map;
-  } catch (error) {
-    console.error('Failed to initialize Google Map:', error);
-    throw error;
-  }
-};
-
-export default initMapAndMarkers;
+export function getMarkerIconUrl(
+  markerTypeIconKey?: string,
+  markerTypeId?: number
+): string | undefined {
+  const svg =
+    getMarkerSvgByKey(markerTypeIconKey) ?? getMarkerSvg(markerTypeId);
+  if (!svg) return undefined;
+  return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+}
