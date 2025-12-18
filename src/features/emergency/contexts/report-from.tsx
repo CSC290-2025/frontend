@@ -1,16 +1,19 @@
 import type {
   ReportRequestFrom,
   ReportResponseFrom,
-} from '@/features/emergency/interfaces/report.ts';
+} from '@/features/emergency/types/report.ts';
 import ReportApi from '@/features/emergency/api/report.api.ts';
 import {
   createContext,
+  type Dispatch,
   type ReactNode,
+  type SetStateAction,
   useContext,
   useEffect,
   useState,
 } from 'react';
 import { useLocation } from 'react-router';
+import { apiClient } from '@/lib/apiClient.ts';
 
 type ReportFromProviderProps = {
   children: ReactNode;
@@ -25,9 +28,10 @@ type ReportFromState = {
     status: string,
     page: string,
     limit: string
-  ) => Promise<ReportResponseFrom[]>;
+  ) => Promise<void>;
   isLoading: boolean;
   totalPage: number;
+  setStatus: Dispatch<SetStateAction<'pending' | 'resolved' | 'verified'>>;
 };
 
 const ReportFromContext = createContext<ReportFromState | null>(null);
@@ -40,6 +44,9 @@ export function ReportFromProvider({
   const [report, setReport] = useState<ReportResponseFrom[]>([]);
   const [totalPage, setTotalPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  const [status, setStatus] = useState<'pending' | 'verified' | 'resolved'>(
+    'pending'
+  );
 
   const { pathname } = useLocation();
 
@@ -47,24 +54,22 @@ export function ReportFromProvider({
     status: string,
     page: string,
     limit: string
-  ): Promise<ReportResponseFrom[]> => {
+  ): Promise<void> => {
     setIsLoading(true);
-
     try {
       const res = await ReportApi.getReportByStatusPag(status, page, limit);
-      const total = Number(res.headers['x-total-count']) || 1;
+      const totalCount = Number(res.headers['x-total-count']) || 1;
 
-      setTotalPage(total);
-      return res.data.report;
+      setTotalPage(totalCount);
+      setReport(res.data.report);
     } catch (error) {
       console.error(error);
-      return [];
     } finally {
       setIsLoading(false);
     }
   };
 
-  const createReport = async (data: ReportRequestFrom) => {
+  const createReport = async (data: ReportRequestFrom): Promise<void> => {
     setIsLoading(true);
     try {
       await ReportApi.postReport(data);
@@ -76,23 +81,10 @@ export function ReportFromProvider({
   };
 
   useEffect(() => {
-    try {
-      if (pathname !== '/activity') return;
-
-      const fetchReport = async () => {
-        const res = await findReportByStatusPag(
-          'pending',
-          initialPage,
-          initialLimit
-        );
-        setReport(res);
-      };
-
-      fetchReport();
-    } catch (error) {
-      console.error(error);
-    }
-  }, [pathname, initialPage, initialLimit]);
+    // if (pathname !== '/activity' || pathname !== '/admindashboard') return;
+    setReport([]);
+    findReportByStatusPag(status, initialPage, initialLimit);
+  }, [pathname, initialPage, initialLimit, status]);
 
   return (
     <ReportFromContext.Provider
@@ -102,6 +94,7 @@ export function ReportFromProvider({
         totalPage,
         createReport,
         findReportByStatusPag,
+        setStatus,
       }}
     >
       {children}

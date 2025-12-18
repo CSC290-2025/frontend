@@ -2,7 +2,7 @@ import type {
   ContactRequestFrom,
   ContactResponseFrom,
   ContactUpdateFrom,
-} from '@/features/emergency/interfaces/contact.ts';
+} from '@/features/emergency/types/contact.ts';
 import ContactApi from '@/features/emergency/api/contact.ts';
 
 import {
@@ -20,9 +20,11 @@ type ContactFormProviderProps = {
 type ContactFormState = {
   contact: ContactResponseFrom[];
   createContact: (data: ContactRequestFrom) => Promise<void>;
-  updateContact: (data: ContactUpdateFrom) => Promise<void>;
+  updateContact: (data: ContactUpdateFrom, id: string) => Promise<void>;
   findContactByUserId: (userId: string) => Promise<void>;
+  deleteContactById: (id: string) => Promise<void>;
   isLoading: boolean;
+  setCurrentUserId: (id: string) => void;
 };
 
 const ContactFormContext = createContext<ContactFormState | null>(null);
@@ -30,26 +32,24 @@ const ContactFormContext = createContext<ContactFormState | null>(null);
 export function ContactFormProvider({ children }: ContactFormProviderProps) {
   const [contact, setContact] = useState<ContactResponseFrom[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
+
+  const setCurrentUserId = (id: string) => {
+    setUserId(id);
+    findContactByUserId(id);
+  };
 
   const findContactByUserId = async (userId: string) => {
-    setIsLoading(true);
-    try {
-      const res = await ContactApi.getContactByUserId(userId);
-
-      setContact(res.contact);
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setIsLoading(false);
-    }
+    const res = await ContactApi.getContactByUserId(userId);
+    setContact(res.contact);
   };
 
   const createContact = async (data: ContactRequestFrom) => {
     setIsLoading(true);
+    if (!userId) return;
     try {
-      const res = await ContactApi.postContact(data);
-
-      setContact((prev) => [...prev, res.data]);
+      await ContactApi.postContact(data);
+      await findContactByUserId(userId);
     } catch (error) {
       console.error(error);
     } finally {
@@ -57,14 +57,25 @@ export function ContactFormProvider({ children }: ContactFormProviderProps) {
     }
   };
 
-  const updateContact = async (data: ContactUpdateFrom) => {
+  const updateContact = async (data: ContactUpdateFrom, id: string) => {
+    if (!userId) return;
     setIsLoading(true);
     try {
-      const res = await ContactApi.updateContactById(data);
+      await ContactApi.updateContactById(data, id);
+      await findContactByUserId(userId);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-      setContact((prev) =>
-        prev.map((c) => (c.id === data.id ? res.data.data : c))
-      );
+  const deleteContactById = async (id: string) => {
+    if (!userId) return;
+    setIsLoading(true);
+    try {
+      await ContactApi.deleteContactById(id);
+      await findContactByUserId(userId);
     } catch (error) {
       console.error(error);
     } finally {
@@ -73,14 +84,14 @@ export function ContactFormProvider({ children }: ContactFormProviderProps) {
   };
 
   useEffect(() => {
+    if (!userId) return;
+    setIsLoading(true);
     try {
-      const fetchData = async () => {
-        await findContactByUserId('1'); //mock cuz it not have auth
-      };
-
-      fetchData();
+      findContactByUserId(userId);
     } catch (error) {
       console.error(error);
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
@@ -92,6 +103,8 @@ export function ContactFormProvider({ children }: ContactFormProviderProps) {
         createContact,
         updateContact,
         findContactByUserId,
+        setCurrentUserId,
+        deleteContactById,
       }}
     >
       {children}

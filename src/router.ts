@@ -68,6 +68,9 @@ export type Path =
   | `/reset-password/request`
   | `/sos`
   | `/sos/:id`
+  | `/sos/AdminDashboard`
+  | `/sos/AdminIncidents`
+  | `/sos/AdminIncidents/:id`
   | `/sos/report`
   | `/sos/report/:id`
   | `/traffic`
@@ -110,6 +113,7 @@ export type Params = {
   };
   '/power-bi/edit/:id': { id: string };
   '/sos/:id': { id: string };
+  '/sos/AdminIncidents/:id': { id: string };
   '/sos/report/:id': { id: string };
   '/volunteer/detail/:id': { id: string };
   '/volunteer/edit/:id': { id: string };

@@ -1,14 +1,16 @@
 import {
   createContext,
   type ReactNode,
-  useState,
-  useEffect,
   useContext,
+  useEffect,
+  useState,
 } from 'react';
 import { getFCMToken, message } from '@/features/emergency/config/firebase.ts';
 import FCMApi from '@/features/emergency/api/fcm.api.ts';
 import { onMessage } from 'firebase/messaging';
 import { toast } from 'sonner';
+import TokenApi from '@/features/emergency/api/token.api.ts';
+import { apiClient } from '@/lib/apiClient.ts';
 
 type Message = {
   title: string;
@@ -18,7 +20,7 @@ type Message = {
 
 type NotificationState = {
   isLoading: boolean;
-  sendAllNotification: (title: string, body: string) => void;
+  sendAllNotification: (title: string, body: string) => Promise<void>;
   msgLocal: Message[];
 };
 
@@ -29,6 +31,8 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   const [fcmToken, setFcmToken] = useState('');
   const [notificationAccess, setNotificationAccess] = useState(false);
 
+  const expireTime = 7 * 60 * 60 * 1000;
+
   const keyMsg = 'Message';
   const [msgLocal, setMsgLocal] = useState<Message[]>(() => {
     if (typeof window === 'undefined' || !window.localStorage) {
@@ -36,31 +40,34 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     }
 
     const persistedValue = window.localStorage.getItem(keyMsg);
-
     return persistedValue !== null ? JSON.parse(persistedValue) : [];
   });
 
   async function requestNotificationAccess() {
-    if (typeof window !== 'undefined') {
+    if (typeof window === 'undefined') return;
+
+    try {
       const permission = await Notification.requestPermission();
 
-      if (permission === 'granted') {
-        setNotificationAccess(true);
-        console.log('Notification permission granted.');
+      if (permission !== 'granted') return;
 
-        const token = await getFCMToken();
-        if (token) setFcmToken(token);
-      } else {
-        setNotificationAccess(false);
-        console.log('Unable to get permission to notify.');
+      const token = await getFCMToken();
+      if (token) {
+        setFcmToken(token);
+        const me = await apiClient.get('/auth/me');
+        await TokenApi.storeToken(token, me.data.data.userId);
       }
+    } catch (error) {
+      console.error(error);
     }
   }
 
-  async function sendAllNotification(title: string, body: string) {
+  async function sendAllNotification(
+    title: string,
+    body: string
+  ): Promise<void> {
     setIsLoading(true);
     try {
-      console.log(title, body);
       await FCMApi.sendAllNotification({
         title,
         body,
@@ -72,59 +79,70 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  async function sendTokenNotification(
+    title: string,
+    body: string,
+    userId: string
+  ): Promise<void> {
+    setIsLoading(true);
+    try {
+      const findToken = await TokenApi.getTokensById(userId);
+      if (!findToken) return;
+
+      await FCMApi.sendTokenNotification({
+        token: findToken.data.token,
+        notification: {
+          title,
+          body,
+        },
+      });
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  const isDuplicate = (list: Message[], msg: Message) => {
+    return list.some((m) => m.title === msg.title && m.body === msg.body);
+  };
+
   useEffect(() => {
     requestNotificationAccess();
-    const timeNow = new Date().getTime();
-    const expireTime = 8 * 60 * 60 * 1000;
 
-    const unsubcribe = onMessage(message, (payload) => {
-      console.log('Received Foreground message ', payload);
-
+    return onMessage(message, (payload) => {
       const newMsg: Message = {
         title: payload.notification?.title || '',
         body: payload.notification?.body || '',
-        timestamp: timeNow,
+        timestamp: Date.now(),
       };
       toast(`${newMsg.title}`, {
         description: newMsg.body,
         position: 'bottom-right',
       });
 
-      setMsgLocal((prev) => {
-        let existItem = false;
-        prev.map((p) => {
-          if (p.title === newMsg.title && p.body === newMsg.body) {
-            existItem = true;
-          }
-        });
-
-        if (!existItem) {
-          return [...prev, newMsg];
-        }
-        return prev;
-      });
+      setMsgLocal((prev) =>
+        isDuplicate(prev, newMsg) ? prev : [...prev, newMsg]
+      );
     });
-
-    const store = localStorage.getItem(keyMsg);
-    console.log(JSON.stringify(store));
-    if (store) {
-      const arr: Message[] = JSON.parse(store);
-
-      arr.map((a, index) => {
-        if (a.timestamp !== undefined) {
-          if (a.timestamp > expireTime) {
-            arr.splice(index, 1);
-          }
-        }
-      });
-      localStorage.setItem(keyMsg, JSON.stringify(arr));
-    }
-    return () => unsubcribe();
   }, []);
 
   useEffect(() => {
-    window.localStorage.setItem(keyMsg, JSON.stringify(msgLocal));
-  }, [msgLocal]);
+    if (msgLocal.length === 0) return;
+
+    const time = setInterval(() => {
+      const now = Date.now();
+      const arr = msgLocal.filter((a) => {
+        return a.timestamp !== undefined && a.timestamp >= now - expireTime;
+      });
+
+      if (arr.length !== msgLocal.length) {
+        setMsgLocal(arr);
+      }
+      localStorage.setItem(keyMsg, JSON.stringify(msgLocal));
+    }, 500);
+    return () => clearInterval(time);
+  }, [msgLocal, expireTime]);
 
   return (
     <NotificationContext.Provider
