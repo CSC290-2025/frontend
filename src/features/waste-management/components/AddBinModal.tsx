@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Search } from 'lucide-react';
+import { X, Search, MapPin, Trash2 } from 'lucide-react';
 import {
   MapContainer,
   TileLayer,
@@ -77,14 +77,49 @@ export default function AddBinModal({ onClose, onSuccess }: AddBinModalProps) {
   const [mapCenter, setMapCenter] = useState<[number, number]>(BANGKOK_COORDS);
   const [locationSearch, setLocationSearch] = useState('');
   const [searchingLocation, setSearchingLocation] = useState(false);
+  const [fetchingAddress, setFetchingAddress] = useState(false);
+  const [locatingUser, setLocatingUser] = useState(false);
 
-  const handleMapClick = (coords: Coordinates) => {
+  const fetchAddressFromCoordinates = async (lat: number, lng: number) => {
+    setFetchingAddress(true);
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`,
+        {
+          headers: {
+            'User-Agent': 'WasteManagementApp',
+          },
+        }
+      );
+      const data = await response.json();
+
+      if (data && data.display_name) {
+        return data.display_name;
+      }
+      return '';
+    } catch (error) {
+      console.error('Error fetching address:', error);
+      return '';
+    } finally {
+      setFetchingAddress(false);
+    }
+  };
+
+  const handleMapClick = async (coords: Coordinates) => {
     setFormData({
       ...formData,
       latitude: coords.lat,
       longitude: coords.lng,
     });
     setMapCenter([coords.lat, coords.lng]);
+
+    const address = await fetchAddressFromCoordinates(coords.lat, coords.lng);
+    if (address) {
+      setFormData((prev) => ({
+        ...prev,
+        address: address,
+      }));
+    }
   };
 
   const handleSearchLocation = async () => {
@@ -128,6 +163,38 @@ export default function AddBinModal({ onClose, onSuccess }: AddBinModalProps) {
     }
   };
 
+  const handleLocateUser = () => {
+    setLocatingUser(true);
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const lat = position.coords.latitude;
+          const lng = position.coords.longitude;
+
+          const address = await fetchAddressFromCoordinates(lat, lng);
+          setFormData({
+            ...formData,
+            latitude: lat,
+            longitude: lng,
+            address: address || '',
+          });
+          setMapCenter([lat, lng]);
+          setLocatingUser(false);
+        },
+        (error) => {
+          console.error('Geolocation error:', error);
+          alert(
+            'Could not access your location. Please enable location services.'
+          );
+          setLocatingUser(false);
+        }
+      );
+    } else {
+      alert('Geolocation is not supported by this browser.');
+      setLocatingUser(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -163,34 +230,51 @@ export default function AddBinModal({ onClose, onSuccess }: AddBinModalProps) {
   };
 
   return (
-    <div className="bg-opacity-50 fixed inset-0 z-50 flex items-center justify-center bg-black p-4">
-      <div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-lg bg-white p-6">
-        <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-lg font-semibold">Add New Bin</h3>
-          <button onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4 backdrop-blur-sm">
+      <div className="max-h-[90vh] w-full max-w-4xl overflow-y-auto rounded-2xl bg-gradient-to-br from-white to-gray-50 p-8 shadow-2xl">
+        <div className="mb-6 flex items-center justify-between border-b border-gray-200 pb-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100">
+              <Trash2 className="h-5 w-5 text-green-600" />
+            </div>
+            <div>
+              <h3 className="text-2xl font-bold text-gray-800">Add New Bin</h3>
+              <p className="text-xs text-gray-500">
+                Create a new waste management location
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="rounded-lg p-2 text-gray-500 transition hover:bg-gray-200 hover:text-gray-700"
+          >
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <div className="space-y-4">
-              <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">
-                  Bin Name
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={formData.bin_name}
-                  onChange={(e) =>
-                    setFormData({ ...formData, bin_name: e.target.value })
-                  }
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500"
-                />
+              <div className="rounded-xl bg-gradient-to-br from-green-50 to-emerald-50 p-4">
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-gray-700">
+                    Bin Name
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.bin_name}
+                    onChange={(e) =>
+                      setFormData({ ...formData, bin_name: e.target.value })
+                    }
+                    placeholder="e.g., Front Street Bin"
+                    className="w-full rounded-lg border-2 border-gray-200 bg-white px-4 py-2.5 focus:border-green-500 focus:ring-2 focus:ring-green-200 focus:outline-none"
+                  />
+                </div>
               </div>
+
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">
+                <label className="mb-2 block text-sm font-semibold text-gray-700">
                   Bin Type
                 </label>
                 <select
@@ -201,15 +285,16 @@ export default function AddBinModal({ onClose, onSuccess }: AddBinModalProps) {
                       bin_type: e.target.value as BinType,
                     })
                   }
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                  className="w-full rounded-lg border-2 border-gray-200 bg-white px-4 py-2.5 focus:border-green-500 focus:ring-2 focus:ring-green-200 focus:outline-none"
                 >
-                  <option value="RECYCLABLE">Recyclable</option>
-                  <option value="GENERAL">General</option>
-                  <option value="HAZARDOUS">Hazardous</option>
+                  <option value="RECYCLABLE">♻️ Recyclable</option>
+                  <option value="GENERAL">🗑️ General</option>
+                  <option value="HAZARDOUS">⚠️ Hazardous</option>
                 </select>
               </div>
+
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">
+                <label className="mb-2 block text-sm font-semibold text-gray-700">
                   Address
                 </label>
                 <input
@@ -218,11 +303,13 @@ export default function AddBinModal({ onClose, onSuccess }: AddBinModalProps) {
                   onChange={(e) =>
                     setFormData({ ...formData, address: e.target.value })
                   }
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                  placeholder="Location will be auto-filled from map"
+                  className="w-full rounded-lg border-2 border-gray-200 bg-white px-4 py-2.5 focus:border-green-500 focus:ring-2 focus:ring-green-200 focus:outline-none"
                 />
               </div>
+
               <div>
-                <label className="mb-1 block text-sm font-medium text-gray-700">
+                <label className="mb-2 block text-sm font-semibold text-gray-700">
                   Capacity (kg)
                 </label>
                 <input
@@ -237,13 +324,14 @@ export default function AddBinModal({ onClose, onSuccess }: AddBinModalProps) {
                         : undefined,
                     })
                   }
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                  placeholder="100"
+                  className="w-full rounded-lg border-2 border-gray-200 bg-white px-4 py-2.5 focus:border-green-500 focus:ring-2 focus:ring-green-200 focus:outline-none"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">
+                  <label className="mb-2 block text-xs font-semibold text-gray-600">
                     Latitude
                   </label>
                   <input
@@ -259,11 +347,11 @@ export default function AddBinModal({ onClose, onSuccess }: AddBinModalProps) {
                       });
                       setMapCenter([lat, formData.longitude]);
                     }}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                    className="w-full rounded-lg border-2 border-gray-200 bg-white px-3 py-2 text-xs focus:border-green-500 focus:ring-2 focus:ring-green-200 focus:outline-none"
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">
+                  <label className="mb-2 block text-xs font-semibold text-gray-600">
                     Longitude
                   </label>
                   <input
@@ -279,17 +367,17 @@ export default function AddBinModal({ onClose, onSuccess }: AddBinModalProps) {
                       });
                       setMapCenter([formData.latitude, lng]);
                     }}
-                    className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                    className="w-full rounded-lg border-2 border-gray-200 bg-white px-3 py-2 text-xs focus:border-green-500 focus:ring-2 focus:ring-green-200 focus:outline-none"
                   />
                 </div>
               </div>
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-medium text-gray-700">
+              <label className="mb-2 block text-sm font-semibold text-gray-700">
                 Search Location
               </label>
-              <div className="mb-2 flex gap-2">
+              <div className="mb-3 flex gap-2">
                 <input
                   type="text"
                   value={locationSearch}
@@ -300,23 +388,42 @@ export default function AddBinModal({ onClose, onSuccess }: AddBinModalProps) {
                       handleSearchLocation();
                     }
                   }}
-                  placeholder="Search for a location (e.g., Bangkok, KMUTT)"
-                  className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500"
+                  placeholder="Search location..."
+                  className="flex-1 rounded-lg border-2 border-gray-200 bg-white px-3 py-2 text-sm focus:border-green-500 focus:ring-2 focus:ring-green-200 focus:outline-none"
                 />
                 <button
                   type="button"
                   onClick={handleSearchLocation}
                   disabled={searchingLocation}
-                  className="flex items-center gap-2 rounded-lg bg-blue-500 px-4 py-2 text-white transition hover:bg-blue-600 disabled:bg-blue-300"
+                  className="flex items-center gap-2 rounded-lg bg-gradient-to-r from-green-500 to-emerald-500 px-4 py-2 text-white transition hover:from-green-600 hover:to-emerald-600 disabled:opacity-50"
                 >
                   <Search className="h-4 w-4" />
                   {searchingLocation ? 'Searching...' : 'Search'}
                 </button>
               </div>
-              <label className="mb-2 block text-sm font-medium text-gray-700">
+              <button
+                type="button"
+                onClick={handleLocateUser}
+                disabled={locatingUser}
+                className="mb-3 flex w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-blue-500 to-cyan-500 px-4 py-2 text-sm font-semibold text-white transition hover:from-green-600 hover:to-cyan-600 disabled:opacity-50"
+              >
+                {locatingUser ? (
+                  <>
+                    <span className="animate-spin">...</span>
+                    Searching...
+                  </>
+                ) : (
+                  <>
+                    <MapPin className="h-4 w-4" />
+                    Use My Current Location
+                  </>
+                )}
+              </button>
+              <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-gray-700">
+                <MapPin className="h-4 w-4 text-green-600" />
                 Click on map to set location
               </label>
-              <div className="h-64 w-full overflow-hidden rounded-lg border border-gray-300">
+              <div className="h-72 w-full overflow-hidden rounded-xl border-2 border-gray-300 shadow-lg">
                 <MapContainer
                   center={mapCenter}
                   zoom={13}
@@ -336,25 +443,25 @@ export default function AddBinModal({ onClose, onSuccess }: AddBinModalProps) {
                 </MapContainer>
               </div>
               <p className="mt-2 text-xs text-gray-500">
-                Click anywhere on the map to set the bin location
+                💡 Click anywhere on the map to select the bin location
               </p>
             </div>
           </div>
 
-          <div className="flex gap-3 pt-4">
+          <div className="flex gap-3 border-t border-gray-200 pt-6">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 rounded-lg border border-gray-300 px-4 py-2 transition hover:bg-gray-50"
+              className="flex-1 rounded-lg border-2 border-gray-300 px-4 py-3 font-semibold text-gray-700 transition hover:bg-gray-100"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 rounded-lg bg-blue-500 px-4 py-2 text-white transition hover:bg-blue-600 disabled:bg-blue-300"
+              className="flex-1 rounded-lg bg-gradient-to-r from-green-500 to-emerald-500 px-4 py-3 font-semibold text-white transition hover:from-green-600 hover:to-emerald-600 disabled:opacity-50"
             >
-              {loading ? 'Creating...' : 'Add Bin'}
+              {loading ? '🔄 Creating...' : '✓ Add Bin'}
             </button>
           </div>
         </form>

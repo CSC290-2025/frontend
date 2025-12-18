@@ -39,7 +39,7 @@ export default function ViewSelector({
             <Button
               variant={viewType === 'daily' ? 'default' : 'outline'}
               onClick={() => onViewTypeChange('daily')}
-              className={viewType === 'daily' ? 'bg-purple-600' : ''}
+              className={viewType === 'daily' ? 'bg-green-600' : ''}
             >
               <Calendar className="mr-2 h-4 w-4" />
               Daily
@@ -47,7 +47,7 @@ export default function ViewSelector({
             <Button
               variant={viewType === 'monthly' ? 'default' : 'outline'}
               onClick={() => onViewTypeChange('monthly')}
-              className={viewType === 'monthly' ? 'bg-purple-600' : ''}
+              className={viewType === 'monthly' ? 'bg-green-600' : ''}
             >
               <BarChart3 className="mr-2 h-4 w-4" />
               Monthly

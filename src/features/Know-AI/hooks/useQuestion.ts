@@ -6,5 +6,6 @@ export const useQuestion = (questionId: number) => {
     queryKey: ['question', questionId],
     queryFn: () => fetchQuestion(questionId),
     enabled: !!questionId,
+    staleTime: Infinity,
   });
 };

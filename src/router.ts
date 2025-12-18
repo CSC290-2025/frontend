@@ -1,6 +1,3 @@
-// Generouted, changes to this file will be overridden
- 
-
 import { components, hooks, utils } from '@generouted/react-router/client';
 
 export type Path =
@@ -17,6 +14,7 @@ export type Path =
   | `/ApartmentPayment`
   | `/Know-AI/:course`
   | `/Know-AI/:course/:id`
+  | `/Know-AI/adminAi`
   | `/Know-AI/createCourse`
   | `/Know-AI/exercises`
   | `/Know-AI/exercises/:level/:question`
@@ -49,6 +47,7 @@ export type Path =
   | `/freecycle/post-item`
   | `/harm`
   | `/harm/:id`
+  | `/healthcare/Login`
   | `/healthcare/healthcare-admin`
   | `/healthcare/healthcare-user`
   | `/hotLine`
