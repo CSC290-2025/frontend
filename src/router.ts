@@ -64,6 +64,8 @@ export type Path =
   | `/power-bi/edit/:id`
   | `/public_transportation`
   | `/register`
+  | `/reset-password`
+  | `/reset-password/request`
   | `/sos`
   | `/sos/:id`
   | `/sos/report`

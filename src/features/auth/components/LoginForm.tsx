@@ -99,7 +99,7 @@ export default function LoginForm() {
 
           <div className="flex justify-end">
             <Link
-              to="/forgot-password"
+              to="/reset-password/request"
               className="text-sm text-blue-500 hover:underline"
             >
               Forgot password?
