@@ -7,3 +7,5 @@ export { default as WasteLoggingForm } from './WasteLoggingForm.tsx';
 export { RecenterMap, MapClickHandler } from './Map';
 export { default as NearestBinCard } from './NearestBinCard';
 export { default as LocationsSideBar } from './LocationsSideBar';
+export { default as DailyWasteLogs } from './DailyWasteLogs.tsx';
+export { default as FreeCycleCTA } from './FreeCycleCTA.tsx';

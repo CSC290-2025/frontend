@@ -1,27 +1,26 @@
 import { useQuery } from '@tanstack/react-query';
 import {
   getAddressById,
-  calculateDistance,
+  getTransitLines,
   formatAddressToString,
 } from '../api/knowAi.api';
 
-export function useTravelDuration(
+export function useTransitLines(
   userAddress: string | undefined,
   courseAddressId: number | undefined | null,
   isEnabled: boolean
 ) {
   return useQuery({
-    queryKey: ['travelDuration', userAddress, courseAddressId],
+    queryKey: ['transitLines', userAddress, courseAddressId],
     queryFn: async () => {
-      if (!userAddress || !courseAddressId) return null;
+      if (!userAddress || !courseAddressId) return [];
 
       const courseAddr = await getAddressById(courseAddressId);
-      if (!courseAddr) return null;
+      if (!courseAddr) return [];
 
-      const destinationString = formatAddressToString(courseAddr);
+      const destination = formatAddressToString(courseAddr);
 
-      const duration = await calculateDistance(userAddress, destinationString);
-      return duration;
+      return await getTransitLines(userAddress, destination);
     },
     enabled: !!userAddress && !!courseAddressId && isEnabled,
   });
