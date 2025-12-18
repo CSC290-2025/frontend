@@ -265,15 +265,36 @@ export function BinLocator() {
   // Auto-open nearest bin popup when it changes
   useEffect(() => {
     if (nearestBin && nearestBinMarkerRef.current) {
-      // Ensure popup opens after a longer delay to allow render cycle
-      const timer = setTimeout(() => {
+      // Try opening popup with multiple attempts at different intervals
+      const openPopup = () => {
         try {
-          nearestBinMarkerRef.current?.openPopup();
+          const popup = nearestBinMarkerRef.current?.getPopup?.();
+          if (popup && nearestBinMarkerRef.current?.openPopup) {
+            nearestBinMarkerRef.current.openPopup();
+            console.log('Nearest bin popup opened successfully');
+          }
         } catch (e) {
-          console.log('Popup open error:', e);
+          console.log('Error opening popup:', e);
         }
-      }, 500);
-      return () => clearTimeout(timer);
+      };
+
+      // Multiple attempts to ensure popup opens
+      const timers = [
+        setTimeout(openPopup, 300),
+        setTimeout(openPopup, 700),
+        setTimeout(openPopup, 1200),
+      ];
+
+      return () => timers.forEach((timer) => clearTimeout(timer));
+      // // Ensure popup opens after a longer delay to allow render cycle
+      // const timer = setTimeout(() => {
+      //   try {
+      //     nearestBinMarkerRef.current?.openPopup();
+      //   } catch (e) {
+      //     console.log('Popup open error:', e);
+      //   }
+      // }, 500);
+      // return () => clearTimeout(timer);
     }
   }, [nearestBin?.id]);
 
@@ -305,11 +326,16 @@ export function BinLocator() {
         </p>
       </div>
 
-      <div className="grid w-full max-w-7xl grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="grid h-screen w-full max-w-7xl grid-cols-1 gap-6 lg:h-auto lg:grid-cols-2">
         {/* Map Column */}
         <div
-          className="relative h-[600px] overflow-hidden rounded-2xl border-2 border-gray-200 bg-white shadow-2xl"
-          style={mapWrapperStyle}
+          className="relative overflow-hidden rounded-2xl border-2 border-gray-200 bg-white shadow-2xl"
+          style={{ ...mapWrapperStyle, minHeight: 600 }}
+          // <div className="grid w-full max-w-7xl grid-cols-1 gap-6 lg:grid-cols-2">
+          //   {/* Map Column */}
+          //   <div
+          //     className="relative h-[600px] overflow-hidden rounded-2xl border-2 border-gray-200 bg-white shadow-2xl"
+          //     style={mapWrapperStyle}
         >
           {nearestBin && <NearestBinCard bin={nearestBin} />}
 
@@ -319,7 +345,7 @@ export function BinLocator() {
             className="z-0 h-full w-full"
             scrollWheelZoom
             ref={mapRef}
-            style={{ height: '100%', width: '100%' }}
+            style={{ ...mapContainerStyle, minHeight: 600 }}
           >
             <RecenterMap lat={centerLocation.lat} lng={centerLocation.lng} />
             <MapClickHandler onSelect={handleMapClick} />
@@ -332,7 +358,7 @@ export function BinLocator() {
             <Marker position={[userLocation.lat, userLocation.lng]}>
               <Popup className="font-sans">
                 <div className="w-40 space-y-0 rounded p-1">
-                  <p className="text-xs font-semibold text-purple-700">
+                  <p className="text-xs font-semibold text-blue-700">
                     You are here
                   </p>
                   <p className="text-xs leading-tight font-medium break-words text-gray-800">
@@ -350,8 +376,8 @@ export function BinLocator() {
                 <Popup className="font-sans">
                   <div className="w-48 space-y-2 rounded p-2">
                     <div>
-                      <p className="text-xs font-semibold text-orange-700">
-                        Search Point
+                      <p className="text-xs font-semibold text-green-700">
+                        Selected point
                       </p>
                       <p className="text-xs leading-tight font-medium break-words text-gray-800">
                         {searchLocation.name ?? 'Location'}
@@ -371,7 +397,7 @@ export function BinLocator() {
                           {searchLocationNearestBin.type}
                         </p>
                         <p className="mt-1 text-xs font-semibold text-blue-600">
-                          {searchLocationNearestBin.distance}
+                          📍 {searchLocationNearestBin.distance}
                         </p>
                       </div>
                     )}
@@ -452,7 +478,7 @@ export function BinLocator() {
                 <Popup className="font-sans" closeButton={false} autoPan={true}>
                   <div className="w-48 space-y-1.5 rounded p-2">
                     <p className="mb-1 text-xs font-bold text-purple-700">
-                      NEAREST BIN
+                      📍 NEAREST BIN
                     </p>
                     <div>
                       <p className="text-xs font-bold text-gray-800">
@@ -475,7 +501,7 @@ export function BinLocator() {
         </div>
 
         {/* Filter Card Column */}
-        <div className="h-[600px]">
+        <div className="h-full">
           <LocationsSideBar
             bins={bins}
             selectedBinId={selectedBinId}

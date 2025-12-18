@@ -287,9 +287,9 @@ export default function AddBinModal({ onClose, onSuccess }: AddBinModalProps) {
                   }
                   className="w-full rounded-lg border-2 border-gray-200 bg-white px-4 py-2.5 focus:border-green-500 focus:ring-2 focus:ring-green-200 focus:outline-none"
                 >
-                  <option value="RECYCLABLE">Recyclable</option>
-                  <option value="GENERAL">General</option>
-                  <option value="HAZARDOUS">Hazardous</option>
+                  <option value="RECYCLABLE">♻️ Recyclable</option>
+                  <option value="GENERAL">🗑️ General</option>
+                  <option value="HAZARDOUS">⚠️ Hazardous</option>
                 </select>
               </div>
 
@@ -443,7 +443,7 @@ export default function AddBinModal({ onClose, onSuccess }: AddBinModalProps) {
                 </MapContainer>
               </div>
               <p className="mt-2 text-xs text-gray-500">
-                Click anywhere on the map to select the bin location
+                💡 Click anywhere on the map to select the bin location
               </p>
             </div>
           </div>
@@ -461,7 +461,7 @@ export default function AddBinModal({ onClose, onSuccess }: AddBinModalProps) {
               disabled={loading}
               className="flex-1 rounded-lg bg-gradient-to-r from-green-500 to-emerald-500 px-4 py-3 font-semibold text-white transition hover:from-green-600 hover:to-emerald-600 disabled:opacity-50"
             >
-              {loading ? ' Creating...' : ' Add Bin'}
+              {loading ? '🔄 Creating...' : '✓ Add Bin'}
             </button>
           </div>
         </form>

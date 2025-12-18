@@ -94,6 +94,7 @@ export interface BackendBin {
   longitude: number;
   address: string | null;
   capacity_kg: number | null;
+  created_by_user_id: number | null;
 }
 
 export interface ApiResponse<T> {

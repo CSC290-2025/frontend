@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BarChart3, MapPin, Trash2, Navigation, Delete } from 'lucide-react';
+import { BarChart3, MapPin, Trash2, Navigation, Calendar } from 'lucide-react';
 import Dashboard from '@/features/waste-management/pages/Dashboard.tsx';
 import BinsManagement from '@/features/waste-management/pages/BinsManagement';
 import WasteLogging from '@/features/waste-management/pages/WasteLogging';
@@ -57,7 +57,7 @@ export default function WasteManagementPage() {
               { id: 'waste', label: 'Log Waste', icon: Trash2 },
               { id: 'bins', label: 'Bins Management', icon: MapPin },
               { id: 'nearest', label: 'Find Nearest Bins', icon: Navigation },
-              { id: 'wasteEvent', label: 'Waste Events', icon: Delete },
+              { id: 'wasteEvent', label: 'Waste Events', icon: Calendar },
             ].map((item) => (
               <button
                 key={item.id}
