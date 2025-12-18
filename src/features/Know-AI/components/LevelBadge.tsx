@@ -8,13 +8,13 @@ export default function LevelBadge({
   return (
     <div className="relative flex h-36 w-36 items-center justify-center">
       {active && (
-        <div className="absolute inset-0 scale-90 animate-pulse rounded-full bg-green-400 opacity-50 blur-2xl" />
+        <div className="absolute inset-0 scale-90 animate-pulse rounded-full bg-white opacity-50 blur-2xl" />
       )}
 
       <div
         className={`relative z-10 flex h-28 w-28 flex-col items-center justify-center overflow-hidden rounded-full text-center transition-all duration-300 ease-out sm:h-32 sm:w-32 ${
           active
-            ? 'scale-105 bg-linear-to-br from-green-400 to-emerald-600 text-white shadow-2xl ring-[5px] shadow-green-500/40 ring-white/30'
+            ? 'scale-105 bg-linear-to-br from-[#6FBF44] to-emerald-600 text-white shadow-2xl ring-[5px] shadow-green-500/40 ring-white/30'
             : 'bg-white text-gray-300 ring-4 ring-gray-100 grayscale'
         } `}
       >
