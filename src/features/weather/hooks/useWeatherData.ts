@@ -4,8 +4,8 @@ import { useWeatherHourly } from './useWeatherHourly';
 import { useWeatherDaily } from './useWeatherDaily';
 
 const conditionIconMap: Record<string, { day: string; night: string }> = {
-  Sunny: { day: '☀️', night: '🌙' }, // night = moonly
-  'Partly Cloudy': { day: '⛅️', night: '🌙⛅️' },
+  Sunny: { day: '☀️', night: '🌕' }, // night = moonly
+  'Partly Cloudy': { day: '⛅️', night: '🌕☁️' },
   Cloudy: { day: '☁️', night: '☁️' },
   Fog: { day: '🌫️', night: '🌫️' },
   Rain: { day: '🌧️', night: '🌧️' },
