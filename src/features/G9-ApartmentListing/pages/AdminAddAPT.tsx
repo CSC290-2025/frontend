@@ -167,6 +167,17 @@ export default function AddApartment(): React.ReactElement {
   ): void => {
     const newRoomTypes = [...formData.roomTypes];
     newRoomTypes[index] = { ...newRoomTypes[index], [field]: value };
+
+    // Auto-calculate prices
+    if (field === 'size' && typeof value === 'string') {
+      const cleansize = value.replace(/\s*(sqm|sq\.m|m²|sq m)\s*$/i, '').trim();
+      const sizeValue = parseFloat(cleansize);
+      if (!isNaN(sizeValue) && sizeValue > 0) {
+        newRoomTypes[index].price_start = sizeValue * 100;
+        newRoomTypes[index].price_end = sizeValue * 200;
+      }
+    }
+
     setFormData((prev) => ({ ...prev, roomTypes: newRoomTypes }));
 
     // Clear room field error when user starts typing
