@@ -1,7 +1,7 @@
 {
   "name": "frontend",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -14,6 +14,7 @@
     "preview": "vite preview",
     "prepare": "husky",
     "api:generate": "curl -s https://smartcity-api.sit.kmutt.ac.th/doc > ../openapi.json && orval",
+    "api:generate-local": "curl -s http://localhost:3000/doc > ../openapi.json && orval",
     "api:types": "orval"
   },
   "dependencies": {

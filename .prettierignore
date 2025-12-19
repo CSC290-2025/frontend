@@ -27,7 +27,7 @@ yarn.lock
 .env*
 !/.env.example
 
-# Assets (binary files don’t need formatting)
+# Assets (binary files don't need formatting)
 *.svg
 *.png
 *.jpg
