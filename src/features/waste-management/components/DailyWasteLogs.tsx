@@ -48,7 +48,9 @@ export default function DailyWasteLogs() {
     );
   }
 
-  const logs = data?.logs || [];
+  const logs = (data?.logs || []).sort(
+    (a, b) => Number(b.weight) - Number(a.weight)
+  );
 
   if (logs.length === 0) {
     return (

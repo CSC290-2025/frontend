@@ -4,7 +4,7 @@ import {
   ChevronRight,
   Search,
   CloudRain,
-  Calendar,
+  Calendar as CalendarIcon,
   Clock,
   Loader2,
 } from 'lucide-react';
@@ -46,93 +46,85 @@ const MonthlyPage: React.FC<MonthlyPageProps> = ({ setActiveTab }) => {
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const firstDayOfMonth = new Date(year, month, 1).getDay();
 
-  // --- HELPER: Safe Data Extraction ---
+  // --- HELPERS ---
+
+  const getLocalDateString = (date: Date) => {
+    const offset = date.getTimezoneOffset();
+    const adjustedDate = new Date(date.getTime() - offset * 60 * 1000);
+    return adjustedDate.toISOString().split('T')[0];
+  };
+
+  const isWithinRainRange = (dateStr: string | null) => {
+    if (!dateStr) return false;
+    const targetDate = new Date(dateStr);
+    targetDate.setHours(0, 0, 0, 0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const sevenDaysFromNow = new Date();
+    sevenDaysFromNow.setDate(today.getDate() + 7);
+    sevenDaysFromNow.setHours(23, 59, 59, 999);
+    return targetDate >= today && targetDate <= sevenDaysFromNow;
+  };
+
   const extractArray = (res: any): any[] => {
-    // Check console to see exactly what API returns
-    console.log('Raw API Response:', res);
-
+    if (!res) return [];
+    if (res.data?.days && Array.isArray(res.data.days)) return res.data.days;
+    if (res.data?.data?.data && Array.isArray(res.data.data.data))
+      return res.data.data.data;
+    if (Array.isArray(res.data)) return res.data;
     if (Array.isArray(res)) return res;
-    if (res?.data?.items && Array.isArray(res.data.items))
-      return res.data.items;
-    if (res?.data?.data && Array.isArray(res.data.data)) return res.data.data;
-    if (res?.data && Array.isArray(res.data)) return res.data;
-    if (res?.items && Array.isArray(res.items)) return res.items;
-
-    // Fallback for object with numbered keys (edge case)
-    if (res && typeof res === 'object') return Object.values(res);
-
     return [];
   };
 
-  // --- HELPER: Transform Event Data ---
-  // Handles cases where API returns 'start_date'/'start_time' instead of 'start_at'
   const transformEvent = (e: any): EventItem | null => {
-    // Construct ISO strings if fields are separate
-    let start = e.start_at;
-    let end = e.end_at;
-
-    if (!start && e.start_date) {
-      start = `${e.start_date}T${e.start_time || '00:00:00'}`;
-    }
-    if (!end && e.end_date) {
-      end = `${e.end_date}T${e.end_time || '23:59:59'}`;
-    }
-
-    if (!start) return null; // Skip invalid events
-
+    const start =
+      e.start_at ||
+      (e.start_date ? `${e.start_date}T${e.start_time || '00:00:00'}` : null);
+    if (!start) return null;
     return {
       id: e.id?.toString() || Math.random().toString(),
       title: e.title || 'Untitled Event',
       start_at: start,
-      end_at: end || start, // Fallback end to start if missing
+      end_at: e.end_at || start,
     };
   };
 
-  // --- API: Fetch Rain (Max 7 Days) ---
+  // --- API CALLS ---
   const fetchRainData = useCallback(async () => {
-    const today = new Date();
-    const todayStr = today.toISOString().split('T')[0];
-    const isCurrentMonth =
-      today.getMonth() === month && today.getFullYear() === year;
-    const startDate = isCurrentMonth
-      ? todayStr
-      : `${year}-${String(month + 1).padStart(2, '0')}-01`;
-
+    const todayStr = getLocalDateString(new Date());
     try {
-      const rawData = await fetchDailyRainForecast(1, startDate, 7);
-      const forecast = extractArray(rawData);
-
+      const forecastDays = await fetchDailyRainForecast(1, todayStr, 7);
       const rainMap: RainDataMap = {};
-      forecast.forEach((item: any) => {
+      console.log(forecastDays);
+      const rawDays = extractArray({ data: forecastDays }); // Using your helper to ensure it's an array
+      console.log(rawDays);
+      rawDays.forEach((item: any) => {
+        // Ensure we extract only the YYYY-MM-DD part from the API date
         if (item.date) {
-          rainMap[item.date] = item.precipitation_probability_max;
+          const formattedDate = new Date(item.date).toISOString().split('T')[0];
+          rainMap[formattedDate] = item.precipitation_probability_max;
         }
       });
       setDailyRainForecast(rainMap);
     } catch (error) {
       console.error('Rain forecast error:', error);
     }
-  }, [year, month]);
+  }, []);
 
-  // --- API: Fetch Monthly Overview ---
   const fetchMonthlyEvents = useCallback(async () => {
     const fromDate = `${year}-${String(month + 1).padStart(2, '0')}-01`;
     const toDate = `${year}-${String(month + 1).padStart(2, '0')}-${daysInMonth}`;
-
     try {
       const res = await fetchEvents({ from: fromDate, to: toDate });
       const rawList = extractArray(res);
-
       const monthlyMap: MonthlyEventsMap = {};
       rawList.forEach((rawEvent: any) => {
         const event = transformEvent(rawEvent);
-        if (!event) return;
-
-        // Extract just the date part (YYYY-MM-DD)
-        const dateKey = event.start_at.split('T')[0];
-
-        if (!monthlyMap[dateKey]) monthlyMap[dateKey] = [];
-        monthlyMap[dateKey].push(event);
+        if (event) {
+          const dateKey = event.start_at.split('T')[0];
+          if (!monthlyMap[dateKey]) monthlyMap[dateKey] = [];
+          monthlyMap[dateKey].push(event);
+        }
       });
       setMonthlyEventsMap(monthlyMap);
     } catch (error) {
@@ -140,25 +132,16 @@ const MonthlyPage: React.FC<MonthlyPageProps> = ({ setActiveTab }) => {
     }
   }, [year, month, daysInMonth]);
 
-  // --- API: Fetch Day Details ---
   const handleDayClick = async (day: number) => {
     const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
     setSelectedDate(dateStr);
     setLoading(true);
-    setEvents([]);
-
     try {
-      console.log(`Fetching events for day: ${dateStr}`);
       const res = await fetchEventsByDay(dateStr);
       const rawList = extractArray(res);
-
-      console.log('Raw Events List:', rawList);
-
-      const formattedEvents = rawList
-        .map(transformEvent)
-        .filter((e): e is EventItem => e !== null);
-
-      setEvents(formattedEvents);
+      setEvents(
+        rawList.map(transformEvent).filter((e): e is EventItem => e !== null)
+      );
     } catch (error) {
       console.error('Fetch daily events error:', error);
     } finally {
@@ -172,15 +155,6 @@ const MonthlyPage: React.FC<MonthlyPageProps> = ({ setActiveTab }) => {
     setSelectedDate(null);
   }, [fetchRainData, fetchMonthlyEvents]);
 
-  const filteredEvents = useMemo(() => {
-    return searchQuery
-      ? events.filter((e) =>
-          e.title.toLowerCase().includes(searchQuery.toLowerCase())
-        )
-      : events;
-  }, [events, searchQuery]);
-
-  // --- Date/Time Formatters ---
   const formatTime = (iso: string) => {
     try {
       return new Date(iso).toLocaleTimeString([], {
@@ -216,11 +190,11 @@ const MonthlyPage: React.FC<MonthlyPageProps> = ({ setActiveTab }) => {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="mx-auto max-w-7xl">
-        {/* Controls */}
+        {/* Navigation Bar */}
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <button
             onClick={() => setActiveTab('events')}
-            className="rounded-lg border bg-white px-5 py-2.5 text-sm font-medium hover:bg-gray-100"
+            className="rounded-lg border bg-white px-5 py-2.5 text-sm font-medium transition-colors hover:bg-gray-100"
           >
             ← Back
           </button>
@@ -229,37 +203,38 @@ const MonthlyPage: React.FC<MonthlyPageProps> = ({ setActiveTab }) => {
             <input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search events on selected day..."
+              placeholder="Search scheduled events..."
               className="w-full rounded-lg border border-gray-300 py-2.5 pr-4 pl-10 text-sm outline-none focus:ring-2 focus:ring-cyan-500 sm:w-80"
             />
           </div>
         </div>
 
-        {/* Calendar */}
-        <div className="rounded-2xl border bg-white p-6 shadow-xl">
+        <div className="rounded-2xl border bg-white p-6 shadow-sm">
+          {/* Calendar Controls */}
           <div className="mb-8 flex items-center justify-center gap-8">
             <button
               onClick={() => setCurrentDate(new Date(year, month - 1, 1))}
-              className="rounded-full p-2 hover:bg-gray-100"
+              className="rounded-full p-2 transition-colors hover:bg-gray-100"
             >
               <ChevronLeft />
             </button>
-            <h2 className="text-2xl font-bold">
+            <h2 className="text-2xl font-bold text-gray-800">
               {monthNames[month]} {year}
             </h2>
             <button
               onClick={() => setCurrentDate(new Date(year, month + 1, 1))}
-              className="rounded-full p-2 hover:bg-gray-100"
+              className="rounded-full p-2 transition-colors hover:bg-gray-100"
             >
               <ChevronRight />
             </button>
           </div>
 
-          <div className="grid grid-cols-7 border-t border-l">
+          {/* Grid */}
+          <div className="grid grid-cols-7 overflow-hidden rounded-lg border-t border-l">
             {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((d) => (
               <div
                 key={d}
-                className="border-r border-b bg-gray-50 py-3 text-center text-xs font-bold text-gray-500"
+                className="border-r border-b bg-gray-50 py-3 text-center text-xs font-bold tracking-wider text-gray-400 uppercase"
               >
                 {d}
               </div>
@@ -268,16 +243,19 @@ const MonthlyPage: React.FC<MonthlyPageProps> = ({ setActiveTab }) => {
               const dateKey = day
                 ? `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
                 : null;
-              const rainProb = dateKey ? dailyRainForecast[dateKey] : null;
-              const dayEventsCount = dateKey
+              const count = dateKey
                 ? monthlyEventsMap[dateKey]?.length || 0
                 : 0;
+
+              // Logic for Rain Display
+              const isInRange = dateKey && isWithinRainRange(dateKey);
+              const rainValue = dateKey ? dailyRainForecast[dateKey] : null;
 
               return (
                 <div
                   key={i}
                   onClick={() => day && handleDayClick(day)}
-                  className={`h-28 border-r border-b p-2 transition-all ${day ? 'cursor-pointer hover:bg-cyan-50' : 'bg-gray-50/30'} ${selectedDate === dateKey ? 'bg-cyan-50' : 'bg-white'}`}
+                  className={`relative h-28 border-r border-b p-2 transition-all ${day ? 'cursor-pointer hover:bg-cyan-50/50' : 'bg-gray-50/30'} ${selectedDate === dateKey ? 'bg-cyan-50' : 'bg-white'}`}
                 >
                   {day && (
                     <div className="flex h-full flex-col justify-between">
@@ -287,19 +265,29 @@ const MonthlyPage: React.FC<MonthlyPageProps> = ({ setActiveTab }) => {
                         >
                           {day}
                         </span>
-                        {rainProb !== null && rainProb > 30 && (
-                          <div className="flex items-center rounded bg-blue-50 px-1 text-[10px] font-bold text-blue-500">
-                            <CloudRain className="mr-0.5 h-3 w-3" /> {rainProb}%
+
+                        {/* RAIN DISPLAY LOGIC */}
+                        {isInRange && (
+                          <div className="flex flex-col items-end">
+                            <CloudRain
+                              className={`h-3.5 w-3.5 ${rainValue === null ? 'text-gray-300' : 'text-blue-400'}`}
+                            />
+                            <span
+                              className={`text-[9px] font-bold ${rainValue === null ? 'text-gray-400' : 'text-blue-500'}`}
+                            >
+                              {/* If value is 0, it shows "0%". If null/missing, it shows "No Data" or "--" */}
+                              {typeof rainValue === 'number'
+                                ? `${Math.round(rainValue)}%`
+                                : 'Empty'}
+                            </span>
                           </div>
                         )}
                       </div>
-                      <div className="mt-1">
-                        {dayEventsCount > 0 && (
-                          <div className="truncate rounded bg-cyan-100 px-1.5 py-0.5 text-[10px] font-bold text-cyan-700">
-                            {dayEventsCount} Event(s)
-                          </div>
-                        )}
-                      </div>
+                      {count > 0 && (
+                        <div className="truncate rounded border border-cyan-200 bg-cyan-100 px-1.5 py-1 text-[10px] font-bold text-cyan-700">
+                          {count} {count === 1 ? 'Event' : 'Events'}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -307,49 +295,61 @@ const MonthlyPage: React.FC<MonthlyPageProps> = ({ setActiveTab }) => {
             })}
           </div>
 
-          {/* Event List */}
+          {/* Date Detailed View */}
           {selectedDate && (
-            <div className="mt-8 border-t pt-6">
-              <h3 className="mb-4 text-xl font-bold text-gray-800">
-                Events on{' '}
-                {new Date(selectedDate).toLocaleDateString('en-US', {
-                  dateStyle: 'long',
-                })}
-              </h3>
+            <div className="animate-in fade-in slide-in-from-bottom-4 mt-8 border-t pt-6 duration-500">
+              <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <h3 className="text-xl font-bold text-gray-800">
+                  Schedule for{' '}
+                  {new Date(selectedDate).toLocaleDateString('en-US', {
+                    dateStyle: 'full',
+                  })}
+                </h3>
+
+                {/* SHOW RAIN PROBABILITY (Handles 0% and Empty) */}
+                {isWithinRainRange(selectedDate) && (
+                  <div className="flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-4 py-2 text-sm font-bold text-blue-600 shadow-sm">
+                    <CloudRain className="h-5 w-5" />
+                    <span>
+                      Rain Probability:{' '}
+                      {typeof dailyRainForecast[selectedDate] === 'number'
+                        ? `${Math.round(dailyRainForecast[selectedDate] as number)}%`
+                        : 'Data Unavailable'}
+                    </span>
+                  </div>
+                )}
+              </div>
+
               {loading ? (
-                <div className="flex justify-center py-10">
+                <div className="flex justify-center py-12">
                   <Loader2 className="h-8 w-8 animate-spin text-cyan-500" />
                 </div>
               ) : (
                 <div className="grid gap-3">
-                  {filteredEvents.length > 0 ? (
-                    filteredEvents.map((event) => (
+                  {events.length > 0 ? (
+                    events.map((event) => (
                       <div
                         key={event.id}
-                        className="flex items-center justify-between rounded-xl border p-4 hover:bg-gray-50"
+                        className="flex items-center gap-4 rounded-xl border bg-white p-4 shadow-sm transition-colors hover:border-cyan-200"
                       >
-                        <div className="flex items-center gap-4">
-                          <div className="rounded-lg bg-cyan-100 p-2">
-                            <Calendar className="h-5 w-5 text-cyan-600" />
-                          </div>
-                          <div>
-                            <p className="font-bold text-gray-800">
-                              {event.title}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              Starts: {formatTime(event.start_at)}
-                            </p>
-                          </div>
+                        <div className="rounded-lg bg-cyan-50 p-2.5">
+                          <Clock className="h-5 w-5 text-cyan-500" />
                         </div>
-                        <button className="rounded-lg bg-cyan-500 px-4 py-2 text-sm font-bold text-white hover:bg-cyan-600">
-                          Details
-                        </button>
+                        <div>
+                          <p className="font-bold text-gray-800">
+                            {event.title}
+                          </p>
+                          <p className="text-sm font-semibold text-cyan-600">
+                            {formatTime(event.start_at)}
+                          </p>
+                        </div>
                       </div>
                     ))
                   ) : (
-                    <p className="py-6 text-center text-gray-400">
-                      No events found for this day.
-                    </p>
+                    <div className="py-12 text-center text-gray-400">
+                      <CalendarIcon className="mx-auto mb-2 h-12 w-12 opacity-20" />
+                      <p>No events found for this day.</p>
+                    </div>
                   )}
                 </div>
               )}

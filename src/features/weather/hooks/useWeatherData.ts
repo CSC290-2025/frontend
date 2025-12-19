@@ -4,8 +4,8 @@ import { useWeatherHourly } from './useWeatherHourly';
 import { useWeatherDaily } from './useWeatherDaily';
 
 const conditionIconMap: Record<string, { day: string; night: string }> = {
-  Sunny: { day: '☀️', night: '🌙' }, // night = moonly
-  'Partly Cloudy': { day: '⛅️', night: '🌙⛅️' },
+  Sunny: { day: '☀️', night: '🌕' }, // night = moonly
+  'Partly Cloudy': { day: '⛅️', night: '🌕☁️' },
   Cloudy: { day: '☁️', night: '☁️' },
   Fog: { day: '🌫️', night: '🌫️' },
   Rain: { day: '🌧️', night: '🌧️' },
@@ -81,6 +81,12 @@ export type WeatherUIData = {
   }[];
   warning: string;
   warningDetail: string;
+  distinctName?: string;
+  location_name?: string;
+  locationName?: string;
+  city?: string;
+  location_id?: number;
+  locationId?: number;
 };
 
 export function useWeatherData(locationId?: number) {

@@ -1,5 +1,5 @@
 export { default as TrafficMapPage } from './pages/TrafficMapPage';
-export { default as TrafficAdminpage } from './pages/TrafficAdminpage';
+export { default as TrafficAdminpage } from './pages/TrafficAdminPage.tsx';
 export { default as TrafficControlPage } from './pages/TrafficControlPage';
 export { default as TrafficSignalMarker } from './components/TrafficSignalMarker';
 export { default as LocationInput } from './components/LocationInput';
