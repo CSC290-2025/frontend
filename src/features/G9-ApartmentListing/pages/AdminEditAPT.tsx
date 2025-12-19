@@ -342,17 +342,6 @@ export default function EditApartment(): React.ReactElement {
   ): void => {
     const newRoomTypes = [...formData.roomTypes];
     newRoomTypes[index] = { ...newRoomTypes[index], [field]: value };
-
-    // auto-calculate prices
-    if (field === 'size' && typeof value === 'string') {
-      const cleansize = value.replace(/\s*(sqm|sq\.m|m²|sq m)\s*$/i, '').trim();
-      const sizeValue = parseFloat(cleansize);
-      if (!isNaN(sizeValue) && sizeValue > 0) {
-        newRoomTypes[index].price_start = sizeValue * 100;
-        newRoomTypes[index].price_end = sizeValue * 200;
-      }
-    }
-
     setFormData((prev) => ({ ...prev, roomTypes: newRoomTypes }));
 
     // Clear room field error when user starts typing
@@ -1011,22 +1000,34 @@ export default function EditApartment(): React.ReactElement {
                 )}
               </div>
               <div>
-                <label className="mb-1 block text-sm">Postal Code</label>
+                <label className="mb-1 block text-sm">
+                  Postal Code <span className="text-red-500">*</span>
+                </label>
                 <input
                   type="text"
                   value={formData.postal_code}
                   onChange={(e) =>
                     handleInputChange('postal_code', e.target.value)
                   }
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                  className={getInputClassName(
+                    'postal_code',
+                    'w-full rounded-lg border px-3 py-2 focus:outline-none'
+                  )}
+                  placeholder="e.g., 10140"
                 />
+                {fieldErrors.postal_code && (
+                  <div className="mt-1 text-sm text-red-500">
+                    {fieldErrors.postal_code}
+                  </div>
+                )}
               </div>
             </div>
           </div>
 
           <div className="mb-6">
             <label className="mb-3 block font-semibold">
-              Electricity Price (THB/unit)
+              Electricity Price (THB/unit){' '}
+              <span className="text-red-500">*</span>
             </label>
             <div className="flex items-center gap-2">
               <input
@@ -1038,17 +1039,25 @@ export default function EditApartment(): React.ReactElement {
                     parseFloat(e.target.value) || 0
                   )
                 }
-                className="w-32 rounded-lg border border-gray-300 px-3 py-2 text-center focus:border-blue-500 focus:outline-none"
+                className={getInputClassName(
+                  'electric_price',
+                  'w-32 rounded-lg border px-3 py-2 text-center focus:outline-none'
+                )}
                 min="0"
                 step="0.01"
               />
               <span className="text-sm">THB/unit</span>
             </div>
+            {fieldErrors.electric_price && (
+              <div className="mt-1 text-sm text-red-500">
+                {fieldErrors.electric_price}
+              </div>
+            )}
           </div>
 
           <div className="mb-6">
             <label className="mb-3 block font-semibold">
-              Water Price (THB/unit)
+              Water Price (THB/unit) <span className="text-red-500">*</span>
             </label>
             <div className="flex items-center gap-2">
               <input
@@ -1060,12 +1069,20 @@ export default function EditApartment(): React.ReactElement {
                     parseFloat(e.target.value) || 0
                   )
                 }
-                className="w-32 rounded-lg border border-gray-300 px-3 py-2 text-center focus:border-blue-500 focus:outline-none"
+                className={getInputClassName(
+                  'water_price',
+                  'w-32 rounded-lg border px-3 py-2 text-center focus:outline-none'
+                )}
                 min="0"
                 step="0.01"
               />
               <span className="text-sm">THB/unit</span>
             </div>
+            {fieldErrors.water_price && (
+              <div className="mt-1 text-sm text-red-500">
+                {fieldErrors.water_price}
+              </div>
+            )}
           </div>
 
           <div className="mb-6">
@@ -1082,7 +1099,11 @@ export default function EditApartment(): React.ReactElement {
                     )
                   }
                   disabled={formData.internetFree}
-                  className="w-32 rounded-lg border border-gray-300 px-3 py-2 text-center focus:border-blue-500 focus:outline-none disabled:bg-gray-100"
+                  className={`w-32 rounded-lg border px-3 py-2 text-center focus:outline-none disabled:bg-gray-100 ${
+                    fieldErrors.internet_price
+                      ? 'border-red-500 bg-red-50 focus:border-red-500'
+                      : 'border-gray-300 focus:border-blue-500'
+                  }`}
                   min="0"
                   step="0.01"
                 />
@@ -1100,6 +1121,11 @@ export default function EditApartment(): React.ReactElement {
                 <span>Free</span>
               </label>
             </div>
+            {fieldErrors.internet_price && (
+              <div className="mt-1 text-sm text-red-500">
+                {fieldErrors.internet_price}
+              </div>
+            )}
           </div>
 
           <div className="mb-6">
@@ -1214,12 +1240,21 @@ export default function EditApartment(): React.ReactElement {
                       onChange={(e) =>
                         handleRoomFieldChange(index, 'name', e.target.value)
                       }
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                      className={`w-full rounded-lg border px-3 py-2 focus:outline-none ${
+                        fieldErrors.roomTypes?.[index]?.name
+                          ? 'border-red-500 bg-red-50 focus:border-red-500'
+                          : 'border-gray-300 focus:border-blue-500'
+                      }`}
                       placeholder="e.g., Studio Room A"
                       minLength={2}
                       maxLength={255}
                       required
                     />
+                    {fieldErrors.roomTypes?.[index]?.name && (
+                      <div className="mt-1 text-sm text-red-500">
+                        {fieldErrors.roomTypes[index].name}
+                      </div>
+                    )}
                   </div>
 
                   <div>
@@ -1232,12 +1267,21 @@ export default function EditApartment(): React.ReactElement {
                       onChange={(e) =>
                         handleRoomFieldChange(index, 'type', e.target.value)
                       }
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                      className={`w-full rounded-lg border px-3 py-2 focus:outline-none ${
+                        fieldErrors.roomTypes?.[index]?.type
+                          ? 'border-red-500 bg-red-50 focus:border-red-500'
+                          : 'border-gray-300 focus:border-blue-500'
+                      }`}
                       placeholder="e.g., Studio, 1 Bedroom, 2 Bedroom"
                       minLength={2}
                       maxLength={255}
                       required
                     />
+                    {fieldErrors.roomTypes?.[index]?.type && (
+                      <div className="mt-1 text-sm text-red-500">
+                        {fieldErrors.roomTypes[index].type}
+                      </div>
+                    )}
                   </div>
 
                   <div>
@@ -1250,10 +1294,19 @@ export default function EditApartment(): React.ReactElement {
                       onChange={(e) =>
                         handleRoomFieldChange(index, 'size', e.target.value)
                       }
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                      className={`w-full rounded-lg border px-3 py-2 focus:outline-none ${
+                        fieldErrors.roomTypes?.[index]?.size
+                          ? 'border-red-500 bg-red-50 focus:border-red-500'
+                          : 'border-gray-300 focus:border-blue-500'
+                      }`}
                       placeholder="e.g., 30"
                       required
                     />
+                    {fieldErrors.roomTypes?.[index]?.size && (
+                      <div className="mt-1 text-sm text-red-500">
+                        {fieldErrors.roomTypes[index].size}
+                      </div>
+                    )}
                   </div>
 
                   <div>
@@ -1270,11 +1323,20 @@ export default function EditApartment(): React.ReactElement {
                           parseFloat(e.target.value) || 0
                         )
                       }
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                      className={`w-full rounded-lg border px-3 py-2 focus:outline-none ${
+                        fieldErrors.roomTypes?.[index]?.price_start
+                          ? 'border-red-500 bg-red-50 focus:border-red-500'
+                          : 'border-gray-300 focus:border-blue-500'
+                      }`}
                       placeholder="e.g., 8000"
                       min={0}
                       required
                     />
+                    {fieldErrors.roomTypes?.[index]?.price_start && (
+                      <div className="mt-1 text-sm text-red-500">
+                        {fieldErrors.roomTypes[index].price_start}
+                      </div>
+                    )}
                   </div>
 
                   <div>
@@ -1291,11 +1353,20 @@ export default function EditApartment(): React.ReactElement {
                           parseFloat(e.target.value) || 0
                         )
                       }
-                      className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:border-blue-500 focus:outline-none"
+                      className={`w-full rounded-lg border px-3 py-2 focus:outline-none ${
+                        fieldErrors.roomTypes?.[index]?.price_end
+                          ? 'border-red-500 bg-red-50 focus:border-red-500'
+                          : 'border-gray-300 focus:border-blue-500'
+                      }`}
                       placeholder="e.g., 12000"
                       min={0}
                       required
                     />
+                    {fieldErrors.roomTypes?.[index]?.price_end && (
+                      <div className="mt-1 text-sm text-red-500">
+                        {fieldErrors.roomTypes[index].price_end}
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -1327,9 +1398,14 @@ export default function EditApartment(): React.ReactElement {
               />
               <span className="text-sm">
                 I have read and confirmed that the information provided is
-                correct.
+                correct. <span className="text-red-500">*</span>
               </span>
             </label>
+            {fieldErrors.confirmed && (
+              <div className="mt-1 text-sm text-red-500">
+                {fieldErrors.confirmed}
+              </div>
+            )}
           </div>
 
           <div className="flex justify-end">
